@@ -1,0 +1,17 @@
+{
+  "project": "CBB Originator Interconnected Player Prop Predictive Model",
+  "status": "source_architecture_frozen_ready_for_data_platform",
+  "date": "2026-10-04",
+  "next_stage": "canonical_schema_and_point_in_time_policy_then_data_platform_v1",
+  "authoritative_documents": [
+    "docs/CBB_Blueprint_v1_3.docx",
+    "docs/CBB_Blueprint_v1_3.pdf",
+    "docs/MODEL_ARCHITECTURE_FREEZE.md",
+    "docs/DATA_SOURCE_POLICY.md",
+    "docs/SOURCE_MATRIX.md",
+    "docs/DATA_REQUIREMENTS.md",
+    "docs/PROBABILITY_ENGINE_POLICY.md",
+    "docs/PROJECT_EXECUTION_ORDER.md",
+    "docs/AMENDMENT_2026-10-04_DATA_SOURCE_FREEZE.md"
+  ]
+}

@@ -1,0 +1,152 @@
+{
+ "derived_from": "data/qa/COVERAGE_AUDIT.json",
+ "canonical_build_id": "20261005T163639Z",
+ "player_game_seasons": {
+  "first_season": 2005,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 2460230
+ },
+ "player_season_seasons": {
+  "first_season": 2005,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 101563
+ },
+ "player_shooting_seasons": {
+  "first_season": 2014,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 56173
+ },
+ "team_game_seasons": {
+  "first_season": 2005,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 244808
+ },
+ "team_season_seasons": {
+  "first_season": 2005,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 7412
+ },
+ "team_shooting_seasons": {
+  "first_season": 2014,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 4311
+ },
+ "games_file_seasons": {
+  "first_season": 1949,
+  "last_season": 2025,
+  "missing_seasons_within_range": [],
+  "row_count": 272560
+ },
+ "seasons_in_games_without_box_scores": [
+  2003,
+  2004
+ ],
+ "player_id_coverage": {
+  "resolved_rate_all_player_games": 0.958883,
+  "d1_player_games": 2271654,
+  "d1_player_games_unresolved": 821
+ },
+ "game_id_coverage": {
+  "games_with_player_box_by_season": {
+   "2005": "4356/5031",
+   "2006": "4922/5172",
+   "2007": "5243/5478",
+   "2008": "5559/5590",
+   "2009": "5649/5726",
+   "2010": "5757/5761",
+   "2011": "5762/5770",
+   "2012": "5045/5739",
+   "2013": "5025/5825",
+   "2014": "5932/5948",
+   "2015": "5925/5932",
+   "2016": "5940/5951",
+   "2017": "5919/5964",
+   "2018": "5965/5968",
+   "2019": "6043/6049",
+   "2020": "5767/5767",
+   "2021": "4285/4285",
+   "2022": "5966/5966",
+   "2023": "6221/6222",
+   "2024": "6243/6243",
+   "2025": "6286/6292"
+  },
+  "bdl_games_mapped": {
+   "fetched": 816,
+   "mapped_to_canonical": 804
+  }
+ },
+ "schema_consistency": {
+  "player_game_stats": {
+   "distinct_column_sets": 1,
+   "distinct_column_orders": 4,
+   "columns_with_type_variation": 5
+  },
+  "player_season_stats": {
+   "distinct_column_sets": 1,
+   "distinct_column_orders": 2,
+   "columns_with_type_variation": 6
+  },
+  "player_season_shooting_stats": {
+   "distinct_column_sets": 1,
+   "distinct_column_orders": 1,
+   "columns_with_type_variation": 0
+  },
+  "team_game_stats": {
+   "distinct_column_sets": 6,
+   "distinct_column_orders": 20,
+   "columns_with_type_variation": 62
+  },
+  "team_season_stats": {
+   "distinct_column_sets": 1,
+   "distinct_column_orders": 2,
+   "columns_with_type_variation": 5
+  },
+  "team_season_shooting_stats": {
+   "distinct_column_sets": 1,
+   "distinct_column_orders": 1,
+   "columns_with_type_variation": 0
+  }
+ },
+ "event_level_families": {
+  "pbp": "MEASURED",
+  "on_floor": "MEASURED",
+  "shots": "MEASURED",
+  "substitutions": "MEASURED",
+  "lineups": "MEASURED",
+  "lineup_stints": "NOT_MEASURED",
+  "rosters": "NOT_MEASURED"
+ },
+ "bdl_reconciliation": [
+  {
+   "entity_type": "GAME_SCORE",
+   "comparisons": 1608,
+   "matches": 1606
+  },
+  {
+   "entity_type": "PLAYER_GAME",
+   "comparisons": 1376,
+   "matches": 1376
+  },
+  {
+   "entity_type": "TEAM_GAME",
+   "comparisons": 112,
+   "matches": 112
+  }
+ ],
+ "tip_time_external_check": {
+  "description": "canonical scheduled_tip_utc (games.csv read as UTC) vs BDL independent UTC tip",
+  "games_compared": 804,
+  "exact_matches": 804
+ },
+ "lockbox": {
+  "season": "2025-26 (CBBD 2026)",
+  "rows_present_in_canonical_facts": 0,
+  "note": "Starter Pack ends at 2024-25; no lockbox data was fetched or ingested."
+ }
+}

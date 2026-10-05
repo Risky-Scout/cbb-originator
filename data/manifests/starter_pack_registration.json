@@ -1,0 +1,7 @@
+{
+ "registered_at_utc": "2026-10-05T05:08:13+00:00",
+ "starter_pack_root": "/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack/starter_pack",
+ "data_manifest_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+ "data_file_count": 111,
+ "note": "received_at for every Starter Pack-derived canonical row. Written once; never rewritten."
+}

@@ -1,0 +1,41 @@
+method,path,operationId,description,response_model,parameters
+GET,/venues,GetVenues,Returns available venues and location information.,VenueInfo,
+GET,/teams/directory,GetDirectory,Returns full team directory and metadata for the specified season.,TeamDirectory,season
+GET,/teams/{teamId}/season/{season}/overview,GetOverview,Returns a stored full-season team overview,TeamSeasonOverview,"teamId, season"
+GET,/teams,GetTeams,Returns team and conference information.,TeamInfo,"conference?, season?"
+GET,/teams/roster,GetTeamRoster,Returns team rosters for a season.,TeamRoster,"season, team?"
+GET,/substitutions/game/{gameId},GetSubstitutionsByGame,Returns all recorded player substitutions for a game.,PlayerSubsititution,gameId
+GET,/substitutions/player/{playerId},GetSubstitutionsByPlayerId,Returns all recorded player substitutions for a player and season.,PlayerSubsititution,"playerId, season"
+GET,/substitutions/team,GetSubstitutionsByTeam,Returns all recorded player substitutions for a team and season.,PlayerSubsititution,"season, team"
+GET,/stats/team/leaderboard,GetTeamLeaderboardStats,Returns team leaderboard statistics. This endpoint requires Patreon Tier 2 access or higher.,TeamStatsLeaderboardRecord,"season?, team?, conference?"
+GET,/stats/team/season,GetTeamSeasonStats,Returns team season statistics. Provide at least a season or team.,TeamSeasonStats,"season?, seasonType?, team?, conference?, startDateRange?, endDateRange?"
+GET,/stats/team/shooting/season,GetTeamSeasonShootingStats,Returns team shooting statistics for a season. Provide a team or conference.,SeasonShootingStats,"season, seasonType?, team?, conference?, startDateRange?, endDateRange?"
+GET,/stats/player/season,GetPlayerSeasonStats,Returns player statistics for a season.,PlayerSeasonStats,"season, seasonType?, team?, conference?, startDateRange?, endDateRange?"
+GET,/stats/player/shooting/season,GetPlayerSeasonShootingStats,Returns player shooting statistics for a season. Provide a team or conference.,PlayerSeasonShootingStats,"season, seasonType?, team?, conference?, startDateRange?, endDateRange?"
+GET,/recruiting/players,GetRecruits,Returns historical composite player recruiting rankings and ratings.,Recruit,"year?, team?, conference?, position?"
+GET,/recruiting/teams,GetTeamRecruitingRankings,Returns historical composite team recruiting rankings.,TeamRecruitingRanking,"year?, team?, conference?"
+GET,/recruiting/portal,GetPortalTransfers,Returns historical transfer portal activity.,Transfer,"year?, sourceTeam?, destinationTeam?, sourceConference?, destinationConference?, position?"
+GET,/ratings/srs,GetSrs,Returns Simple Rating System (SRS) ratings.,SrsInfo,"season?, team?, conference?"
+GET,/ratings/adjusted,GetAdjustedEfficiency,Returns adjusted offensive and defensive efficiency ratings.,AdjustedEfficiencyInfo,"season?, team?, conference?"
+GET,/ratings/elo,GetElo,Returns historical Elo ratings.,TeamElo,"season?, team?, conference?"
+GET,/rankings,GetRankings,Returns historical poll rankings.,PollTeamInfo,"season?, seasonType?, week?, pollType?, team?, conference?"
+GET,/plays/game/{gameId},GetPlays,Returns all recorded plays for a game.,PlayInfo,"gameId, shootingPlaysOnly?"
+GET,/plays/player/{playerId},GetPlaysByPlayerId,Returns all recorded plays for a player and season.,PlayInfo,"playerId, season, shootingPlaysOnly?"
+GET,/plays/team,GetPlaysByTeam,Returns all recorded plays for a team and season.,PlayInfo,"season, team, shootingPlaysOnly?"
+GET,/plays/date,GetPlaysByDate,Returns all recorded plays for a UTC date.,PlayInfo,"date, shootingPlaysOnly?, utcOffset?"
+GET,/plays/tournament,GetPlaysByTournament,Returns all recorded plays for a tournament and season.,PlayInfo,"tournament, season, shootingPlaysOnly?"
+GET,/plays/types,GetPlayTypes,Returns available play types and their identifiers.,PlayTypeInfo,
+GET,/lineups/team,GetLineupsByTeamSeason,Returns lineup statistics for a team and season.,LineupStats,"season, team, startDateRange?, endDateRange?"
+GET,/lineups/game/{gameId},GetLineupStatsByGame,Returns lineup statistics for a game.,LineupStats,gameId
+GET,/lines,GetLines,"Returns betting lines for up to 3,000 games that match the filters, ordered by start date.",GameLines,"season?, team?, conference?, startDateRange?, endDateRange?"
+GET,/lines/providers,GetProviders,Returns available betting line providers.,LineProviderInfo,
+GET,/games,GetGames,"Returns up to 3,000 games that match the filters, ordered by start date.",GameInfo,"startDateRange?, endDateRange?, team?, conference?, season?, seasonType?, status?, tournament?"
+GET,/games/media,GetBroadcasts,"Returns broadcast records for up to 3,000 games that match the filters, ordered by start date.",GameMediaInfo,"startDateRange?, endDateRange?, team?, conference?, season?, seasonType?, tournament?"
+GET,/games/teams,GetGameTeams,"Returns team box scores and advanced metrics for up to 3,000 games that match the filters, ordered by start date.",GameBoxScoreTeam,"startDateRange?, endDateRange?, team?, conference?, season?, seasonType?, tournament?"
+GET,/games/players,GetGamePlayers,"Returns player box scores and advanced metrics for up to 1,000 games that match the filters, ordered by start date.",GameBoxScorePlayers,"startDateRange?, endDateRange?, team?, conference?, season?, seasonType?, tournament?"
+GET,/scoreboard,GetScoreboard,Returns live scoreboard data. This endpoint requires Patreon Tier 1 access or higher.,ScoreboardGame,conference?
+GET,/draft/teams,GetDraftTeams,Returns NBA teams represented in the draft data.,DraftTeam,
+GET,/draft/positions,GetDraftPositions,Returns player positions represented in the draft data.,DraftPosition,
+GET,/draft/picks,GetDraftPicks,Returns historical NBA draft picks.,DraftPick,"year?, draftTeam?, sourceTeam?, position?"
+GET,/conferences,GetConferences,Returns available conferences and their identifiers.,ConferenceInfo,
+GET,/conferences/history,GetConferenceHistory,Returns historical conference membership records.,ConferenceHistory,conference?

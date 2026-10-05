@@ -1,0 +1,3065 @@
+{
+ "generated_at_utc": "2026-10-05T16:41:17+00:00",
+ "field": "/games/players players[].athleteId",
+ "raw_payload_count": 30,
+ "player_rows": 159,
+ "status": "MEASURED",
+ "classification": "PERSISTENT_PLAYER_ID",
+ "evidence": {
+  "within_season": {
+   "players": 75,
+   "multi_game_players": 55,
+   "multi_game_players_single_id": 55,
+   "multi_game_players_new_id_every_game": 0,
+   "ids_shared_by_different_players": 0,
+   "examples_unstable": []
+  },
+  "across_seasons": {
+   "players": 68,
+   "multi_game_players": 48,
+   "multi_game_players_single_id": 48,
+   "multi_game_players_new_id_every_game": 0,
+   "ids_shared_by_different_players": 0,
+   "examples_unstable": [],
+   "players_seen_in_2plus_seasons": 7
+  },
+  "multi_team_contexts": {
+   "names_in_2plus_teams": 2,
+   "names_with_one_id": 2,
+   "names_with_different_ids": 0,
+   "detail": [
+    {
+     "name": "Aden Holloway",
+     "team_seasons": [
+      [
+       5,
+       2025
+      ],
+      [
+       16,
+       2024
+      ]
+     ],
+     "ids": [
+      "92"
+     ]
+    },
+    {
+     "name": "Clifford Omoruyi",
+     "team_seasons": [
+      [
+       5,
+       2025
+      ],
+      [
+       245,
+       2024
+      ]
+     ],
+     "ids": [
+      "84"
+     ]
+    }
+   ]
+  },
+  "reason": "every multi-game player keeps one id within and across seasons and across team contexts; no id reuse"
+ },
+ "athleteSourceId": {
+  "classification": "PERSISTENT_PLAYER_ID",
+  "evidence": {
+   "within_season": {
+    "players": 75,
+    "multi_game_players": 55,
+    "multi_game_players_single_id": 55,
+    "multi_game_players_new_id_every_game": 0,
+    "ids_shared_by_different_players": 0,
+    "examples_unstable": []
+   },
+   "across_seasons": {
+    "players": 68,
+    "multi_game_players": 48,
+    "multi_game_players_single_id": 48,
+    "multi_game_players_new_id_every_game": 0,
+    "ids_shared_by_different_players": 0,
+    "examples_unstable": [],
+    "players_seen_in_2plus_seasons": 7
+   },
+   "multi_team_contexts": {
+    "names_in_2plus_teams": 2,
+    "names_with_one_id": 2,
+    "names_with_different_ids": 0,
+    "detail": [
+     {
+      "name": "Aden Holloway",
+      "team_seasons": [
+       [
+        5,
+        2025
+       ],
+       [
+        16,
+        2024
+       ]
+      ],
+      "ids": [
+       "4684276"
+      ]
+     },
+     {
+      "name": "Clifford Omoruyi",
+      "team_seasons": [
+       [
+        5,
+        2025
+       ],
+       [
+        245,
+        2024
+       ]
+      ],
+      "ids": [
+       "4433155"
+      ]
+     }
+    ]
+   },
+   "reason": "every multi-game player keeps one id within and across seasons and across team contexts; no id reuse"
+  }
+ },
+ "roster_agreement": {
+  "box_players": 75,
+  "box_players_on_rostered_team_seasons": 28,
+  "matched_by_name_on_roster": 28,
+  "same_id_as_roster": 28,
+  "agreement": 1.0,
+  "mismatches": [],
+  "box_names_not_on_roster": []
+ },
+ "season_file_compatibility": {
+  "distinct_api_players": 75,
+  "name_resolved_rows": 73,
+  "api_id_equals_season_file_id": 73,
+  "agreement": 1.0,
+  "api_ids_known_as_persistent_season_file_ids": 75,
+  "mismatches": [
+   {
+    "season": 2025,
+    "team_id": "5",
+    "name": "Labaron Philon Jr.",
+    "api_id": "85",
+    "season_file_name_for_api_id": "Labaron Philon",
+    "cause": "API_ID_IS_A_SEASON_FILE_ID_UNDER_A_DIFFERENT_NAME"
+   },
+   {
+    "season": 2025,
+    "team_id": "5",
+    "name": "Latrell Wrightsell",
+    "api_id": "91",
+    "season_file_name_for_api_id": "Latrell Wrightsell Jr.",
+    "cause": "API_ID_IS_A_SEASON_FILE_ID_UNDER_A_DIFFERENT_NAME"
+   }
+  ],
+  "mismatch_causes": {
+   "API_ID_IS_A_SEASON_FILE_ID_UNDER_A_DIFFERENT_NAME": 2
+  }
+ },
+ "coverage": {
+  "games_returned": 4,
+  "game_ids": [
+   14,
+   300,
+   5882,
+   6173
+  ],
+  "seasons": [
+   2024,
+   2025
+  ],
+  "player_box_coverage": {
+   "n": 4,
+   "of": 4,
+   "share": 1.0
+  },
+  "team_box_coverage": {
+   "n": 0,
+   "of": 4,
+   "share": 0.0
+  },
+  "score_reconciliation": {
+   "vs_starter_pack": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "team_box_vs_games": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   }
+  },
+  "minutes_reconciliation": {
+   "n": 14,
+   "of": 14,
+   "share": 1.0
+  },
+  "event_games": {
+   "14": {
+    "plays": 0,
+    "onFloor_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "onFloor_complete_10": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shotInfo_on_shooting_plays": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shotInfo_with_location": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "wallclock_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "substitutions": 78,
+    "lineups": 0
+   },
+   "300": {
+    "plays": 296,
+    "onFloor_present": {
+     "n": 296,
+     "of": 296,
+     "share": 1.0
+    },
+    "onFloor_complete_10": {
+     "n": 296,
+     "of": 296,
+     "share": 1.0
+    },
+    "shotInfo_on_shooting_plays": {
+     "n": 136,
+     "of": 136,
+     "share": 1.0
+    },
+    "shotInfo_with_location": {
+     "n": 108,
+     "of": 136,
+     "share": 0.7941
+    },
+    "wallclock_present": {
+     "n": 272,
+     "of": 296,
+     "share": 0.9189
+    },
+    "substitutions": 79,
+    "lineups": 39
+   },
+   "5882": {
+    "plays": 366,
+    "onFloor_present": {
+     "n": 366,
+     "of": 366,
+     "share": 1.0
+    },
+    "onFloor_complete_10": {
+     "n": 336,
+     "of": 366,
+     "share": 0.918
+    },
+    "shotInfo_on_shooting_plays": {
+     "n": 166,
+     "of": 166,
+     "share": 1.0
+    },
+    "shotInfo_with_location": {
+     "n": 130,
+     "of": 166,
+     "share": 0.7831
+    },
+    "wallclock_present": {
+     "n": 364,
+     "of": 366,
+     "share": 0.9945
+    },
+    "substitutions": 97,
+    "lineups": 56
+   },
+   "35928": {
+    "plays": 0,
+    "onFloor_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "onFloor_complete_10": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shotInfo_on_shooting_plays": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shotInfo_with_location": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "wallclock_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "substitutions": 0,
+    "lineups": 0
+   }
+  },
+  "rosters": [
+   {
+    "team": "Purdue",
+    "season": 2025,
+    "players": 18
+   },
+   {
+    "team": "Purdue",
+    "season": 2024,
+    "players": 17
+   }
+  ]
+ },
+ "smoke": {
+  "label": "SMOKE SAMPLE \u2014 bounded; never generalize to whole seasons",
+  "game_data": {
+   "games_returned": 4,
+   "game_ids": [
+    14,
+    300,
+    5882,
+    6173
+   ],
+   "seasons": [
+    2024,
+    2025
+   ],
+   "status_final": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "game_id_joins_starter_pack": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "team_identity_joins": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "tip_time_reconciliation_vs_starter_pack": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "final_score_reconciliation_vs_starter_pack": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   }
+  },
+  "player_box": {
+   "team_game_rows": 14,
+   "player_rows": 159,
+   "athleteId_joins_persistent_player": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   },
+   "starter_coverage": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   },
+   "minutes_coverage": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   },
+   "counting_stat_coverage": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   },
+   "player_pts_identity": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   },
+   "sum_player_points_equals_team_points": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "sum_player_minutes_within_5_of_5x_game_minutes": {
+    "n": 14,
+    "of": 14,
+    "share": 1.0
+   },
+   "line_equals_starter_pack_line(points,minutes,fga,reb)": {
+    "n": 159,
+    "of": 159,
+    "share": 1.0
+   }
+  },
+  "team_box": {
+   "team_rows": 4,
+   "possessions_coverage": {
+    "n": 3,
+    "of": 4,
+    "share": 0.75
+   },
+   "pace_coverage": {
+    "n": 3,
+    "of": 4,
+    "share": 0.75
+   },
+   "four_factor_coverage_by_field": {
+    "effectiveFieldGoalPct": {
+     "n": 4,
+     "of": 4,
+     "share": 1.0
+    },
+    "freeThrowRate": {
+     "n": 4,
+     "of": 4,
+     "share": 1.0
+    },
+    "turnoverRatio": {
+     "n": 3,
+     "of": 4,
+     "share": 0.75
+    },
+    "offensiveReboundPct": {
+     "n": 4,
+     "of": 4,
+     "share": 1.0
+    }
+   },
+   "points_equal_games_final_score": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   },
+   "all_17_primitives_equal_starter_pack": {
+    "n": 4,
+    "of": 4,
+    "share": 1.0
+   }
+  },
+  "pbp": {
+   "14": {
+    "season": 2025,
+    "plays": 0,
+    "final_score_matches_game": null,
+    "period_clock_complete": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "periods_present": [],
+    "periods_expected": [
+     1,
+     2
+    ],
+    "wallclock_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "first_wallclock_minus_tip_hours": null,
+    "wallclock_span_minutes": null
+   },
+   "300": {
+    "season": 2025,
+    "plays": 296,
+    "final_score_matches_game": true,
+    "period_clock_complete": {
+     "n": 296,
+     "of": 296,
+     "share": 1.0
+    },
+    "periods_present": [
+     1,
+     2
+    ],
+    "periods_expected": [
+     1,
+     2
+    ],
+    "wallclock_present": {
+     "n": 272,
+     "of": 296,
+     "share": 0.9189
+    },
+    "first_wallclock_minus_tip_hours": -4.96,
+    "wallclock_span_minutes": 108.7
+   },
+   "5882": {
+    "season": 2024,
+    "plays": 366,
+    "final_score_matches_game": true,
+    "period_clock_complete": {
+     "n": 366,
+     "of": 366,
+     "share": 1.0
+    },
+    "periods_present": [
+     1,
+     2
+    ],
+    "periods_expected": [
+     1,
+     2
+    ],
+    "wallclock_present": {
+     "n": 364,
+     "of": 366,
+     "share": 0.9945
+    },
+    "first_wallclock_minus_tip_hours": -4.91,
+    "wallclock_span_minutes": 120.5
+   },
+   "35928": {
+    "season": 2019,
+    "plays": 0,
+    "final_score_matches_game": null,
+    "period_clock_complete": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "periods_present": [],
+    "periods_expected": [
+     1,
+     2
+    ],
+    "wallclock_present": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "first_wallclock_minus_tip_hours": null,
+    "wallclock_span_minutes": null
+   }
+  },
+  "onfloor": {
+   "14": {
+    "plays": 0,
+    "states": {},
+    "valid_5v5": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "onFloor_player_ids_join_persistent_player": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   },
+   "300": {
+    "plays": 296,
+    "states": {
+     "VALID_5V5": 296
+    },
+    "valid_5v5": {
+     "n": 296,
+     "of": 296,
+     "share": 1.0
+    },
+    "onFloor_player_ids_join_persistent_player": {
+     "n": 2960,
+     "of": 2960,
+     "share": 1.0
+    }
+   },
+   "5882": {
+    "plays": 366,
+    "states": {
+     "VALID_5V5": 336,
+     "MALFORMED": 30
+    },
+    "valid_5v5": {
+     "n": 336,
+     "of": 366,
+     "share": 0.918
+    },
+    "onFloor_player_ids_join_persistent_player": {
+     "n": 3690,
+     "of": 3690,
+     "share": 1.0
+    }
+   },
+   "35928": {
+    "plays": 0,
+    "states": {},
+    "valid_5v5": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "onFloor_player_ids_join_persistent_player": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   }
+  },
+  "shotinfo": {
+   "14": {
+    "shooting_plays": 0,
+    "with_shotInfo": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shooter_id": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "assisted_shots": 0,
+    "assister_id_when_assisted": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "range": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "range_values": {},
+    "location_xy": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   },
+   "300": {
+    "shooting_plays": 136,
+    "with_shotInfo": {
+     "n": 136,
+     "of": 136,
+     "share": 1.0
+    },
+    "shooter_id": {
+     "n": 136,
+     "of": 136,
+     "share": 1.0
+    },
+    "assisted_shots": 30,
+    "assister_id_when_assisted": {
+     "n": 30,
+     "of": 30,
+     "share": 1.0
+    },
+    "range": {
+     "n": 136,
+     "of": 136,
+     "share": 1.0
+    },
+    "range_values": {
+     "three_pointer": 45,
+     "jumper": 25,
+     "rim": 38,
+     "free_throw": 28
+    },
+    "location_xy": {
+     "n": 108,
+     "of": 136,
+     "share": 0.7941
+    }
+   },
+   "5882": {
+    "shooting_plays": 166,
+    "with_shotInfo": {
+     "n": 166,
+     "of": 166,
+     "share": 1.0
+    },
+    "shooter_id": {
+     "n": 166,
+     "of": 166,
+     "share": 1.0
+    },
+    "assisted_shots": 40,
+    "assister_id_when_assisted": {
+     "n": 40,
+     "of": 40,
+     "share": 1.0
+    },
+    "range": {
+     "n": 166,
+     "of": 166,
+     "share": 1.0
+    },
+    "range_values": {
+     "three_pointer": 60,
+     "free_throw": 36,
+     "jumper": 19,
+     "rim": 51
+    },
+    "location_xy": {
+     "n": 130,
+     "of": 166,
+     "share": 0.7831
+    }
+   },
+   "35928": {
+    "shooting_plays": 0,
+    "with_shotInfo": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "shooter_id": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "assisted_shots": 0,
+    "assister_id_when_assisted": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "range": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "range_values": {},
+    "location_xy": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   }
+  },
+  "substitutions": {
+   "14": {
+    "rows": 78,
+    "teams": 2,
+    "athlete_ids_join_persistent_player": {
+     "n": 78,
+     "of": 78,
+     "share": 1.0
+    },
+    "timing_complete": {
+     "n": 78,
+     "of": 78,
+     "share": 1.0
+    },
+    "team_play_floor_sets_equal_onFloor": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   },
+   "300": {
+    "rows": 79,
+    "teams": 2,
+    "athlete_ids_join_persistent_player": {
+     "n": 79,
+     "of": 79,
+     "share": 1.0
+    },
+    "timing_complete": {
+     "n": 79,
+     "of": 79,
+     "share": 1.0
+    },
+    "team_play_floor_sets_equal_onFloor": {
+     "n": 582,
+     "of": 592,
+     "share": 0.9831
+    }
+   },
+   "5882": {
+    "rows": 97,
+    "teams": 2,
+    "athlete_ids_join_persistent_player": {
+     "n": 97,
+     "of": 97,
+     "share": 1.0
+    },
+    "timing_complete": {
+     "n": 97,
+     "of": 97,
+     "share": 1.0
+    },
+    "team_play_floor_sets_equal_onFloor": {
+     "n": 666,
+     "of": 672,
+     "share": 0.9911
+    }
+   },
+   "35928": {
+    "rows": 0,
+    "teams": 0,
+    "athlete_ids_join_persistent_player": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "timing_complete": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "team_play_floor_sets_equal_onFloor": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    }
+   }
+  },
+  "lineups": {
+   "14": {
+    "units": 0,
+    "teams": 0,
+    "valid_five_player_units": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "athlete_ids_join_persistent_player": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "seconds_coverage": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "possessions_coverage": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "team_seconds_vs_game_seconds": {},
+    "team_points_vs_final": {},
+    "team_units_reconcile_seconds_and_points": {}
+   },
+   "300": {
+    "units": 39,
+    "teams": 2,
+    "valid_five_player_units": {
+     "n": 39,
+     "of": 39,
+     "share": 1.0
+    },
+    "athlete_ids_join_persistent_player": {
+     "n": 195,
+     "of": 195,
+     "share": 1.0
+    },
+    "seconds_coverage": {
+     "n": 39,
+     "of": 39,
+     "share": 1.0
+    },
+    "possessions_coverage": {
+     "n": 39,
+     "of": 39,
+     "share": 1.0
+    },
+    "team_seconds_vs_game_seconds": {
+     "236": [
+      2400.0,
+      2400
+     ],
+     "210": [
+      2400.0,
+      2400
+     ]
+    },
+    "team_points_vs_final": {
+     "236": [
+      72,
+      72
+     ],
+     "210": [
+      50,
+      50
+     ]
+    },
+    "team_units_reconcile_seconds_and_points": {
+     "236": true,
+     "210": true
+    }
+   },
+   "5882": {
+    "units": 56,
+    "teams": 2,
+    "valid_five_player_units": {
+     "n": 56,
+     "of": 56,
+     "share": 1.0
+    },
+    "athlete_ids_join_persistent_player": {
+     "n": 280,
+     "of": 280,
+     "share": 1.0
+    },
+    "seconds_coverage": {
+     "n": 56,
+     "of": 56,
+     "share": 1.0
+    },
+    "possessions_coverage": {
+     "n": 56,
+     "of": 56,
+     "share": 1.0
+    },
+    "team_seconds_vs_game_seconds": {
+     "236": [
+      2400.0,
+      2400
+     ],
+     "256": [
+      3390.0,
+      2400
+     ]
+    },
+    "team_points_vs_final": {
+     "236": [
+      98,
+      98
+     ],
+     "256": [
+      70,
+      45
+     ]
+    },
+    "team_units_reconcile_seconds_and_points": {
+     "236": true,
+     "256": false
+    }
+   },
+   "35928": {
+    "units": 0,
+    "teams": 0,
+    "valid_five_player_units": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "athlete_ids_join_persistent_player": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "seconds_coverage": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "possessions_coverage": {
+     "n": 0,
+     "of": 0,
+     "share": null
+    },
+    "team_seconds_vs_game_seconds": {},
+    "team_points_vs_final": {},
+    "team_units_reconcile_seconds_and_points": {}
+   }
+  },
+  "rosters": {
+   "team_seasons": [
+    {
+     "team": "Purdue",
+     "season": 2025,
+     "players": 18
+    },
+    {
+     "team": "Purdue",
+     "season": 2024,
+     "players": 17
+    }
+   ],
+   "roster_player_rows": 35,
+   "roster_ids_join_persistent_player": {
+    "n": 33,
+    "of": 35,
+    "share": 0.9429
+   },
+   "roster_id_equals_box_athleteId_same_name": {
+    "n": 28,
+    "of": 28,
+    "share": 1.0
+   },
+   "team_season_maps_to_core_team_seasons": {
+    "n": 2,
+    "of": 2,
+    "share": 1.0
+   }
+  }
+ },
+ "date_bounded_pit": {
+  "windows": [
+   [
+    "stats/player/season",
+    "2024-11-01",
+    "2024-11-15"
+   ],
+   [
+    "stats/player/season",
+    "2024-11-01",
+    "2024-11-16"
+   ],
+   [
+    "stats/player/season",
+    "2024-11-01",
+    "2024-11-12"
+   ],
+   [
+    "stats/team/season",
+    "2024-11-01",
+    "2024-11-15"
+   ],
+   [
+    "stats/team/season",
+    "2024-11-01",
+    "2024-11-16"
+   ],
+   [
+    "stats/team/season",
+    "2024-11-01",
+    "2024-11-12"
+   ]
+  ],
+  "interpretations": {
+   "tip_utc_le_end_midnight_utc": {
+    "player_rows": 33,
+    "player_rows_matched": 33,
+    "team_rows": 3,
+    "team_rows_matched": 3,
+    "mismatches": [],
+    "all_reconcile": true
+   },
+   "tip_utc_lt_end_midnight_utc": {
+    "player_rows": 33,
+    "player_rows_matched": 23,
+    "team_rows": 3,
+    "team_rows_matched": 2,
+    "mismatches": [
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Trey Kaufman-Renn",
+      "fields": {
+       "ast": [
+        12,
+        8
+       ],
+       "drb": [
+        15,
+        9
+       ],
+       "fga": [
+        48,
+        25
+       ],
+       "fgm": [
+        28,
+        16
+       ],
+       "fta": [
+        21,
+        17
+       ],
+       "ftm": [
+        14,
+        13
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        117,
+        87
+       ],
+       "orb": [
+        10,
+        8
+       ],
+       "pf": [
+        11,
+        7
+       ],
+       "points": [
+        72,
+        46
+       ],
+       "reb": [
+        25,
+        17
+       ],
+       "three_pa": [
+        4,
+        3
+       ],
+       "three_pm": [
+        2,
+        1
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Braden Smith",
+      "fields": {
+       "ast": [
+        38,
+        28
+       ],
+       "drb": [
+        24,
+        19
+       ],
+       "fga": [
+        49,
+        31
+       ],
+       "fgm": [
+        20,
+        14
+       ],
+       "fta": [
+        16,
+        10
+       ],
+       "ftm": [
+        14,
+        9
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        139,
+        102
+       ],
+       "orb": [
+        1,
+        0
+       ],
+       "pf": [
+        5,
+        3
+       ],
+       "points": [
+        62,
+        45
+       ],
+       "reb": [
+        25,
+        19
+       ],
+       "stl": [
+        10,
+        9
+       ],
+       "three_pa": [
+        22,
+        18
+       ],
+       "tov": [
+        13,
+        12
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Fletcher Loyer",
+      "fields": {
+       "ast": [
+        11,
+        9
+       ],
+       "drb": [
+        4,
+        2
+       ],
+       "fga": [
+        35,
+        26
+       ],
+       "fgm": [
+        22,
+        17
+       ],
+       "fta": [
+        15,
+        10
+       ],
+       "ftm": [
+        12,
+        8
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        116,
+        85
+       ],
+       "pf": [
+        6,
+        5
+       ],
+       "points": [
+        68,
+        51
+       ],
+       "reb": [
+        4,
+        2
+       ],
+       "stl": [
+        2,
+        1
+       ],
+       "three_pa": [
+        17,
+        12
+       ],
+       "three_pm": [
+        12,
+        9
+       ],
+       "tov": [
+        5,
+        4
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Gicarri Harris",
+      "fields": {
+       "drb": [
+        6,
+        5
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        77,
+        63
+       ],
+       "orb": [
+        1,
+        0
+       ],
+       "pf": [
+        5,
+        4
+       ],
+       "reb": [
+        7,
+        5
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Camden Heide",
+      "fields": {
+       "ast": [
+        2,
+        1
+       ],
+       "blk": [
+        2,
+        1
+       ],
+       "drb": [
+        14,
+        9
+       ],
+       "fga": [
+        8,
+        5
+       ],
+       "fgm": [
+        3,
+        2
+       ],
+       "fta": [
+        10,
+        6
+       ],
+       "ftm": [
+        7,
+        5
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        68,
+        44
+       ],
+       "orb": [
+        5,
+        2
+       ],
+       "pf": [
+        6,
+        4
+       ],
+       "points": [
+        16,
+        11
+       ],
+       "reb": [
+        19,
+        11
+       ],
+       "three_pa": [
+        7,
+        5
+       ],
+       "three_pm": [
+        3,
+        2
+       ],
+       "tov": [
+        2,
+        1
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Raleigh Burgess",
+      "fields": {
+       "fga": [
+        10,
+        7
+       ],
+       "fgm": [
+        4,
+        2
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        29,
+        25
+       ],
+       "orb": [
+        6,
+        5
+       ],
+       "points": [
+        9,
+        4
+       ],
+       "reb": [
+        8,
+        7
+       ],
+       "three_pa": [
+        2,
+        1
+       ],
+       "three_pm": [
+        1,
+        0
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Caleb Furst",
+      "fields": {
+       "drb": [
+        3,
+        2
+       ],
+       "fga": [
+        10,
+        8
+       ],
+       "fgm": [
+        6,
+        5
+       ],
+       "fta": [
+        5,
+        0
+       ],
+       "ftm": [
+        4,
+        0
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        35,
+        22
+       ],
+       "orb": [
+        2,
+        1
+       ],
+       "points": [
+        16,
+        10
+       ],
+       "reb": [
+        5,
+        3
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Will Berg",
+      "fields": {
+       "blk": [
+        1,
+        0
+       ],
+       "drb": [
+        8,
+        7
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        50,
+        41
+       ],
+       "orb": [
+        3,
+        2
+       ],
+       "pf": [
+        8,
+        5
+       ],
+       "reb": [
+        11,
+        9
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "C.J. Cox",
+      "fields": {
+       "drb": [
+        6,
+        5
+       ],
+       "fga": [
+        14,
+        9
+       ],
+       "fgm": [
+        8,
+        4
+       ],
+       "fta": [
+        9,
+        8
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        61,
+        43
+       ],
+       "pf": [
+        5,
+        3
+       ],
+       "points": [
+        26,
+        15
+       ],
+       "reb": [
+        7,
+        6
+       ],
+       "three_pa": [
+        8,
+        5
+       ],
+       "three_pm": [
+        4,
+        1
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Myles Colvin",
+      "fields": {
+       "ast": [
+        3,
+        2
+       ],
+       "blk": [
+        2,
+        0
+       ],
+       "drb": [
+        12,
+        10
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "minutes": [
+        82,
+        62
+       ],
+       "pf": [
+        8,
+        6
+       ],
+       "reb": [
+        13,
+        11
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/team/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-16"
+      ],
+      "who": "Purdue",
+      "fields": {
+       "ast": [
+        78,
+        60
+       ],
+       "blk": [
+        13,
+        9
+       ],
+       "drb": [
+        105,
+        80
+       ],
+       "fga": [
+        221,
+        158
+       ],
+       "fgm": [
+        117,
+        86
+       ],
+       "fta": [
+        98,
+        73
+       ],
+       "ftm": [
+        67,
+        51
+       ],
+       "games": [
+        4,
+        3
+       ],
+       "orb": [
+        33,
+        23
+       ],
+       "pf": [
+        57,
+        40
+       ],
+       "points": [
+        341,
+        254
+       ],
+       "reb": [
+        138,
+        103
+       ],
+       "stl": [
+        21,
+        19
+       ],
+       "three_pa": [
+        87,
+        71
+       ],
+       "three_pm": [
+        40,
+        31
+       ],
+       "tov_total": [
+        42,
+        39
+       ]
+      }
+     }
+    ],
+    "all_reconcile": false
+   },
+   "tip_utc_le_end_day_utc": {
+    "player_rows": 33,
+    "player_rows_matched": 23,
+    "team_rows": 3,
+    "team_rows_matched": 2,
+    "mismatches": [
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Trey Kaufman-Renn",
+      "fields": {
+       "ast": [
+        5,
+        8
+       ],
+       "drb": [
+        8,
+        9
+       ],
+       "fga": [
+        17,
+        25
+       ],
+       "fgm": [
+        11,
+        16
+       ],
+       "fta": [
+        8,
+        17
+       ],
+       "ftm": [
+        6,
+        13
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        57,
+        87
+       ],
+       "orb": [
+        6,
+        8
+       ],
+       "pf": [
+        4,
+        7
+       ],
+       "points": [
+        29,
+        46
+       ],
+       "reb": [
+        14,
+        17
+       ],
+       "stl": [
+        1,
+        2
+       ],
+       "tov": [
+        5,
+        7
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Braden Smith",
+      "fields": {
+       "ast": [
+        22,
+        28
+       ],
+       "drb": [
+        10,
+        19
+       ],
+       "fga": [
+        15,
+        31
+       ],
+       "fgm": [
+        7,
+        14
+       ],
+       "fta": [
+        6,
+        10
+       ],
+       "ftm": [
+        5,
+        9
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        67,
+        102
+       ],
+       "pf": [
+        2,
+        3
+       ],
+       "points": [
+        23,
+        45
+       ],
+       "reb": [
+        10,
+        19
+       ],
+       "stl": [
+        4,
+        9
+       ],
+       "three_pa": [
+        10,
+        18
+       ],
+       "three_pm": [
+        4,
+        8
+       ],
+       "tov": [
+        9,
+        12
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Fletcher Loyer",
+      "fields": {
+       "ast": [
+        6,
+        9
+       ],
+       "fga": [
+        19,
+        26
+       ],
+       "fgm": [
+        12,
+        17
+       ],
+       "fta": [
+        8,
+        10
+       ],
+       "ftm": [
+        6,
+        8
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        59,
+        85
+       ],
+       "pf": [
+        2,
+        5
+       ],
+       "points": [
+        37,
+        51
+       ],
+       "three_pa": [
+        10,
+        12
+       ],
+       "three_pm": [
+        7,
+        9
+       ],
+       "tov": [
+        2,
+        4
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Gicarri Harris",
+      "fields": {
+       "drb": [
+        3,
+        5
+       ],
+       "fga": [
+        9,
+        14
+       ],
+       "fgm": [
+        4,
+        6
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        44,
+        63
+       ],
+       "points": [
+        10,
+        15
+       ],
+       "reb": [
+        3,
+        5
+       ],
+       "three_pa": [
+        7,
+        10
+       ],
+       "three_pm": [
+        2,
+        3
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Camden Heide",
+      "fields": {
+       "drb": [
+        4,
+        9
+       ],
+       "fga": [
+        2,
+        5
+       ],
+       "fgm": [
+        0,
+        2
+       ],
+       "fta": [
+        2,
+        6
+       ],
+       "ftm": [
+        2,
+        5
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        26,
+        44
+       ],
+       "orb": [
+        1,
+        2
+       ],
+       "pf": [
+        1,
+        4
+       ],
+       "points": [
+        2,
+        11
+       ],
+       "reb": [
+        5,
+        11
+       ],
+       "three_pa": [
+        2,
+        5
+       ],
+       "three_pm": [
+        0,
+        2
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Raleigh Burgess",
+      "fields": {
+       "ast": [
+        0,
+        2
+       ],
+       "fga": [
+        6,
+        7
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        17,
+        25
+       ],
+       "orb": [
+        4,
+        5
+       ],
+       "reb": [
+        6,
+        7
+       ],
+       "three_pa": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Caleb Furst",
+      "fields": {
+       "blk": [
+        1,
+        2
+       ],
+       "drb": [
+        1,
+        2
+       ],
+       "fga": [
+        7,
+        8
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        14,
+        22
+       ],
+       "pf": [
+        1,
+        2
+       ],
+       "reb": [
+        2,
+        3
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Will Berg",
+      "fields": {
+       "ast": [
+        1,
+        2
+       ],
+       "drb": [
+        6,
+        7
+       ],
+       "fga": [
+        6,
+        7
+       ],
+       "fgm": [
+        5,
+        6
+       ],
+       "fta": [
+        7,
+        11
+       ],
+       "ftm": [
+        2,
+        4
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        25,
+        41
+       ],
+       "pf": [
+        4,
+        5
+       ],
+       "points": [
+        12,
+        16
+       ],
+       "reb": [
+        8,
+        9
+       ],
+       "tov": [
+        1,
+        3
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "C.J. Cox",
+      "fields": {
+       "ast": [
+        1,
+        3
+       ],
+       "drb": [
+        4,
+        5
+       ],
+       "fga": [
+        4,
+        9
+       ],
+       "fgm": [
+        1,
+        4
+       ],
+       "fta": [
+        1,
+        8
+       ],
+       "ftm": [
+        0,
+        6
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        27,
+        43
+       ],
+       "orb": [
+        0,
+        1
+       ],
+       "pf": [
+        1,
+        3
+       ],
+       "points": [
+        3,
+        15
+       ],
+       "reb": [
+        4,
+        6
+       ],
+       "three_pa": [
+        3,
+        5
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Myles Colvin",
+      "fields": {
+       "drb": [
+        5,
+        10
+       ],
+       "fga": [
+        15,
+        20
+       ],
+       "fgm": [
+        7,
+        10
+       ],
+       "fta": [
+        0,
+        2
+       ],
+       "ftm": [
+        0,
+        1
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        38,
+        62
+       ],
+       "pf": [
+        2,
+        6
+       ],
+       "points": [
+        19,
+        28
+       ],
+       "reb": [
+        6,
+        11
+       ],
+       "stl": [
+        2,
+        3
+       ],
+       "three_pa": [
+        12,
+        16
+       ],
+       "three_pm": [
+        5,
+        7
+       ],
+       "tov": [
+        2,
+        3
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/team/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Purdue",
+      "fields": {
+       "ast": [
+        43,
+        60
+       ],
+       "blk": [
+        8,
+        9
+       ],
+       "drb": [
+        54,
+        80
+       ],
+       "fga": [
+        106,
+        158
+       ],
+       "fgm": [
+        58,
+        86
+       ],
+       "fta": [
+        41,
+        73
+       ],
+       "ftm": [
+        26,
+        51
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "orb": [
+        18,
+        23
+       ],
+       "pf": [
+        22,
+        40
+       ],
+       "points": [
+        162,
+        254
+       ],
+       "reb": [
+        72,
+        103
+       ],
+       "stl": [
+        12,
+        19
+       ],
+       "three_pa": [
+        48,
+        71
+       ],
+       "three_pm": [
+        20,
+        31
+       ],
+       "tov_total": [
+        29,
+        39
+       ]
+      }
+     }
+    ],
+    "all_reconcile": false
+   },
+   "et_date_le_end": {
+    "player_rows": 33,
+    "player_rows_matched": 13,
+    "team_rows": 3,
+    "team_rows_matched": 1,
+    "mismatches": [
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Trey Kaufman-Renn",
+      "fields": {
+       "ast": [
+        8,
+        12
+       ],
+       "drb": [
+        9,
+        15
+       ],
+       "fga": [
+        25,
+        48
+       ],
+       "fgm": [
+        16,
+        28
+       ],
+       "fta": [
+        17,
+        21
+       ],
+       "ftm": [
+        13,
+        14
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        87,
+        117
+       ],
+       "orb": [
+        8,
+        10
+       ],
+       "pf": [
+        7,
+        11
+       ],
+       "points": [
+        46,
+        72
+       ],
+       "reb": [
+        17,
+        25
+       ],
+       "three_pa": [
+        3,
+        4
+       ],
+       "three_pm": [
+        1,
+        2
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Braden Smith",
+      "fields": {
+       "ast": [
+        28,
+        38
+       ],
+       "drb": [
+        19,
+        24
+       ],
+       "fga": [
+        31,
+        49
+       ],
+       "fgm": [
+        14,
+        20
+       ],
+       "fta": [
+        10,
+        16
+       ],
+       "ftm": [
+        9,
+        14
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        102,
+        139
+       ],
+       "orb": [
+        0,
+        1
+       ],
+       "pf": [
+        3,
+        5
+       ],
+       "points": [
+        45,
+        62
+       ],
+       "reb": [
+        19,
+        25
+       ],
+       "stl": [
+        9,
+        10
+       ],
+       "three_pa": [
+        18,
+        22
+       ],
+       "tov": [
+        12,
+        13
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Fletcher Loyer",
+      "fields": {
+       "ast": [
+        9,
+        11
+       ],
+       "drb": [
+        2,
+        4
+       ],
+       "fga": [
+        26,
+        35
+       ],
+       "fgm": [
+        17,
+        22
+       ],
+       "fta": [
+        10,
+        15
+       ],
+       "ftm": [
+        8,
+        12
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        85,
+        116
+       ],
+       "pf": [
+        5,
+        6
+       ],
+       "points": [
+        51,
+        68
+       ],
+       "reb": [
+        2,
+        4
+       ],
+       "stl": [
+        1,
+        2
+       ],
+       "three_pa": [
+        12,
+        17
+       ],
+       "three_pm": [
+        9,
+        12
+       ],
+       "tov": [
+        4,
+        5
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Gicarri Harris",
+      "fields": {
+       "drb": [
+        5,
+        6
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        63,
+        77
+       ],
+       "orb": [
+        0,
+        1
+       ],
+       "pf": [
+        4,
+        5
+       ],
+       "reb": [
+        5,
+        7
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Camden Heide",
+      "fields": {
+       "ast": [
+        1,
+        2
+       ],
+       "blk": [
+        1,
+        2
+       ],
+       "drb": [
+        9,
+        14
+       ],
+       "fga": [
+        5,
+        8
+       ],
+       "fgm": [
+        2,
+        3
+       ],
+       "fta": [
+        6,
+        10
+       ],
+       "ftm": [
+        5,
+        7
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        44,
+        68
+       ],
+       "orb": [
+        2,
+        5
+       ],
+       "pf": [
+        4,
+        6
+       ],
+       "points": [
+        11,
+        16
+       ],
+       "reb": [
+        11,
+        19
+       ],
+       "three_pa": [
+        5,
+        7
+       ],
+       "three_pm": [
+        2,
+        3
+       ],
+       "tov": [
+        1,
+        2
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Raleigh Burgess",
+      "fields": {
+       "fga": [
+        7,
+        10
+       ],
+       "fgm": [
+        2,
+        4
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        25,
+        29
+       ],
+       "orb": [
+        5,
+        6
+       ],
+       "points": [
+        4,
+        9
+       ],
+       "reb": [
+        7,
+        8
+       ],
+       "three_pa": [
+        1,
+        2
+       ],
+       "three_pm": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Caleb Furst",
+      "fields": {
+       "drb": [
+        2,
+        3
+       ],
+       "fga": [
+        8,
+        10
+       ],
+       "fgm": [
+        5,
+        6
+       ],
+       "fta": [
+        0,
+        5
+       ],
+       "ftm": [
+        0,
+        4
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        22,
+        35
+       ],
+       "orb": [
+        1,
+        2
+       ],
+       "points": [
+        10,
+        16
+       ],
+       "reb": [
+        3,
+        5
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Will Berg",
+      "fields": {
+       "blk": [
+        0,
+        1
+       ],
+       "drb": [
+        7,
+        8
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        41,
+        50
+       ],
+       "orb": [
+        2,
+        3
+       ],
+       "pf": [
+        5,
+        8
+       ],
+       "reb": [
+        9,
+        11
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "C.J. Cox",
+      "fields": {
+       "drb": [
+        5,
+        6
+       ],
+       "fga": [
+        9,
+        14
+       ],
+       "fgm": [
+        4,
+        8
+       ],
+       "fta": [
+        8,
+        9
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        43,
+        61
+       ],
+       "pf": [
+        3,
+        5
+       ],
+       "points": [
+        15,
+        26
+       ],
+       "reb": [
+        6,
+        7
+       ],
+       "three_pa": [
+        5,
+        8
+       ],
+       "three_pm": [
+        1,
+        4
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-15"
+      ],
+      "who": "Myles Colvin",
+      "fields": {
+       "ast": [
+        2,
+        3
+       ],
+       "blk": [
+        0,
+        2
+       ],
+       "drb": [
+        10,
+        12
+       ],
+       "games": [
+        3,
+        4
+       ],
+       "minutes": [
+        62,
+        82
+       ],
+       "pf": [
+        6,
+        8
+       ],
+       "reb": [
+        11,
+        13
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Trey Kaufman-Renn",
+      "fields": {
+       "ast": [
+        5,
+        8
+       ],
+       "drb": [
+        8,
+        9
+       ],
+       "fga": [
+        17,
+        25
+       ],
+       "fgm": [
+        11,
+        16
+       ],
+       "fta": [
+        8,
+        17
+       ],
+       "ftm": [
+        6,
+        13
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        57,
+        87
+       ],
+       "orb": [
+        6,
+        8
+       ],
+       "pf": [
+        4,
+        7
+       ],
+       "points": [
+        29,
+        46
+       ],
+       "reb": [
+        14,
+        17
+       ],
+       "stl": [
+        1,
+        2
+       ],
+       "tov": [
+        5,
+        7
+       ]
+      }
+     },
+     {
+      "endpoint": "stats/player/season",
+      "window": [
+       "2024-11-01",
+       "2024-11-12"
+      ],
+      "who": "Braden Smith",
+      "fields": {
+       "ast": [
+        22,
+        28
+       ],
+       "drb": [
+        10,
+        19
+       ],
+       "fga": [
+        15,
+        31
+       ],
+       "fgm": [
+        7,
+        14
+       ],
+       "fta": [
+        6,
+        10
+       ],
+       "ftm": [
+        5,
+        9
+       ],
+       "games": [
+        2,
+        3
+       ],
+       "minutes": [
+        67,
+        102
+       ],
+       "pf": [
+        2,
+        3
+       ],
+       "points": [
+        23,
+        45
+       ],
+       "reb": [
+        10,
+        19
+       ],
+       "stl": [
+        4,
+        9
+       ],
+       "three_pa": [
+        10,
+        18
+       ],
+       "three_pm": [
+        4,
+        8
+       ],
+       "tov": [
+        9,
+        12
+       ]
+      }
+     }
+    ],
+    "all_reconcile": false
+   }
+  },
+  "reconciling_interpretations": [
+   "tip_utc_le_end_midnight_utc"
+  ],
+  "classification": "VALIDATED_FOR_TESTED_FIELDS",
+  "tested_fields": {
+   "player": [
+    "games",
+    "minutes",
+    "points",
+    "fgm",
+    "fga",
+    "three_pm",
+    "three_pa",
+    "ftm",
+    "fta",
+    "orb",
+    "drb",
+    "reb",
+    "ast",
+    "stl",
+    "blk",
+    "tov",
+    "pf"
+   ],
+   "team": [
+    "games",
+    "points",
+    "fgm",
+    "fga",
+    "three_pm",
+    "three_pa",
+    "ftm",
+    "fta",
+    "orb",
+    "drb",
+    "reb",
+    "ast",
+    "stl",
+    "blk",
+    "tov_total",
+    "pf"
+   ]
+  }
+ },
+ "anchor_compatible": true,
+ "mapping_implication": "API athleteId may anchor canonical players directly (provider 'CBBD')."
+}

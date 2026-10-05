@@ -1,0 +1,529 @@
+{
+ "files": {
+  ".DS_Store": {
+   "sha256": "b5921545817d4f0bf12f4f48d288b17473eb87fac5bada7bd7238d9a284d1122",
+   "size_bytes": 6148
+  },
+  "00_data_dictionary.ipynb": {
+   "sha256": "65a977cd275c98bf1eb30060099d746952a96d6766cfd061b11e75f14c6a88eb",
+   "size_bytes": 134557
+  },
+  "01_intro_to_data.ipynb": {
+   "sha256": "6428988ed152cb2b11230cf379eac260aca4f33e6bc7669ffd00989c160cbe65",
+   "size_bytes": 217157
+  },
+  "02_build_simple_rankings.ipynb": {
+   "sha256": "5bf7d7269edc92ef3b60d76309435c9f16c6d7ed44e939ad4dcac91ff797ff81",
+   "size_bytes": 143676
+  },
+  "03_team_stats_explorer.ipynb": {
+   "sha256": "ebd5b20e3d930b67610029fbea7f8539b9e0c1adc4144e6860584c5a78ff7c0a",
+   "size_bytes": 500868
+  },
+  "04_tempo_free_team_metrics.ipynb": {
+   "sha256": "8c3d7c735eb0d3e002809b28511f6c97bf17f34af93eb1ee3568ffa73ac17bcc",
+   "size_bytes": 552290
+  },
+  "05_team_vs_conference_averages.ipynb": {
+   "sha256": "98b308843f93727d8eba3b8498c51a36335d80d23ea86bee94dcea28a537d3dc",
+   "size_bytes": 394210
+  },
+  "06_opponent_adjusted_ratings.ipynb": {
+   "sha256": "efd6ba825689c596ee0e844fdb0cfb889655fc3f5162b99f240ef06a8c56111b",
+   "size_bytes": 330579
+  },
+  "07_team_similarity.ipynb": {
+   "sha256": "ebc8f81abda03721627f42c13f96500c15b3af20008229510dc68790af6e8478",
+   "size_bytes": 264925
+  },
+  "08_metric_distribution_explorer.ipynb": {
+   "sha256": "4418cd8e5b08ca865678597d6d594c00f514002d0701ed755aa7f5ea8c8a78c8",
+   "size_bytes": 157847
+  },
+  "09_player_rate_stats.ipynb": {
+   "sha256": "2a9cefb332dbae12a45e5c02608319a6fa9fc6d9c9d20a80e3f6ea0d219d4805",
+   "size_bytes": 393852
+  },
+  "10_player_shot_profile_analysis.ipynb": {
+   "sha256": "ed5ffdc8aea0340bc4c3752c7c298e0ee861739290a334437f62ab59b05e7547",
+   "size_bytes": 653121
+  },
+  "11_player_comparison_dashboard.ipynb": {
+   "sha256": "cefcf0b573176fb8b15afb5d2a5d037edf5a08ff7976c85fde18e35af81a94cc",
+   "size_bytes": 490262
+  },
+  "12_matchup_explorer.ipynb": {
+   "sha256": "9e1e3c62a9223aa11a2141d64fd9118bc7409f1db28b3508ada1fbb9d059cc50",
+   "size_bytes": 289264
+  },
+  "13_efficiency_dashboards.ipynb": {
+   "sha256": "a07602ed4e9aaaf7c38c39bfb37b109510d5b64cb8a92d439f1acdba783cd759",
+   "size_bytes": 388150
+  },
+  "CBBD Starter Pack - Data Files Guide.pdf": {
+   "sha256": "3b3e82647e9b9b0dfd91422905c18fc6c365ac74e7a59f92e689e1cc7ca0def9",
+   "size_bytes": 357329
+  },
+  "CBBD Starter Pack - Notebooks Guide.pdf": {
+   "sha256": "479d2b142066b87ed6b65a79525ab77d85430920151e8f63168a6c4f321fce29",
+   "size_bytes": 163856
+  },
+  "LICENSE": {
+   "sha256": "1da63b81060d094f187929eb1a7428eb6b0d88919948050988c9108f66963013",
+   "size_bytes": 1300
+  },
+  "data/.DS_Store": {
+   "sha256": "bfa01dec4e66a9bdb48597e59a7b7bac94bebb5ad16f0020fce5990631137c52",
+   "size_bytes": 6148
+  },
+  "data/conferences.csv": {
+   "sha256": "c44a6d9a090e5dade386e4c2c6364d1b772c5ef79a2ef881716a7f7ca4db1590",
+   "size_bytes": 1319
+  },
+  "data/games.csv": {
+   "sha256": "3ce90eca75bd9d7ed98afb095bf89aa1250e442ebe9608cfaac81747d88dc7bc",
+   "size_bytes": 47406077
+  },
+  "data/player_game_stats/2005.csv": {
+   "sha256": "1a1c12265e7f59d99d012e7d0926301fabff1d702da36605cd9c4e0746025b87",
+   "size_bytes": 22137872
+  },
+  "data/player_game_stats/2006.csv": {
+   "sha256": "b65d18a66c756c080738562cb5ef651913054ab2d8161fc7e1b26ff936595d64",
+   "size_bytes": 25524544
+  },
+  "data/player_game_stats/2007.csv": {
+   "sha256": "f35d15c405668f33a229225007d3b5a65e01155d5ad7b8c029e4d1f09773c942",
+   "size_bytes": 27571759
+  },
+  "data/player_game_stats/2008.csv": {
+   "sha256": "37f1b16ae332827556c48951fba114c3198eb4256e350a5b4b609cb06ecf8759",
+   "size_bytes": 29685443
+  },
+  "data/player_game_stats/2009.csv": {
+   "sha256": "196b51f9e05fbcd4e0e93f5e44f035f60e2fcb3b8a89a1befbda6eab7d70a20e",
+   "size_bytes": 29416956
+  },
+  "data/player_game_stats/2010.csv": {
+   "sha256": "96cae1a7a0bc4d06f89e5a953ba8a5282fbe092537c6c9ffe9b3009721cfa4d3",
+   "size_bytes": 30414281
+  },
+  "data/player_game_stats/2011.csv": {
+   "sha256": "c5c0dfab641b1bc87b06a1e0088c66eeb2b1bc6efa6d85f919fddd9fe13d9f3a",
+   "size_bytes": 29869133
+  },
+  "data/player_game_stats/2012.csv": {
+   "sha256": "68295d6933861d58795fbb5e4dfa23264690f62c8c57d9a44adac9b0515dec82",
+   "size_bytes": 25959281
+  },
+  "data/player_game_stats/2013.csv": {
+   "sha256": "0e6451d229c9112060eacd1b3645f4a8e45129d01928e6ee6ae8481162194492",
+   "size_bytes": 26146164
+  },
+  "data/player_game_stats/2014.csv": {
+   "sha256": "c618695b1f80d8b1fd37745cff8dc2f2028def531e41ef75265e811e74bf18b8",
+   "size_bytes": 32436024
+  },
+  "data/player_game_stats/2015.csv": {
+   "sha256": "aca1ffc2c4239b1c30781554ec7e35579dc9a5aab63ffef77422a4040f8716c6",
+   "size_bytes": 31612884
+  },
+  "data/player_game_stats/2016.csv": {
+   "sha256": "2759d4d5505c644a51f95d3de0a3630760b7940c994de8d344ceca51698ee059",
+   "size_bytes": 31909588
+  },
+  "data/player_game_stats/2017.csv": {
+   "sha256": "7dab3fe6aeb64385c73274afb688fd47efa08e0f6d0d3de7e9d6a5a3aa497673",
+   "size_bytes": 31854564
+  },
+  "data/player_game_stats/2018.csv": {
+   "sha256": "e8551cdd62a363a6615dbf5e1db030cec26038e3f85bf06e3151a211c05ac23d",
+   "size_bytes": 31601418
+  },
+  "data/player_game_stats/2019.csv": {
+   "sha256": "6f04ca91f60e16d22f238684fef78570818e5e91433a9127a3e15df8088d86ef",
+   "size_bytes": 31790307
+  },
+  "data/player_game_stats/2020.csv": {
+   "sha256": "fa344fe82e91b3f085760fbff4f74d7c16e5acacded3e049250371438e6f0499",
+   "size_bytes": 30062667
+  },
+  "data/player_game_stats/2021.csv": {
+   "sha256": "d6cf364c8b901b7f628f22ce70d273bacc34b3645fc8f43425b2499023ae1931",
+   "size_bytes": 22472131
+  },
+  "data/player_game_stats/2022.csv": {
+   "sha256": "434f77d59222e6d838232a14408e88ef09bd22c0caa3b8818271cc151cd8df86",
+   "size_bytes": 31263374
+  },
+  "data/player_game_stats/2023.csv": {
+   "sha256": "586011ff85342e83405f09e16988a75a0737ce394c2102201b11eb4427c8b05b",
+   "size_bytes": 31912884
+  },
+  "data/player_game_stats/2024.csv": {
+   "sha256": "f32d5d88feead5b161904c4391db2d1923cf055f078cd52467440386397ae669",
+   "size_bytes": 32020916
+  },
+  "data/player_game_stats/2025.csv": {
+   "sha256": "580d869bfe4e94e311b30e250a1c94c15ce5d58089deff34242485da1e8f6679",
+   "size_bytes": 32111051
+  },
+  "data/player_season_shooting_stats/2014.csv": {
+   "sha256": "1c0ef985f78f450b4380a6377340d81500d21b1bde6305339fa5260b09b16b5e",
+   "size_bytes": 694226
+  },
+  "data/player_season_shooting_stats/2015.csv": {
+   "sha256": "ffc71272c146fb2b087a7e3fe3225dba5fd6472a8f96b6fc46a0ae5886fca9d6",
+   "size_bytes": 701682
+  },
+  "data/player_season_shooting_stats/2016.csv": {
+   "sha256": "57d9c89bf0c98489ad4e388524316b45464aa690e7534c7e5b9ac1c31d779342",
+   "size_bytes": 699570
+  },
+  "data/player_season_shooting_stats/2017.csv": {
+   "sha256": "cd02201db2079df92179dfa207abdf0008b5fcab67aeb7986d5a30fa2dc41490",
+   "size_bytes": 709774
+  },
+  "data/player_season_shooting_stats/2018.csv": {
+   "sha256": "3ea17d30fb2ee72a5ee23a881337fccc46000eb9de888ea4d3d285e41af0abea",
+   "size_bytes": 707424
+  },
+  "data/player_season_shooting_stats/2019.csv": {
+   "sha256": "dc3420aab72fe7e3c484f6f4b35570fa06e8b019d78cd55ef24cf637c596717d",
+   "size_bytes": 704605
+  },
+  "data/player_season_shooting_stats/2020.csv": {
+   "sha256": "164b1774f78381fc142d49eebd6ff10abb8cd81157bfd5b05307cd21ed4d643e",
+   "size_bytes": 704379
+  },
+  "data/player_season_shooting_stats/2021.csv": {
+   "sha256": "7303cecbf788d2215d4289c112ce5955099a3918bc95f57eda4d0e1861f881f4",
+   "size_bytes": 711337
+  },
+  "data/player_season_shooting_stats/2022.csv": {
+   "sha256": "cfad69834ca180fe9bdda2ed23f468f7fe0bd2870c8eef382ff4904f64dee3c5",
+   "size_bytes": 750717
+  },
+  "data/player_season_shooting_stats/2023.csv": {
+   "sha256": "f3fde2c7b2c6deeb0eba8130b541a1bf53f28a1b3950da81b8b463ad6267abcc",
+   "size_bytes": 738950
+  },
+  "data/player_season_shooting_stats/2024.csv": {
+   "sha256": "c386543f22e965fc27716e5fe18c23ae1b3f82b4413d9047d0d95f7da2c3e030",
+   "size_bytes": 745136
+  },
+  "data/player_season_shooting_stats/2025.csv": {
+   "sha256": "1c7652bd8539c841f09ff04830529517814124a5ad97f673af8be583343119ef",
+   "size_bytes": 763846
+  },
+  "data/player_season_stats/2005.csv": {
+   "sha256": "17cb426fd47034c5f8b22eb6b359ad1056df080c8cce85a715a1186cb6c071ad",
+   "size_bytes": 797478
+  },
+  "data/player_season_stats/2006.csv": {
+   "sha256": "9c7a61790c1f1b32356b760ee0aa6ca3ca19ebedde7c486b81a93378dbc89a6b",
+   "size_bytes": 901569
+  },
+  "data/player_season_stats/2007.csv": {
+   "sha256": "34d2ac3af1091b73d46a4a66b65e45b7cfbf615b8d6e031821c5725d01b60f41",
+   "size_bytes": 916769
+  },
+  "data/player_season_stats/2008.csv": {
+   "sha256": "8ef17b795715caa0fbbd3ab93312befe2939802331642870417866baa82f8391",
+   "size_bytes": 935723
+  },
+  "data/player_season_stats/2009.csv": {
+   "sha256": "de83e8f7373fb31f58feb10a61fc387fa0264679391eb6a730ab46cbc2007b8b",
+   "size_bytes": 928555
+  },
+  "data/player_season_stats/2010.csv": {
+   "sha256": "01f386ee4aba324789865824a5cec0ebc22c91bba71194309be184f869e3657c",
+   "size_bytes": 957661
+  },
+  "data/player_season_stats/2011.csv": {
+   "sha256": "bb3b9f2f2824e124e2e49c19d2a3a424b1b0b3742bd39b3fc42ab4aab81aaafb",
+   "size_bytes": 970912
+  },
+  "data/player_season_stats/2012.csv": {
+   "sha256": "be540904824e2f7ac7120b21583ce7cf3834e8e0be9638640cb5062d57b1f902",
+   "size_bytes": 960416
+  },
+  "data/player_season_stats/2013.csv": {
+   "sha256": "21a52427c3651dfa0160d016df6f30d6ac20f1a19ebd3a0a315b31a5c3eba521",
+   "size_bytes": 969481
+  },
+  "data/player_season_stats/2014.csv": {
+   "sha256": "79b7c3b50ec95908416a93994b0cb4d97e9acec1b5e1514556571e2470c4d177",
+   "size_bytes": 996881
+  },
+  "data/player_season_stats/2015.csv": {
+   "sha256": "0c669a136936cdd3a1bfd646286c9d5a432e9d3f71be90c45e76edbc294fc2c3",
+   "size_bytes": 988105
+  },
+  "data/player_season_stats/2016.csv": {
+   "sha256": "40f3385f32a74c29c788e142ecbb6b0687b718054dbcdbbb236b057cc6c9a581",
+   "size_bytes": 983752
+  },
+  "data/player_season_stats/2017.csv": {
+   "sha256": "fa06bb41ab0b9a490aeee7de3b8e9a830bd97b7d1f94a0931e5ef9c6b347548a",
+   "size_bytes": 1007090
+  },
+  "data/player_season_stats/2018.csv": {
+   "sha256": "4633bb2a4671cc74278dca66cf90e4cdf79cc78748b16be83f62c4df5e2f3620",
+   "size_bytes": 982609
+  },
+  "data/player_season_stats/2019.csv": {
+   "sha256": "1b1f0e6f061d44e609c2896e4714cb62201500460e136d9adac8cf2f4ff04a61",
+   "size_bytes": 987570
+  },
+  "data/player_season_stats/2020.csv": {
+   "sha256": "24569e181811f21617c2e5c7466479599967babdeddf2d4ca9678d38fc50e283",
+   "size_bytes": 987860
+  },
+  "data/player_season_stats/2021.csv": {
+   "sha256": "2ea7a0ca1a10ac4555952dda08b87a91020ecca756210c4a8b32547b23a6c0a9",
+   "size_bytes": 1009399
+  },
+  "data/player_season_stats/2022.csv": {
+   "sha256": "9505e08e1cd81b0330e360f6f2dac43c0ce976c894aafe676159a0e524de7817",
+   "size_bytes": 1039587
+  },
+  "data/player_season_stats/2023.csv": {
+   "sha256": "db9937bdff5855e3a1d7ac7e95e1a87f5b49419dd29aea7339167125386521fd",
+   "size_bytes": 1028987
+  },
+  "data/player_season_stats/2024.csv": {
+   "sha256": "765cdfb178dac4ea5101b8e2e1a87e11738023a32f882a78d412c4ae5d9df028",
+   "size_bytes": 1023349
+  },
+  "data/player_season_stats/2025.csv": {
+   "sha256": "f70420c68914d74afeaf674f29669a8279fa1763ca35b8d075f032cb62f17aa3",
+   "size_bytes": 1034103
+  },
+  "data/team_game_stats/2005.csv": {
+   "sha256": "992db9b0f891c68145220e22e2632b1324f59886d2e3d536772778c320239ca4",
+   "size_bytes": 3778007
+  },
+  "data/team_game_stats/2006.csv": {
+   "sha256": "14f1b52258b0de25f5e980608589cb6cde3606f0362ef44a4656ac3c6e152aa7",
+   "size_bytes": 4293375
+  },
+  "data/team_game_stats/2007.csv": {
+   "sha256": "e45e088d3c90d113e87bc2f80199fc8aa0ef72767c5986fba26f32644c555a8f",
+   "size_bytes": 4689706
+  },
+  "data/team_game_stats/2008.csv": {
+   "sha256": "5b6e80cc1931eefc4197a3bc6dce01c28d19fca0510c7ef23894d25ea53b6f58",
+   "size_bytes": 4893606
+  },
+  "data/team_game_stats/2009.csv": {
+   "sha256": "14f0478d6cf23ad445931757fd16020887b4b1e1c55d952da08a22feae25e0ce",
+   "size_bytes": 5561687
+  },
+  "data/team_game_stats/2010.csv": {
+   "sha256": "edc74530bce2c23184686062b074cb1b3c7920d008e5f028f53e660e2f47f0ae",
+   "size_bytes": 5628343
+  },
+  "data/team_game_stats/2011.csv": {
+   "sha256": "314bf14cabc44c4539bf9099de522595ede7d9dbb68e6397b3c875a35c47078a",
+   "size_bytes": 5661482
+  },
+  "data/team_game_stats/2012.csv": {
+   "sha256": "5ab5ae7fa73a5c8bcf3b8cad426f19bd138a6dbb7249282993d98f4ed07fb89c",
+   "size_bytes": 4830803
+  },
+  "data/team_game_stats/2013.csv": {
+   "sha256": "2f6d01d3cad1a1c55609fa0038fc168af1b865de459de5296c798d73410cf823",
+   "size_bytes": 4887308
+  },
+  "data/team_game_stats/2014.csv": {
+   "sha256": "b1cfa02c5ff37bf2326b21e7d216656c7fd1088ad982b18ca23eca1a5a61f7a6",
+   "size_bytes": 5822334
+  },
+  "data/team_game_stats/2015.csv": {
+   "sha256": "b0db9f18058b29f98c50f23d5f4c3600e3bc0df5ce1a16a9726705457512e489",
+   "size_bytes": 5686621
+  },
+  "data/team_game_stats/2016.csv": {
+   "sha256": "adbffa35b2b487b12820f2dbc873eae5b7441c12ae87069d1cab84d577cbe56d",
+   "size_bytes": 5809670
+  },
+  "data/team_game_stats/2017.csv": {
+   "sha256": "12aa7f97c4e61acd1b0c0ce43521e5ed6458ea3aadfbc66ba30bb9ede4b21069",
+   "size_bytes": 5801044
+  },
+  "data/team_game_stats/2018.csv": {
+   "sha256": "93f93dcab1ba6a0c635516f5211d05deadfcce4e8139c06c5a333c0fcbd87016",
+   "size_bytes": 5842518
+  },
+  "data/team_game_stats/2019.csv": {
+   "sha256": "17e73956246ef01eb6550268e0daef945687864db01b000ab74494bed7d1a76f",
+   "size_bytes": 5881795
+  },
+  "data/team_game_stats/2020.csv": {
+   "sha256": "f64d320a04b8af5d75b3439a3cb74ccc43834488a0d831ee026c20703c54c35e",
+   "size_bytes": 5139412
+  },
+  "data/team_game_stats/2021.csv": {
+   "sha256": "03e6d4e8b373e7884ca7d11f13f8a86b9b6971dc40aea97a33c7c4c102b6340c",
+   "size_bytes": 3747885
+  },
+  "data/team_game_stats/2022.csv": {
+   "sha256": "f99d1814b47a8e32d3e60b7b9a2eb856185fa2f6f6c1f24319bba29e0c73e68e",
+   "size_bytes": 5260266
+  },
+  "data/team_game_stats/2023.csv": {
+   "sha256": "e7a01c2346c476044b9868d6e68e461ff902617cc139ea904fd72bc2e6f66a9f",
+   "size_bytes": 5385281
+  },
+  "data/team_game_stats/2024.csv": {
+   "sha256": "eed03e288035314e3a39536a01afef17c9bc1fd2b542bb83307ab0edaf0e3c12",
+   "size_bytes": 5370593
+  },
+  "data/team_game_stats/2025.csv": {
+   "sha256": "f93c15a469d30bd8e99c7f462530a70baa4fc01a79df717c3e8db3a3e6bdfda2",
+   "size_bytes": 6713992
+  },
+  "data/team_season_shooting_stats/2014.csv": {
+   "sha256": "7a60dfa5dbdf12e9fa729bd389affedaff4e61d715188d8450cc7588528025c0",
+   "size_bytes": 56209
+  },
+  "data/team_season_shooting_stats/2015.csv": {
+   "sha256": "cf262c2b1c11388b7f34b970646c8304935a7218fe280b8866d3a9f2702e98ca",
+   "size_bytes": 55615
+  },
+  "data/team_season_shooting_stats/2016.csv": {
+   "sha256": "00ce0b1de79e8a7b8e7d7c760fc467b3afd5cbe57b5c666d600f0b7dd39b9e5c",
+   "size_bytes": 55699
+  },
+  "data/team_season_shooting_stats/2017.csv": {
+   "sha256": "f1e8d7a5d1f39dc384235320ca1da24fd80b0c4feb949da833087292eb880250",
+   "size_bytes": 55567
+  },
+  "data/team_season_shooting_stats/2018.csv": {
+   "sha256": "cdff477a5220182f233ea7b0daa334f8fbf63c8f81c2d3632d7351e9aecf94f8",
+   "size_bytes": 55684
+  },
+  "data/team_season_shooting_stats/2019.csv": {
+   "sha256": "6f3a58dc66fe047c804ad37b4b5b42b58e943b0bc744fa40543fed39ddb1190b",
+   "size_bytes": 55815
+  },
+  "data/team_season_shooting_stats/2020.csv": {
+   "sha256": "640b73bfdfe3959fd1249385ea458e6a84198ef23a964008cb2b3138ca511e79",
+   "size_bytes": 55542
+  },
+  "data/team_season_shooting_stats/2021.csv": {
+   "sha256": "a11aa96cd2f9cb08d4658a7a5e4432fb038c8bccb8e2272581e197bd75863c06",
+   "size_bytes": 53838
+  },
+  "data/team_season_shooting_stats/2022.csv": {
+   "sha256": "cf6b581af9c5f991d1a2f3209ba8e9caa1f0423f6b3372ea5d75b81e4a7d5a94",
+   "size_bytes": 56123
+  },
+  "data/team_season_shooting_stats/2023.csv": {
+   "sha256": "b6332dad1b769d5318bd76a3c71580296749b2cd02d97bae499d73c5ff8b613f",
+   "size_bytes": 56278
+  },
+  "data/team_season_shooting_stats/2024.csv": {
+   "sha256": "c416ba1de6b36f7c8c6a3e4567203118abdf45d41a83f87451c63f2eef4f3790",
+   "size_bytes": 56065
+  },
+  "data/team_season_shooting_stats/2025.csv": {
+   "sha256": "bf4c4bb46568be35a2938a8490aa59e5ae6d254762bb2a618273c746bc4d5c79",
+   "size_bytes": 56964
+  },
+  "data/team_season_stats/2005.csv": {
+   "sha256": "309effa15a73ee9998964555d3a557d98f5f3c15f66fa8d1455485bcb40f2566",
+   "size_bytes": 103699
+  },
+  "data/team_season_stats/2006.csv": {
+   "sha256": "19e2134910bb58650b7b8fd507ee7e5424c8ed1b2ac7210399b05ccc9d55b1e4",
+   "size_bytes": 112048
+  },
+  "data/team_season_stats/2007.csv": {
+   "sha256": "99f262cdfa7fa48766a3627fdd9ccb7f69122c500d59706ef8e29fbb538ca0fb",
+   "size_bytes": 112731
+  },
+  "data/team_season_stats/2008.csv": {
+   "sha256": "69850d1b3f46f0d2fb581242a16c8b98028951d100dcbc47cf7fd81a9e6b00ad",
+   "size_bytes": 114403
+  },
+  "data/team_season_stats/2009.csv": {
+   "sha256": "00aa1315e62077e4f85600b82325734704c3ea8b7b9d50235ac83fa1aad1458c",
+   "size_bytes": 115653
+  },
+  "data/team_season_stats/2010.csv": {
+   "sha256": "d47c4fddfe5e07567c251b02581a71cfb389fae15a1459d37c76959f53582a45",
+   "size_bytes": 117402
+  },
+  "data/team_season_stats/2011.csv": {
+   "sha256": "99468fdbb4d54fc979c0cdcaf3c7244f61d3603f39b6ceba02be492647ae048c",
+   "size_bytes": 120885
+  },
+  "data/team_season_stats/2012.csv": {
+   "sha256": "5b9d322d5bd555768fcc6720857b72d6d324f160818ff8ea211dad47ae3d9d3a",
+   "size_bytes": 119383
+  },
+  "data/team_season_stats/2013.csv": {
+   "sha256": "2ac4dfcf1f8b2b995a681263891533897742c672d5cf85204250f3912840b212",
+   "size_bytes": 120360
+  },
+  "data/team_season_stats/2014.csv": {
+   "sha256": "1dde5aeed0b63a24c2b602c4d92ae5fdde337d2fc13b48dfed23ff7f657673dd",
+   "size_bytes": 126543
+  },
+  "data/team_season_stats/2015.csv": {
+   "sha256": "d4841dee49c32f2770827b200291ddf9ff04bc139fc26fd6ad4f50350561f099",
+   "size_bytes": 125193
+  },
+  "data/team_season_stats/2016.csv": {
+   "sha256": "d8d47132f0ed7c69801bf12f794d3ed76365f458ebaea0a7497a571faf548c46",
+   "size_bytes": 125610
+  },
+  "data/team_season_stats/2017.csv": {
+   "sha256": "0a074bd3700248b89f746937671f2c62b92ecddda2826c0be847b6c24f83e92d",
+   "size_bytes": 125194
+  },
+  "data/team_season_stats/2018.csv": {
+   "sha256": "96f1c7a7f774c877239b37928c2f47acdea6f5cfe904355df5bff04a1acc4f76",
+   "size_bytes": 125865
+  },
+  "data/team_season_stats/2019.csv": {
+   "sha256": "2356138524b7054adc40e7c80fcf3ae914030aef25ac6c884d8f9fee1b4b0295",
+   "size_bytes": 126645
+  },
+  "data/team_season_stats/2020.csv": {
+   "sha256": "c8a0cba5457491d5a341538d3adf4760cfa492849ef0c2c97a77a72dfee6acc4",
+   "size_bytes": 126395
+  },
+  "data/team_season_stats/2021.csv": {
+   "sha256": "21603b83bc44637a13d3e0e1aff4cf39cf4dbe6063d020c797aba1a13f633c34",
+   "size_bytes": 121636
+  },
+  "data/team_season_stats/2022.csv": {
+   "sha256": "2a094ac5d1fb1c75dba78d754b2b3dd86cba01dccd25054a4e0a15a6cb29ceb3",
+   "size_bytes": 128019
+  },
+  "data/team_season_stats/2023.csv": {
+   "sha256": "35005eb233c2f23946fcfbd1ad24b582254f7b341b0a2b69fff175a7b01910b4",
+   "size_bytes": 129105
+  },
+  "data/team_season_stats/2024.csv": {
+   "sha256": "c18b238cf47d4c5a4c90f3f8a514e285f8c7c054e9e69f645d30bdaf5a69b82f",
+   "size_bytes": 128982
+  },
+  "data/team_season_stats/2025.csv": {
+   "sha256": "1205b75a95b028c9752a98faa41a3cdff676acd1f7d10345478d702bc12155cc",
+   "size_bytes": 129222
+  },
+  "data/teams.csv": {
+   "sha256": "b546a0482eeb1e2030e47fdfe884a971660a153c34ac06c61c9fad4e15447920",
+   "size_bytes": 96652
+  },
+  "headers.md": {
+   "sha256": "ff2c167f1068a4337d4532c23c32f43157295dcea265bae7362beb767b85ecca",
+   "size_bytes": 8562
+  }
+ },
+ "starter_pack_root": "/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack/starter_pack"
+}
