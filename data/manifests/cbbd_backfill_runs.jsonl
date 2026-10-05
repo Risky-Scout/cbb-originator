@@ -1,0 +1,2 @@
+{"calls": 0, "successful_calls": 0, "empty_successful": 0, "retries": 0, "http_429": 0, "permanent_failures": 0, "skipped_already_stored": 10745, "runtime_s": 0.6, "quota_remaining": null}
+{"calls": 13049, "successful_calls": 13048, "empty_successful": 576, "retries": 1, "http_429": 1, "permanent_failures": 0, "skipped_already_stored": 4545, "runtime_s": 11264.6, "quota_remaining": 107127}

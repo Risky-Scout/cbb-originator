@@ -1,0 +1,398 @@
+{
+ "dataset_version": "cbb_data_v2.0+b00e8d3dc798",
+ "canonical_build_id": "20261005T225802Z",
+ "build_timestamp_utc": "2026-10-05 18:58:02.976645-04:00",
+ "generated_at_utc": "2026-10-05T23:14:16+00:00",
+ "cbbd_api_schema_version": "CBBD OpenAPI v1.29.0 (reference/CBBD_OPENAPI_VERIFICATION_v1_1.md)",
+ "ingestion_version": "stage1-1.0.0",
+ "schema_version": "canonical-1.0.0",
+ "starter_pack_manifest_hash": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+ "raw_cbbd_payload_manifest_hash": "b055525a97845b01c299328b1e12cbc91a46b0c049f3706e7d07d56c1d6bd71f",
+ "raw_cbbd_payloads": 18569,
+ "raw_cbbd_payloads_by_endpoint": {
+  "games": {
+   "payloads": 2,
+   "empty": 0,
+   "bytes": 3222
+  },
+  "games/players": {
+   "payloads": 6,
+   "empty": 0,
+   "bytes": 112797
+  },
+  "games/teams": {
+   "payloads": 2,
+   "empty": 0,
+   "bytes": 7353
+  },
+  "lineups/game": {
+   "payloads": 12773,
+   "empty": 812,
+   "bytes": 597781885
+  },
+  "lineups/team": {
+   "payloads": 79,
+   "empty": 78,
+   "bytes": 158374
+  },
+  "plays/date": {
+   "payloads": 2973,
+   "empty": 147,
+   "bytes": 31469217899
+  },
+  "plays/game": {
+   "payloads": 297,
+   "empty": 67,
+   "bytes": 68485182
+  },
+  "plays/team": {
+   "payloads": 1,
+   "empty": 0,
+   "bytes": 15798163
+  },
+  "recruiting/players": {
+   "payloads": 21,
+   "empty": 3,
+   "bytes": 4134227
+  },
+  "recruiting/portal": {
+   "payloads": 21,
+   "empty": 17,
+   "bytes": 1031627
+  },
+  "recruiting/teams": {
+   "payloads": 21,
+   "empty": 0,
+   "bytes": 428534
+  },
+  "stats/player/season": {
+   "payloads": 3,
+   "empty": 0,
+   "bytes": 27451
+  },
+  "stats/team/season": {
+   "payloads": 3,
+   "empty": 0,
+   "bytes": 4372
+  },
+  "substitutions/game": {
+   "payloads": 266,
+   "empty": 234,
+   "bytes": 900366
+  },
+  "substitutions/team": {
+   "payloads": 2077,
+   "empty": 513,
+   "bytes": 342865978
+  },
+  "teams/roster": {
+   "payloads": 23,
+   "empty": 0,
+   "bytes": 71730321
+  },
+  "venues": {
+   "payloads": 1,
+   "empty": 0,
+   "bytes": 113583
+  }
+ },
+ "canonical_content_digest": "d01c81fe23abd516deb12836a171fc4fc255d58b829cd6fa903a36cf678427b6",
+ "canonical_tables": {
+  "availability.events": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "benchmark.bdl_games": {
+   "rows": 816,
+   "fingerprint": "816:2813297028881559283:7534640451716950072477"
+  },
+  "benchmark.bdl_player_games": {
+   "rows": 130,
+   "fingerprint": "130:11818551700518417877:1113492599438700647615"
+  },
+  "benchmark.bdl_team_games": {
+   "rows": 8,
+   "fingerprint": "8:7866945610511673173:81155583978563100715"
+  },
+  "benchmark.game_odds": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "benchmark.opening_odds": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "core.conferences": {
+   "rows": 34,
+   "fingerprint": "34:642483520258836427:290653243389125917657"
+  },
+  "core.game_schedule_versions": {
+   "rows": 272560,
+   "fingerprint": "272560:8331757522010754119:2513778979255381842409259"
+  },
+  "core.games": {
+   "rows": 272560,
+   "fingerprint": "272560:9858785848240968337:2514619389991490352853993"
+  },
+  "core.players": {
+   "rows": 92251,
+   "fingerprint": "92251:13553067290098460575:851536035266627172939145"
+  },
+  "core.recruits": {
+   "rows": 10185,
+   "fingerprint": "10185:5456840467008386505:94410102665533726632905"
+  },
+  "core.rosters": {
+   "rows": 202651,
+   "fingerprint": "202651:5317474147153714238:1866199561677902541242692"
+  },
+  "core.team_recruiting_rankings": {
+   "rows": 4445,
+   "fingerprint": "4445:5857203269648133469:40557606616395888521193"
+  },
+  "core.team_seasons": {
+   "rows": 26700,
+   "fingerprint": "26700:11507907417698344569:245906141269370792776169"
+  },
+  "core.teams": {
+   "rows": 1517,
+   "fingerprint": "1517:7108531092818327516:13885453202058560398010"
+  },
+  "core.transfers": {
+   "rows": 3491,
+   "fingerprint": "3491:2155478486551427935:32465365771156613677715"
+  },
+  "core.venue_directory": {
+   "rows": 988,
+   "fingerprint": "988:6603151653770591818:8753004886102804556708"
+  },
+  "core.venues": {
+   "rows": 749,
+   "fingerprint": "749:7157018095201785543:6851188985207199738889"
+  },
+  "fact.lineup_stats": {
+   "rows": 370401,
+   "fingerprint": "370401:13318390794623822689:3416754705764057173517055"
+  },
+  "fact.lineup_stints": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "fact.participation": {
+   "rows": 3189460,
+   "fingerprint": "3189460:14953320121456973180:29412332226410704924194878"
+  },
+  "fact.play_on_floor": {
+   "rows": 41450717,
+   "fingerprint": "41450717:14934174784649385682:382312762599273352011444104"
+  },
+  "fact.play_participants": {
+   "rows": 28574421,
+   "fingerprint": "28574421:14238379258684593465:263531044673961841174913205"
+  },
+  "fact.player_games": {
+   "rows": 2368206,
+   "fingerprint": "2368206:4591861363244304689:21851631581386221512217535"
+  },
+  "fact.player_season_game_derived": {
+   "rows": 99390,
+   "fingerprint": "99390:7066074568209806870:917931326302148855562236"
+  },
+  "fact.player_season_shooting": {
+   "rows": 55429,
+   "fingerprint": "55429:7821237910942722:512554550698787664225532"
+  },
+  "fact.player_season_stats": {
+   "rows": 99596,
+   "fingerprint": "99596:18061503232672243849:918007395804337192222643"
+  },
+  "fact.plays": {
+   "rows": 29021691,
+   "fingerprint": "29021691:11248129471106088202:267691866211488877978763752"
+  },
+  "fact.possessions": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "fact.shots": {
+   "rows": 13638660,
+   "fingerprint": "13638660:8012292195808912316:125775033362958494492781254"
+  },
+  "fact.substitution_pairs": {
+   "rows": 517979,
+   "fingerprint": "517979:13182294454147488203:4773037099514036038827837"
+  },
+  "fact.substitutions": {
+   "rows": 858399,
+   "fingerprint": "858399:14624741770436343681:7906345648404902452089173"
+  },
+  "fact.team_games": {
+   "rows": 235612,
+   "fingerprint": "235612:3427783411827214217:2169535433019019508300731"
+  },
+  "fact.team_season_game_derived": {
+   "rows": 13034,
+   "fingerprint": "13034:945725527780871071:118938351427775875456087"
+  },
+  "fact.team_season_shooting": {
+   "rows": 4254,
+   "fingerprint": "4254:13912807624665163400:39087400977142766660052"
+  },
+  "fact.team_season_stats": {
+   "rows": 7265,
+   "fingerprint": "7265:6652063825676688468:66461491720978583107936"
+  },
+  "metadata.conference_id_map": {
+   "rows": 34,
+   "fingerprint": "34:420939023503045506:319068624416807659884"
+  },
+  "metadata.game_id_map": {
+   "rows": 273376,
+   "fingerprint": "273376:3132719505050340246:2525123414605934997663022"
+  },
+  "metadata.player_id_map": {
+   "rows": 248031,
+   "fingerprint": "248031:10848519433341111709:2288279844566502027581337"
+  },
+  "metadata.source_manifest": {
+   "rows": 111,
+   "fingerprint": "111:17739978034927690541:969756568479364832467"
+  },
+  "metadata.team_id_map": {
+   "rows": 1896,
+   "fingerprint": "1896:15081082896649940065:17174671483641702041651"
+  },
+  "qa.exceptions": {
+   "rows": 153934,
+   "fingerprint": "153934:17223377868840570667:1419275869921639113460723"
+  },
+  "qa.lineup_units_quarantine": {
+   "rows": 0,
+   "fingerprint": "0:None:None"
+  },
+  "qa.pbp_game_reconciliation": {
+   "rows": 89292,
+   "fingerprint": "89292:4801463413515488179:824805305978613235648125"
+  },
+  "qa.player_season_summary_conflicts": {
+   "rows": 6095,
+   "fingerprint": "6095:9559132346219174944:55196322443266873131610"
+  },
+  "qa.reconciliation": {
+   "rows": 3096,
+   "fingerprint": "3096:12698305989043173735:28450150073103159244893"
+  },
+  "qa.season_summary_conflicts": {
+   "rows": 3167,
+   "fingerprint": "3167:16634770125507067435:29549381129434585230265"
+  },
+  "qa.source_defects": {
+   "rows": 439325,
+   "fingerprint": "439325:16325621406928137160:4059386783680538271109492"
+  }
+ },
+ "included_seasons": [
+  2005,
+  2006,
+  2007,
+  2008,
+  2009,
+  2010,
+  2011,
+  2012,
+  2013,
+  2014,
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
+ ],
+ "event_seasons_present": {
+  "plays": [
+   2006,
+   2007,
+   2008,
+   2009,
+   2010,
+   2011,
+   2012,
+   2013,
+   2014,
+   2015,
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023,
+   2024,
+   2025
+  ],
+  "substitutions": [
+   2013,
+   2024,
+   2025
+  ],
+  "lineup_stats": [
+   2024,
+   2025
+  ],
+  "rosters": [
+   2005,
+   2006,
+   2007,
+   2008,
+   2009,
+   2010,
+   2011,
+   2012,
+   2013,
+   2014,
+   2015,
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022,
+   2023,
+   2024,
+   2025
+  ]
+ },
+ "excluded_lockbox_season": "2025-26",
+ "lockbox_touched": false,
+ "code_commit": {
+  "head": "154a24c88ea2b0023ce9e43a8ce358176cc93edd",
+  "tracked_changes_at_build": true
+ },
+ "unresolved_defect_counts": {
+  "ONFLOOR:ONFLOOR_INVALID": 319631,
+  "PBP:FINAL_SCORE_MISMATCH": 4138,
+  "PBP:GAME_NOT_IN_CANONICAL": 2,
+  "PBP:INCOMPLETE_PERIODS": 4,
+  "PBP:SCORE_DECREASE": 16600,
+  "SHOT:ASSISTED_WITHOUT_ASSISTER": 11036,
+  "SHOT:SHOOTER_NOT_ON_FLOOR": 48921,
+  "SHOT:SHOOTER_UNRESOLVED": 6031,
+  "SHOT:SHOT_NO_SHOOTER": 32924,
+  "SUBSTITUTION:SUB_ATHLETE_UNRESOLVED": 38
+ },
+ "unresolved_identity_counts": {
+  "player_games_unresolved": 97373,
+  "event_onfloor_rows_unresolved": 0,
+  "substitution_rows_unresolved": 38,
+  "transfers_unresolved_or_candidate": 969,
+  "recruits_unresolved_or_candidate": 2717
+ }
+}

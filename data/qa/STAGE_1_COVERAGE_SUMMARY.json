@@ -1,6 +1,6 @@
 {
  "derived_from": "data/qa/COVERAGE_AUDIT.json",
- "canonical_build_id": "20261005T163639Z",
+ "canonical_build_id": "20261005T225802Z",
  "player_game_seasons": {
   "first_season": 2005,
   "last_season": 2025,
@@ -120,7 +120,10 @@
   "substitutions": "MEASURED",
   "lineups": "MEASURED",
   "lineup_stints": "NOT_MEASURED",
-  "rosters": "NOT_MEASURED"
+  "rosters": "MEASURED",
+  "recruits": "MEASURED",
+  "transfers": "MEASURED",
+  "venue_directory": "MEASURED"
  },
  "bdl_reconciliation": [
   {

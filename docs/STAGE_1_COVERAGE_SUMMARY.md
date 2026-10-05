@@ -1,6 +1,6 @@
 # Stage 1 Coverage Summary
 
-Rendered from `data/qa/STAGE_1_COVERAGE_SUMMARY.json`, which is derived from the authoritative `data/qa/COVERAGE_AUDIT.json` (canonical build `20261005T163639Z`). Every number is measured from physically present data. Nothing here is estimated from documentation.
+Rendered from `data/qa/STAGE_1_COVERAGE_SUMMARY.json`, which is derived from the authoritative `data/qa/COVERAGE_AUDIT.json` (canonical build `20261005T225802Z`). Every number is measured from physically present data. Nothing here is estimated from documentation.
 
 ## Season coverage by family (CBBD season = year the season ends)
 
@@ -69,7 +69,10 @@ games.csv also covers 1949–2002 with schedule and results only.
 - substitutions: **MEASURED**
 - lineups: **MEASURED**
 - lineup_stints: **NOT_MEASURED**
-- rosters: **NOT_MEASURED**
+- rosters: **MEASURED**
+- recruits: **MEASURED**
+- transfers: **MEASURED**
+- venue_directory: **MEASURED**
 
 No historical PBP, on-floor, substitution, or lineup coverage is claimed. MEASURED here means only that rows from the bounded CBBD live SMOKE SAMPLE exist (no backfill). Per-game smoke metrics are in docs/CBBD_LIVE_SMOKE_RESULTS.md and must not be generalized to whole seasons.
 

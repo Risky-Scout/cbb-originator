@@ -1,0 +1,64 @@
+{
+ "candidate_pairs": 602,
+ "by_class": {
+  "LEGITIMATE_DISTINCT_GAME": 554,
+  "TRUE_DUPLICATE": 41,
+  "POSSIBLE_DUPLICATE": 6,
+  "UNRESOLVED": 1
+ },
+ "by_season": {
+  "2005": {
+   "UNRESOLVED": 1
+  },
+  "2012": {
+   "TRUE_DUPLICATE": 8
+  },
+  "2013": {
+   "POSSIBLE_DUPLICATE": 6,
+   "TRUE_DUPLICATE": 33
+  },
+  "2014": {
+   "LEGITIMATE_DISTINCT_GAME": 1
+  },
+  "2021": {
+   "LEGITIMATE_DISTINCT_GAME": 550
+  },
+  "2022": {
+   "LEGITIMATE_DISTINCT_GAME": 3
+  }
+ },
+ "downstream_scope": {
+  "duplicate_or_possible_ids": 94,
+  "canonical_rows_on_these_ids": {
+   "fact.team_games": 94,
+   "fact.player_games": 923,
+   "fact.participation": 1261,
+   "core.game_schedule_versions": 94,
+   "fact.plays": 9082,
+   "fact.shots": 4180,
+   "fact.substitutions": 89,
+   "fact.lineup_stats": 0
+  },
+  "pairs_where_both_records_have_scores": 47,
+  "true_duplicate_pairs_both_scored": 41,
+  "team_seasons_whose_all_results_aggregates_count_both_copies": 83,
+  "affected_columns": [
+   "fact.team_season_game_derived.games_with_result",
+   "wins",
+   "losses",
+   "points_all_results",
+   "opp_points_all_results"
+  ],
+  "box_score_double_count": "none: no candidate pair has box rows on both ids"
+ },
+ "purdue_alabama_2024_25": [
+  {
+   "game": "id=671",
+   "date_et": "2024-11-15",
+   "score": "87-78"
+  }
+ ],
+ "remediation_performed": false,
+ "destructive_remediation_required": false,
+ "recommended_non_destructive_remediation": "Keep both records. Exclude the box-less copy of each TRUE_DUPLICATE pair from all-results season aggregates via an identity-exclusion view (architect approval required)."
+}

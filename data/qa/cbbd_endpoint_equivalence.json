@@ -1,0 +1,543 @@
+{
+ "pbp_date_vs_game": {
+  "2008-01-11": {
+   "games": 8,
+   "games_with_pbp_per_game": 5,
+   "games_equivalent": 8,
+   "events_per_game_endpoint": 1530,
+   "events_bulk_for_these_games": 1530,
+   "bulk_events_total_incl_adjacent_et_dates": 16446,
+   "bulk_duplicate_event_ids": 0,
+   "bytes_per_game_calls": 1205989,
+   "bytes_date_calls": 13069968,
+   "calls_per_game": 8,
+   "calls_date": 1,
+   "per_game": {
+    "103459": {
+     "per_game_events": 322,
+     "bulk_events": 322,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 322,
+     "events_identical": 322,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103460": {
+     "per_game_events": 300,
+     "bulk_events": 300,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 300,
+     "events_identical": 300,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103461": {
+     "per_game_events": 0,
+     "bulk_events": 0,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 0,
+     "events_identical": 0,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103462": {
+     "per_game_events": 0,
+     "bulk_events": 0,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 0,
+     "events_identical": 0,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103463": {
+     "per_game_events": 286,
+     "bulk_events": 286,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 286,
+     "events_identical": 286,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103464": {
+     "per_game_events": 0,
+     "bulk_events": 0,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 0,
+     "events_identical": 0,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103465": {
+     "per_game_events": 291,
+     "bulk_events": 291,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 291,
+     "events_identical": 291,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "103466": {
+     "per_game_events": 331,
+     "bulk_events": 331,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 331,
+     "events_identical": 331,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    }
+   }
+  },
+  "2016-01-15": {
+   "games": 8,
+   "games_with_pbp_per_game": 8,
+   "games_equivalent": 8,
+   "events_per_game_endpoint": 2755,
+   "events_bulk_for_these_games": 2755,
+   "bulk_events_total_incl_adjacent_et_dates": 60725,
+   "bulk_duplicate_event_ids": 1683,
+   "bytes_per_game_calls": 2167866,
+   "bytes_date_calls": 48187029,
+   "calls_per_game": 8,
+   "calls_date": 2,
+   "per_game": {
+    "57079": {
+     "per_game_events": 331,
+     "bulk_events": 331,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 331,
+     "events_identical": 331,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57080": {
+     "per_game_events": 397,
+     "bulk_events": 397,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 397,
+     "events_identical": 397,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 397,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57081": {
+     "per_game_events": 344,
+     "bulk_events": 344,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 344,
+     "events_identical": 344,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 344,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57082": {
+     "per_game_events": 312,
+     "bulk_events": 312,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 312,
+     "events_identical": 312,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 312,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57083": {
+     "per_game_events": 319,
+     "bulk_events": 319,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 319,
+     "events_identical": 319,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 319,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57084": {
+     "per_game_events": 311,
+     "bulk_events": 311,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 311,
+     "events_identical": 311,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 311,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57085": {
+     "per_game_events": 332,
+     "bulk_events": 332,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 332,
+     "events_identical": 332,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "57086": {
+     "per_game_events": 409,
+     "bulk_events": 409,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 409,
+     "events_identical": 409,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    }
+   }
+  },
+  "2025-01-17": {
+   "games": 10,
+   "games_with_pbp_per_game": 10,
+   "games_equivalent": 10,
+   "events_per_game_endpoint": 3230,
+   "events_bulk_for_these_games": 3230,
+   "bulk_events_total_incl_adjacent_et_dates": 63062,
+   "bulk_duplicate_event_ids": 957,
+   "bytes_per_game_calls": 4343008,
+   "bytes_date_calls": 86445289,
+   "calls_per_game": 10,
+   "calls_date": 2,
+   "per_game": {
+    "3458": {
+     "per_game_events": 362,
+     "bulk_events": 362,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 362,
+     "events_identical": 362,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3459": {
+     "per_game_events": 356,
+     "bulk_events": 356,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 356,
+     "events_identical": 356,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 356,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3460": {
+     "per_game_events": 296,
+     "bulk_events": 296,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 296,
+     "events_identical": 296,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 296,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3461": {
+     "per_game_events": 305,
+     "bulk_events": 305,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 305,
+     "events_identical": 305,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 305,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3462": {
+     "per_game_events": 341,
+     "bulk_events": 341,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 341,
+     "events_identical": 341,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3463": {
+     "per_game_events": 307,
+     "bulk_events": 307,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 307,
+     "events_identical": 307,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3464": {
+     "per_game_events": 359,
+     "bulk_events": 359,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 359,
+     "events_identical": 359,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3465": {
+     "per_game_events": 300,
+     "bulk_events": 300,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 300,
+     "events_identical": 300,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3466": {
+     "per_game_events": 302,
+     "bulk_events": 302,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 302,
+     "events_identical": 302,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    },
+    "3467": {
+     "per_game_events": 302,
+     "bulk_events": 302,
+     "missing_in_bulk": 0,
+     "extra_in_bulk": 0,
+     "common": 302,
+     "events_identical": 302,
+     "field_differences": {},
+     "duplicate_ids_in_bulk": 0,
+     "duplicate_ids_in_per_game": 0,
+     "equivalent": true
+    }
+   }
+  }
+ },
+ "pbp_busy_date": {
+  "et_date": "2025-02-08",
+  "et_games": 155,
+  "utc_dates": [
+   "2025-02-08",
+   "2025-02-09"
+  ],
+  "bulk_events": 57335,
+  "bulk_games": 169,
+  "bulk_games_on_et_date": 154,
+  "bulk_bytes": 78607896,
+  "payload_row_counts": {
+   "2025-02-08": 43783,
+   "2025-02-09": 13552
+  },
+  "spot_checks": {
+   "4485": {
+    "per_game_events": 292,
+    "bulk_events": 292,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 292,
+    "events_identical": 292,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "4516": {
+    "per_game_events": 338,
+    "bulk_events": 338,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 338,
+    "events_identical": 338,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "4547": {
+    "per_game_events": 279,
+    "bulk_events": 279,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 279,
+    "events_identical": 279,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "4578": {
+    "per_game_events": 332,
+    "bulk_events": 332,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 332,
+    "events_identical": 332,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "4609": {
+    "per_game_events": 305,
+    "bulk_events": 305,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 305,
+    "events_identical": 305,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 305,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   }
+  }
+ },
+ "pbp_team_vs_game": {
+  "team_season": {
+   "season": 2025,
+   "team": "Purdue"
+  },
+  "games_in_canonical": 36,
+  "games_in_team_payload": 35,
+  "events": 12052,
+  "bytes": 15798163,
+  "compared": {
+   "14": {
+    "per_game_events": 0,
+    "bulk_events": 0,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 0,
+    "events_identical": 0,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "300": {
+    "per_game_events": 296,
+    "bulk_events": 296,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 296,
+    "events_identical": 296,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   },
+   "471": {
+    "per_game_events": 330,
+    "bulk_events": 330,
+    "missing_in_bulk": 0,
+    "extra_in_bulk": 0,
+    "common": 330,
+    "events_identical": 330,
+    "field_differences": {},
+    "duplicate_ids_in_bulk": 0,
+    "duplicate_ids_in_per_game": 0,
+    "equivalent": true
+   }
+  }
+ },
+ "subs_team_vs_game": {
+  "team_season": {
+   "season": 2025,
+   "team": "Purdue"
+  },
+  "rows": 1147,
+  "games": 36,
+  "bytes": 451303,
+  "compared": {
+   "14": {
+    "game_endpoint_rows": 78,
+    "game_endpoint_rows_for_team": 28,
+    "team_endpoint_rows": 28,
+    "identical_multiset": true,
+    "team_endpoint_has_opponent_rows": false
+   },
+   "300": {
+    "game_endpoint_rows": 79,
+    "game_endpoint_rows_for_team": 33,
+    "team_endpoint_rows": 33,
+    "identical_multiset": true,
+    "team_endpoint_has_opponent_rows": false
+   },
+   "471": {
+    "game_endpoint_rows": 81,
+    "game_endpoint_rows_for_team": 41,
+    "team_endpoint_rows": 41,
+    "identical_multiset": true,
+    "team_endpoint_has_opponent_rows": false
+   }
+  }
+ },
+ "lineups_team_vs_game": {
+  "team_season_units": 98,
+  "team_payload_has_gameId": false,
+  "day_bounded_vs_game": {
+   "14": {
+    "game_units_for_team": 0,
+    "team_day_units": 0,
+    "same_units": true,
+    "same_seconds": true
+   },
+   "300": {
+    "game_units_for_team": 16,
+    "team_day_units": 0,
+    "same_units": false,
+    "same_seconds": true
+   },
+   "471": {
+    "game_units_for_team": 20,
+    "team_day_units": 0,
+    "same_units": false,
+    "same_seconds": true
+   }
+  }
+ }
+}

@@ -1,0 +1,1298 @@
+{
+ "seed": "stage2-discovery-v1",
+ "sample_manifest": "data/qa/cbbd_event_coverage_sample_manifest.json",
+ "seasons": {
+  "2005": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE",
+     "escalation_games_with_plays": 0
+    },
+    "onfloor": {
+     "tested": 0,
+     "present": 0,
+     "failed": 0,
+     "classification": "NOT_TESTED"
+    },
+    "shotinfo": {
+     "tested": 0,
+     "present": 0,
+     "failed": 0,
+     "classification": "NOT_TESTED"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 4747,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [
+    {
+     "date": "2004-12-04",
+     "et_games_that_date": 111,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    },
+    {
+     "date": "2004-12-11",
+     "et_games_that_date": 89,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    },
+    {
+     "date": "2005-01-15",
+     "et_games_that_date": 131,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    },
+    {
+     "date": "2005-02-05",
+     "et_games_that_date": 129,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    },
+    {
+     "date": "2005-02-19",
+     "et_games_that_date": 125,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    },
+    {
+     "date": "2005-03-10",
+     "et_games_that_date": 50,
+     "request": "OK",
+     "plays": 0,
+     "games_with_plays": 0
+    }
+   ],
+   "quality_in_sample": {}
+  },
+  "2006": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 5,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 5,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 5074,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2007": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 5,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 5,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 6785,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2008": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 7,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 7,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 7,
+     "present": 7,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 7093,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2009": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 9,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 9,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 9,
+     "present": 9,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 5549,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2010": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 9,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 9,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 9,
+     "present": 9,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 5771,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2011": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 7,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 7,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 7,
+     "present": 7,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 5709,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2012": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 5,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 5,
+     "present": 5,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 5705,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2013": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 8,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 8,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 8,
+     "present": 8,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 1,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 1804,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2014": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 11,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 11,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 10805,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2015": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 11396,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2016": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 11,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 11,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 11868,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2017": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 12016,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2018": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 12898,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.0
+    }
+   }
+  },
+  "2019": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 13171,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.616
+    }
+   }
+  },
+  "2020": {
+   "games_sampled": 10,
+   "empty_cells": [
+    "POST/MAJOR",
+    "POST/MID",
+    "POST/SMALL"
+   ],
+   "families": {
+    "pbp": {
+     "tested": 10,
+     "present": 10,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 10,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 10,
+     "present": 10,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 10,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 10,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 14599,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.8865
+    }
+   }
+  },
+  "2021": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 11,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 11,
+     "present": 11,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 11186,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.5191
+    }
+   }
+  },
+  "2022": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 13490,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.6432
+    }
+   }
+  },
+  "2023": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PARTIAL"
+    },
+    "onfloor": {
+     "tested": 12,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "shotinfo": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 0,
+     "failed": 0,
+     "classification": "NO_COVERAGE_OBSERVED_IN_SAMPLE"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 13717,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "valid_5v5_share": {
+     "min": 0.0,
+     "mean": 0.0
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0,
+     "mean": 0.5161
+    }
+   }
+  },
+  "2024": {
+   "games_sampled": 13,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "shotinfo": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "lineups": {
+     "tested": 13,
+     "present": 13,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 14058,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "valid_5v5_share": {
+     "min": 0.3981,
+     "mean": 0.8653
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.0495,
+     "mean": 0.6996
+    }
+   }
+  },
+  "2025": {
+   "games_sampled": 12,
+   "empty_cells": [],
+   "families": {
+    "pbp": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "onfloor": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "shotinfo": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "substitutions": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "lineups": {
+     "tested": 12,
+     "present": 12,
+     "failed": 0,
+     "classification": "MEASURED_PRESENT"
+    },
+    "rosters": {
+     "teams": 1535,
+     "players": 15210,
+     "classification": "MEASURED_PRESENT"
+    }
+   },
+   "escalation_plays_date": [],
+   "quality_in_sample": {
+    "onfloor_share": {
+     "min": 0.9982,
+     "mean": 0.9998
+    },
+    "valid_5v5_share": {
+     "min": 0.8934,
+     "mean": 0.9908
+    },
+    "shotinfo_share": {
+     "min": 1.0,
+     "mean": 1.0
+    },
+    "xy_share_fg": {
+     "min": 0.9844,
+     "mean": 0.9952
+    }
+   }
+  }
+ },
+ "warning": "Sample findings. Never a claim of full-season coverage; see cbbd_event_coverage_by_season.csv for measured full-backfill coverage."
+}
