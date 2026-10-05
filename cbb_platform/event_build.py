@@ -137,9 +137,35 @@ def build_rosters(con, root=None) -> None:
 
 # ============================================================================ plays
 def build_plays(con, root=None) -> None:
+    """Chunked by GAME (bounded memory). Pass 1 reads only (gameId, season, file) from every play payload and
+    assigns each game ONE chunk = its canonical season (else the payload's own season field, else -1). Pass 2
+    builds plays + participants + onFloor + shots one chunk at a time, reading only files that hold the
+    chunk's games and keeping only those games, so every copy of a game is deduplicated together."""
     paths = _files(con, tuple(PLAY_ENDPOINT_RANK), root)
     if not paths:
         return
+    con.execute(f"""
+    CREATE OR REPLACE TEMP TABLE play_index AS
+    SELECT DISTINCT p.gameId, p.filename, p.season FROM {_read_json(paths, "{'gameId':'BIGINT','season':'INTEGER'}")} p;
+    CREATE OR REPLACE TEMP TABLE game_chunk AS
+    -- onFloor-era seasons are wide (10 nested entries per play): split them into 4 game-hash sub-chunks
+    SELECT i.gameId, coalesce(any_value(g.season), max(i.season), -1) * 10
+           + CASE WHEN coalesce(any_value(g.season), max(i.season), -1) >= 2024 THEN i.gameId % 4 ELSE 0 END AS chunk
+    FROM play_index i LEFT JOIN core.games g ON g.canonical_game_id = cid('G','game', i.gameId) GROUP BY 1;
+    CREATE OR REPLACE TEMP TABLE play_dup_all (gameId BIGINT, id BIGINT, copies BIGINT, variants BIGINT);
+    """)
+    for (chunk,) in con.execute("SELECT DISTINCT chunk FROM game_chunk ORDER BY 1").fetchall():
+        files = [r[0] for r in con.execute("""SELECT DISTINCT i.filename FROM play_index i JOIN game_chunk c USING (gameId)
+                                              WHERE c.chunk = ? ORDER BY 1""", [chunk]).fetchall()]
+        _plays_chunk(con, files, chunk)
+        build_shots(con)
+        con.execute("INSERT INTO play_dup_all SELECT gameId, id, copies, variants FROM play_dup")
+        for t in ("pl", "of_norm", "of_class", "pp_norm", "play_lists", "play_dup", "game_sides"):
+            con.execute(f"DROP TABLE IF EXISTS {t}")
+    con.execute("DROP TABLE IF EXISTS play_index")
+
+
+def _plays_chunk(con, paths: list[str], chunk: int) -> None:
     # row_hash = content hash of every source field (the reader's filename column excluded)
     con.execute(f"""
     CREATE OR REPLACE TEMP TABLE play_copies AS
@@ -149,7 +175,8 @@ def build_plays(con, root=None) -> None:
         p.playType, p.isHomeTeam, p.teamId, p.team, p.conference, p.teamSeed, p.opponentId, p.opponent, p.opponentConference,
         p.opponentSeed, p.period, p.clock, p.secondsRemaining, p.homeScore, p.awayScore, p.homeWinProbability, p.scoringPlay,
         p.shootingPlay, p.scoreValue, p.wallclock, p.playText, p.participants, p.onFloor, p.shotInfo)) AS VARCHAR)) AS row_hash
-    FROM {_read_json(paths, PLAY_COLUMNS)} p JOIN raw_files f ON f.path = p.filename;
+    FROM {_read_json(paths, PLAY_COLUMNS)} p JOIN raw_files f ON f.path = p.filename
+    WHERE p.gameId IN (SELECT gameId FROM game_chunk WHERE chunk = {int(chunk)});
     """)
     con.execute("""
     CREATE OR REPLACE TEMP TABLE play_dup AS
@@ -225,7 +252,9 @@ def build_plays(con, root=None) -> None:
            coalesce(ls.pl_, []), coalesce(ls.fl, []),
            len(coalesce(p.participants, [])), len(coalesce(p.onFloor, [])),
            coalesce(c.quality, 'NO_ONFLOOR'), p.wallclock, p.copies,
-           gp.event_time, gp.knowable_at, p.rel,
+           -- PIT rule HR-1; for a CBBD game absent from core.games (quarantined) the provider's own tip is used
+           coalesce(gp.event_time, TRY_CAST(p.gameStartDate AS TIMESTAMPTZ)),
+           coalesce(gp.knowable_at, TRY_CAST(p.gameStartDate AS TIMESTAMPTZ) + INTERVAL 4 HOUR), p.rel,
            getvariable('ev_src'), p.rel, 'gameId=' || p.gameId || ';playId=' || p.id, getvariable('ver'), p.recv, getvariable('proc')
     FROM pl p LEFT JOIN of_class c ON c.gameId = p.gameId AND c.play_id = p.id
     LEFT JOIN play_lists ls ON ls.gameId = p.gameId AND ls.play_id = p.id
@@ -267,7 +296,8 @@ def build_shots(con) -> None:
            CASE WHEN p.shotInfo.location.x IS NULL OR p.shotInfo.location.y IS NULL THEN NULL
                 ELSE p.shotInfo.location.x BETWEEN {COURT_X[0]} AND {COURT_X[1]}
                  AND p.shotInfo.location.y BETWEEN {COURT_Y[0]} AND {COURT_Y[1]} END,
-           gp.event_time, gp.knowable_at,
+           coalesce(gp.event_time, TRY_CAST(p.gameStartDate AS TIMESTAMPTZ)),
+           coalesce(gp.knowable_at, TRY_CAST(p.gameStartDate AS TIMESTAMPTZ) + INTERVAL 4 HOUR),
            getvariable('ev_src'), p.rel, 'gameId=' || p.gameId || ';playId=' || p.id, getvariable('ver'), p.recv, getvariable('proc')
     FROM pl p LEFT JOIN of_class c ON c.gameId = p.gameId AND c.play_id = p.id
     LEFT JOIN known_athletes ks ON ks.athlete_id = p.shotInfo.shooter.id
@@ -433,7 +463,7 @@ def build_recruiting(con, root=None) -> None:
                     WHEN c.n > 1 THEN 'UNRESOLVED_AMBIGUOUS_NAME'
                     ELSE 'UNRESOLVED_NO_ATHLETE_ID' END,
                CASE WHEN k.canonical_player_id IS NOT NULL THEN 1.0 WHEN c.n = 1 THEN 0.8 ELSE 0.0 END,
-               k.canonical_player_id IS NULL AND (c.n >= 1 OR r.athleteId IS NOT NULL),
+               k.canonical_player_id IS NULL AND (coalesce(c.n, 0) >= 1 OR r.athleteId IS NOT NULL),
                getvariable('ev_src'), r.rel, 'recruitId=' || r.id, getvariable('ver'), r.recv, getvariable('proc')
         FROM rec r LEFT JOIN known_athletes k ON k.athlete_id = r.athleteId LEFT JOIN rec_cand c ON c.id = r.id;
         """)
@@ -482,7 +512,7 @@ def build_recruiting(con, root=None) -> None:
                     WHEN t.origin.id IS NULL THEN 'UNRESOLVED_NO_ORIGIN_TEAM'
                     ELSE 'UNRESOLVED_NO_ROSTER_MATCH' END,
                CASE WHEN o.n = 1 AND d.corroborated THEN 0.99 WHEN o.n = 1 THEN 0.7 ELSE 0.0 END,
-               NOT (o.n = 1 AND coalesce(d.corroborated, FALSE)) AND coalesce(o.n, 0) >= 1,
+               NOT (coalesce(o.n, 0) = 1 AND coalesce(d.corroborated, FALSE)) AND coalesce(o.n, 0) >= 1,
                getvariable('ev_src'), t.rel, 'transferId=' || t.id, getvariable('ver'), t.recv, getvariable('proc')
         FROM tr t LEFT JOIN tr_origin o ON o.id = t.id LEFT JOIN tr_dest d ON d.id = t.id;
         """)
@@ -548,7 +578,7 @@ DEFECT_SQL = [
     ("PBP", "SCORE_DECREASE", "WARN", False, """SELECT canonical_game_id, season, 'game=' || canonical_game_id,
         score_decreases || ' plays where a running score decreases' FROM qa.pbp_game_reconciliation WHERE score_decreases > 0"""),
     ("PBP", "CONFLICTING_DUPLICATE_EVENT", "ERROR", True, """SELECT cid('G','game', gameId), NULL, 'gameId=' || gameId || ';playId=' || id,
-        variants || ' different contents across ' || copies || ' payload copies' FROM play_dup WHERE variants > 1"""),
+        variants || ' different contents across ' || copies || ' payload copies' FROM play_dup_all WHERE variants > 1"""),
     ("ONFLOOR", "ONFLOOR_INVALID", "WARN", True, """SELECT canonical_game_id, season, 'gameId=' || source_game_id || ';playId=' || source_play_id,
         on_floor_quality FROM fact.plays WHERE on_floor_quality NOT IN ('VALID_5V5', 'NO_ONFLOOR')"""),
     ("SHOT", "SHOT_NO_SHOOTER", "WARN", True, """SELECT canonical_game_id, season, 'gameId=' || split_part(source_record_key, ';', 1)[8:] || ';playId=' || source_play_id,
@@ -577,7 +607,7 @@ DEFECT_SQL = [
 
 def build_defects(con) -> None:
     for fam, reason, sev, excl, sql in DEFECT_SQL:
-        if "play_dup" in sql and not _has(con, "play_dup"):
+        if "play_dup_all" in sql and not _has(con, "play_dup_all"):
             continue
         con.execute(f"""INSERT INTO qa.source_defects
                         SELECT '{fam}', '{reason}', '{sev}', x.*, {str(excl).upper()}, '{VERSION}' FROM ({sql}) x""")
@@ -605,11 +635,14 @@ def build_events(con: duckdb.DuckDBPyConnection, root: Path | None = None) -> No
             con.execute(f"SET VARIABLE {var} = ?", [default])
     if con.execute("SELECT getvariable('proc') IS NULL").fetchone()[0]:
         con.execute("SET VARIABLE proc = now()")
+    con.execute("SET preserve_insertion_order = false")
+    con.execute("SET memory_limit = '18GB'")
+    con.execute("SET threads = 6")
+    con.execute(f"SET temp_directory = '{C.DATA / 'duckdb_tmp'}'")
     _game_pit(con)
     build_rosters(con, root)
     _known_players(con)
     build_plays(con, root)
-    build_shots(con)
     build_substitutions(con, root)
     build_lineups(con, root)
     build_recruiting(con, root)

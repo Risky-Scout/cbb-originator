@@ -271,7 +271,7 @@ def compile_manifest(log_path: Path | None = None, out: Path | None = None) -> d
         else:
             b["failed"] += 1
     manifest = {"provider": PROVIDER, "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "note": "Non-secret request metadata only. No Authorization header or API key is ever recorded. "
+                "note": "Non-secret request metadata only. No request header or credential value is ever recorded. "
                         "A failed request is NOT evidence of absent source data.",
                 "summary_by_endpoint": by, "log_lines": sum(attempts.values()),
                 "requests": [{**e, "log_lines_for_request": attempts[e["request_key"]]} for e in requests_]}
