@@ -32,3 +32,15 @@ def present_values() -> list[str]:
         if raw and len(raw) >= 8:
             out += [raw, _CONTROL.sub("", raw).strip()]
     return list(dict.fromkeys(out))
+
+
+def get_strict(name: str) -> str:
+    """Like `get`, but refuses (BLOCKED_CREDENTIAL_FORMAT) a value that still carries terminal control
+    characters instead of cleaning it. Used by the Stage 2 historical backfill, which must not rely on
+    silent cleaning. The error names the variable, never its value."""
+    raw = os.environ.get(name)
+    if not raw:
+        raise RuntimeError(f"BLOCKED_CREDENTIAL: {name} is not set")
+    if _CONTROL.search(raw) or raw != raw.strip():
+        raise RuntimeError(f"BLOCKED_CREDENTIAL_FORMAT: {name} contains control characters or padding")
+    return get(name)

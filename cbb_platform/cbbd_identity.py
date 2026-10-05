@@ -242,7 +242,9 @@ def load_payloads(root=None, with_params: bool = False):
     out: dict = defaultdict(list)
     params: dict = defaultdict(list)
     for path, meta in raw_store.records("cbbd", root=root):
-        body = json.loads(path.read_bytes())
+        if "request" in meta:      # Stage 2 backfill payloads: not part of the Stage 1 smoke analysis
+            continue
+        body = json.loads(raw_store.read_payload(path))
         ep = meta["endpoint"]
         if ep in ("plays/game", "substitutions/game", "lineups/game"):
             out.setdefault(ep, {})

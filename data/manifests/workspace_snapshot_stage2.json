@@ -1,0 +1,37 @@
+{
+ "taken_at_utc": "2026-10-05T18:56:47+00:00",
+ "parent": "/Users/josephshackelford/CBB Predictive Model 2026",
+ "note": "Sibling entries of CBB_Originator_Model at Stage 2 start (Finder .DS_Store and Office lock files excluded).",
+ "entries": {
+  "CBB Starter Pack": {
+   "type": "dir",
+   "entries": 138,
+   "newest_mtime_ns": 1791052552134132751
+  },
+  "CBB Starter Pack.zip": {
+   "type": "file",
+   "size": 164104745,
+   "mtime_ns": 1791145737230898978
+  },
+  "CBB_ORIGINATOR_ARCHITECTURE_AMENDMENT_AND_STAGE1_DIRECTIVE_V2.md": {
+   "type": "file",
+   "size": 35074,
+   "mtime_ns": 1791175570944015045
+  },
+  "CBB_Originator_Model.zip": {
+   "type": "file",
+   "size": 361964,
+   "mtime_ns": 1791144688803545931
+  },
+  "The complete mission is now clear.docx": {
+   "type": "file",
+   "size": 27121,
+   "mtime_ns": 1791171445356857098
+  },
+  "cbbd-openapi.json": {
+   "type": "file",
+   "size": 169262,
+   "mtime_ns": 1791055108846198401
+  }
+ }
+}

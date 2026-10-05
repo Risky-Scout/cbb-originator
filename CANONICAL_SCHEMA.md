@@ -67,7 +67,7 @@ Populated means populated in the Stage 1 build. Row counts are in `metadata.data
 | `core.games` | contest | `canonical_game_id` | teams, conferences, venues | populated 1949-2025 |
 | `core.game_schedule_versions` | game × schedule version | (`canonical_game_id`, `schedule_version`) | games | 1 retrospective version per game |
 | `core.players` | persistent athlete | `canonical_player_id` | — | populated |
-| `core.rosters` | player × team × season | (player, team, season) | players, teams | **empty**: no roster source yet |
+| `core.rosters` | player × team × season (CBBD /teams/roster) | (player, team, season) | players, teams | Stage 2 backfill (see §12 and `data/qa/cbbd_event_coverage_by_season.csv`): 2004-05..2024-25 |
 | `core.recruits`, `core.transfers` | recruit / portal entry | source id | players, teams | **empty**: CBBD API not fetched |
 | `fact.player_games` | one source box-score line | `player_game_key` | games, teams, players (nullable) | populated 2005-2025 |
 | `fact.team_games` | team × game | (`canonical_game_id`, `canonical_team_id`) | games, teams | populated 2005-2025 |
@@ -76,9 +76,9 @@ Populated means populated in the Stage 1 build. Row counts are in `metadata.data
 | `fact.team_season_stats` / `fact.team_season_shooting` | team × season (end-of-season, **raw summary, unchanged**; secondary/QA/prior) | (team, season) | teams | populated (shooting 2014+) |
 | `fact.team_season_game_derived` | team × season, **authoritative** totals derived from `core.games` + `fact.team_games` | (team, season) | teams | populated (seasons with summaries) |
 | `fact.player_season_game_derived` | player × team × season, **authoritative** where `identity_complete` (sum of resolved `fact.player_games`) | (player, team, season) | players, teams | populated |
-| `fact.plays` / `fact.shots` | CBBD play / shot | (game, `source_play_id`) | games, teams | **SMOKE SAMPLE only**: 662 plays / 302 shots from 2 games (no backfill) |
-| `fact.substitutions` | athlete stint as CBBD supplies it (athlete-centric) | (game, athlete, `stint_number`) | games, teams, players | **SMOKE SAMPLE only**: 254 rows from 3 games |
-| `fact.lineup_stats` | CBBD five-man aggregate (not stints) | (game, team, `lineup_hash`) | games, teams | **SMOKE SAMPLE only**: 95 units from 2 games |
+| `fact.plays` / `fact.shots` (+ `fact.play_participants`, `fact.play_on_floor`) | CBBD play / shot / participant / onFloor entry | (game, `source_play_id`[, order]) | games, teams, players | Stage 2 backfill (see §12 and `data/qa/cbbd_event_coverage_by_season.csv`): 2005-06..2024-25 |
+| `fact.substitutions` (+ derived `fact.substitution_pairs`) | athlete stint as CBBD supplies it (athlete-centric) | (game, athlete, `stint_number`) | games, teams, players | Stage 2 backfill (see §12 and `data/qa/cbbd_event_coverage_by_season.csv`) |
+| `fact.lineup_stats` (+ `qa.lineup_units_quarantine`) | CBBD five-man aggregate (not stints); valid units only | (game, team, `lineup_hash`) | games, teams | Stage 2 backfill (see §12 and `data/qa/cbbd_event_coverage_by_season.csv`): 2023-24, 2024-25 |
 | `fact.lineup_stints`, `fact.possessions` | derived exact stint / possession | (game, id) | games | **empty by design**: derived in Stage 4; never manufactured |
 | `availability.events` | one player line of one received snapshot | `availability_event_id` | teams, players (nullable) | **empty**: no real capture supplied |
 | `benchmark.bdl_games`, `bdl_player_games`, `bdl_team_games` | BDL record | BDL ids | games, teams, players (nullable) | populated by the BDL smoke fetch |
@@ -186,7 +186,7 @@ Key measured facts behind these rules (see `docs/STARTER_PACK_PHYSICAL_AUDIT.md`
 | Team-season `points` vs its own shot primitives | inconsistent in 1,673 / 7,265 rows, concentrated in low-box-coverage seasons 2005–07 and 2012–13. **Root cause (measured):** the summary's `games` and `points` count every game with a final result (7,265 / 7,265 rows match `core.games`), while every shot/rebound/turnover primitive sums only the games with a team box (no primitive conflicts at all) | rows still flagged `PTS_IDENTITY`; raw summaries preserved unchanged. **Game-level tables are authoritative**: `fact.team_season_game_derived` keeps the two bases separate and wins on conflict, and every conflict is in `qa.season_summary_conflicts` (`docs/SEASON_STATISTICS_AUTHORITY.md`) |
 | BDL NULL counting stats | NULL where CBBD has 0 for players with minutes | compared as 0 in reconciliation only; benchmark rows keep NULL |
 | Pre-2003 game times | date-only strings | `tip_time_quality = DATE_ONLY`, `scheduled_tip_utc = NULL` |
-| CBBD PBP `wallclock` (live smoke) | stamped `Z` but is US/Eastern wall time: first play −4.96 h / −4.91 h before the UTC tip | stored verbatim in `fact.plays.wallclock`; **never** used as a UTC instant (POINT_IN_TIME_POLICY §1) |
+| CBBD PBP `wallclock` (live smoke) | stamped `Z` but is US/Eastern wall time: first play −4.96 h / −4.91 h before the UTC tip | stored verbatim in `fact.plays.raw_wallclock` (VARCHAR); **never** used as a UTC instant (POINT_IN_TIME_POLICY §1) |
 | CBBD feed gaps and defects (live smoke) | 2024-25 opener (game 14): substitutions present, but **no PBP and no lineups**. 2018-19 game: no PBP, substitutions or lineups. Game 5882: 30 plays with 6 Samford players on the floor, which propagates into Samford's lineups (3,390 s vs 2,400; 70 lineup points vs 45 final) | ingested as supplied, never repaired; onFloor states and lineup reconciliation are measured per game (`docs/CBBD_LIVE_SMOKE_RESULTS.md`). Stage 4 stint reconstruction must validate per game |
 
 ## 10. Source field disposition (Stage 1 gate: every field mapped or explicitly ignored)
@@ -212,3 +212,31 @@ Sportsbook data exists only in `benchmark.game_odds` and `benchmark.opening_odds
 2. no flagship view references `benchmark`;
 3. the flagship namespace contains only views;
 4. a positive control proves the detector catches every real odds column.
+
+## 12. Stage 2 event layer (CBBD PBP, onFloor, shots, substitutions, lineups, rosters, recruiting, portal, venues)
+
+Built by `cbb_platform/event_build.py` on every canonical build, from immutable raw payloads only. Endpoint choice,
+dedup keys and equivalence evidence: `docs/CBBD_BACKFILL_STRATEGY.md`. Measured coverage: `docs/CBBD_EVENT_COVERAGE_DISCOVERY.md`
+(sample), `data/qa/cbbd_event_coverage_by_season.csv` (full backfill).
+
+| table | grain | notes |
+|---|---|---|
+| `fact.plays` | one CBBD event (`source_play_id` = CBBD play id, globally unique) | `play_sequence` = source id order; `on_floor_quality` classifies the raw onFloor list; `raw_wallclock` verbatim VARCHAR, never a UTC instant; `duplicate_copies` = payload copies collapsed on (gameId, play id) |
+| `fact.play_participants` | one participant entry of a play, in source order | roles are not typed by CBBD |
+| `fact.play_on_floor` | one onFloor entry of a play, in source order | `side` HOME/AWAY from the entry's team name vs the game's home/away names; UNKNOWN otherwise. Raw entries are never added, removed or reordered |
+| `fact.shots` | one CBBD shotInfo | shooter/assister ids; `location_valid` (0..940 x 0..500 frame); `shooter_on_team_floor` only when the play's floor is VALID_5V5 |
+| `fact.substitutions` | one athlete stint as supplied | athlete-centric; `stint_number` = order of the athlete's stints |
+| `fact.substitution_pairs` | one substitution instant per team | DERIVED. A pair only for exactly one OUT and one IN at the instant; otherwise `ambiguous_flag` with the athlete lists and no pairing |
+| `fact.lineup_stats` | one valid five-man unit per team-game | exactly five distinct athlete ids; invalid units go to `qa.lineup_units_quarantine` |
+| `core.rosters` | athlete × team × season | CBBD athleteId → `cid('P','athlete', id)`; roster-only athletes are ADDED to `core.players` (existing ids untouched) |
+| `core.recruits`, `core.team_recruiting_rankings`, `core.transfers`, `core.venue_directory` | provider records | recruit identity only via the provider's athleteId; portal identity via roster corroboration (origin roster + destination roster next season); candidates carry `needs_manual_review` |
+| `qa.source_defects` | one defect | family + reason code; `excluded_from_trusted` removes the record (or game) from `flagship.*` trusted views |
+| `qa.pbp_game_reconciliation` | one game with PBP | final score, score decreases, increment mismatches, periods, terminal event, clock order; official scores are never modified |
+
+On-floor quality classes (first failing rule wins; `cbb_platform/event_metrics.py`, unit tested against the SQL):
+`NO_ONFLOOR`, `UNRESOLVED_PLAYER`, `PLAYER_ON_BOTH_TEAMS`, `DUPLICATE_PLAYER`, `OTHER_INVALID`, `MISSING_HOME`,
+`MISSING_AWAY`, `MORE_THAN_5`, `LESS_THAN_5`, `VALID_5V5`.
+
+Trusted views: `flagship.plays` (games without PBP-level defects), `flagship.on_floor_trusted` (VALID_5V5 plays of trusted
+games), `flagship.shots_trusted`, `flagship.substitutions`, `flagship.lineup_stats`, `flagship.rosters`.
+PIT: every event row carries the game's `event_time` / `historical_knowable_at` (rule HR-1); event-level times are not trusted.

@@ -244,14 +244,29 @@ def _walk_dates_and_seasons(obj, out):
             _walk_dates_and_seasons(x, out)
 
 
+BIG_PLAY_PAYLOAD = 5_000_000      # bytes; larger PBP payloads are scanned column-wise by DuckDB (same keys)
+
+
 def test_no_lockbox_payload_was_ever_stored():
+    big = []
     for provider, lockbox_season in (("cbbd", 2026), ("bdl", 2025)):   # BDL seasons are start-year
         for path, meta in raw_store.records(provider):
+            assert str(meta["params"].get("season")) != str(lockbox_season), path
+            if provider == "cbbd" and meta["endpoint"].startswith("plays/") and meta["size_bytes"] > BIG_PLAY_PAYLOAD:
+                big.append(str(path))
+                continue
             seen = {"dates": set(), "seasons": set()}
-            _walk_dates_and_seasons(json.loads(path.read_bytes()), seen)
+            _walk_dates_and_seasons(json.loads(raw_store.read_payload(path)), seen)
             assert lockbox_season not in seen["seasons"], path
             assert not [d for d in seen["dates"] if "2025-08-01" <= d <= "2026-07-31"], path
-            assert str(meta["params"].get("season")) != str(lockbox_season), path
+    if big:   # PlayInfo carries its dates/seasons only at top level: season, gameStartDate, wallclock
+        import duckdb
+        lst = "[" + ",".join(f"'{p}'" for p in big) + "]"
+        n_bad = duckdb.sql(f"""SELECT count(*) FROM read_json({lst}, format='array', maximum_object_size=200000000,
+                columns={{'season':'INTEGER','gameStartDate':'VARCHAR','wallclock':'VARCHAR'}})
+                WHERE season = 2026 OR substr(gameStartDate, 1, 10) BETWEEN '2025-08-01' AND '2026-07-31'
+                   OR substr(wallclock, 1, 10) BETWEEN '2025-08-01' AND '2026-07-31'""").fetchone()[0]
+        assert n_bad == 0
 
 
 def test_lockbox_policy_document_exists():

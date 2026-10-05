@@ -10,9 +10,15 @@ Rules (tested in tests/test_raw_store.py):
   * byte-identical content from a DIFFERENT request (e.g. two games that both return `[]`) is a
     new record, so every request keeps its own provenance;
   * different content always creates a NEW file (append-only history).
+
+Stage 2: large event payloads may be stored gzip-compressed (`compress=True`, extension .json.gz).
+`sha256` is ALWAYS the hash of the original, uncompressed response bytes; the gzip stream is
+deterministic (mtime 0) and `stored_sha256` hashes the file as written. `read_payload` returns the
+original bytes for either encoding.
 """
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import os
@@ -44,9 +50,12 @@ def _same_params(a: dict, b: dict) -> bool:
 
 
 def store(provider: str, endpoint: str, payload: bytes, *, params: dict | None = None,
-          ext: str = "json", received_at: datetime | None = None, root: Path | None = None) -> RawRecord:
+          ext: str = "json", received_at: datetime | None = None, root: Path | None = None,
+          compress: bool = False, extra_meta: dict | None = None) -> RawRecord:
     """Write `payload` immutably and return its record. Identical bytes are stored only once."""
     root = root or C.RAW
+    if compress and not ext.endswith(".gz"):
+        ext = ext + ".gz"
     params = params or {}
     sha = hashlib.sha256(payload).hexdigest()
     folder = root / provider / _slug(endpoint)
@@ -63,11 +72,18 @@ def store(provider: str, endpoint: str, payload: bytes, *, params: dict | None =
     path = folder / f"{stamp}__{sha[:16]}.{ext}"
     if path.exists():                                  # never overwrite, even by accident
         raise FileExistsError(path)
-    path.write_bytes(payload)
+    stored = gzip.compress(payload, compresslevel=6, mtime=0) if compress else payload
+    tmp = path.with_name(path.name + ".partial")
+    tmp.write_bytes(stored)
+    os.replace(tmp, path)                              # atomic: a crash never leaves a half payload
     os.chmod(path, 0o444)
     meta = {"provider": provider, "endpoint": endpoint, "params": params, "sha256": sha,
             "received_at": received.isoformat(), "size_bytes": len(payload), "file": path.name,
             "ingestion_version": C.INGESTION_VERSION}
+    if compress:
+        meta.update(encoding="gzip", stored_sha256=hashlib.sha256(stored).hexdigest(), stored_size_bytes=len(stored))
+    if extra_meta:
+        meta["request"] = extra_meta                   # non-secret request metadata only
     meta_path = Path(str(path) + ".meta.json")
     meta_path.write_text(json.dumps(meta, indent=1, sort_keys=True))
     os.chmod(meta_path, 0o444)
@@ -82,3 +98,9 @@ def records(provider: str, root: Path | None = None) -> list[tuple[Path, dict]]:
         meta = json.loads(meta_path.read_text())
         out.append((meta_path.parent / meta["file"], meta))
     return sorted(out, key=lambda pm: (pm[1]["received_at"], pm[1]["file"]))
+
+
+def read_payload(path: Path) -> bytes:
+    """Original response bytes of a stored payload (transparently gunzips .gz files)."""
+    data = Path(path).read_bytes()
+    return gzip.decompress(data) if str(path).endswith(".gz") else data

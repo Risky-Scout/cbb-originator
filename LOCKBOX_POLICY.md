@@ -77,3 +77,11 @@ The opening is a single, documented evaluation event. The guard is relaxed by an
 ## 5. Current and future seasons
 
 Information for 2026-27 (CBBD season 2027) and later may be ingested for production or shadow purposes under separate rules that are not yet written. Until those rules exist, the guard also refuses those seasons. Such ingestion never authorizes fetching 2025-26 outcomes.
+
+## Stage 2 additions
+
+- CBBD `/plays/date` takes a single `date` parameter; it is registered with the guard as a date parameter, so any date in
+  2025-08-01..2026-07-31 (or later) is refused before the credential is read. Recruiting/portal `year` is guarded like a
+  season, and the backfill requests only class years whose target season is a development season (<= 2024-25).
+- The Stage 2 client (`cbb_platform/cbbd_client.py`) calls the same guarded `source_fetch` path; `tests/test_stage2.py`
+  re-tests every Stage 2 endpoint against the lockbox and scans the request log.

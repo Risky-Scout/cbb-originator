@@ -163,33 +163,46 @@ def test_http_errors_never_carry_credentials_or_bodies(monkeypatch):
 
 # =========================================================================== live CBBD normalization (built database)
 def _raw(endpoint):
-    return [(json.loads(p.read_bytes()), m) for p, m in raw_store.records("cbbd") if m["endpoint"] == endpoint]
+    """Stage 1 SMOKE payloads only. Stage 2 backfill payloads carry a `request` metadata block and are
+    covered by tests/test_stage2.py; these Stage 1 assertions keep their original scope unchanged."""
+    return [(json.loads(raw_store.read_payload(p)), m) for p, m in raw_store.records("cbbd")
+            if m["endpoint"] == endpoint and "request" not in m]
+
+
+def _smoke_games(db):
+    gids = sorted({m["params"]["gameId"] for ep in ("plays/game", "substitutions/game", "lineups/game") for _, m in _raw(ep)})
+    return [scalar(db, "SELECT 'G-' || substr(sha256('CBBD|game|' || ?), 1, 16)", [str(g)]) for g in gids]
 
 
 def test_live_pbp_substitutions_lineups_normalized_completely(db):
-    assert scalar(db, "SELECT count(*) FROM fact.plays") == sum(len(b) for b, _ in _raw("plays/game")) > 0
-    assert scalar(db, "SELECT count(*) FROM fact.substitutions") == sum(len(b) for b, _ in _raw("substitutions/game")) > 0
-    assert scalar(db, "SELECT count(*) FROM fact.lineup_stats") == sum(len(b) for b, _ in _raw("lineups/game")) > 0
-    assert scalar(db, "SELECT count(*) FROM fact.shots") == sum(1 for b, _ in _raw("plays/game") for p in b if p.get("shotInfo"))
-    # play_sequence is a dense 1..n per game
+    g = _smoke_games(db)
+    q = lambda sql: scalar(db, sql + " WHERE canonical_game_id IN (SELECT unnest(?))", [g])
+    assert q("SELECT count(*) FROM fact.plays") == sum(len(b) for b, _ in _raw("plays/game")) > 0
+    assert q("SELECT count(*) FROM fact.substitutions") == sum(len(b) for b, _ in _raw("substitutions/game")) > 0
+    assert q("SELECT count(*) FROM fact.lineup_stats") == sum(len(b) for b, _ in _raw("lineups/game")) > 0
+    assert q("SELECT count(*) FROM fact.shots") == sum(1 for b, _ in _raw("plays/game") for p in b if p.get("shotInfo"))
+    # play_sequence is a dense 1..n per game (every game, not only the smoke sample)
     assert scalar(db, """SELECT count(*) FROM (SELECT canonical_game_id, max(play_sequence) mx, count(*) n,
                          count(DISTINCT play_sequence) d FROM fact.plays GROUP BY 1) WHERE mx <> n OR d <> n""") == 0
 
 
 def test_live_player_ids_resolve_to_persistent_players(db):
-    assert scalar(db, """SELECT count(*) FROM (SELECT unnest(on_floor_player_ids) x FROM fact.plays)
-                         WHERE x NOT IN (SELECT canonical_player_id FROM core.players)""") == 0
-    assert scalar(db, "SELECT count(*) FROM fact.substitutions WHERE canonical_player_id IS NULL") == 0
-    assert scalar(db, """SELECT count(*) FROM (SELECT unnest(player_ids) x FROM fact.lineup_stats)
-                         WHERE x NOT IN (SELECT canonical_player_id FROM core.players)""") == 0
+    g = _smoke_games(db)
+    assert scalar(db, """SELECT count(*) FROM (SELECT unnest(on_floor_player_ids) x FROM fact.plays WHERE canonical_game_id IN (SELECT unnest(?)))
+                         WHERE x NOT IN (SELECT canonical_player_id FROM core.players)""", [g]) == 0
+    assert scalar(db, "SELECT count(*) FROM fact.substitutions WHERE canonical_player_id IS NULL AND canonical_game_id IN (SELECT unnest(?))", [g]) == 0
+    assert scalar(db, """SELECT count(*) FROM (SELECT unnest(player_ids) x FROM fact.lineup_stats WHERE canonical_game_id IN (SELECT unnest(?)))
+                         WHERE x NOT IN (SELECT canonical_player_id FROM core.players)""", [g]) == 0
 
 
 def test_live_plays_join_canonical_games_and_scores(db):
-    assert scalar(db, "SELECT count(*) FROM fact.plays p WHERE NOT EXISTS (SELECT 1 FROM core.games g "
-                      "WHERE g.canonical_game_id = p.canonical_game_id AND g.season <= 2025)") == 0
+    g = _smoke_games(db)
+    assert scalar(db, "SELECT count(*) FROM fact.plays p WHERE canonical_game_id IN (SELECT unnest(?)) AND NOT EXISTS (SELECT 1 FROM core.games g "
+                      "WHERE g.canonical_game_id = p.canonical_game_id AND g.season <= 2025)", [g]) == 0
     assert scalar(db, """SELECT count(*) FROM (SELECT canonical_game_id, arg_max(home_score, play_sequence) h,
-                         arg_max(away_score, play_sequence) a FROM fact.plays GROUP BY 1) p JOIN core.games g USING (canonical_game_id)
-                         WHERE p.h <> g.home_points OR p.a <> g.away_points""") == 0
+                         arg_max(away_score, play_sequence) a FROM fact.plays WHERE canonical_game_id IN (SELECT unnest(?)) GROUP BY 1) p
+                         JOIN core.games g USING (canonical_game_id)
+                         WHERE p.h <> g.home_points OR p.a <> g.away_points""", [g]) == 0
 
 
 # =========================================================================== live athleteId classification

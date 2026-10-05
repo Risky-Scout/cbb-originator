@@ -39,6 +39,10 @@ ENDPOINTS = {
     "conferences": "/conferences", "teams": "/teams", "venues": "/venues",
     "recruiting/players": "/recruiting/players", "recruiting/portal": "/recruiting/portal",
     "stats/player/season": "/stats/player/season", "stats/team/season": "/stats/team/season",
+    # Stage 2 bulk / reference endpoints (cbb_platform/cbbd_client.py, docs/CBBD_BACKFILL_STRATEGY.md)
+    "plays/date": "/plays/date", "plays/team": "/plays/team",
+    "substitutions/team": "/substitutions/team", "lineups/team": "/lineups/team",
+    "recruiting/teams": "/recruiting/teams",
 }
 
 
@@ -110,15 +114,12 @@ def _team(con, tid) -> str | None:
 
 
 def normalize_all(con: duckdb.DuckDBPyConnection) -> None:
-    for path, meta in raw_store.records(PROVIDER):
-        payload = json.loads(path.read_bytes())
-        lineage = ("CBBD_API", str(path.relative_to(path.parents[2])), meta["received_at"])
-        if meta["endpoint"] == "plays/game":
-            _plays(con, payload, lineage)
-        elif meta["endpoint"] == "substitutions/game":
-            _substitutions(con, payload, lineage)
-        elif meta["endpoint"] == "lineups/game":
-            _lineups(con, payload, lineage, meta["params"]["gameId"])
+    """Stage 2: every CBBD raw payload family is normalized set-wise by cbb_platform/event_build.py
+    (plays + participants + onFloor + shots, substitutions + derived pairs, lineups, rosters, recruiting,
+    portal, venues, reconciliation, defect quarantine). The per-row Stage 1 helpers below are kept for
+    reference only and are no longer called."""
+    from cbb_platform import event_build
+    event_build.build_events(con, C.RAW)
 
 
 def _lin(lineage, key):

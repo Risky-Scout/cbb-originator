@@ -126,36 +126,79 @@ CREATE TABLE IF NOT EXISTS core.players (
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL
 );
 
--- Explicit roster universe (CBBD /teams/roster). EMPTY in Stage 1: the Starter Pack has no
--- roster table, and season-stat membership is NOT a roster (it omits non-playing players).
+-- Explicit roster universe (CBBD /teams/roster; Stage 2). One row per athlete per team-season as supplied.
+-- canonical_player_id = cid('P','athlete', athleteId): the CBBD athleteId is the verified persistent id
+-- (docs/CBBD_PLAYER_IDENTITY_VERIFICATION.md). A roster row needs no season statistics.
 CREATE TABLE IF NOT EXISTS core.rosters (
     canonical_player_id VARCHAR NOT NULL,
     canonical_team_id   VARCHAR NOT NULL,
     season              INTEGER NOT NULL,
+    source_athlete_id   VARCHAR NOT NULL,
+    source_player_source_id VARCHAR,          -- provider's upstream id (sourceId)
+    source_team_id VARCHAR, source_team_source_id VARCHAR,
+    player_name VARCHAR, first_name VARCHAR, last_name VARCHAR,
     jersey              VARCHAR,
     position            VARCHAR,
     height_inches       DOUBLE,
     weight_lbs          DOUBLE,
-    roster_status       VARCHAR,
-    valid_from          TIMESTAMPTZ,
+    date_of_birth_raw   VARCHAR,
+    hometown_city VARCHAR, hometown_state VARCHAR, hometown_country VARCHAR,
+    hometown_latitude DOUBLE, hometown_longitude DOUBLE, hometown_county_fips VARCHAR,
+    start_season INTEGER, end_season INTEGER,
+    roster_status       VARCHAR,              -- not supplied by CBBD (NULL)
+    valid_from          TIMESTAMPTZ,          -- not supplied (NULL): rosters are season snapshots
     valid_to            TIMESTAMPTZ,
+    anchored_by_season_files BOOLEAN NOT NULL, -- athlete already anchored by Starter Pack season files
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (canonical_player_id, canonical_team_id, season)
 );
 
-CREATE TABLE IF NOT EXISTS core.recruits (            -- CBBD /recruiting/players; empty in Stage 1
-    source_recruit_id VARCHAR PRIMARY KEY, canonical_player_id VARCHAR, recruit_year INTEGER,
-    name VARCHAR, position VARCHAR, committed_team_id VARCHAR, stars INTEGER, rating DOUBLE, ranking INTEGER,
-    height_inches DOUBLE, weight_lbs DOUBLE,
+-- CBBD /recruiting/players. canonical_player_id is set ONLY from the provider's own athleteId when it
+-- resolves; a name/team match is kept as a CANDIDATE with needs_manual_review (never silently assigned).
+CREATE TABLE IF NOT EXISTS core.recruits (
+    source_recruit_id VARCHAR PRIMARY KEY, source_recruit_source_id VARCHAR, recruit_year INTEGER,
+    name VARCHAR, position VARCHAR, school_name VARCHAR, school_id VARCHAR,
+    hometown_city VARCHAR, hometown_state VARCHAR, hometown_country VARCHAR,
+    committed_source_team_id VARCHAR, committed_team_name VARCHAR, committed_conference VARCHAR, committed_team_id VARCHAR,
+    stars INTEGER, rating DOUBLE, ranking INTEGER, height_inches DOUBLE, weight_lbs DOUBLE,
+    source_athlete_id VARCHAR, canonical_player_id VARCHAR, candidate_canonical_player_id VARCHAR,
+    identity_method VARCHAR NOT NULL, identity_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS core.transfers (           -- CBBD /recruiting/portal; empty in Stage 1
-    source_transfer_id VARCHAR PRIMARY KEY, canonical_player_id VARCHAR, transfer_year INTEGER,
-    first_name VARCHAR, last_name VARCHAR, position VARCHAR, origin_team_id VARCHAR, destination_team_id VARCHAR,
+CREATE TABLE IF NOT EXISTS core.team_recruiting_rankings (     -- CBBD /recruiting/teams
+    source_team_id VARCHAR NOT NULL, canonical_team_id VARCHAR, team_name VARCHAR, conference VARCHAR,
+    recruit_year INTEGER NOT NULL, ranking INTEGER, rating DOUBLE,
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (source_team_id, recruit_year)
+);
+
+-- CBBD /recruiting/portal. The portal record carries NO athlete id, so identity is a roster join:
+--   RESOLVED_ROSTER_CORROBORATED  exactly one same-name athlete on the origin roster (season = year) AND the
+--                                 same athlete id on the destination roster the next season (confidence 0.99)
+--   CANDIDATE_ORIGIN_ROSTER_NAME  exactly one same-name athlete on the origin roster only (review required)
+--   UNRESOLVED_*                  no match / ambiguous / no roster
+CREATE TABLE IF NOT EXISTS core.transfers (
+    source_transfer_id VARCHAR PRIMARY KEY, source_transfer_source_id VARCHAR, transfer_year INTEGER,
+    first_name VARCHAR, last_name VARCHAR, position VARCHAR,
+    origin_source_team_id VARCHAR, origin_team_name VARCHAR, origin_conference VARCHAR, origin_team_id VARCHAR,
+    destination_source_team_id VARCHAR, destination_team_name VARCHAR, destination_conference VARCHAR, destination_team_id VARCHAR,
     eligibility VARCHAR, years_remaining INTEGER, stars INTEGER, rating DOUBLE,
+    canonical_player_id VARCHAR, candidate_canonical_player_id VARCHAR,
+    identity_method VARCHAR NOT NULL, identity_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL
+);
+
+-- CBBD /venues directory. Same id space as games.csv venue_id (join measured). Coordinates, timezone and
+-- elevation are NOT supplied by CBBD and remain external enrichments.
+CREATE TABLE IF NOT EXISTS core.venue_directory (
+    canonical_venue_id VARCHAR PRIMARY KEY, source_venue_id VARCHAR NOT NULL, source_venue_source_id VARCHAR,
+    name VARCHAR, city VARCHAR, state VARCHAR, country VARCHAR,
+    in_starter_pack_venues BOOLEAN NOT NULL,
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL
 );
@@ -333,49 +376,142 @@ CREATE TABLE IF NOT EXISTS fact.player_season_game_derived (
     PRIMARY KEY (canonical_player_id, canonical_team_id, season)
 );
 
--- CBBD PBP family (populated by the CBBD adapter; EMPTY until CBBD_API_KEY is supplied).
+-- ============================================================================ CBBD event layer (Stage 2)
+-- Built by cbb_platform/event_build.py from immutable raw payloads (/plays/date, /plays/game,
+-- /substitutions/team|game, /lineups/game). One event = one source play id; payload copies of the same
+-- event are deduplicated on (gameId, play id) and counted in duplicate_copies. Raw source truth is never
+-- repaired here: quality classes and qa.source_defects describe it; trusted views exclude defects.
+-- Player ids: canonical id when the CBBD athleteId is a known persistent player (season files or roster),
+-- otherwise the explicit provider token 'CBBD_ATHLETE:<id>' (lists) / NULL (scalar columns).
 CREATE TABLE IF NOT EXISTS fact.plays (
     canonical_game_id VARCHAR NOT NULL, source_play_id VARCHAR NOT NULL, play_sequence INTEGER,
+    source_game_id VARCHAR, source_play_source_id VARCHAR, season INTEGER,
     period INTEGER, clock VARCHAR, seconds_remaining INTEGER, play_type VARCHAR,
-    canonical_team_id VARCHAR, home_score INTEGER, away_score INTEGER,
+    canonical_team_id VARCHAR, source_team_id VARCHAR, is_home_team BOOLEAN,
+    home_score INTEGER, away_score INTEGER,
     scoring_play BOOLEAN, shooting_play BOOLEAN, score_value INTEGER, play_text VARCHAR,
-    participant_player_ids VARCHAR[],      -- canonical ids where resolvable (roles are NOT typed by CBBD)
-    on_floor_player_ids VARCHAR[],         -- exactly as supplied; never manufactured
-    wallclock_utc TIMESTAMPTZ,             -- event_time when supplied
+    home_win_probability DOUBLE,
+    participant_player_ids VARCHAR[],      -- canonical ids / provider tokens (roles are NOT typed by CBBD)
+    on_floor_player_ids VARCHAR[],         -- exactly as supplied, in source order; never manufactured
+    n_participants INTEGER, n_on_floor INTEGER,
+    on_floor_quality VARCHAR NOT NULL,     -- NO_ONFLOOR | VALID_5V5 | MISSING_HOME | ... (event_metrics.py)
+    raw_wallclock VARCHAR,                 -- verbatim source string. NOT a UTC instant (CBBD_WALLCLOCK_SEMANTICS.md)
+    duplicate_copies INTEGER NOT NULL,     -- raw payload copies of this event that were deduplicated
+    event_time TIMESTAMPTZ,                -- scheduled tip of the game (event-level times are not trusted)
+    historical_knowable_at TIMESTAMPTZ,    -- PIT rule HR-1 of the game
+    source_payload_reference VARCHAR,      -- = source_file (raw payload path)
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (canonical_game_id, source_play_id)
+);
+
+CREATE TABLE IF NOT EXISTS fact.play_participants (
+    canonical_game_id VARCHAR NOT NULL, source_play_id VARCHAR NOT NULL, participant_order INTEGER NOT NULL,
+    source_athlete_id VARCHAR, canonical_player_id VARCHAR, source_name VARCHAR,
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (canonical_game_id, source_play_id, participant_order)
+);
+
+-- Raw onFloor, normalized: one row per listed athlete, in source order. side from the athlete's team label.
+CREATE TABLE IF NOT EXISTS fact.play_on_floor (
+    canonical_game_id VARCHAR NOT NULL, source_play_id VARCHAR NOT NULL, floor_order INTEGER NOT NULL,
+    source_athlete_id VARCHAR, canonical_player_id VARCHAR, source_name VARCHAR,
+    source_team_name VARCHAR, canonical_team_id VARCHAR, side VARCHAR NOT NULL,   -- HOME | AWAY | UNKNOWN
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (canonical_game_id, source_play_id, floor_order)
 );
 
 CREATE TABLE IF NOT EXISTS fact.shots (
     canonical_game_id VARCHAR NOT NULL, source_play_id VARCHAR NOT NULL,
     shooter_player_id VARCHAR, made BOOLEAN, shot_range VARCHAR, assisted BOOLEAN,
     assister_player_id VARCHAR, location_x DOUBLE, location_y DOUBLE,
+    season INTEGER, period INTEGER, clock VARCHAR, seconds_remaining INTEGER,
+    canonical_team_id VARCHAR, play_type VARCHAR, score_value INTEGER,
+    shooter_source_athlete_id VARCHAR, assister_source_athlete_id VARCHAR,
+    on_floor_quality VARCHAR NOT NULL,     -- onFloor context reference: fact.plays/fact.play_on_floor same key
+    shooter_on_team_floor BOOLEAN,         -- NULL unless the play's floor state is VALID_5V5
+    location_valid BOOLEAN,                -- NULL when x/y absent; FALSE outside the measured court frame
+    event_time TIMESTAMPTZ, historical_knowable_at TIMESTAMPTZ,
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (canonical_game_id, source_play_id)
 );
 
--- CBBD substitutions are ATHLETE-CENTRIC (one row = one athlete's sub-in and sub-out states).
--- Paired player_in/player_out transactions are a later derived artifact (Stage 4).
+-- CBBD substitutions are ATHLETE-CENTRIC (one row = one athlete's sub-in and sub-out states). Stored as supplied.
 CREATE TABLE IF NOT EXISTS fact.substitutions (
     canonical_game_id VARCHAR NOT NULL, canonical_team_id VARCHAR NOT NULL, canonical_player_id VARCHAR,
     source_athlete_id VARCHAR NOT NULL, stint_number INTEGER NOT NULL,
     sub_in_period INTEGER, sub_in_seconds_remaining INTEGER, sub_in_team_points INTEGER, sub_in_opponent_points INTEGER,
     sub_out_period INTEGER, sub_out_seconds_remaining INTEGER, sub_out_team_points INTEGER, sub_out_opponent_points INTEGER,
+    source_game_id VARCHAR, source_team_id VARCHAR, source_athlete_name VARCHAR, position VARCHAR, season INTEGER,
+    timing_complete BOOLEAN, duplicate_copies INTEGER,
+    event_time TIMESTAMPTZ, historical_knowable_at TIMESTAMPTZ,
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (canonical_game_id, source_athlete_id, stint_number)
 );
 
--- CBBD /lineups aggregates (five-man unit totals; NOT stints).
+-- DERIVED paired substitutions. At one (game, team, period, clock) instant, athletes whose stint ends are
+-- OUT and athletes whose stint starts are IN (period starts/ends excluded). A pair is emitted only when the
+-- instant has exactly one OUT and one IN; larger groups are kept whole with ambiguous_flag = TRUE.
+CREATE TABLE IF NOT EXISTS fact.substitution_pairs (
+    canonical_game_id VARCHAR NOT NULL, canonical_team_id VARCHAR NOT NULL,
+    period INTEGER NOT NULL, seconds_remaining INTEGER NOT NULL,
+    out_source_athlete_ids VARCHAR[], in_source_athlete_ids VARCHAR[],
+    player_out_id VARCHAR, player_in_id VARCHAR,      -- canonical; only when unambiguous
+    pairing_method VARCHAR NOT NULL,                  -- UNIQUE_ONE_FOR_ONE | AMBIGUOUS_MULTI_SWAP | UNBALANCED
+    pairing_confidence DOUBLE NOT NULL, ambiguous_flag BOOLEAN NOT NULL,
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (canonical_game_id, canonical_team_id, period, seconds_remaining)
+);
+
+-- CBBD /lineups/game aggregates (five-man unit totals; NOT chronological stints). VALID units only:
+-- exactly five distinct athlete ids. Invalid units live in qa.lineup_units_quarantine.
 CREATE TABLE IF NOT EXISTS fact.lineup_stats (
     canonical_game_id VARCHAR NOT NULL, canonical_team_id VARCHAR NOT NULL, lineup_hash VARCHAR NOT NULL,
     player_ids VARCHAR[], total_seconds DOUBLE, team_possessions INTEGER, team_points INTEGER,
     opponent_possessions INTEGER, opponent_points INTEGER,
+    source_athlete_ids VARCHAR[], pace DOUBLE, offense_rating DOUBLE, defense_rating DOUBLE, net_rating DOUBLE,
+    team_stats JSON, opponent_stats JSON, season INTEGER,
+    event_time TIMESTAMPTZ, historical_knowable_at TIMESTAMPTZ,
     source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
     ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (canonical_game_id, canonical_team_id, lineup_hash)
+);
+
+CREATE TABLE IF NOT EXISTS qa.lineup_units_quarantine (
+    canonical_game_id VARCHAR NOT NULL, canonical_team_id VARCHAR, lineup_hash VARCHAR,
+    source_athlete_ids VARCHAR[], total_seconds DOUBLE, team_possessions INTEGER, team_points INTEGER,
+    opponent_possessions INTEGER, opponent_points INTEGER, raw_unit JSON, defect_reason VARCHAR NOT NULL,
+    source_system VARCHAR NOT NULL, source_file VARCHAR, source_record_key VARCHAR NOT NULL,
+    ingestion_version VARCHAR NOT NULL, received_at TIMESTAMPTZ NOT NULL, processed_at TIMESTAMPTZ NOT NULL
+);
+
+-- Deterministic source-defect quarantine (Stage 2P). Raw evidence is preserved; a defect row excludes the
+-- record from every trusted/reconstructed view unless it is explicitly repaired later.
+CREATE TABLE IF NOT EXISTS qa.source_defects (
+    family VARCHAR NOT NULL,            -- PBP | ONFLOOR | SHOT | SUBSTITUTION | LINEUP | ROSTER | IDENTITY
+    reason_code VARCHAR NOT NULL,
+    severity VARCHAR NOT NULL,          -- INFO | WARN | ERROR
+    canonical_game_id VARCHAR, season INTEGER,
+    record_key VARCHAR NOT NULL,        -- e.g. gameId=..;playId=..
+    detail VARCHAR,
+    excluded_from_trusted BOOLEAN NOT NULL,
+    created_by_version VARCHAR NOT NULL
+);
+
+-- One row per game with CBBD PBP (Stage 2N). Official scores and events are never modified.
+CREATE TABLE IF NOT EXISTS qa.pbp_game_reconciliation (
+    canonical_game_id VARCHAR PRIMARY KEY, season INTEGER, plays INTEGER, periods_present INTEGER,
+    periods_expected INTEGER, period_clock_complete_share DOUBLE,
+    pbp_final_home INTEGER, pbp_final_away INTEGER, official_home INTEGER, official_away INTEGER,
+    final_score_match BOOLEAN, score_decreases INTEGER, increment_mismatches INTEGER,
+    scoring_points_home INTEGER, scoring_points_away INTEGER, scoring_sum_matches_official BOOLEAN,
+    missing_terminal BOOLEAN, clock_order_violations INTEGER,
+    coverage_quality VARCHAR NOT NULL  -- RECONCILED | FINAL_SCORE_MISMATCH | INCOMPLETE_PERIODS | NO_OFFICIAL_SCORE | ...
 );
 
 -- Derived exact stints (Stage 4). Empty by design in Stage 1; never manufactured from minutes.
@@ -424,7 +560,9 @@ CREATE TABLE IF NOT EXISTS availability.events (
     identity_status         VARCHAR NOT NULL,
     parser_version          VARCHAR NOT NULL,
     is_synthetic_fixture    BOOLEAN NOT NULL DEFAULT FALSE,
-    source_file VARCHAR NOT NULL
+    source_file VARCHAR NOT NULL,
+    team_match_confidence   DOUBLE NOT NULL DEFAULT 0.0,   -- 1.0 exact school/display name; 0.0 unresolved
+    player_match_confidence DOUBLE NOT NULL DEFAULT 0.0    -- see adapters/availability.py PLAYER_CONFIDENCE
 );
 
 -- ----------------------------------------------------------------------------- benchmark
@@ -564,3 +702,21 @@ CREATE OR REPLACE VIEW flagship.team_season_shooting   AS SELECT * FROM fact.tea
 -- Synthetic test fixtures can never reach the flagship path.
 CREATE OR REPLACE VIEW flagship.availability_events    AS
     SELECT * FROM availability.events WHERE NOT is_synthetic_fixture;
+
+-- ----------------------------------------------------------------------------- Stage 2 trusted event views
+-- Defective records (qa.source_defects with excluded_from_trusted) never reach these views.
+CREATE OR REPLACE VIEW flagship.plays AS
+    SELECT * FROM fact.plays p WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
+        AND d.family = 'PBP' AND d.canonical_game_id = p.canonical_game_id);
+CREATE OR REPLACE VIEW flagship.on_floor_trusted AS
+    SELECT f.* FROM fact.play_on_floor f JOIN flagship.plays p USING (canonical_game_id, source_play_id)
+    WHERE p.on_floor_quality = 'VALID_5V5';
+CREATE OR REPLACE VIEW flagship.shots_trusted AS
+    SELECT s.* FROM fact.shots s JOIN flagship.plays p USING (canonical_game_id, source_play_id)
+    WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted AND d.family = 'SHOT'
+        AND d.record_key = 'gameId=' || p.source_game_id || ';playId=' || s.source_play_id);
+CREATE OR REPLACE VIEW flagship.substitutions AS
+    SELECT s.* FROM fact.substitutions s WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
+        AND d.family = 'SUBSTITUTION' AND d.canonical_game_id = s.canonical_game_id);
+CREATE OR REPLACE VIEW flagship.lineup_stats AS SELECT * FROM fact.lineup_stats;
+CREATE OR REPLACE VIEW flagship.rosters AS SELECT * FROM core.rosters;

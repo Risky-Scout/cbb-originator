@@ -129,14 +129,20 @@ def build_audit(con: duckdb.DuckDBPyConnection) -> dict:
             "bdl_games": {"fetched": bdl_games, "mapped_to_canonical": bdl_mapped},
         },
         "event_level_families": {
-            "pbp": not_measured("fact.plays", "bounded CBBD live SMOKE SAMPLE only (cbb_platform/cbbd_smoke.py); see docs/CBBD_LIVE_SMOKE_RESULTS.md"),
-            "on_floor": not_measured("fact.plays", "on-floor arrives inside CBBD PBP; bounded CBBD live SMOKE SAMPLE only (cbb_platform/cbbd_smoke.py); see docs/CBBD_LIVE_SMOKE_RESULTS.md"),
-            "shots": not_measured("fact.shots", "shotInfo arrives inside CBBD PBP; bounded CBBD live SMOKE SAMPLE only (cbb_platform/cbbd_smoke.py); see docs/CBBD_LIVE_SMOKE_RESULTS.md"),
-            "substitutions": not_measured("fact.substitutions", "bounded CBBD live SMOKE SAMPLE only (cbb_platform/cbbd_smoke.py); see docs/CBBD_LIVE_SMOKE_RESULTS.md"),
-            "lineups": not_measured("fact.lineup_stats", "bounded CBBD live SMOKE SAMPLE only (cbb_platform/cbbd_smoke.py); see docs/CBBD_LIVE_SMOKE_RESULTS.md"),
+            "pbp": not_measured("fact.plays", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below"),
+            "on_floor": not_measured("fact.play_on_floor", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below; onFloor arrives inside CBBD PBP"),
+            "shots": not_measured("fact.shots", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below; shotInfo arrives inside CBBD PBP"),
+            "substitutions": not_measured("fact.substitutions", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below"),
+            "lineups": not_measured("fact.lineup_stats", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below"),
             "lineup_stints": not_measured("fact.lineup_stints", "derived in Stage 4; never manufactured"),
-            "rosters": not_measured("core.rosters", "Starter Pack has no roster table; two CBBD /teams/roster smoke payloads are kept raw only (core.rosters not populated in Stage 1)"),
+            "rosters": not_measured("core.rosters", "Stage 2 measured backfill; per-season detail in data/qa/cbbd_event_coverage_by_season.csv and stage2_event_coverage below; CBBD /teams/roster, one call per season"),
+            "recruits": not_measured("core.recruits", "CBBD /recruiting/players, class years 2004-2024"),
+            "transfers": not_measured("core.transfers", "CBBD /recruiting/portal, years 2004-2024"),
+            "venue_directory": not_measured("core.venue_directory", "CBBD /venues"),
         },
+        # Authoritative Stage 2 measurement (cbb_platform/event_audit.py), folded in verbatim.
+        "stage2_event_coverage": (json.loads((C.QA / "cbbd_event_coverage_by_season.json").read_text())
+                                  if (C.QA / "cbbd_event_coverage_by_season.json").exists() else "NOT_RUN"),
         "bdl_reconciliation": {
             "by_entity": _rows(con, """SELECT entity_type, count(*) comparisons, count(*) FILTER (WHERE values_match) matches
                                        FROM qa.reconciliation GROUP BY 1 ORDER BY 1"""),

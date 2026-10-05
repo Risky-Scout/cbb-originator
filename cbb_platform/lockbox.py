@@ -86,7 +86,8 @@ def _overlaps_lockbox(start, end) -> bool:
 # For each provider: which request parameters carry seasons, single dates, date ranges and game ids,
 # and which endpoints are pure reference data. Every other endpoint is GUARDED.
 PROVIDERS = {
-    "cbbd": {"season": ("season", "year"), "date": (), "range": (("startDateRange", "endDateRange"),),
+    # `date` = /plays/date (Stage 2). `year` = recruiting/portal class year (guarded like a season).
+    "cbbd": {"season": ("season", "year"), "date": ("date",), "range": (("startDateRange", "endDateRange"),),
              "game": ("gameId",), "reference": {"conferences", "teams", "venues"}},
     "bdl": {"season": ("season", "seasons", "seasons[]"), "date": ("date", "dates", "dates[]"),
             "range": (("start_date", "end_date"),), "game": ("game_id", "game_ids", "game_ids[]"),

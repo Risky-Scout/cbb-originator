@@ -193,12 +193,17 @@ def normalize_all(con: duckdb.DuckDBPyConnection, root=None) -> None:
                 team_id = _resolve_team(con, r.get("team"))
                 player_id, ident = _resolve_player(con, team_id, r.get("player"))
                 con.execute("""INSERT INTO availability.events VALUES
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,getvariable('proc'),?,?,?,?,?,?,?,?)""", [
+                    (?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,getvariable('proc'),?,?,?,?,?,?,?,?,?,?)""", [
                     event_id, provider, meta["sha256"], n, r.get("team"), r.get("player") or "",
                     r.get("position"), r.get("class"), r.get("injury"), r.get("status"), status_norm,
                     r.get("note"), r.get("updated"), meta["received_at"], flag, ctype, team_id, player_id,
                     ident, PARSER_VERSION, bool(meta["params"].get("synthetic_fixture")),
-                    str(path.relative_to(path.parents[2]))])
+                    str(path.relative_to(path.parents[2])),
+                    1.0 if team_id else 0.0, PLAYER_CONFIDENCE.get(ident, 0.0)])
+
+
+# Player match confidence by identity status. A prior-season team + exact-name match is never fully trusted.
+PLAYER_CONFIDENCE = {"RESOLVED_NEEDS_REVIEW_PRIOR_SEASON_TEAM_EXACT_NAME": 0.6}
 
 
 def _resolve_team(con, name: str | None) -> str | None:

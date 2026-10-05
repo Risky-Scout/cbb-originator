@@ -697,6 +697,7 @@ def build(db_path=None, parquet_root=None) -> dict:
 
     con = duckdb.connect(tmp)
     con.execute("SET TimeZone = 'UTC'")
+    con.execute("SET enable_progress_bar = false")
     con.execute(C.SCHEMA_SQL.read_text())
     con.execute(ID_MACROS)
     # Shared lineage values, read inside SQL via getvariable(...).
