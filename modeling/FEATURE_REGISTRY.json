@@ -1,6 +1,6 @@
 {
  "version": "stage3-features-1.0.0",
- "upstream_dataset": "cbb_data_v2.2+95dd9c2fa5b7",
+ "upstream_dataset": "cbb_data_v2.3+7bef640cccde",
  "cutoff_rule": "prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT tip); start of the US/Eastern game date (00:00 ET) when the tip is not exact. A source game may contribute only when its historical_knowable_at (canonical PIT rule HR-1: tip + 4 h, or 06:00 ET next day for inexact tips) <= prediction_cutoff_utc. Since the target game is knowable only at tip + 4 h it can never contribute to its own features. CBBD wallclock is UNTRUSTED_MIXED and is never read.",
  "missing_codes": [
   "NO_PRIOR_HISTORY",
@@ -67,8 +67,8 @@
    "status_column": "pps_status"
   },
   "player_profile": {
-   "description": "Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
-   "source": "src.rosters, src.recruits, src.transfers",
+   "description": "Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
+   "source": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status"
   },
   "player_role": {
@@ -223,7 +223,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -242,7 +242,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -261,7 +261,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -280,7 +280,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -299,7 +299,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -318,7 +318,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -337,7 +337,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -356,7 +356,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -375,7 +375,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -394,7 +394,7 @@
    "null_meaning": "NULL only with a non-OK tr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -420,7 +420,7 @@
    "null_meaning": "NULL only with a non-OK rest_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -439,7 +439,7 @@
    "null_meaning": "NULL only with a non-OK rest_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -458,7 +458,7 @@
    "null_meaning": "NULL only with a non-OK rest_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -484,7 +484,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -503,7 +503,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -522,7 +522,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -541,7 +541,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -560,7 +560,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -579,7 +579,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -598,7 +598,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -617,7 +617,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -636,7 +636,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -655,7 +655,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -674,7 +674,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -693,7 +693,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -712,7 +712,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -731,7 +731,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -750,7 +750,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -769,7 +769,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -788,7 +788,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -807,7 +807,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -826,7 +826,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -845,7 +845,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -864,7 +864,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -883,7 +883,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -902,7 +902,7 @@
    "null_meaning": "NULL only with a non-OK te_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -928,7 +928,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -947,7 +947,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -966,7 +966,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -985,7 +985,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1004,7 +1004,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1023,7 +1023,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1042,7 +1042,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1061,7 +1061,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1080,7 +1080,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1099,7 +1099,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1118,7 +1118,7 @@
    "null_meaning": "NULL only with a non-OK tf_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1144,7 +1144,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1163,7 +1163,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1182,7 +1182,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1201,7 +1201,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1220,7 +1220,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1239,7 +1239,7 @@
    "null_meaning": "NULL only with a non-OK ts_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1265,7 +1265,7 @@
    "null_meaning": "NULL only with a non-OK sos_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1284,7 +1284,7 @@
    "null_meaning": "NULL only with a non-OK sos_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1310,7 +1310,7 @@
    "null_meaning": "NULL only with a non-OK tp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1329,7 +1329,7 @@
    "null_meaning": "NULL only with a non-OK tp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1348,7 +1348,7 @@
    "null_meaning": "NULL only with a non-OK tp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1367,7 +1367,7 @@
    "null_meaning": "NULL only with a non-OK tp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1386,7 +1386,7 @@
    "null_meaning": "NULL only with a non-OK tp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1510,7 +1510,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1529,7 +1529,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1548,7 +1548,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1567,7 +1567,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1586,7 +1586,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1605,7 +1605,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1624,7 +1624,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1643,7 +1643,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1662,7 +1662,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1681,7 +1681,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1700,7 +1700,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1719,7 +1719,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1738,7 +1738,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1757,7 +1757,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1776,7 +1776,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1795,7 +1795,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1814,7 +1814,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1833,7 +1833,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1852,7 +1852,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1871,7 +1871,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1890,7 +1890,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1909,7 +1909,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1928,7 +1928,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1947,7 +1947,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1966,7 +1966,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -1985,7 +1985,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2004,7 +2004,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2023,7 +2023,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2042,7 +2042,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2061,7 +2061,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2080,7 +2080,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2099,7 +2099,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2118,7 +2118,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2137,7 +2137,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2156,7 +2156,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2175,7 +2175,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2194,7 +2194,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2213,7 +2213,7 @@
    "null_meaning": "NULL only with a non-OK pstd_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2239,7 +2239,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2258,7 +2258,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2277,7 +2277,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2296,7 +2296,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2315,7 +2315,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2334,7 +2334,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2353,7 +2353,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2372,7 +2372,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2391,7 +2391,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2410,7 +2410,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2429,7 +2429,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2448,7 +2448,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2467,7 +2467,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2486,7 +2486,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2505,7 +2505,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2524,7 +2524,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2543,7 +2543,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2562,7 +2562,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2581,7 +2581,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2600,7 +2600,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2619,7 +2619,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2638,7 +2638,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2657,7 +2657,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2676,7 +2676,7 @@
    "null_meaning": "NULL only with a non-OK pr_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2702,7 +2702,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2721,7 +2721,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2740,7 +2740,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2759,7 +2759,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2778,7 +2778,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2797,7 +2797,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2816,7 +2816,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2835,7 +2835,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2854,7 +2854,7 @@
    "null_meaning": "NULL only with a non-OK pp_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2880,7 +2880,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2899,7 +2899,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2918,7 +2918,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2937,7 +2937,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2956,7 +2956,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2975,7 +2975,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -2994,7 +2994,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3013,7 +3013,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3032,7 +3032,7 @@
    "null_meaning": "NULL only with a non-OK pps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3043,60 +3043,60 @@
    "approved_for_modeling": false
   },
   {
-   "feature_name": "prof_position",
+   "feature_name": "prof_last_box_position",
    "table": "feat.player_features",
    "kind": "FEATURE",
    "data_type": "VARCHAR",
    "feature_family": "player_profile",
-   "description": "position (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "last box position (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "category",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "MEDIUM: CBBD roster snapshot is season-level (retrospective membership/attributes)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
-   "feature_name": "prof_height_in",
+   "feature_name": "prof_recruit_height_in",
    "table": "feat.player_features",
    "kind": "FEATURE",
    "data_type": "DOUBLE",
    "feature_family": "player_profile",
-   "description": "height in (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit height in (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "inches",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "MEDIUM: CBBD roster snapshot is season-level (retrospective membership/attributes)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
-   "feature_name": "prof_weight_lb",
+   "feature_name": "prof_recruit_weight_lb",
    "table": "feat.player_features",
    "kind": "FEATURE",
    "data_type": "DOUBLE",
    "feature_family": "player_profile",
-   "description": "weight lb (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit weight lb (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "pounds",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "MEDIUM: CBBD roster snapshot is season-level (retrospective membership/attributes)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3105,17 +3105,17 @@
    "kind": "FEATURE",
    "data_type": "INTEGER",
    "feature_family": "player_profile",
-   "description": "recruit stars (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit stars (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "provider scale",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3124,17 +3124,17 @@
    "kind": "FEATURE",
    "data_type": "DOUBLE",
    "feature_family": "player_profile",
-   "description": "recruit rating (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit rating (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "provider scale",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3143,17 +3143,17 @@
    "kind": "FEATURE",
    "data_type": "INTEGER",
    "feature_family": "player_profile",
-   "description": "recruit ranking (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit ranking (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "provider scale",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3162,17 +3162,17 @@
    "kind": "FEATURE",
    "data_type": "INTEGER",
    "feature_family": "player_profile",
-   "description": "recruit year (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "recruit year (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "year",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3181,17 +3181,17 @@
    "kind": "FEATURE",
    "data_type": "BOOLEAN",
    "feature_family": "player_profile",
-   "description": "portal transfer in (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "portal transfer in (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "boolean",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3200,17 +3200,17 @@
    "kind": "FEATURE",
    "data_type": "INTEGER",
    "feature_family": "player_profile",
-   "description": "portal stars (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "portal stars (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "provider scale",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3219,17 +3219,17 @@
    "kind": "FEATURE",
    "data_type": "VARCHAR",
    "feature_family": "player_profile",
-   "description": "portal origin team id (season to date); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "portal origin team id (season to date); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "category",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "season to date",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3238,17 +3238,17 @@
    "kind": "FEATURE",
    "data_type": "BOOLEAN",
    "feature_family": "player_profile",
-   "description": "has prior season in window (cumulative since 2023-24); family player_profile: Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
+   "description": "has prior season in window (cumulative since 2023-24); family player_profile: Cold-start inputs known pregame: last box position, recruiting class and measurements, portal transfer, history flags (no end-of-season roster attribute).",
    "unit": "boolean",
    "grain": "player-game example",
-   "source_tables": "src.rosters, src.recruits, src.transfers",
+   "source_tables": "src.player_games, src.recruits, src.transfers",
    "status_column": "prof_status",
    "historical_window": "cumulative since 2023-24",
    "minimum_observations": 3,
    "null_meaning": "NULL only with a non-OK prof_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3274,7 +3274,7 @@
    "null_meaning": "NULL only with a non-OK ret_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3293,7 +3293,7 @@
    "null_meaning": "NULL only with a non-OK ret_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3312,7 +3312,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3331,7 +3331,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3350,7 +3350,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3369,7 +3369,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3388,7 +3388,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3414,7 +3414,7 @@
    "null_meaning": "NULL only with a non-OK ret_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3440,7 +3440,7 @@
    "null_meaning": "NULL only with a non-OK role_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3508,7 +3508,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3527,7 +3527,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3546,7 +3546,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3565,7 +3565,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3584,7 +3584,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3603,7 +3603,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3622,7 +3622,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3641,7 +3641,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3660,7 +3660,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3679,7 +3679,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3698,7 +3698,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3717,7 +3717,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3736,7 +3736,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3755,7 +3755,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3774,7 +3774,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3793,7 +3793,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3812,7 +3812,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3831,7 +3831,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3850,7 +3850,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3869,7 +3869,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3888,7 +3888,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3907,7 +3907,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3926,7 +3926,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3945,7 +3945,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3964,7 +3964,7 @@
    "null_meaning": "NULL only with a non-OK ev_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -3990,7 +3990,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4009,7 +4009,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4028,7 +4028,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4047,7 +4047,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4066,7 +4066,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4085,7 +4085,7 @@
    "null_meaning": "NULL only with a non-OK loc_team_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4153,7 +4153,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4172,7 +4172,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4191,7 +4191,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4210,7 +4210,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4229,7 +4229,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4248,7 +4248,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4267,7 +4267,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4286,7 +4286,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4305,7 +4305,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4324,7 +4324,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4343,7 +4343,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4362,7 +4362,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4381,7 +4381,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4400,7 +4400,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4419,7 +4419,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4438,7 +4438,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4457,7 +4457,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4476,7 +4476,7 @@
    "null_meaning": "NULL only with a non-OK ps_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4502,7 +4502,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4521,7 +4521,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4540,7 +4540,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4559,7 +4559,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4578,7 +4578,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4597,7 +4597,7 @@
    "null_meaning": "NULL only with a non-OK loc_player_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4665,7 +4665,7 @@
    "null_meaning": "NULL only with a non-OK lu_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4684,7 +4684,7 @@
    "null_meaning": "NULL only with a non-OK lu_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4703,7 +4703,7 @@
    "null_meaning": "NULL only with a non-OK lu_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4722,7 +4722,7 @@
    "null_meaning": "NULL only with a non-OK lu_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4741,7 +4741,7 @@
    "null_meaning": "NULL only with a non-OK lu_status (NO_PRIOR_HISTORY / SOURCE_NOT_AVAILABLE / INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL",
    "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT ti...)",
    "version": "stage3-features-1.0.0",
-   "leakage_risk": "LOW: pregame state only (PIT ASOF)",
+   "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
    "approved_for_modeling": true
   },
   {
@@ -4749,6 +4749,54 @@
    "table": "feat.player_lineup_features",
    "kind": "STATUS",
    "data_type": "VARCHAR",
+   "approved_for_modeling": false
+  },
+  {
+   "feature_name": "research_roster_position",
+   "table": "feat.player_profile_research",
+   "kind": "RESEARCH_NON_PIT",
+   "data_type": "VARCHAR",
+   "feature_family": "research_roster_snapshot",
+   "description": "end-of-season CBBD roster position (NOT point-in-time)",
+   "unit": "category",
+   "source_tables": "src.rosters (end-of-season snapshot)",
+   "leakage_risk": "HIGH: end-of-season roster snapshot; membership/attributes not knowable at historical cutoffs",
+   "approved_for_modeling": false
+  },
+  {
+   "feature_name": "research_roster_height_in",
+   "table": "feat.player_profile_research",
+   "kind": "RESEARCH_NON_PIT",
+   "data_type": "DOUBLE",
+   "feature_family": "research_roster_snapshot",
+   "description": "end-of-season CBBD roster height in (NOT point-in-time)",
+   "unit": "inches",
+   "source_tables": "src.rosters (end-of-season snapshot)",
+   "leakage_risk": "HIGH: end-of-season roster snapshot; membership/attributes not knowable at historical cutoffs",
+   "approved_for_modeling": false
+  },
+  {
+   "feature_name": "research_roster_weight_lb",
+   "table": "feat.player_profile_research",
+   "kind": "RESEARCH_NON_PIT",
+   "data_type": "DOUBLE",
+   "feature_family": "research_roster_snapshot",
+   "description": "end-of-season CBBD roster weight lb (NOT point-in-time)",
+   "unit": "pounds",
+   "source_tables": "src.rosters (end-of-season snapshot)",
+   "leakage_risk": "HIGH: end-of-season roster snapshot; membership/attributes not knowable at historical cutoffs",
+   "approved_for_modeling": false
+  },
+  {
+   "feature_name": "research_roster_knowledge_class",
+   "table": "feat.player_profile_research",
+   "kind": "RESEARCH_NON_PIT",
+   "data_type": "VARCHAR",
+   "feature_family": "research_roster_snapshot",
+   "description": "end-of-season CBBD roster knowledge class (NOT point-in-time)",
+   "unit": "count",
+   "source_tables": "src.rosters (end-of-season snapshot)",
+   "leakage_risk": "HIGH: end-of-season roster snapshot; membership/attributes not knowable at historical cutoffs",
    "approved_for_modeling": false
   }
  ]

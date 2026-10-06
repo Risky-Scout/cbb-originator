@@ -236,9 +236,14 @@ def test_athlete_id_maps_to_one_canonical_id_everywhere(db):
                     ("fact.substitutions", "source_athlete_id", "canonical_player_id"),
                     ("fact.shots", "shooter_source_athlete_id", "shooter_player_id"),
                     ("core.rosters", "source_athlete_id", "canonical_player_id")):
+        # Stage 3.1: the ONLY permitted deviation from cid(athleteId) is an adjudicated SPLIT target
+        splits = "SELECT to_canonical_player_id FROM metadata.player_identity_resolution WHERE rule_type = 'SPLIT'"
+        split_ids = "SELECT provider_athlete_id FROM metadata.player_identity_resolution WHERE rule_type = 'SPLIT'"
         assert scalar(db, f"""SELECT count(*) FROM {t} WHERE {c} IS NOT NULL
-                              AND {c} <> 'P-' || substr(sha256('CBBD|athlete|' || {a}), 1, 16)""") == 0, t
-        assert scalar(db, f"SELECT count(*) FROM (SELECT {a} FROM {t} WHERE {c} IS NOT NULL GROUP BY 1 HAVING count(DISTINCT {c}) > 1)") == 0, t
+                              AND {c} <> 'P-' || substr(sha256('CBBD|athlete|' || {a}), 1, 16)
+                              AND NOT ({a} IN ({split_ids}) AND {c} IN ({splits}))""") == 0, t
+        assert scalar(db, f"""SELECT count(*) FROM (SELECT {a} FROM {t} WHERE {c} IS NOT NULL AND {a} NOT IN ({split_ids})
+                              GROUP BY 1 HAVING count(DISTINCT {c}) > 1)""") == 0, t
 
 
 def test_existing_canonical_player_ids_were_not_altered(db):
@@ -310,9 +315,12 @@ def test_trusted_shots_have_their_shooter_on_the_floor(db):
 
 
 def test_assisted_shots_resolve_the_assister_where_supplied(db):
+    # Stage 3.1: rows governed by an adjudicated QUARANTINE rule are deliberately unresolved
     assert scalar(db, """SELECT count(*) FROM fact.shots WHERE assister_source_athlete_id IS NOT NULL
                          AND assister_player_id IS NULL AND assister_source_athlete_id IN
-                         (SELECT provider_player_key FROM metadata.player_id_map WHERE provider = 'CBBD')""") == 0
+                         (SELECT provider_player_key FROM metadata.player_id_map WHERE provider = 'CBBD')
+                         AND assister_source_athlete_id NOT IN (SELECT provider_athlete_id FROM metadata.player_identity_resolution
+                                                                WHERE rule_type = 'QUARANTINE')""") == 0
     assert scalar(db, """SELECT count(*) FROM fact.shots WHERE assisted AND assister_source_athlete_id IS NULL
                          AND NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.reason_code = 'ASSISTED_WITHOUT_ASSISTER'
                          AND d.record_key LIKE '%;playId=' || source_play_id)""") == 0

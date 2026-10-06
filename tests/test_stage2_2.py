@@ -175,10 +175,13 @@ def test_no_predictive_model_trained():
 
 
 def test_dataset_version_v2_2_with_parent(db):
-    man = json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())
-    assert man["dataset_version"].startswith("cbb_data_v2.2+")
+    # the Stage 2.2 dataset is preserved verbatim as an ancestor of the current version
+    man = json.loads((C.MANIFESTS / "DATASET_MANIFEST_cbb_data_v2.2+95dd9c2fa5b7.json").read_text())
+    assert man["dataset_version"] == "cbb_data_v2.2+95dd9c2fa5b7"
     assert man["parent_dataset_version"] == "cbb_data_v2.1+292c2d2b1739"
     assert (C.MANIFESTS / "DATASET_MANIFEST_cbb_data_v2.1+292c2d2b1739.json").exists()
+    assert "cbb_data_v2.2+95dd9c2fa5b7" in json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())["lineage"]
+    man = json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())
     gs = man["game_status"]
     assert gs["played_games"] == scalar(db, "SELECT count(*) FROM flagship.played_games")
     assert man["modeling_game_relation"] == "flagship.played_games"

@@ -62,12 +62,12 @@
   },
   "fact.participation": {
    "v2_0_rows": 3189460,
-   "v2_1_rows": 3189460,
+   "v2_1_rows": 3189462,
    "rows_on_alias_or_corrupt_records": 0,
-   "rows_resolving_to_trusted_games": 3189460,
+   "rows_resolving_to_trusted_games": 3189462,
    "rows_without_canonical_game": 0,
    "trusted_view": "flagship.participation",
-   "trusted_view_rows": 3189460
+   "trusted_view_rows": 3189462
   },
   "fact.plays": {
    "v2_0_rows": 29021691,

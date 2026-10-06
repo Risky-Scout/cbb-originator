@@ -51,6 +51,30 @@ def run(features_db, labels_db) -> dict:
         for sc in cols:
             fam_cov[sc] = {r["season"]: r for r in rows(f"""SELECT season, count(*) AS n, avg(({sc} = 'OK')::INT) AS ok_rate,
                 {', '.join(f"avg(({sc} = '{c}')::INT) AS {c.lower()}" for c in spec.MISSING_CODES)} FROM {t} GROUP BY 1""")}
+    # Stage 3.1 player-pool misses (after remediation) + status of the 20 pre-remediation misses
+    import csv as _csv
+    miss_rows = rows("SELECT * EXCLUDE (prediction_cutoff_utc, scheduled_tip_utc) FROM lb.lab.player_pool_misses ORDER BY ALL")
+    with (C.QA / "player_pool_misses_after.csv").open("w", newline="") as fh:
+        w = _csv.DictWriter(fh, fieldnames=list(miss_rows[0]) if miss_rows else ["season"])
+        w.writeheader()
+        w.writerows(miss_rows)
+    miss_by = {}
+    for m in miss_rows:
+        miss_by.setdefault(m["season"], {}).setdefault(m["miss_class"], 0)
+        miss_by[m["season"]][m["miss_class"]] += 1
+    pre = C.QA / "player_pool_misses.csv"
+    if pre.exists():
+        old20 = list(_csv.DictReader(pre.open()))
+        # resolve by (game source id, player): canonical player may have changed (identity repair) -> match by team/game/player id
+        for r in old20:
+            r["in_pool_after_stage3_1"] = bool(con.execute("""SELECT count(*) FROM ex.player_game_examples x
+                JOIN lb.lab.player_game_labels l USING (player_game_example_id)
+                WHERE l.box_row_present AND x.canonical_player_id = ? AND x.canonical_game_id = 'G-' || substr(sha256('CBBD|game|' || ?), 1, 16)""",
+                [r["canonical_player_id"], r["game"]]).fetchone()[0])
+        with pre.open("w", newline="") as fh:
+            w = _csv.DictWriter(fh, fieldnames=list(old20[0]))
+            w.writeheader()
+            w.writerows(old20)
     per_season = []
     for b in base:
         s = b["season"]
@@ -72,6 +96,9 @@ def run(features_db, labels_db) -> dict:
         "player_game_examples": sum(r["eligible_player_games"] for r in per_season),
         "label_rows": sum(r.get("label_rows", 0) for r in per_season),
         "label_rows_with_box": sum(allbox.get(r["season"], {}).get("n", 0) for r in per_season),
+        "player_pool_misses_after": len(miss_rows),
+        "player_pool_misses_by_class": {k: sum(1 for m in miss_rows if m["miss_class"] == k) for k in sorted({m["miss_class"] for m in miss_rows})},
+        "player_pool_misses_by_season": {str(k): v for k, v in sorted(miss_by.items())},
     }
     result = {"version": spec.STAGE3_VERSION, "upstream_dataset": spec.UPSTREAM_DATASET, "summary": summary,
               "by_season": per_season, "family_missingness": {sc: {str(k): v for k, v in d.items()} for sc, d in fam_cov.items()}}

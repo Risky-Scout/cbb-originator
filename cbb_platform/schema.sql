@@ -658,6 +658,15 @@ CREATE TABLE IF NOT EXISTS metadata.game_status_resolution (
     resolution_method VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
 );
 
+-- Stage 3.1: adjudicated player-identity repairs (cbb_platform/player_identity.py). One row per rule x table, with the
+-- number of derived canonical rows rewritten. Raw source rows are never modified.
+CREATE TABLE IF NOT EXISTS metadata.player_identity_resolution (
+    rule_id VARCHAR NOT NULL, rule_type VARCHAR NOT NULL,      -- SPLIT | QUARANTINE | TEAM_REATTRIBUTION
+    classification VARCHAR NOT NULL, provider_athlete_id VARCHAR,
+    from_canonical_player_id VARCHAR, to_canonical_player_id VARCHAR, scope VARCHAR NOT NULL, table_name VARCHAR NOT NULL,
+    rows_affected BIGINT NOT NULL, evidence VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS metadata.conference_id_map (
     provider VARCHAR NOT NULL, provider_conference_key VARCHAR NOT NULL, canonical_conference_id VARCHAR,
     match_method VARCHAR NOT NULL, match_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,

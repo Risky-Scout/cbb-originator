@@ -23,7 +23,7 @@ def build(con) -> None:
     con.execute(f"""
     CREATE OR REPLACE TEMP TABLE cand AS
     SELECT canonical_game_id, canonical_team_id, canonical_player_id, season FROM fx.ex.player_game_examples;
-    CREATE OR REPLACE TEMP TABLE part AS {PART.classify_sql('cand')};
+    CREATE OR REPLACE TEMP TABLE part AS {PART.classify_sql('cand', use_season_roster_snapshot=True)};
     CREATE OR REPLACE TABLE lab.player_game_labels AS
     SELECT x.player_game_example_id, x.game_example_id, x.canonical_game_id, x.canonical_player_id, x.canonical_team_id,
            x.season, pa.participation_status, pa.participation_evidence, pa.box_row AS box_row_present,
@@ -62,6 +62,36 @@ def build(con) -> None:
           WHERE x.canonical_game_id = b.canonical_game_id AND x.canonical_team_id = b.canonical_team_id
             AND x.canonical_player_id = b.canonical_player_id)
     ORDER BY 1, 2, 3;
+    -- Stage 3.1: every resolved target box row outside the PIT pool, classified from evidence (never used to repair the pool)
+    CREATE OR REPLACE TABLE lab.player_pool_misses AS
+    WITH m AS (SELECT o.*, ge.prediction_cutoff_utc, ge.scheduled_tip_utc FROM lab.target_box_rows_outside_universe o
+               JOIN fx.ex.game_examples ge USING (canonical_game_id)),
+    f AS (SELECT m.*,
+            EXISTS (SELECT 1 FROM src.identity_conflicts c WHERE c.canonical_player_id = m.canonical_player_id AND c.season = m.season) AS identity_conflict,
+            (SELECT count(*) FROM src.player_games x WHERE x.canonical_player_id = m.canonical_player_id AND x.season = m.season
+                AND x.canonical_team_id = m.canonical_team_id) AS rows_for_team,
+            (SELECT max(cnt) FROM (SELECT count(*) AS cnt FROM src.player_games x WHERE x.canonical_player_id = m.canonical_player_id
+                AND x.season = m.season AND x.canonical_team_id <> m.canonical_team_id GROUP BY x.canonical_team_id)) AS max_rows_other_team,
+            EXISTS (SELECT 1 FROM fx.ex.team_membership_evidence e WHERE e.canonical_player_id = m.canonical_player_id
+                AND e.canonical_team_id = m.canonical_team_id AND e.season = m.season AND e.available_from <= m.prediction_cutoff_utc) AS legal_evidence,
+            NOT EXISTS (SELECT 1 FROM src.player_games x JOIN src.played_games g USING (canonical_game_id)
+                WHERE x.canonical_player_id = m.canonical_player_id AND g.scheduled_tip_utc < m.scheduled_tip_utc) AS first_observed_appearance,
+            NOT EXISTS (SELECT 1 FROM src.player_games x JOIN src.played_games g USING (canonical_game_id)
+                WHERE x.canonical_player_id = m.canonical_player_id AND x.canonical_team_id = m.canonical_team_id
+                  AND g.scheduled_tip_utc < m.scheduled_tip_utc) AS first_team_appearance,
+            EXISTS (SELECT 1 FROM src.recruits r WHERE r.canonical_player_id = m.canonical_player_id) AS any_recruit_record,
+            EXISTS (SELECT 1 FROM src.transfers t WHERE coalesce(t.canonical_player_id, t.candidate_canonical_player_id) = m.canonical_player_id) AS any_transfer_record
+          FROM m)
+    SELECT f.*,
+           CASE WHEN f.legal_evidence THEN 'PIPELINE_BUG'
+                WHEN f.identity_conflict OR (f.rows_for_team = 1 AND coalesce(f.max_rows_other_team, 0) >= 3) THEN 'IDENTITY_ERROR'
+                WHEN f.first_observed_appearance THEN 'HISTORICALLY_UNOBSERVABLE'
+                ELSE 'VALID_COLD_START_MISS' END AS miss_class,
+           CASE WHEN f.legal_evidence THEN 'legal evidence existed but the pool missed it'
+                WHEN f.identity_conflict OR (f.rows_for_team = 1 AND coalesce(f.max_rows_other_team, 0) >= 3) THEN 'player identity/team attribution conflict'
+                WHEN f.first_observed_appearance THEN 'first observed college appearance with no legal preseason evidence for this team'
+                ELSE 'known player (earlier appearances elsewhere / earlier seasons) without legal evidence of membership of this team at the cutoff' END AS miss_reason
+    FROM f ORDER BY season, canonical_game_id, canonical_team_id, canonical_player_id;
     CREATE OR REPLACE TABLE lab.target_box_rows_unresolved AS
     SELECT b.canonical_game_id, b.canonical_team_id, b.season, b.identity_status, b.minutes
     FROM src.player_games b JOIN fx.ex.game_examples ge USING (canonical_game_id)

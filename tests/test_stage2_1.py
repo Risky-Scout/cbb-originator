@@ -135,6 +135,12 @@ def test_trusted_games_contain_no_duplicate_contest(db):
                                          ("fact.participation", "flagship.participation")])
 def test_box_facts_are_not_lost(db, raw, trusted):
     before = json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"][raw]
+    if raw == "fact.participation":
+        # Stage 3.1 identity repairs move box rows between team-seasons, which changes the SEASON-MEMBERSHIP candidate
+        # rows; the BOX-derived participation rows (the box facts) must equal the unchanged player-game count
+        assert scalar(db, "SELECT count(*) FROM fact.participation WHERE candidate_source = 'BOX_SCORE_ROW'") == \
+            json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.player_games"]
+        before = scalar(db, f"SELECT count(*) FROM {raw}")
     assert scalar(db, f"SELECT count(*) FROM {raw}") == before               # raw facts untouched
     assert scalar(db, f"SELECT count(*) FROM {trusted}") == before            # every one reaches a trusted game
     assert scalar(db, f"SELECT count(*) FROM {trusted} WHERE canonical_game_id NOT IN (SELECT canonical_game_id FROM flagship.games)") == 0

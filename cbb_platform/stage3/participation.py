@@ -26,9 +26,12 @@ def sub_feed_sql() -> str:
     WHERE s.timing_complete GROUP BY 1, 2"""
 
 
-def classify_sql(candidates: str) -> str:
+def classify_sql(candidates: str, use_season_roster_snapshot: bool = False) -> str:
     """`candidates` = relation(canonical_game_id, canonical_team_id, canonical_player_id, season). Returns rows with
-    participation_status, participation_evidence and the box row fields needed downstream."""
+    participation_status, participation_evidence and the box row fields needed downstream.
+
+    NOT_ON_ROSTER needs the END-OF-SEASON roster snapshot, which is not point-in-time knowledge: it is applied only for
+    LABELS (use_season_roster_snapshot=True). Feature history (prior games) never consults it (Stage 3.1)."""
     return f"""
     WITH c AS (SELECT DISTINCT canonical_game_id, canonical_team_id, canonical_player_id, season FROM {candidates}),
     box AS (SELECT canonical_game_id, canonical_team_id, canonical_player_id, minutes, starter,
@@ -42,14 +45,15 @@ def classify_sql(candidates: str) -> str:
            CASE WHEN b.positive THEN 'PLAYED'
                 WHEN st.canonical_player_id IS NOT NULL THEN 'PLAYED'
                 WHEN f.feed_complete AND c.season >= 2024 THEN 'DNP_CONFIRMED'
-                WHEN b.canonical_player_id IS NULL AND r.canonical_player_id IS NULL AND EXISTS (
+                WHEN {str(use_season_roster_snapshot).upper()} AND b.canonical_player_id IS NULL AND r.canonical_player_id IS NULL AND EXISTS (
                      SELECT 1 FROM ros o WHERE o.canonical_player_id = c.canonical_player_id AND o.season = c.season
                        AND o.canonical_team_id <> c.canonical_team_id) THEN 'NOT_ON_ROSTER'
                 ELSE 'UNKNOWN_PARTICIPATION' END AS participation_status,
            CASE WHEN b.positive THEN 'BOX_ROW_POSITIVE'
                 WHEN st.canonical_player_id IS NOT NULL THEN 'SUBSTITUTION_STINT'
                 WHEN f.feed_complete AND c.season >= 2024 THEN 'COMPLETE_SUBSTITUTION_FEED_NO_STINT'
-                WHEN b.canonical_player_id IS NULL AND r.canonical_player_id IS NULL THEN 'NO_BOX_ROW_NOT_ON_TEAM_ROSTER'
+                WHEN {str(use_season_roster_snapshot).upper()} AND b.canonical_player_id IS NULL AND r.canonical_player_id IS NULL
+                     THEN 'NO_BOX_ROW_NOT_ON_TEAM_ROSTER'
                 WHEN b.canonical_player_id IS NOT NULL THEN 'BOX_ROW_ZERO_MINUTES_NO_STATS_AMBIGUOUS'
                 ELSE 'NO_BOX_ROW' END AS participation_evidence
     FROM c

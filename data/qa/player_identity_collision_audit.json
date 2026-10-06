@@ -1,0 +1,1582 @@
+{
+ "window": "2013-14 .. 2024-25",
+ "candidates": 180,
+ "by_class": {
+  "CONFIRMED_SINGLE_PLAYER": 173,
+  "CONFIRMED_COLLISION": 6,
+  "REVIEW_REQUIRED": 1
+ },
+ "by_check": {
+  "SEASON_FILE_MULTI_TEAM": 166,
+  "API_OVERLAP": 5,
+  "ROSTER_MULTI_TEAM": 6,
+  "SPLIT_ENTITY_LINK": 1,
+  "ROSTER_ATTRIBUTE_CONTAMINATION": 1,
+  "BOX_TEAM_MISATTRIBUTION": 1
+ },
+ "aj_lawson": {
+  "classification": "SOURCE_ID_COLLISION (TWO_DISTINCT_PLAYERS_MERGED by CBBD athleteId 31449)",
+  "after_repair": [
+   {
+    "canonical_player_id": "P-61f0fe8bc63621e8",
+    "box_rows": 122,
+    "first_season": 2017,
+    "last_season": 2021,
+    "teams": [
+     "McNeese",
+     "North Texas"
+    ]
+   },
+   {
+    "canonical_player_id": "P-7d2ea3fe693fd65b",
+    "box_rows": 81,
+    "first_season": 2019,
+    "last_season": 2021,
+    "teams": [
+     "South Carolina"
+    ]
+   }
+  ]
+ },
+ "repair_rules": [
+  {
+   "rule_id": "BOX_TEAM_REATTRIBUTION_GAME_209587",
+   "rule_type": "TEAM_REATTRIBUTION",
+   "table": "fact.player_games",
+   "rows": 10
+  },
+  {
+   "rule_id": "QUARANTINE_CBBD_ATHLETE_19801",
+   "rule_type": "QUARANTINE",
+   "table": "fact.play_on_floor.canonical_player_id",
+   "rows": 0
+  },
+  {
+   "rule_id": "QUARANTINE_CBBD_ATHLETE_19801",
+   "rule_type": "QUARANTINE",
+   "table": "fact.play_participants.canonical_player_id",
+   "rows": 2795
+  },
+  {
+   "rule_id": "QUARANTINE_CBBD_ATHLETE_19801",
+   "rule_type": "QUARANTINE",
+   "table": "fact.shots.assister_player_id",
+   "rows": 153
+  },
+  {
+   "rule_id": "QUARANTINE_CBBD_ATHLETE_19801",
+   "rule_type": "QUARANTINE",
+   "table": "fact.shots.shooter_player_id",
+   "rows": 1199
+  },
+  {
+   "rule_id": "QUARANTINE_CBBD_ATHLETE_19801",
+   "rule_type": "QUARANTINE",
+   "table": "fact.substitutions.canonical_player_id",
+   "rows": 0
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "core.rosters",
+   "rows": 1
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.play_on_floor.canonical_player_id",
+   "rows": 0
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.play_participants.canonical_player_id",
+   "rows": 3182
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.player_games",
+   "rows": 122
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.player_season_shooting",
+   "rows": 4
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.player_season_stats",
+   "rows": 4
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.shots.assister_player_id",
+   "rows": 354
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.shots.shooter_player_id",
+   "rows": 1544
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "fact.substitutions.canonical_player_id",
+   "rows": 0
+  },
+  {
+   "rule_id": "SPLIT_CBBD_ATHLETE_31449",
+   "rule_type": "SPLIT",
+   "table": "metadata.player_id_map",
+   "rows": 4
+  }
+ ],
+ "remaining_unrepaired_confirmed": 0,
+ "candidates_list": [
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52269",
+   "season": 2014,
+   "detail": "['J-Mychal Reese'] on ['Houston', 'Texas A&M']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 16493",
+   "season": 2020,
+   "detail": "['Antonio Thomas'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 21233",
+   "season": 2020,
+   "detail": "['Shaun Williams'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 28308",
+   "season": 2020,
+   "detail": "['David Sloan'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31475",
+   "season": 2020,
+   "detail": "['Cartier Diarra'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35462",
+   "season": 2020,
+   "detail": "['Nate Kennell'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35993",
+   "season": 2020,
+   "detail": "['Xavier Sneed'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 21449",
+   "season": 2020,
+   "detail": "[\"Ja'Shon Henry\"] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35461",
+   "season": 2020,
+   "detail": "['Koch Bar'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 16406",
+   "season": 2020,
+   "detail": "['DaJuan Gordon'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 21450",
+   "season": 2020,
+   "detail": "['Ville Tahvanainen'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 26836",
+   "season": 2020,
+   "detail": "['Antonio Gordon'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 27975",
+   "season": 2020,
+   "detail": "['Mike McGuirl'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31643",
+   "season": 2020,
+   "detail": "['Elijah Childs'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35463",
+   "season": 2020,
+   "detail": "['Darrell Brown'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35994",
+   "season": 2020,
+   "detail": "['Makol Mawien'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 21237",
+   "season": 2020,
+   "detail": "['Stephan Gabriel'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 25974",
+   "season": 2020,
+   "detail": "['Levi Stockard III'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 27530",
+   "season": 2020,
+   "detail": "['Danya Kingsby'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 27587",
+   "season": 2020,
+   "detail": "['Ari Boya'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35995",
+   "season": 2020,
+   "detail": "['Pierson McAtee'] on ['Bradley', 'Kansas State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31449",
+   "season": 2020,
+   "detail": "['A.J. Lawson'] on ['McNeese', 'South Carolina']",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "REPAIRED_SPLIT (SPLIT_CBBD_ATHLETE_31449)"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4854",
+   "season": 2022,
+   "detail": "['Christian Wright'] on ['Georgia', 'Northwestern']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5155",
+   "season": 2022,
+   "detail": "['Jaden House'] on ['High Point', 'Winthrop']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 15205",
+   "season": 2022,
+   "detail": "['Emmanuel Izunabor'] on ['High Point', 'Winthrop']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 15213",
+   "season": 2022,
+   "detail": "['Brock Williams'] on ['High Point', 'Winthrop']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 16876",
+   "season": 2022,
+   "detail": "['John-Michael Wright'] on ['High Point', 'Winthrop']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47028",
+   "season": 2015,
+   "detail": "['Austin White'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53266",
+   "season": 2015,
+   "detail": "['Tarique Thompson'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 57395",
+   "season": 2015,
+   "detail": "['Adam Weary'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 57398",
+   "season": 2015,
+   "detail": "['K.J. James'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 57393",
+   "season": 2015,
+   "detail": "['Lorenzo Cugini'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53265",
+   "season": 2015,
+   "detail": "['Anthony Lindauer'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 57397",
+   "season": 2015,
+   "detail": "['Haiishen McIntyre'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 62597",
+   "season": 2015,
+   "detail": "['Devante Wallace'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 62598",
+   "season": 2015,
+   "detail": "['Brian Richardson'] on ['Arkansas-Pine Bluff', 'High Point']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 32058",
+   "season": 2017,
+   "detail": "['Ivan Madunic'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 40211",
+   "season": 2017,
+   "detail": "['Jaylan Robertson'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42562",
+   "season": 2017,
+   "detail": "['Josh Coleman'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 46842",
+   "season": 2017,
+   "detail": "['Demario Beck'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47309",
+   "season": 2017,
+   "detail": "['Randy Onwuasor'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52730",
+   "season": 2017,
+   "detail": "['Elijah Wilson'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 27728",
+   "season": 2017,
+   "detail": "['Algevon Eichelberger'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 32567",
+   "season": 2017,
+   "detail": "['Brandon Cyrus'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42835",
+   "season": 2017,
+   "detail": "['Obediah Church'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42837",
+   "season": 2017,
+   "detail": "['Jarred Dixon'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42839",
+   "season": 2017,
+   "detail": "['Ryan Kreklow'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47140",
+   "season": 2017,
+   "detail": "['Jarrid Rhodes'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47180",
+   "season": 2017,
+   "detail": "['Austin Ruder'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52529",
+   "season": 2017,
+   "detail": "['Jordan Martin'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52531",
+   "season": 2017,
+   "detail": "['Tyler McCullough'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53500",
+   "season": 2017,
+   "detail": "['Chris Harrison-Docks'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53502",
+   "season": 2017,
+   "detail": "['Levi Cook'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 37368",
+   "season": 2017,
+   "detail": "['Skylar Mays'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 37520",
+   "season": 2017,
+   "detail": "['Travis Fields Jr.'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42178",
+   "season": 2017,
+   "detail": "['Elbert Robinson III'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42349",
+   "season": 2017,
+   "detail": "['Kieran Hayward'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43033",
+   "season": 2017,
+   "detail": "['Zoran Talley Jr.'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43315",
+   "season": 2017,
+   "detail": "['Jalyn Patterson'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31903",
+   "season": 2017,
+   "detail": "['Ryan Betley'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 44083",
+   "season": 2017,
+   "detail": "['Charlie Brown Jr.'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47834",
+   "season": 2017,
+   "detail": "['Caleb Wood'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 48082",
+   "season": 2017,
+   "detail": "['Jai Williams'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51589",
+   "season": 2017,
+   "detail": "['Matt Howard'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53252",
+   "season": 2017,
+   "detail": "['Javon Baumann'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 34822",
+   "season": 2017,
+   "detail": "['Lamarr Kimble'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35379",
+   "season": 2017,
+   "detail": "['Tyler Hamilton'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42359",
+   "season": 2017,
+   "detail": "['Jackson Donahue'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47833",
+   "season": 2017,
+   "detail": "['Sam Jones'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 46841",
+   "season": 2017,
+   "detail": "['Jaylen Shaw'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47675",
+   "season": 2017,
+   "detail": "['Christian Musoko'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52414",
+   "season": 2017,
+   "detail": "['Will Joyce'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52728",
+   "season": 2017,
+   "detail": "['Joseph Williams-Powell'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52729",
+   "season": 2017,
+   "detail": "['Colton Ray-St Cyr'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 27767",
+   "season": 2017,
+   "detail": "['Josh Parrish'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43443",
+   "season": 2017,
+   "detail": "['Noah Dickerson'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43445",
+   "season": 2017,
+   "detail": "['Matisse Thybulle'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43446",
+   "season": 2017,
+   "detail": "['David Crisp'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43447",
+   "season": 2017,
+   "detail": "['Dominic Green'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43464",
+   "season": 2017,
+   "detail": "['JD Miller'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43465",
+   "season": 2017,
+   "detail": "['Alex Robinson'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47399",
+   "season": 2017,
+   "detail": "['Matthew Atewe'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47691",
+   "season": 2017,
+   "detail": "['Devenir Duruisseau'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51852",
+   "season": 2017,
+   "detail": "['Michael Williams'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53509",
+   "season": 2017,
+   "detail": "['Markelle Fultz'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 36201",
+   "season": 2017,
+   "detail": "['Carlos Johnson'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 37332",
+   "season": 2017,
+   "detail": "['Desmond Bane'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47485",
+   "season": 2017,
+   "detail": "['Kenrich Williams'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47489",
+   "season": 2017,
+   "detail": "['Dalton Dry'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 48410",
+   "season": 2017,
+   "detail": "['Malique Trent-Street'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 37834",
+   "season": 2017,
+   "detail": "['Artur Labinowicz'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43135",
+   "season": 2017,
+   "detail": "['Jacob Calloway'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52413",
+   "season": 2017,
+   "detail": "['Brayden Holker'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52415",
+   "season": 2017,
+   "detail": "['John Marshall'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 43634",
+   "season": 2017,
+   "detail": "['Elijah Cain'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53503",
+   "season": 2017,
+   "detail": "['R.J. Curington'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 46416",
+   "season": 2017,
+   "detail": "['Brandan Stith'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 46417",
+   "season": 2017,
+   "detail": "['Randy Haynes'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47305",
+   "season": 2017,
+   "detail": "['Wayde Sims'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35981",
+   "season": 2017,
+   "detail": "['Devon Goodman'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 44085",
+   "season": 2017,
+   "detail": "['Markell Lodge'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 44086",
+   "season": 2017,
+   "detail": "['Chris Clover'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47832",
+   "season": 2017,
+   "detail": "['Darnell Foreman'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 48079",
+   "season": 2017,
+   "detail": "['James Demery'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 26780",
+   "season": 2017,
+   "detail": "['Nicholas Robinson'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35092",
+   "season": 2017,
+   "detail": "['Collin McManus'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35980",
+   "season": 2017,
+   "detail": "['AJ Brodeur'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 41655",
+   "season": 2017,
+   "detail": "['Max Rothschild'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53251",
+   "season": 2017,
+   "detail": "['Brendan Casper'] on ['Pennsylvania', \"Saint Joseph's\"]",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 36941",
+   "season": 2017,
+   "detail": "['Amidou Bamba'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47678",
+   "season": 2017,
+   "detail": "['James McGee'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52412",
+   "season": 2017,
+   "detail": "['Race Parsons'] on ['Coastal Carolina', 'Southern Utah']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 36204",
+   "season": 2017,
+   "detail": "['Jaylen Fisher'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 37637",
+   "season": 2017,
+   "detail": "['Sam Timmins'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51850",
+   "season": 2017,
+   "detail": "['Brandon Parrish'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53508",
+   "season": 2017,
+   "detail": "['Malik Dime'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47484",
+   "season": 2017,
+   "detail": "['Vladimir Brodziansky'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47488",
+   "season": 2017,
+   "detail": "['Austin Sottile'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51848",
+   "season": 2017,
+   "detail": "['Karviar Shepherd'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51849",
+   "season": 2017,
+   "detail": "['Chris Washburn'] on ['TCU', 'Washington']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31449",
+   "season": 2021,
+   "detail": "['A.J. Lawson'] on ['McNeese', 'South Carolina']",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "REPAIRED_SPLIT (SPLIT_CBBD_ATHLETE_31449)"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 7555",
+   "season": 2021,
+   "detail": "['Rondel Walker'] on ['Oklahoma State', 'Texas Tech']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 16954",
+   "season": 2021,
+   "detail": "['Avery Anderson III'] on ['Oklahoma State', 'Texas Tech']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5104",
+   "season": 2025,
+   "detail": "['Iverson King'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5099",
+   "season": 2025,
+   "detail": "['Kaleb Scott'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5101",
+   "season": 2025,
+   "detail": "['Jamahri Harvey'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5102",
+   "season": 2025,
+   "detail": "['Kobe Stewart'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5105",
+   "season": 2025,
+   "detail": "['Carl Parrish'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5111",
+   "season": 2025,
+   "detail": "['Houston Jones'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4612",
+   "season": 2025,
+   "detail": "['Troy Cole Jr.'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4606",
+   "season": 2025,
+   "detail": "['TJ Biel'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4613",
+   "season": 2025,
+   "detail": "['Damarion Walkup'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4615",
+   "season": 2025,
+   "detail": "['BJ Ward'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4616",
+   "season": 2025,
+   "detail": "['Teddy Washington Jr.'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4605",
+   "season": 2025,
+   "detail": "['Brendan Terry'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4607",
+   "season": 2025,
+   "detail": "['Rob Martin'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4608",
+   "season": 2025,
+   "detail": "['Elliot Lowndes'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4611",
+   "season": 2025,
+   "detail": "['David Idada'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 4614",
+   "season": 2025,
+   "detail": "['Marqueas Bell'] on ['Southeast Missouri State', 'UNC Asheville']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42535",
+   "season": 2018,
+   "detail": "['Jake Wright'] on ['Hartford', 'Miami (OH)']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52786",
+   "season": 2015,
+   "detail": "['Devin Waddell'] on ['Auburn', 'Tulsa']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47139",
+   "season": 2017,
+   "detail": "['Alize Johnson'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47817",
+   "season": 2017,
+   "detail": "[\"Tre'Darius McCallum\"] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47819",
+   "season": 2017,
+   "detail": "['Joe Hanel'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52526",
+   "season": 2017,
+   "detail": "['Dequon Miller'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53498",
+   "season": 2017,
+   "detail": "['Billy Garrett Jr.'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 35856",
+   "season": 2017,
+   "detail": "['Aaron Carver'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42179",
+   "season": 2017,
+   "detail": "['Ahmad Caver'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 42180",
+   "season": 2017,
+   "detail": "['B.J. Stith'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 57511",
+   "season": 2015,
+   "detail": "['Cole Stockton'] on ['Auburn', 'Tulsa']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31789",
+   "season": 2017,
+   "detail": "['Devin Gage'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47141",
+   "season": 2017,
+   "detail": "['Ronnie Rousseau III'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 52530",
+   "season": 2017,
+   "detail": "['Chris Kendrix'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53499",
+   "season": 2017,
+   "detail": "['Darrick Wood'] on ['DePaul', 'Missouri State']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 41842",
+   "season": 2017,
+   "detail": "['Trey Porter'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47306",
+   "season": 2017,
+   "detail": "['Duop Reath'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 47307",
+   "season": 2017,
+   "detail": "['Brandon Sampson'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51548",
+   "season": 2017,
+   "detail": "['Denzell Taylor'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 51549",
+   "season": 2017,
+   "detail": "['Jordan Baker'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53103",
+   "season": 2017,
+   "detail": "['Antonio Blakeney'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 53105",
+   "season": 2017,
+   "detail": "['Craig Victor II'] on ['LSU', 'Old Dominion']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5106",
+   "season": 2025,
+   "detail": "['Quadir Pettaway'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5098",
+   "season": 2025,
+   "detail": "['Jaylen Peterson'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5100",
+   "season": 2025,
+   "detail": "['Kory Mincy'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 5108",
+   "season": 2025,
+   "detail": "['Triston Wilson'] on ['Illinois State', 'Presbyterian']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "SEASON_FILE_MULTI_TEAM",
+   "entity": "athleteId 31717",
+   "season": 2021,
+   "detail": "['Cade Cunningham'] on ['Oklahoma State', 'Texas Tech']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "sequential mid-season team change; no overlapping appearances"
+  },
+  {
+   "check": "API_OVERLAP",
+   "entity": "athleteId 19801",
+   "season": null,
+   "detail": "16 overlapping game pairs (Tulane 2014-2016 vs NC State)",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "REPAIRED_QUARANTINE (QUARANTINE_CBBD_ATHLETE_19801)"
+  },
+  {
+   "check": "API_OVERLAP",
+   "entity": "athleteId 22371",
+   "season": null,
+   "detail": "1 overlapping game pair(s) ['G-c215c3b3eb09ee2c/G-e95271d0deaa32f7']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "game-level event attribution (whole rosters in one game pair: High Point/Hampton 2022-01-24 PBP misattribution or Kansas City vs Kansas Christian doubleheader 2020-12-19); not an identity collision"
+  },
+  {
+   "check": "API_OVERLAP",
+   "entity": "athleteId 26094",
+   "season": null,
+   "detail": "1 overlapping game pair(s) ['G-c215c3b3eb09ee2c/G-e95271d0deaa32f7']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "game-level event attribution (whole rosters in one game pair: High Point/Hampton 2022-01-24 PBP misattribution or Kansas City vs Kansas Christian doubleheader 2020-12-19); not an identity collision"
+  },
+  {
+   "check": "API_OVERLAP",
+   "entity": "athleteId 26095",
+   "season": null,
+   "detail": "1 overlapping game pair(s) ['G-c215c3b3eb09ee2c/G-e95271d0deaa32f7']",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "game-level event attribution (whole rosters in one game pair: High Point/Hampton 2022-01-24 PBP misattribution or Kansas City vs Kansas Christian doubleheader 2020-12-19); not an identity collision"
+  },
+  {
+   "check": "API_OVERLAP",
+   "entity": "athleteId 31449",
+   "season": null,
+   "detail": "19 overlapping game pairs",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "REPAIRED_SPLIT (SPLIT_CBBD_ATHLETE_31449)"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 1108",
+   "season": 2024,
+   "detail": "rosters ['T-1b0ba36fa0176fe6', 'T-0f17138f990d1895']; box teams 1",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 37907",
+   "season": 2020,
+   "detail": "rosters ['T-1af2344db7382f24', 'T-be3f082d3b0a1b03']; box teams 0",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 37907",
+   "season": 2019,
+   "detail": "rosters ['T-be3f082d3b0a1b03', 'T-1af2344db7382f24']; box teams 0",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 21897",
+   "season": 2022,
+   "detail": "rosters ['T-a646e58ba46256a0', 'T-4b494301d8f704cc']; box teams 1",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 19806",
+   "season": 2023,
+   "detail": "rosters ['T-af2fbd740320e5b8', 'T-3c4f2604e01220d1']; box teams 1",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "ROSTER_MULTI_TEAM",
+   "entity": "athleteId 3046",
+   "season": 2024,
+   "detail": "rosters ['T-5af17dc89476af51', 'T-3c4f2604e01220d1']; box teams 1",
+   "classification": "CONFIRMED_SINGLE_PLAYER",
+   "resolution": "season snapshot lists a mid-season move; appearances on at most one team"
+  },
+  {
+   "check": "SPLIT_ENTITY_LINK",
+   "entity": "P-61f0fe8bc63621e8",
+   "season": null,
+   "detail": "North Texas 2016-17/2017-18 and McNeese 2019-20/2020-21 rows kept as ONE entity (same name, guard, a transfer sit-out season between); not proven distinct",
+   "classification": "REVIEW_REQUIRED",
+   "resolution": "kept together (no automatic split)"
+  },
+  {
+   "check": "ROSTER_ATTRIBUTE_CONTAMINATION",
+   "entity": "athleteId 31449",
+   "season": 2020,
+   "detail": "McNeese 2020 roster row carries the South Carolina player's hometown (Brampton ON) and DOB (2000-07-15)",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "row re-mapped to the split entity; attributes research-only (not PIT)"
+  },
+  {
+   "check": "BOX_TEAM_MISATTRIBUTION",
+   "entity": "game 209587",
+   "season": 2025,
+   "detail": "10 Presbyterian box rows filed under Illinois State",
+   "classification": "CONFIRMED_COLLISION",
+   "resolution": "REPAIRED_TEAM_REATTRIBUTION (reconciles 70 / 78)"
+  }
+ ]
+}

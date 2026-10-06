@@ -22,7 +22,7 @@ POSSIBLE_DUPLICATE and UNRESOLVED pairs follow the architect's Stage 2.1 adjudic
 |---|---|---|---|---|---|
 | fact.player_games | 2368206 | 2368206 | 0 | 2368206 | 2368206 |
 | fact.team_games | 235612 | 235612 | 0 | 235612 | 235612 |
-| fact.participation | 3189460 | 3189460 | 0 | 3189460 | 3189460 |
+| fact.participation | 3189460 | 3189462 | 0 | 3189462 | 3189462 |
 | fact.plays | 29021691 | 29021691 | 0 | 29021404 | - |
 | fact.shots | 13638660 | 13638660 | 0 | 13638528 | - |
 | fact.substitutions | 858399 | 858399 | 0 | 858399 | - |

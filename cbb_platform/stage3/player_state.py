@@ -27,7 +27,7 @@ def build(con) -> None:
            coalesce(p.minutes, 0) AS mins, coalesce(p.starter, FALSE)::INT AS st,
            (coalesce(p.minutes, 0) > 0 OR greatest(p.points, p.fga, p.fta, p.reb, p.ast, p.stl, p.blk, p.tov, p.pf) > 0)::INT AS app,
            p.points AS pts, p.two_pm, p.two_pa, p.three_pm AS tpm, p.three_pa AS tpa, p.ftm, p.fta, p.orb, p.drb, p.ast,
-           p.stl, p.blk, p.tov, p.pf,
+           p.stl, p.blk, p.tov, p.pf, p.source_position AS pos,
            p.fga + 0.44 * p.fta + p.tov AS used,
            -- team possessions used while the player was on the floor = team used x (player minutes / game minutes)
            CASE WHEN t.game_minutes > 0 THEN (t.fga + 0.44 * t.fta + t.tov_total) * coalesce(p.minutes, 0) / t.game_minutes
@@ -49,19 +49,20 @@ def build(con) -> None:
     CREATE OR REPLACE TEMP TABLE pg_k AS SELECT *, row_number() OVER {P.w(PP)} AS k FROM pg;
     CREATE OR REPLACE TABLE feat.player_box_state AS
     SELECT canonical_player_id, season, canonical_team_id AS last_team_id, source_game_id, source_tip, available_at,
-           mins AS last_min, st AS last_st, app AS last_app, {', '.join(cols)},
+           mins AS last_min, st AS last_st, app AS last_app, pos AS last_position, {', '.join(cols)},
            max(CASE WHEN app = 1 THEN source_tip END) OVER (PARTITION BY {PP} ORDER BY available_at, source_tip, source_game_id
                                                            ROWS UNBOUNDED PRECEDING) AS last_app_tip
     FROM pg_k ORDER BY 1, 2, 6;
     """)
     # ---------------------------------------------------------------- participation history (team-game based)
     con.execute(f"""
+    -- Stage 3.1: participation candidates of an earlier team game = members whose LEGAL evidence was knowable at that
+    -- game's own cutoff (never the end-of-season roster snapshot)
     CREATE OR REPLACE TEMP TABLE part_cand AS
-    SELECT DISTINCT tg.canonical_game_id, tg.canonical_team_id, c.canonical_player_id, tg.season
-    FROM src.team_games tg
-    JOIN (SELECT canonical_player_id, canonical_team_id, season FROM src.rosters
-          UNION SELECT canonical_player_id, canonical_team_id, season FROM src.player_games WHERE canonical_player_id IS NOT NULL) c
-      ON c.canonical_team_id = tg.canonical_team_id AND c.season = tg.season;
+    SELECT DISTINCT tg.canonical_game_id, tg.canonical_team_id, m.canonical_player_id, tg.season
+    FROM src.team_games tg JOIN src.played_games g USING (canonical_game_id)
+    JOIN ex.team_membership_evidence m ON m.canonical_team_id = tg.canonical_team_id AND m.season = tg.season
+     AND m.available_from <= g.scheduled_tip_utc - INTERVAL {spec.CUTOFF_OFFSET_HOURS} HOUR;
     CREATE OR REPLACE TEMP TABLE part AS
     SELECT x.*, g.scheduled_tip_utc AS source_tip, g.historical_knowable_at AS available_at, x.canonical_game_id AS source_game_id
     FROM ({PART.classify_sql('part_cand')}) x JOIN src.played_games g USING (canonical_game_id);
@@ -103,16 +104,21 @@ def build(con) -> None:
     FROM src.player_games WHERE canonical_player_id IS NOT NULL GROUP BY 1, 2, 3;
     CREATE OR REPLACE TEMP TABLE rec AS     -- recruiting class known before the season (class year < season)
     SELECT canonical_player_id, arg_max(stars, recruit_year) AS stars, arg_max(rating, recruit_year) AS rating,
-           arg_max(ranking, recruit_year) AS ranking, max(recruit_year) AS recruit_year
+           arg_max(ranking, recruit_year) AS ranking, max(recruit_year) AS recruit_year,
+           arg_max(height_inches, recruit_year) AS height_in, arg_max(weight_lbs, recruit_year) AS weight_lb
     FROM src.recruits WHERE canonical_player_id IS NOT NULL GROUP BY 1;
     CREATE OR REPLACE TEMP TABLE trf AS     -- portal record of year Y feeds season Y+1
     SELECT canonical_player_id, transfer_year + 1 AS season, destination_team_id, origin_team_id, stars, rating
     FROM src.transfers WHERE canonical_player_id IS NOT NULL
     QUALIFY row_number() OVER (PARTITION BY canonical_player_id, transfer_year ORDER BY source_transfer_id) = 1;
-    CREATE OR REPLACE TEMP TABLE ros AS
-    SELECT canonical_player_id, canonical_team_id, season, any_value(position) AS position, any_value(height_inches) AS height_in,
-           any_value(weight_lbs) AS weight_lb, min(start_season) AS roster_start_season
-    FROM src.rosters GROUP BY 1, 2, 3;
+    -- NON-PIT research table (Stage 3.1): end-of-season roster attributes, never an approved feature
+    CREATE OR REPLACE TABLE feat.player_profile_research AS
+    SELECT x.player_game_example_id, x.season, any_value(r.position) AS research_roster_position,
+           any_value(r.height_inches) AS research_roster_height_in, any_value(r.weight_lbs) AS research_roster_weight_lb,
+           'SEASON_ROSTER_ONLY_NOT_PIT_CONFIRMED' AS research_roster_knowledge_class
+    FROM ex.player_game_examples x JOIN src.rosters r ON r.canonical_player_id = x.canonical_player_id
+         AND r.canonical_team_id = x.canonical_team_id AND r.season = x.season
+    GROUP BY 1, 2 ORDER BY 1;
     """)
     R = P.ratio
     MIN = spec.MIN_OBS["player"]
@@ -159,21 +165,21 @@ def build(con) -> None:
            CASE WHEN x.season = {spec.SOURCE_SEASONS[0]} THEN 'SOURCE_NOT_AVAILABLE'
                 WHEN coalesce(ps.n_app, 0) = 0 THEN 'NO_PRIOR_HISTORY' ELSE 'OK' END AS pps_status,
            -- player_profile (cold-start inputs; known before the season)
-           ro.position AS prof_position, ro.height_in AS prof_height_in, ro.weight_lb AS prof_weight_lb,
+           b.last_position AS prof_last_box_position, rc.height_in AS prof_recruit_height_in, rc.weight_lb AS prof_recruit_weight_lb,
            rc.stars AS prof_recruit_stars, rc.rating AS prof_recruit_rating, rc.ranking AS prof_recruit_ranking,
            rc.recruit_year AS prof_recruit_year,
            (tr.canonical_player_id IS NOT NULL) AS prof_portal_transfer_in, tr.stars AS prof_portal_stars,
            tr.origin_team_id AS prof_portal_origin_team_id,
            EXISTS (SELECT 1 FROM pseason h WHERE h.canonical_player_id = x.canonical_player_id AND h.season < x.season
                    AND h.n_app > 0) AS prof_has_prior_season_in_window,
-           CASE WHEN ro.canonical_player_id IS NULL AND rc.canonical_player_id IS NULL AND tr.canonical_player_id IS NULL
+           CASE WHEN b.last_position IS NULL AND rc.canonical_player_id IS NULL AND tr.canonical_player_id IS NULL
+                AND NOT EXISTS (SELECT 1 FROM pseason h WHERE h.canonical_player_id = x.canonical_player_id AND h.season < x.season AND h.n_app > 0)
                 THEN 'SOURCE_NOT_AVAILABLE' ELSE 'OK' END AS prof_status,
            tpm.min_for_team AS ret_prev_season_min_for_team, tpmt.team_min AS ret_prev_season_team_min
     FROM ex.player_game_examples x
     JOIN f_pbox b USING (player_game_example_id)
     JOIN f_part pa USING (player_game_example_id)
     LEFT JOIN pseason ps ON ps.canonical_player_id = x.canonical_player_id AND ps.season = x.season - 1
-    LEFT JOIN ros ro ON ro.canonical_player_id = x.canonical_player_id AND ro.canonical_team_id = x.canonical_team_id AND ro.season = x.season
     LEFT JOIN rec rc ON rc.canonical_player_id = x.canonical_player_id AND rc.recruit_year < x.season
     LEFT JOIN trf tr ON tr.canonical_player_id = x.canonical_player_id AND tr.season = x.season
     LEFT JOIN player_team_prev_minutes tpm ON tpm.canonical_player_id = x.canonical_player_id
@@ -222,8 +228,9 @@ FAMILIES = {
     "player_participation": ("Team-game participation history under the shared rules (PLAYED/DNP_CONFIRMED/UNKNOWN).",
                              "feat.player_participation_state", "pp_status"),
     "player_prior_season": ("Previous season (inside the window) volume and rates.", "feat.player_box_state", "pps_status"),
-    "player_profile": ("Cold-start inputs known pregame: roster attributes, recruiting class, portal transfer, history flags.",
-                       "src.rosters, src.recruits, src.transfers", "prof_status"),
+    "player_profile": ("Cold-start inputs known pregame: last box position, recruiting class and measurements, portal "
+                       "transfer, history flags (no end-of-season roster attribute).", "src.player_games, src.recruits, src.transfers",
+                       "prof_status"),
     "player_role": ("Minutes-role and team rotation context from the same game's pregame rows.", "feat.player_features", "role_status"),
     "team_returning_minutes": ("Previous-season minutes for this team of the players in this pregame universe (returning share).",
                                "src.player_games (previous season)", "ret_status"),

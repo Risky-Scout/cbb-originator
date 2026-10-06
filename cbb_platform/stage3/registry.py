@@ -14,6 +14,8 @@ from cbb_platform.stage3 import event_stats, lineup_stats, player_state, spec, t
 
 FEATURE_TABLES = ("feat.team_features", "feat.player_features", "feat.team_event_features", "feat.player_shot_features",
                   "feat.player_lineup_features")
+# NON-PIT research tables (Stage 3.1): registered, never approved for modeling
+RESEARCH_TABLES = ("feat.player_profile_research",)
 KEYS = {"game_example_id", "player_game_example_id", "canonical_game_id", "canonical_team_id", "canonical_player_id",
         "opponent_team_id", "season", "is_home", "neutral_site", "prediction_cutoff_utc", "transformation_version"}
 PREFIX_FAMILY = [  # longest first
@@ -124,11 +126,19 @@ def build(con) -> dict:
                                  "INSUFFICIENT_SAMPLE keeps values) or a zero denominator for a ratio; counts are 0, never NULL"),
                 "pit_cutoff_rule": "ASOF state with available_at <= prediction_cutoff_utc (" + spec.CUTOFF_RULE[:60] + "...)",
                 "version": spec.STAGE3_VERSION,
-                "leakage_risk": ("MEDIUM: CBBD roster snapshot is season-level (retrospective membership/attributes)"
-                                 if col in ("prof_position", "prof_height_in", "prof_weight_lb") else
-                                 "LOW: pregame state only (PIT ASOF)"),
+                "leakage_risk": "LOW: pregame state only (PIT ASOF; no end-of-season roster input)",
                 "approved_for_modeling": True,
             })
+    for t in RESEARCH_TABLES:
+        for col, typ in con.execute(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema || '.' || table_name = '{t}' ORDER BY ordinal_position").fetchall():
+            if col in KEYS:
+                continue
+            entries.append({"feature_name": col, "table": t, "kind": "RESEARCH_NON_PIT", "data_type": typ,
+                            "feature_family": "research_roster_snapshot",
+                            "description": f"{col.replace('research_roster_', 'end-of-season CBBD roster ').replace('_', ' ')} (NOT point-in-time)",
+                            "unit": unit_of(col), "source_tables": "src.rosters (end-of-season snapshot)",
+                            "leakage_risk": "HIGH: end-of-season roster snapshot; membership/attributes not knowable at historical cutoffs",
+                            "approved_for_modeling": False})
     reg = {"version": spec.STAGE3_VERSION, "upstream_dataset": spec.UPSTREAM_DATASET, "cutoff_rule": spec.CUTOFF_RULE,
            "missing_codes": spec.MISSING_CODES, "families": FAMILY_META,
            "feature_count": sum(1 for e in entries if e["kind"] == "FEATURE"), "entries": entries}

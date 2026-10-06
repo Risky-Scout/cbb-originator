@@ -9,7 +9,7 @@ from pathlib import Path
 from cbb_platform import config as C
 
 STAGE3_VERSION = "stage3-features-1.0.0"
-UPSTREAM_DATASET = "cbb_data_v2.2+95dd9c2fa5b7"
+UPSTREAM_DATASET = "cbb_data_v2.3+7bef640cccde"
 
 # ------------------------------------------------------------------ scope (architect data-scope freeze)
 MODEL_SEASONS = tuple(range(2014, 2026))     # end-year: 2013-14 .. 2024-25

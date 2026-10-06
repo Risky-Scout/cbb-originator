@@ -46,7 +46,7 @@ def reg():
 
 
 # =================================================================== scope / folds / universe
-def test_upstream_dataset_is_v2_2():
+def test_upstream_dataset_is_the_frozen_version():
     man = json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())
     assert man["dataset_version"] == spec.UPSTREAM_DATASET
     s3 = json.loads(spec.STAGE3_MANIFEST.read_text())
@@ -82,12 +82,13 @@ def test_game_universe_is_every_played_di_game(fx):
 
 
 def test_player_universe_never_uses_the_target_box(fx):
-    """Universe = roster or EARLIER participation; a player with only a target-game box row is not in it."""
-    assert one(fx, """SELECT count(*) FROM ex.player_game_examples x WHERE NOT x.on_season_roster AND NOT EXISTS (
-        SELECT 1 FROM feat.player_box_state s WHERE s.canonical_player_id = x.canonical_player_id AND s.season = x.season
-          AND s.last_team_id = x.canonical_team_id AND s.available_at <= x.prediction_cutoff_utc)""") == 0
+    """Universe = members with LEGAL evidence at the cutoff (Stage 3.1); an appearance counts only once knowable."""
+    assert one(fx, """SELECT count(*) FROM ex.player_game_examples x WHERE x.pool_evidence = 'PRIOR_APPEARANCE_CONFIRMED'
+        AND NOT EXISTS (SELECT 1 FROM cdb.flagship.player_game_outcomes p JOIN cdb.flagship.played_games g USING (canonical_game_id)
+          WHERE p.canonical_player_id = x.canonical_player_id AND p.canonical_team_id = x.canonical_team_id AND g.season = x.season
+            AND p.canonical_game_id <> x.canonical_game_id AND p.historical_knowable_at <= x.prediction_cutoff_utc)""") == 0
     src = inspect.getsource(universe)
-    assert "first_available_at <= t.prediction_cutoff_utc" in src
+    assert "m.available_from <= t.prediction_cutoff_utc" in src
     assert one(fx, "SELECT count(*) FROM ex.player_game_examples x JOIN ex.identity_conflicts c USING (canonical_player_id, season)") == 0
 
 

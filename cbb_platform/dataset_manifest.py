@@ -2,7 +2,7 @@
 
     .venv/bin/python -m cbb_platform.dataset_manifest
 
-DATASET_VERSION = "cbb_data_v2.2+" + first 12 hex of sha256(starter pack data digest | raw CBBD payload
+DATASET_VERSION = "cbb_data_v2.3+" + first 12 hex of sha256(starter pack data digest | raw CBBD payload
 manifest hash | canonical content fingerprints | game identity resolution hash | game status hash).
 v2.2 = Stage 2.2 (played-game status); parent cbb_data_v2.1+292c2d2b1739 (Stage 2.1 identity remediation), whose parent
 is cbb_data_v2.0+b00e8d3dc798. Every ancestor manifest is kept verbatim as data/manifests/DATASET_MANIFEST_<version>.json. Identical inputs and identical canonical content give the
@@ -21,7 +21,7 @@ import duckdb
 from cbb_platform import config as C, lockbox, raw_store
 
 OUT = C.MANIFESTS / "DATASET_MANIFEST.json"
-PARENT_VERSION = "cbb_data_v2.1+292c2d2b1739"
+PARENT_VERSION = "cbb_data_v2.2+95dd9c2fa5b7"
 PARENT_MANIFEST = C.MANIFESTS / f"DATASET_MANIFEST_{PARENT_VERSION}.json"
 CBBD_API_SCHEMA_VERSION = "CBBD OpenAPI v1.29.0 (reference/CBBD_OPENAPI_VERIFICATION_v1_1.md)"
 
@@ -71,8 +71,12 @@ def build(db_path=None) -> dict:
     canon_digest = hashlib.sha256(json.dumps({t: v["fingerprint"] for t, v in tables.items()}, sort_keys=True).encode()).hexdigest()
     gi = json.loads((C.QA / "game_identity_resolution.json").read_text())
     gs = json.loads((C.QA / "game_status_resolution.json").read_text())
-    version = "cbb_data_v2.2+" + hashlib.sha256(
-        f"{reg['data_manifest_digest']}|{raw_hash}|{canon_digest}|{gi['resolution_hash']}|{gs['status_hash']}".encode()).hexdigest()[:12]
+    con2 = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
+    pid_rows = con2.execute("SELECT * EXCLUDE (created_by_version) FROM metadata.player_identity_resolution ORDER BY ALL").fetchall()
+    con2.close()
+    pid_hash = hashlib.sha256(json.dumps(pid_rows, default=str).encode()).hexdigest()
+    version = "cbb_data_v2.3+" + hashlib.sha256(
+        f"{reg['data_manifest_digest']}|{raw_hash}|{canon_digest}|{gi['resolution_hash']}|{gs['status_hash']}|{pid_hash}".encode()).hexdigest()[:12]
     parent = json.loads(PARENT_MANIFEST.read_text())
     man = {"dataset_version": version, "parent_dataset_version": PARENT_VERSION,
            "game_identity": {"resolution_hash": gi["resolution_hash"], "map_rows": gi["map_rows"], "by_class": gi["by_class"],
@@ -80,7 +84,9 @@ def build(db_path=None) -> dict:
                              "aliases": gi["aliases"], "quarantined_corrupt": gi["quarantined_corrupt"],
                              "affected_team_seasons": gi["affected_team_seasons"],
                              "removed_duplicate_contributions": gi["removed_duplicate_contributions"]},
-           "lineage": ["cbb_data_v2.0+b00e8d3dc798", "cbb_data_v2.1+292c2d2b1739"],
+           "lineage": ["cbb_data_v2.0+b00e8d3dc798", "cbb_data_v2.1+292c2d2b1739", "cbb_data_v2.2+95dd9c2fa5b7"],
+           "player_identity_resolution": {"hash": pid_hash, "rules": sorted({r[0] for r in pid_rows}),
+                                          "rows_rewritten": sum(r[8] for r in pid_rows)},
            "game_status": {"status_hash": gs["status_hash"], "trusted_games": gs["trusted_games"], "played_games": gs["played_games"],
                            "excluded_from_played_games": gs["excluded_from_played_games"], "status_counts": gs["all_status_counts"],
                            "zero_zero_by_status": gs["zero_zero_by_status"], "affected_team_seasons": gs["affected_team_seasons"],
