@@ -1,0 +1,154 @@
+{
+ "stage": "3",
+ "version": "stage3-features-1.0.0",
+ "upstream_dataset": "cbb_data_v2.2+95dd9c2fa5b7",
+ "built_at_utc": "2026-10-06T03:53:54+00:00",
+ "model_seasons": [
+  2014,
+  2025
+ ],
+ "lockbox_season": "2025-26",
+ "lockbox_touched": false,
+ "cutoff_rule": "prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT tip); start of the US/Eastern game date (00:00 ET) when the tip is not exact. A source game may contribute only when its historical_knowable_at (canonical PIT rule HR-1: tip + 4 h, or 06:00 ET next day for inexact tips) <= prediction_cutoff_utc. Since the target game is knowable only at tip + 4 h it can never contribute to its own features. CBBD wallclock is UNTRUSTED_MIXED and is never read.",
+ "feature_registry_count": 220,
+ "fingerprints": {
+  "features": {
+   "ex.game_examples": {
+    "rows": 65048,
+    "fingerprint": "65048:7252765387431886980:599724187232374686684126"
+   },
+   "ex.identity_conflicts": {
+    "rows": 2,
+    "fingerprint": "2:5275647993033361948:10216664355666291554"
+   },
+   "ex.player_game_examples": {
+    "rows": 2081918,
+    "fingerprint": "2081918:6946928731182222153:19205416651927668685396697"
+   },
+   "ex.team_game_examples": {
+    "rows": 130096,
+    "fingerprint": "130096:16568284664620108514:1202274777997136901387518"
+   },
+   "feat.lineup_matchup_game": {
+    "rows": 312784,
+    "fingerprint": "312784:18122313993969920397:2880449063320693923636073"
+   },
+   "feat.lineup_pair_game": {
+    "rows": 830283,
+    "fingerprint": "830283:13816335146359383062:7657653089839828304759854"
+   },
+   "feat.lineup_pair_state": {
+    "rows": 830283,
+    "fingerprint": "830283:11188599068646087006:7649630000438703507031172"
+   },
+   "feat.lineup_unit_game": {
+    "rows": 329086,
+    "fingerprint": "329086:4570127909715061438:3032554943867197773332344"
+   },
+   "feat.lineup_unit_state": {
+    "rows": 329086,
+    "fingerprint": "329086:16833538515764359910:3035074796353383961279154"
+   },
+   "feat.player_box_state": {
+    "rows": 1359987,
+    "fingerprint": "1359987:11736514013184947707:12540700443220861975120109"
+   },
+   "feat.player_features": {
+    "rows": 2081918,
+    "fingerprint": "2081918:3265132404996744870:19188304716596300298618656"
+   },
+   "feat.player_lineup_features": {
+    "rows": 2081918,
+    "fingerprint": "2081918:15842573771634119133:19188816680822576344749053"
+   },
+   "feat.player_oncourt_game": {
+    "rows": 225889,
+    "fingerprint": "225889:17976805167529380163:2081835500598982977012223"
+   },
+   "feat.player_oncourt_state": {
+    "rows": 225889,
+    "fingerprint": "225889:9614466819993242161:2086468854105490567872455"
+   },
+   "feat.player_participation_state": {
+    "rows": 2282300,
+    "fingerprint": "2282300:15756400802029545733:21045294261881909894351445"
+   },
+   "feat.player_shot_features": {
+    "rows": 2081918,
+    "fingerprint": "2081918:261258050696408104:19196154727265229431381782"
+   },
+   "feat.player_shot_game": {
+    "rows": 1161439,
+    "fingerprint": "1161439:18131546779422920229:10712043734647613781107083"
+   },
+   "feat.player_shot_state": {
+    "rows": 1161439,
+    "fingerprint": "1161439:6810538128508057117:10712340032082749864733075"
+   },
+   "feat.team_box_state": {
+    "rows": 140966,
+    "fingerprint": "140966:10707575870973602416:1306000290598716024548942"
+   },
+   "feat.team_event_features": {
+    "rows": 130096,
+    "fingerprint": "130096:5510120835068225975:1200426827924865003063923"
+   },
+   "feat.team_event_game": {
+    "rows": 128615,
+    "fingerprint": "128615:18052563145838760683:1186952662481614860580153"
+   },
+   "feat.team_event_state": {
+    "rows": 128615,
+    "fingerprint": "128615:17818761274390031774:1180169053439542993980212"
+   },
+   "feat.team_features": {
+    "rows": 130096,
+    "fingerprint": "130096:5982674952523816076:1203820300028440619024228"
+   },
+   "feat.team_results_state": {
+    "rows": 141172,
+    "fingerprint": "141172:4882585370965886416:1301874578312413031713242"
+   },
+   "feat.team_sos_state": {
+    "rows": 140966,
+    "fingerprint": "140966:7100943766815440525:1301131870532163032953157"
+   }
+  },
+  "labels": {
+   "lab.player_game_labels": {
+    "rows": 2081918,
+    "fingerprint": "2081918:14874509384749066997:19197791257340024358605957"
+   },
+   "lab.target_box_rows_outside_universe": {
+    "rows": 20,
+    "fingerprint": "20:9664555231871136749:186104272033092753363"
+   },
+   "lab.target_box_rows_unresolved": {
+    "rows": 607,
+    "fingerprint": "607:18248352969920839183:5561928969614455890869"
+   },
+   "lab.team_game_labels": {
+    "rows": 130096,
+    "fingerprint": "130096:15709731474507142189:1199188725116190438989475"
+   }
+  }
+ },
+ "features_db_sha_of_fingerprints": "fb08012db4009cb050095fba6bdd6584484753b9d0fb86b75084bed003b25438",
+ "labels_db_sha_of_fingerprints": "6aee87606b867df0187560dd4af2cbe25bfa82c73c5474f8b084fe98a8b8059a",
+ "folds": [
+  "FOLD_1",
+  "FOLD_2",
+  "FOLD_3",
+  "FOLD_4",
+  "FOLD_5",
+  "FOLD_6",
+  "FOLD_7",
+  "LINEUP_ROTATION_DEV"
+ ],
+ "coverage_summary": {
+  "game_examples": 65048,
+  "player_game_examples": 2081918,
+  "label_rows": 2081918,
+  "label_rows_with_box": 1295123
+ }
+}

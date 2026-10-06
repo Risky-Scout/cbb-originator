@@ -24,3 +24,7 @@ data/qa/large/
 .DS_Store
 ~$*
 data/duckdb_tmp/
+# Stage 3 generated stores (rebuildable deterministically from v2.2 + code)
+modeling/store/
+modeling/features/
+modeling/labels/*/
