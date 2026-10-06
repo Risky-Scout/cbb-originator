@@ -1,8 +1,82 @@
 {
- "dataset_version": "cbb_data_v2.0+b00e8d3dc798",
- "canonical_build_id": "20261005T225802Z",
- "build_timestamp_utc": "2026-10-05 18:58:02.976645-04:00",
- "generated_at_utc": "2026-10-05T23:14:16+00:00",
+ "dataset_version": "cbb_data_v2.1+292c2d2b1739",
+ "parent_dataset_version": "cbb_data_v2.0+b00e8d3dc798",
+ "game_identity": {
+  "resolution_hash": "1da90b6c090a1a282882f7bae3d4cf1c5335857d31db4d171c7bab4173855c87",
+  "map_rows": 1204,
+  "by_class": {
+   "CANONICAL": 48,
+   "DUPLICATE_ALIAS": 47,
+   "LEGITIMATE_DISTINCT_GAME": 1108,
+   "SOURCE_CORRUPT_MISATTRIBUTED": 1
+  },
+  "raw_source_games": 272560,
+  "canonical_trusted_games": 120631,
+  "aliases": 47,
+  "quarantined_corrupt": 1,
+  "affected_team_seasons": 85,
+  "removed_duplicate_contributions": 96
+ },
+ "wallclock_policy": "UNTRUSTED_MIXED (raw preserved; prohibited for PIT, availability, latency, tip, live timing)",
+ "fingerprints_before": {
+  "availability.events": "0:None:None",
+  "benchmark.bdl_games": "816:2813297028881559283:7534640451716950072477",
+  "benchmark.bdl_player_games": "130:11818551700518417877:1113492599438700647615",
+  "benchmark.bdl_team_games": "8:7866945610511673173:81155583978563100715",
+  "benchmark.game_odds": "0:None:None",
+  "benchmark.opening_odds": "0:None:None",
+  "core.conferences": "34:642483520258836427:290653243389125917657",
+  "core.game_schedule_versions": "272560:8331757522010754119:2513778979255381842409259",
+  "core.games": "272560:9858785848240968337:2514619389991490352853993",
+  "core.players": "92251:13553067290098460575:851536035266627172939145",
+  "core.recruits": "10185:5456840467008386505:94410102665533726632905",
+  "core.rosters": "202651:5317474147153714238:1866199561677902541242692",
+  "core.team_recruiting_rankings": "4445:5857203269648133469:40557606616395888521193",
+  "core.team_seasons": "26700:11507907417698344569:245906141269370792776169",
+  "core.teams": "1517:7108531092818327516:13885453202058560398010",
+  "core.transfers": "3491:2155478486551427935:32465365771156613677715",
+  "core.venue_directory": "988:6603151653770591818:8753004886102804556708",
+  "core.venues": "749:7157018095201785543:6851188985207199738889",
+  "fact.lineup_stats": "370401:13318390794623822689:3416754705764057173517055",
+  "fact.lineup_stints": "0:None:None",
+  "fact.participation": "3189460:14953320121456973180:29412332226410704924194878",
+  "fact.play_on_floor": "41450717:14934174784649385682:382312762599273352011444104",
+  "fact.play_participants": "28574421:14238379258684593465:263531044673961841174913205",
+  "fact.player_games": "2368206:4591861363244304689:21851631581386221512217535",
+  "fact.player_season_game_derived": "99390:7066074568209806870:917931326302148855562236",
+  "fact.player_season_shooting": "55429:7821237910942722:512554550698787664225532",
+  "fact.player_season_stats": "99596:18061503232672243849:918007395804337192222643",
+  "fact.plays": "29021691:11248129471106088202:267691866211488877978763752",
+  "fact.possessions": "0:None:None",
+  "fact.shots": "13638660:8012292195808912316:125775033362958494492781254",
+  "fact.substitution_pairs": "517979:13182294454147488203:4773037099514036038827837",
+  "fact.substitutions": "858399:14624741770436343681:7906345648404902452089173",
+  "fact.team_games": "235612:3427783411827214217:2169535433019019508300731",
+  "fact.team_season_game_derived": "13034:945725527780871071:118938351427775875456087",
+  "fact.team_season_shooting": "4254:13912807624665163400:39087400977142766660052",
+  "fact.team_season_stats": "7265:6652063825676688468:66461491720978583107936",
+  "metadata.conference_id_map": "34:420939023503045506:319068624416807659884",
+  "metadata.game_id_map": "273376:3132719505050340246:2525123414605934997663022",
+  "metadata.player_id_map": "248031:10848519433341111709:2288279844566502027581337",
+  "metadata.source_manifest": "111:17739978034927690541:969756568479364832467",
+  "metadata.team_id_map": "1896:15081082896649940065:17174671483641702041651",
+  "qa.exceptions": "153934:17223377868840570667:1419275869921639113460723",
+  "qa.lineup_units_quarantine": "0:None:None",
+  "qa.pbp_game_reconciliation": "89292:4801463413515488179:824805305978613235648125",
+  "qa.player_season_summary_conflicts": "6095:9559132346219174944:55196322443266873131610",
+  "qa.reconciliation": "3096:12698305989043173735:28450150073103159244893",
+  "qa.season_summary_conflicts": "3167:16634770125507067435:29549381129434585230265",
+  "qa.source_defects": "439325:16325621406928137160:4059386783680538271109492"
+ },
+ "fingerprints_changed_vs_parent": [
+  "fact.player_season_game_derived",
+  "fact.team_season_game_derived",
+  "metadata.game_alias_map",
+  "qa.season_summary_conflicts"
+ ],
+ "canonical_build_id": "20261006T014459Z",
+ "build_timestamp_utc": "2026-10-05 21:44:59.298042-04:00",
+ "generated_at_utc": "2026-10-06T01:55:33+00:00",
  "cbbd_api_schema_version": "CBBD OpenAPI v1.29.0 (reference/CBBD_OPENAPI_VERIFICATION_v1_1.md)",
  "ingestion_version": "stage1-1.0.0",
  "schema_version": "canonical-1.0.0",
@@ -96,7 +170,7 @@
    "bytes": 113583
   }
  },
- "canonical_content_digest": "d01c81fe23abd516deb12836a171fc4fc255d58b829cd6fa903a36cf678427b6",
+ "canonical_content_digest": "e1ee8612415718565e2ecc72cac6c167b9d838666270a1c13122e8f8cfb456ed",
  "canonical_tables": {
   "availability.events": {
    "rows": 0,
@@ -196,7 +270,7 @@
   },
   "fact.player_season_game_derived": {
    "rows": 99390,
-   "fingerprint": "99390:7066074568209806870:917931326302148855562236"
+   "fingerprint": "99390:1937859997578882420:915584412873639006171282"
   },
   "fact.player_season_shooting": {
    "rows": 55429,
@@ -232,7 +306,7 @@
   },
   "fact.team_season_game_derived": {
    "rows": 13034,
-   "fingerprint": "13034:945725527780871071:118938351427775875456087"
+   "fingerprint": "13034:2324136702671764007:120437379962813555242887"
   },
   "fact.team_season_shooting": {
    "rows": 4254,
@@ -245,6 +319,10 @@
   "metadata.conference_id_map": {
    "rows": 34,
    "fingerprint": "34:420939023503045506:319068624416807659884"
+  },
+  "metadata.game_alias_map": {
+   "rows": 1204,
+   "fingerprint": "1204:2865634036188908354:11322168633818491349984"
   },
   "metadata.game_id_map": {
    "rows": 273376,
@@ -284,7 +362,7 @@
   },
   "qa.season_summary_conflicts": {
    "rows": 3167,
-   "fingerprint": "3167:16634770125507067435:29549381129434585230265"
+   "fingerprint": "3167:452617658610305681:29528326581528604340509"
   },
   "qa.source_defects": {
    "rows": 439325,
@@ -373,7 +451,7 @@
  "excluded_lockbox_season": "2025-26",
  "lockbox_touched": false,
  "code_commit": {
-  "head": "154a24c88ea2b0023ce9e43a8ce358176cc93edd",
+  "head": "c2c1b1edd45e43d50b1cc5e816f2ce43bcf8a9fa",
   "tracked_changes_at_build": true
  },
  "unresolved_defect_counts": {

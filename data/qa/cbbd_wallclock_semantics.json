@@ -1,5 +1,13 @@
 {
  "classification": "MIXED",
+ "policy": "UNTRUSTED_MIXED",
+ "prohibited_uses": [
+  "historical point-in-time cutoffs",
+  "feature availability",
+  "event latency",
+  "game tip reconstruction",
+  "live-model timing"
+ ],
  "approved_for_pit_or_latency": false,
  "rule": "Raw wallclock is preserved unchanged and remains PROHIBITED for PIT cutoffs and live latency until the architect approves a conversion rule backed by this classification.",
  "games_with_wallclock_and_exact_tip": 26613,
@@ -168,211 +176,13 @@
   "p90": 130.8
  },
  "examples": {
-  "CENTRAL": [
-   {
-    "game": "G-2586225d69d7b56e",
-    "season": 2021,
-    "tip_utc": "2021-01-18 20:00:00+00:00",
-    "venue_state": "AL",
-    "first_wallclock_raw": "2021-01-18T20:02:42.000Z",
-    "residual_hours": {
-     "UTC": 0.04,
-     "EASTERN_TIME_MISLABELED_Z": 5.04,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 6.04
-    }
-   },
-   {
-    "game": "G-a7bc55ab1101eac9",
-    "season": 2021,
-    "tip_utc": "2021-01-26 00:00:00+00:00",
-    "venue_state": "IL",
-    "first_wallclock_raw": "2021-01-26T00:06:49.000Z",
-    "residual_hours": {
-     "UTC": 0.11,
-     "EASTERN_TIME_MISLABELED_Z": 5.11,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 6.11
-    }
-   },
-   {
-    "game": "G-94a9ce5bae69aebe",
-    "season": 2021,
-    "tip_utc": "2021-01-28 01:00:00+00:00",
-    "venue_state": "LA",
-    "first_wallclock_raw": "2021-01-28T01:02:11.000Z",
-    "residual_hours": {
-     "UTC": 0.04,
-     "EASTERN_TIME_MISLABELED_Z": 5.04,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 6.04
-    }
-   },
-   {
-    "game": "G-f9ea4fe7fb3cced4",
-    "season": 2021,
-    "tip_utc": "2021-01-28 01:30:00+00:00",
-    "venue_state": "AR",
-    "first_wallclock_raw": "2021-01-28T01:36:15.000Z",
-    "residual_hours": {
-     "UTC": 0.1,
-     "EASTERN_TIME_MISLABELED_Z": 5.1,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 6.1
-    }
-   },
-   {
-    "game": "G-b0156c896a8fde81",
-    "season": 2022,
-    "tip_utc": "2022-01-28 01:00:00+00:00",
-    "venue_state": "MN",
-    "first_wallclock_raw": "2022-01-27T20:02:22.000Z",
-    "residual_hours": {
-     "UTC": -4.96,
-     "EASTERN_TIME_MISLABELED_Z": 0.04,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.04
-    }
-   }
-  ],
-  "EASTERN": [
-   {
-    "game": "G-90e4e36c6ce2c070",
-    "season": 2021,
-    "tip_utc": "2021-01-21 00:00:00+00:00",
-    "venue_state": "VA",
-    "first_wallclock_raw": "2021-01-21T00:02:12.000Z",
-    "residual_hours": {
-     "UTC": 0.04,
-     "EASTERN_TIME_MISLABELED_Z": 5.04,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.04
-    }
-   },
-   {
-    "game": "G-281c6f290b0f34ac",
-    "season": 2021,
-    "tip_utc": "2021-01-22 23:00:00+00:00",
-    "venue_state": "NC",
-    "first_wallclock_raw": "2021-01-22T23:02:05.000Z",
-    "residual_hours": {
-     "UTC": 0.03,
-     "EASTERN_TIME_MISLABELED_Z": 5.03,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.03
-    }
-   },
-   {
-    "game": "G-5f9d98546b7277b7",
-    "season": 2021,
-    "tip_utc": "2021-01-23 19:00:00+00:00",
-    "venue_state": "NC",
-    "first_wallclock_raw": "2021-01-23T19:02:42.000Z",
-    "residual_hours": {
-     "UTC": 0.04,
-     "EASTERN_TIME_MISLABELED_Z": 5.04,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.04
-    }
-   },
-   {
-    "game": "G-05e8de596c8da439",
-    "season": 2021,
-    "tip_utc": "2021-01-23 19:00:00+00:00",
-    "venue_state": "NH",
-    "first_wallclock_raw": "2021-01-23T19:04:17.000Z",
-    "residual_hours": {
-     "UTC": 0.07,
-     "EASTERN_TIME_MISLABELED_Z": 5.07,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.07
-    }
-   },
-   {
-    "game": "G-e0083e523caea795",
-    "season": 2021,
-    "tip_utc": "2021-01-23 21:00:00+00:00",
-    "venue_state": "PA",
-    "first_wallclock_raw": "2021-01-23T21:04:15.000Z",
-    "residual_hours": {
-     "UTC": 0.07,
-     "EASTERN_TIME_MISLABELED_Z": 5.07,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.07
-    }
-   }
-  ],
-  "PACIFIC": [
-   {
-    "game": "G-80d6804be0c3d731",
-    "season": 2021,
-    "tip_utc": "2021-01-22 03:00:00+00:00",
-    "venue_state": "WA",
-    "first_wallclock_raw": "2021-01-22T03:07:27.000Z",
-    "residual_hours": {
-     "UTC": 0.12,
-     "EASTERN_TIME_MISLABELED_Z": 5.12,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 8.12
-    }
-   },
-   {
-    "game": "G-8fdeaa617510026b",
-    "season": 2021,
-    "tip_utc": "2021-01-26 02:00:00+00:00",
-    "venue_state": "NV",
-    "first_wallclock_raw": "2021-01-26T02:12:36.000Z",
-    "residual_hours": {
-     "UTC": 0.21,
-     "EASTERN_TIME_MISLABELED_Z": 5.21,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 8.21
-    }
-   },
-   {
-    "game": "G-3d43e88b104d523e",
-    "season": 2022,
-    "tip_utc": "2022-01-28 02:00:00+00:00",
-    "venue_state": "CA",
-    "first_wallclock_raw": "2022-01-27T21:04:21.000Z",
-    "residual_hours": {
-     "UTC": -4.93,
-     "EASTERN_TIME_MISLABELED_Z": 0.07,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.07
-    }
-   },
-   {
-    "game": "G-b59df6da800830f5",
-    "season": 2022,
-    "tip_utc": "2022-01-28 03:00:00+00:00",
-    "venue_state": "CA",
-    "first_wallclock_raw": "2022-01-27T22:08:33.000Z",
-    "residual_hours": {
-     "UTC": -4.86,
-     "EASTERN_TIME_MISLABELED_Z": 0.14,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.14
-    }
-   },
-   {
-    "game": "G-452affec414dd71d",
-    "season": 2022,
-    "tip_utc": "2022-01-30 01:00:00+00:00",
-    "venue_state": "CA",
-    "first_wallclock_raw": "2022-01-29T20:31:36.000Z",
-    "residual_hours": {
-     "UTC": -4.47,
-     "EASTERN_TIME_MISLABELED_Z": 0.53,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.53
-    }
-   }
-  ],
   "MOUNTAIN": [
    {
-    "game": "G-87ba129eb5e69556",
+    "game": "G-06b4bf8e53d23c58",
     "season": 2021,
-    "tip_utc": "2021-01-24 03:00:00+00:00",
-    "venue_state": "UT",
-    "first_wallclock_raw": "2021-01-24T03:12:12.000Z",
-    "residual_hours": {
-     "UTC": 0.2,
-     "EASTERN_TIME_MISLABELED_Z": 5.2,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 7.2
-    }
-   },
-   {
-    "game": "G-0f4a2f9a1cfb6641",
-    "season": 2022,
-    "tip_utc": "2022-01-28 02:00:00+00:00",
-    "venue_state": "MT",
-    "first_wallclock_raw": "2022-01-27T21:01:32.000Z",
+    "tip_utc": "2021-02-07 01:00:00+00:00",
+    "venue_state": "CO",
+    "first_wallclock_raw": "2021-02-06T20:01:50.000Z",
     "residual_hours": {
      "UTC": -4.97,
      "EASTERN_TIME_MISLABELED_Z": 0.03,
@@ -380,77 +190,263 @@
     }
    },
    {
-    "game": "G-ed036be6dc396415",
-    "season": 2024,
-    "tip_utc": "2023-12-03 02:00:00+00:00",
-    "venue_state": "NM",
-    "first_wallclock_raw": "2023-12-02T21:08:41.000Z",
+    "game": "G-9b942636efc7d3f2",
+    "season": 2021,
+    "tip_utc": "2021-02-09 21:00:00+00:00",
+    "venue_state": "UT",
+    "first_wallclock_raw": "2021-02-09T16:05:37.000Z",
     "residual_hours": {
-     "UTC": -4.86,
-     "EASTERN_TIME_MISLABELED_Z": 0.14,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.14
+     "UTC": -4.91,
+     "EASTERN_TIME_MISLABELED_Z": 0.09,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.09
     }
    },
    {
-    "game": "G-d879ba6533da93d3",
-    "season": 2024,
-    "tip_utc": "2023-12-30 02:00:00+00:00",
-    "venue_state": "NM",
-    "first_wallclock_raw": "2023-12-29T21:04:29.000Z",
+    "game": "G-731fa7877bb066c5",
+    "season": 2021,
+    "tip_utc": "2021-02-12 02:00:00+00:00",
+    "venue_state": "CO",
+    "first_wallclock_raw": "2021-02-11T21:08:57.000Z",
+    "residual_hours": {
+     "UTC": -4.85,
+     "EASTERN_TIME_MISLABELED_Z": 0.15,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.15
+    }
+   },
+   {
+    "game": "G-bd49acaa1028b2ac",
+    "season": 2021,
+    "tip_utc": "2021-02-13 01:00:00+00:00",
+    "venue_state": "UT",
+    "first_wallclock_raw": "2021-02-12T20:07:14.000Z",
+    "residual_hours": {
+     "UTC": -4.88,
+     "EASTERN_TIME_MISLABELED_Z": 0.12,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.12
+    }
+   },
+   {
+    "game": "G-bb106fa447370f23",
+    "season": 2021,
+    "tip_utc": "2021-02-13 20:00:00+00:00",
+    "venue_state": "CO",
+    "first_wallclock_raw": "2021-02-13T15:06:17.000Z",
+    "residual_hours": {
+     "UTC": -4.9,
+     "EASTERN_TIME_MISLABELED_Z": 0.1,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.1
+    }
+   }
+  ],
+  "EASTERN": [
+   {
+    "game": "G-edba975d401c93c6",
+    "season": 2021,
+    "tip_utc": "2021-02-07 01:00:00+00:00",
+    "venue_state": "GA",
+    "first_wallclock_raw": "2021-02-06T20:01:43.000Z",
+    "residual_hours": {
+     "UTC": -4.97,
+     "EASTERN_TIME_MISLABELED_Z": 0.03,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 0.03
+    }
+   },
+   {
+    "game": "G-2417eb2101a437cc",
+    "season": 2021,
+    "tip_utc": "2021-02-07 19:00:00+00:00",
+    "venue_state": "VA",
+    "first_wallclock_raw": "2021-02-07T14:05:43.000Z",
+    "residual_hours": {
+     "UTC": -4.9,
+     "EASTERN_TIME_MISLABELED_Z": 0.1,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 0.1
+    }
+   },
+   {
+    "game": "G-354aa4744e2d3a9b",
+    "season": 2021,
+    "tip_utc": "2021-02-08 18:00:00+00:00",
+    "venue_state": "OH",
+    "first_wallclock_raw": "2021-02-08T13:05:40.000Z",
+    "residual_hours": {
+     "UTC": -4.91,
+     "EASTERN_TIME_MISLABELED_Z": 0.09,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 0.09
+    }
+   },
+   {
+    "game": "G-b2094bcb52274342",
+    "season": 2021,
+    "tip_utc": "2021-02-08 21:00:00+00:00",
+    "venue_state": "VA",
+    "first_wallclock_raw": "2021-02-08T16:03:44.000Z",
+    "residual_hours": {
+     "UTC": -4.94,
+     "EASTERN_TIME_MISLABELED_Z": 0.06,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 0.06
+    }
+   },
+   {
+    "game": "G-5e798f44628a8e6f",
+    "season": 2021,
+    "tip_utc": "2021-02-08 22:00:00+00:00",
+    "venue_state": "SC",
+    "first_wallclock_raw": "2021-02-08T17:03:30.000Z",
+    "residual_hours": {
+     "UTC": -4.94,
+     "EASTERN_TIME_MISLABELED_Z": 0.06,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 0.06
+    }
+   }
+  ],
+  "CENTRAL": [
+   {
+    "game": "G-9568e7085c73b9f2",
+    "season": 2021,
+    "tip_utc": "2021-02-07 01:00:00+00:00",
+    "venue_state": "LA",
+    "first_wallclock_raw": "2021-02-06T20:04:17.000Z",
     "residual_hours": {
      "UTC": -4.93,
      "EASTERN_TIME_MISLABELED_Z": 0.07,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.07
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.07
     }
    },
    {
-    "game": "G-ca240a0309bdab5d",
+    "game": "G-b7439a894379137a",
     "season": 2021,
-    "tip_utc": "2021-02-28 03:00:00+00:00",
-    "venue_state": "CO",
-    "first_wallclock_raw": "2021-02-27T22:06:35.000Z",
+    "tip_utc": "2021-02-07 17:00:00+00:00",
+    "venue_state": "LA",
+    "first_wallclock_raw": "2021-02-07T12:03:24.000Z",
+    "residual_hours": {
+     "UTC": -4.94,
+     "EASTERN_TIME_MISLABELED_Z": 0.06,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.06
+    }
+   },
+   {
+    "game": "G-8ed800767fb3d0d6",
+    "season": 2021,
+    "tip_utc": "2021-02-11 00:30:00+00:00",
+    "venue_state": "IA",
+    "first_wallclock_raw": "2021-02-10T19:43:02.000Z",
+    "residual_hours": {
+     "UTC": -4.78,
+     "EASTERN_TIME_MISLABELED_Z": 0.22,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.22
+    }
+   },
+   {
+    "game": "G-7e7e374dd85dddc3",
+    "season": 2021,
+    "tip_utc": "2021-02-11 01:00:00+00:00",
+    "venue_state": "AL",
+    "first_wallclock_raw": "2021-02-10T20:02:34.000Z",
+    "residual_hours": {
+     "UTC": -4.96,
+     "EASTERN_TIME_MISLABELED_Z": 0.04,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.04
+    }
+   },
+   {
+    "game": "G-61f77a61ff362b4f",
+    "season": 2021,
+    "tip_utc": "2021-02-11 02:00:00+00:00",
+    "venue_state": "MO",
+    "first_wallclock_raw": "2021-02-10T21:06:31.000Z",
     "residual_hours": {
      "UTC": -4.89,
      "EASTERN_TIME_MISLABELED_Z": 0.11,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.11
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 1.11
+    }
+   }
+  ],
+  "PACIFIC": [
+   {
+    "game": "G-943074965c8cde33",
+    "season": 2021,
+    "tip_utc": "2021-02-07 03:00:00+00:00",
+    "venue_state": "CA",
+    "first_wallclock_raw": "2021-02-06T22:05:39.000Z",
+    "residual_hours": {
+     "UTC": -4.91,
+     "EASTERN_TIME_MISLABELED_Z": 0.09,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.09
+    }
+   },
+   {
+    "game": "G-00a83edc9d2f8d5c",
+    "season": 2021,
+    "tip_utc": "2021-02-07 21:00:00+00:00",
+    "venue_state": "CA",
+    "first_wallclock_raw": "2021-02-07T16:02:34.000Z",
+    "residual_hours": {
+     "UTC": -4.96,
+     "EASTERN_TIME_MISLABELED_Z": 0.04,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.04
+    }
+   },
+   {
+    "game": "G-bcf3e4403523418b",
+    "season": 2021,
+    "tip_utc": "2021-02-08 03:00:00+00:00",
+    "venue_state": "CA",
+    "first_wallclock_raw": "2021-02-07T22:02:15.000Z",
+    "residual_hours": {
+     "UTC": -4.96,
+     "EASTERN_TIME_MISLABELED_Z": 0.04,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.04
+    }
+   },
+   {
+    "game": "G-299674aa87df1210",
+    "season": 2021,
+    "tip_utc": "2021-02-10 22:00:00+00:00",
+    "venue_state": "CA",
+    "first_wallclock_raw": "2021-02-10T17:06:23.000Z",
+    "residual_hours": {
+     "UTC": -4.89,
+     "EASTERN_TIME_MISLABELED_Z": 0.11,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.11
+    }
+   },
+   {
+    "game": "G-3c1ec103cd8f8a36",
+    "season": 2021,
+    "tip_utc": "2021-02-11 23:00:00+00:00",
+    "venue_state": "CA",
+    "first_wallclock_raw": "2021-02-11T18:03:05.000Z",
+    "residual_hours": {
+     "UTC": -4.95,
+     "EASTERN_TIME_MISLABELED_Z": 0.05,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 3.05
     }
    }
   ],
   "MOUNTAIN_NO_DST": [
    {
-    "game": "G-7980aedac606688d",
-    "season": 2024,
-    "tip_utc": "2023-12-21 01:00:00+00:00",
-    "venue_state": "AZ",
-    "first_wallclock_raw": "2023-12-20T20:07:53.000Z",
-    "residual_hours": {
-     "UTC": -4.87,
-     "EASTERN_TIME_MISLABELED_Z": 0.13,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.13
-    }
-   },
-   {
-    "game": "G-3d297b92b759371c",
+    "game": "G-7a7a4afab81cb316",
     "season": 2021,
-    "tip_utc": "2021-02-28 02:00:00+00:00",
+    "tip_utc": "2021-02-12 01:00:00+00:00",
     "venue_state": "AZ",
-    "first_wallclock_raw": "2021-02-27T21:07:54.000Z",
+    "first_wallclock_raw": "2021-02-11T20:06:44.000Z",
     "residual_hours": {
-     "UTC": -4.87,
-     "EASTERN_TIME_MISLABELED_Z": 0.13,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.13
+     "UTC": -4.89,
+     "EASTERN_TIME_MISLABELED_Z": 0.11,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.11
     }
    },
    {
-    "game": "G-97fc0e70a0ba8685",
-    "season": 2025,
-    "tip_utc": "2024-12-07 19:00:00+00:00",
+    "game": "G-4f62674ef4420b32",
+    "season": 2021,
+    "tip_utc": "2021-02-13 19:00:00+00:00",
     "venue_state": "AZ",
-    "first_wallclock_raw": "2024-12-07T14:10:34.000Z",
+    "first_wallclock_raw": "2021-02-13T14:05:58.000Z",
     "residual_hours": {
-     "UTC": -4.82,
-     "EASTERN_TIME_MISLABELED_Z": 0.18,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.18
+     "UTC": -4.9,
+     "EASTERN_TIME_MISLABELED_Z": 0.1,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.1
     }
    },
    {
@@ -466,19 +462,67 @@
     }
    },
    {
-    "game": "G-e218aedecbadaab4",
-    "season": 2025,
-    "tip_utc": "2025-02-15 19:00:00+00:00",
+    "game": "G-79d5daf97c588bf6",
+    "season": 2021,
+    "tip_utc": "2021-01-16 21:00:00+00:00",
     "venue_state": "AZ",
-    "first_wallclock_raw": "2025-02-16T00:01:07.000Z",
+    "first_wallclock_raw": "2021-01-16T21:07:48.000Z",
     "residual_hours": {
-     "UTC": 5.02,
-     "EASTERN_TIME_MISLABELED_Z": 10.02,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 12.02
+     "UTC": 0.13,
+     "EASTERN_TIME_MISLABELED_Z": 5.13,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 7.13
+    }
+   },
+   {
+    "game": "G-d4b95ab6b9023b18",
+    "season": 2021,
+    "tip_utc": "2021-02-21 02:00:00+00:00",
+    "venue_state": "AZ",
+    "first_wallclock_raw": "2021-02-20T21:08:09.000Z",
+    "residual_hours": {
+     "UTC": -4.86,
+     "EASTERN_TIME_MISLABELED_Z": 0.14,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 2.14
     }
    }
   ],
   "HAWAII": [
+   {
+    "game": "G-f5d0062747099f65",
+    "season": 2021,
+    "tip_utc": "2021-01-16 04:59:00+00:00",
+    "venue_state": "HI",
+    "first_wallclock_raw": "2021-01-15T05:07:10.000Z",
+    "residual_hours": {
+     "UTC": -23.86,
+     "EASTERN_TIME_MISLABELED_Z": -18.86,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": -13.86
+    }
+   },
+   {
+    "game": "G-d6bb1baaf4300df3",
+    "season": 2022,
+    "tip_utc": "2021-11-14 02:30:00+00:00",
+    "venue_state": "HI",
+    "first_wallclock_raw": "2021-11-13T21:31:53.000Z",
+    "residual_hours": {
+     "UTC": -4.97,
+     "EASTERN_TIME_MISLABELED_Z": 0.03,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.03
+    }
+   },
+   {
+    "game": "G-5b96def39a6bff95",
+    "season": 2022,
+    "tip_utc": "2021-11-14 04:59:00+00:00",
+    "venue_state": "HI",
+    "first_wallclock_raw": "2021-11-13T00:23:11.000Z",
+    "residual_hours": {
+     "UTC": -28.6,
+     "EASTERN_TIME_MISLABELED_Z": -23.6,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": -18.6
+    }
+   },
    {
     "game": "G-0cf33ed612b5c2ab",
     "season": 2022,
@@ -492,51 +536,15 @@
     }
    },
    {
-    "game": "G-131d5f3eac622db3",
-    "season": 2023,
-    "tip_utc": "2022-11-15 04:59:00+00:00",
+    "game": "G-9f5b2b3271c66c1c",
+    "season": 2022,
+    "tip_utc": "2021-12-23 02:30:00+00:00",
     "venue_state": "HI",
-    "first_wallclock_raw": "2022-11-14T00:08:30.000Z",
+    "first_wallclock_raw": "2021-12-22T21:36:52.000Z",
     "residual_hours": {
-     "UTC": -28.84,
-     "EASTERN_TIME_MISLABELED_Z": -23.84,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": -18.84
-    }
-   },
-   {
-    "game": "G-2eaaf93adc44c229",
-    "season": 2024,
-    "tip_utc": "2023-11-21 19:30:00+00:00",
-    "venue_state": "HI",
-    "first_wallclock_raw": "2023-11-21T14:34:46.000Z",
-    "residual_hours": {
-     "UTC": -4.92,
-     "EASTERN_TIME_MISLABELED_Z": 0.08,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.08
-    }
-   },
-   {
-    "game": "G-4cbe7c7ae37b3b12",
-    "season": 2024,
-    "tip_utc": "2024-01-14 04:59:00+00:00",
-    "venue_state": "HI",
-    "first_wallclock_raw": "2024-01-14T00:05:55.000Z",
-    "residual_hours": {
-     "UTC": -4.88,
-     "EASTERN_TIME_MISLABELED_Z": 0.12,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.12
-    }
-   },
-   {
-    "game": "G-0bf24f161c46d146",
-    "season": 2025,
-    "tip_utc": "2024-12-26 02:45:00+00:00",
-    "venue_state": "HI",
-    "first_wallclock_raw": "2024-12-25T21:47:52.000Z",
-    "residual_hours": {
-     "UTC": -4.95,
-     "EASTERN_TIME_MISLABELED_Z": 0.05,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.05
+     "UTC": -4.89,
+     "EASTERN_TIME_MISLABELED_Z": 0.11,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": 5.11
     }
    }
   ],
@@ -554,18 +562,6 @@
     }
    },
    {
-    "game": "G-7bcd1111b440150a",
-    "season": 2025,
-    "tip_utc": "2024-11-24 17:00:00+00:00",
-    "venue_state": "Puerto Rico",
-    "first_wallclock_raw": "2024-11-24T12:10:49.000Z",
-    "residual_hours": {
-     "UTC": -4.82,
-     "EASTERN_TIME_MISLABELED_Z": 0.18,
-     "LOCAL_VENUE_TIME_MISLABELED_Z": -0.82
-    }
-   },
-   {
     "game": "G-77231480f802b8fc",
     "season": 2025,
     "tip_utc": "2024-11-24 20:30:00+00:00",
@@ -575,6 +571,18 @@
      "UTC": -4.94,
      "EASTERN_TIME_MISLABELED_Z": 0.06,
      "LOCAL_VENUE_TIME_MISLABELED_Z": -0.94
+    }
+   },
+   {
+    "game": "G-7bcd1111b440150a",
+    "season": 2025,
+    "tip_utc": "2024-11-24 17:00:00+00:00",
+    "venue_state": "Puerto Rico",
+    "first_wallclock_raw": "2024-11-24T12:10:49.000Z",
+    "residual_hours": {
+     "UTC": -4.82,
+     "EASTERN_TIME_MISLABELED_Z": 0.18,
+     "LOCAL_VENUE_TIME_MISLABELED_Z": -0.82
     }
    },
    {

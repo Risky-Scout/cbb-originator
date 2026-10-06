@@ -1,0 +1,121 @@
+{
+ "resolution_hash": "1da90b6c090a1a282882f7bae3d4cf1c5335857d31db4d171c7bab4173855c87",
+ "map_rows": 1204,
+ "by_class": {
+  "CANONICAL": 48,
+  "DUPLICATE_ALIAS": 47,
+  "LEGITIMATE_DISTINCT_GAME": 1108,
+  "SOURCE_CORRUPT_MISATTRIBUTED": 1
+ },
+ "by_method": {
+  "ARCHITECT_ADJUDICATION_STAGE_2_1": 14,
+  "RULE_TRUE_DUPLICATE_PRIORITY(box attachment)": 82
+ },
+ "raw_source_games": 272560,
+ "trusted_games": 120631,
+ "trusted_games_dev_seasons": 120631,
+ "raw_games_dev_seasons": 120679,
+ "aliases": 47,
+ "quarantined_corrupt": 1,
+ "affected_team_seasons": 85,
+ "removed_duplicate_contributions": 96,
+ "aggregate_totals_old_new": {
+  "games": [
+   2835,
+   2739
+  ],
+  "wins": [
+   1517,
+   1474
+  ],
+  "losses": [
+   1289,
+   1246
+  ],
+  "points_for": [
+   191895,
+   186016
+  ],
+  "points_against": [
+   186067,
+   180188
+  ]
+ },
+ "fact_preservation": {
+  "fact.player_games": {
+   "v2_0_rows": 2368206,
+   "v2_1_rows": 2368206,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 2368206,
+   "rows_without_canonical_game": 0,
+   "trusted_view": "flagship.player_game_outcomes",
+   "trusted_view_rows": 2368206
+  },
+  "fact.team_games": {
+   "v2_0_rows": 235612,
+   "v2_1_rows": 235612,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 235612,
+   "rows_without_canonical_game": 0,
+   "trusted_view": "flagship.team_game_outcomes",
+   "trusted_view_rows": 235612
+  },
+  "fact.participation": {
+   "v2_0_rows": 3189460,
+   "v2_1_rows": 3189460,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 3189460,
+   "rows_without_canonical_game": 0,
+   "trusted_view": "flagship.participation",
+   "trusted_view_rows": 3189460
+  },
+  "fact.plays": {
+   "v2_0_rows": 29021691,
+   "v2_1_rows": 29021691,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 29021404,
+   "rows_without_canonical_game": 287,
+   "trusted_view": null,
+   "trusted_view_rows": null
+  },
+  "fact.shots": {
+   "v2_0_rows": 13638660,
+   "v2_1_rows": 13638660,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 13638528,
+   "rows_without_canonical_game": 132,
+   "trusted_view": null,
+   "trusted_view_rows": null
+  },
+  "fact.substitutions": {
+   "v2_0_rows": 858399,
+   "v2_1_rows": 858399,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 858399,
+   "rows_without_canonical_game": 0,
+   "trusted_view": null,
+   "trusted_view_rows": null
+  },
+  "fact.lineup_stats": {
+   "v2_0_rows": 370401,
+   "v2_1_rows": 370401,
+   "rows_on_alias_or_corrupt_records": 0,
+   "rows_resolving_to_trusted_games": 370401,
+   "rows_without_canonical_game": 0,
+   "trusted_view": "flagship.lineup_stats",
+   "trusted_view_rows": 370401
+  }
+ },
+ "unaudited_pre_window": {
+  "seasons": "< 2005",
+  "raw_records": 151881,
+  "candidate_pairs": 877,
+  "by_class": {
+   "UNRESOLVED": 135,
+   "POSSIBLE_DUPLICATE": 740,
+   "TRUE_DUPLICATE": 2
+  },
+  "status": "raw-only in core.games; excluded from flagship.games (identity not audited/adjudicated)"
+ },
+ "wallclock_policy": "UNTRUSTED_MIXED"
+}
