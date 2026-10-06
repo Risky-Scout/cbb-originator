@@ -8,7 +8,7 @@
     docs/GAME_IDENTITY_RESOLUTION.md
 
 "old" = the all-results aggregate over EVERY core.games source record (the Stage 2.0 definition);
-"new" = fact.team_season_game_derived, which Stage 2.1 builds from the trusted relation flagship.games.
+"new" = the same aggregate over the trusted (deduplicated) relation flagship.games -- the identity effect only.
 """
 from __future__ import annotations
 
@@ -42,14 +42,29 @@ GROUP BY 1, 2
 """
 
 
+NEW_SQL = """
+WITH results AS (
+    SELECT home_team_id AS team, season, home_points AS pts, away_points AS opp FROM flagship.games
+    WHERE home_points IS NOT NULL AND away_points IS NOT NULL
+    UNION ALL SELECT away_team_id, season, away_points, home_points FROM flagship.games
+    WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
+SELECT team AS canonical_team_id, season, count(*) AS games_with_result, count(*) FILTER (WHERE pts > opp) AS wins,
+       count(*) FILTER (WHERE pts < opp) AS losses, sum(pts) AS points_all_results, sum(opp) AS opp_points_all_results
+FROM results GROUP BY 1, 2
+"""
+
+
 def impact_rows(con) -> list[dict]:
+    # Stage 2.1 identity effect ONLY: all source records vs the trusted (deduplicated) relation flagship.games.
+    # (fact.team_season_game_derived additionally excludes unplayed records since Stage 2.2.)
     cur = con.execute(f"""
         SELECT t.school AS team, o.team AS canonical_team_id, o.season,
                o.n AS old_games, d.games_with_result AS new_games, o.w AS old_wins, d.wins AS new_wins,
                o.l AS old_losses, d.losses AS new_losses, o.pf AS old_points_for, d.points_all_results AS new_points_for,
                o.pa AS old_points_against, d.opp_points_all_results AS new_points_against,
                o.removed AS removed_duplicate_contributions, array_to_string(o.involved, ' ') AS source_game_ids_involved
-        FROM ({OLD_SQL}) o JOIN fact.team_season_game_derived d ON d.canonical_team_id = o.team AND d.season = o.season
+        FROM ({OLD_SQL}) o JOIN ({NEW_SQL}) d ON d.canonical_team_id = o.team AND d.season = o.season
+        JOIN fact.team_season_game_derived x ON x.canonical_team_id = o.team AND x.season = o.season
         JOIN core.teams t ON t.canonical_team_id = o.team
         WHERE (o.n, o.w, o.l, o.pf, o.pa) IS DISTINCT FROM (d.games_with_result, d.wins, d.losses, d.points_all_results, d.opp_points_all_results)
         ORDER BY o.season, t.school""")

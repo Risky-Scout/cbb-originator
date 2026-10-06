@@ -649,6 +649,15 @@ CREATE TABLE IF NOT EXISTS metadata.game_alias_map (
     PRIMARY KEY (provider, source_game_id)
 );
 
+-- Stage 2.2: played-game status of every trusted game (cbb_platform/game_status.py). Only PLAYED_CONFIRMED
+-- (positive evidence of play) enters flagship.played_games, the modeling universe.
+CREATE TABLE IF NOT EXISTS metadata.game_status_resolution (
+    canonical_game_id VARCHAR PRIMARY KEY, source_game_id VARCHAR NOT NULL, season INTEGER NOT NULL,
+    status VARCHAR NOT NULL,                  -- PLAYED_CONFIRMED | UNPLAYED_OR_CANCELLED | SCHEDULE_PLACEHOLDER | SOURCE_STATUS_UNRESOLVED
+    evidence VARCHAR NOT NULL, excluded_from_played_games BOOLEAN NOT NULL,
+    resolution_method VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS metadata.conference_id_map (
     provider VARCHAR NOT NULL, provider_conference_key VARCHAR NOT NULL, canonical_conference_id VARCHAR,
     match_method VARCHAR NOT NULL, match_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
@@ -716,6 +725,11 @@ CREATE OR REPLACE VIEW metadata.trusted_game_map AS
 CREATE OR REPLACE VIEW flagship.games AS
     SELECT g.* FROM core.games g WHERE g.season BETWEEN 2005 AND 2025 AND NOT EXISTS (SELECT 1 FROM metadata.game_alias_map m
         WHERE m.source_canonical_game_id = g.canonical_game_id AND m.excluded_from_trusted_games);
+-- THE modeling universe (Stage 2.2): trusted contests with positive evidence of having been played.
+-- flagship.games stays the trusted schedule/history relation (scheduled but unplayed records included).
+CREATE OR REPLACE VIEW flagship.played_games AS
+    SELECT g.* FROM flagship.games g JOIN metadata.game_status_resolution s USING (canonical_game_id)
+    WHERE NOT s.excluded_from_played_games;
 CREATE OR REPLACE VIEW flagship.game_schedule_versions AS
     SELECT s.* FROM core.game_schedule_versions s JOIN flagship.games g USING (canonical_game_id);
 CREATE OR REPLACE VIEW flagship.team_seasons           AS SELECT * FROM core.team_seasons;

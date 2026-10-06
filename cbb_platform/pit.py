@@ -28,7 +28,7 @@ def _target(con: duckdb.DuckDBPyConnection, target_game_id: str) -> tuple:
 
 
 AS_OF_SQL = """
-SELECT t.* FROM flagship.team_game_outcomes t JOIN flagship.games g USING (canonical_game_id)
+SELECT t.* FROM flagship.team_game_outcomes t JOIN flagship.played_games g USING (canonical_game_id)   -- Stage 2.2: played only
 WHERE t.canonical_team_id = $team AND t.season = $season
   AND t.historical_knowable_at < $cutoff                      -- knowable strictly before the cutoff
   AND t.canonical_game_id <> $target                          -- HR-2: never the target game
@@ -68,7 +68,7 @@ RESULTS_AS_OF_SQL = """
 SELECT g.canonical_game_id,
        CASE WHEN g.home_team_id = $team THEN g.home_points ELSE g.away_points END AS pts_for,
        CASE WHEN g.home_team_id = $team THEN g.away_points ELSE g.home_points END AS pts_against
-FROM flagship.games g                                         -- TRUSTED games: an alias never adds a result
+FROM flagship.played_games g        -- trusted PLAYED games: an alias or an unplayed record never adds a result
 WHERE $team IN (g.home_team_id, g.away_team_id) AND g.season = $season
   AND g.home_points IS NOT NULL AND g.away_points IS NOT NULL
   AND g.canonical_game_id <> $target
@@ -83,6 +83,17 @@ def team_results_to_date(con: duckdb.DuckDBPyConnection, team_id: str, target_ga
     season, tip, date_et = _target(con, target_game_id)
     return dict(zip(("games", "wins", "losses", "points_for", "points_against", "game_ids"), con.execute(f"""
         SELECT count(*), count(*) FILTER (WHERE pts_for > pts_against), count(*) FILTER (WHERE pts_for < pts_against),
-               sum(pts_for), sum(pts_against), list(canonical_game_id ORDER BY canonical_game_id)
+               sum(pts_for), sum(pts_against), coalesce(list(canonical_game_id ORDER BY canonical_game_id), [])
         FROM ({RESULTS_AS_OF_SQL})""", {"team": team_id, "season": season, "target": target_game_id, "tip": tip,
                                         "date_et": date_et}).fetchone()))
+
+
+def last_game_before(con: duckdb.DuckDBPyConnection, team_id: str, target_game_id: str):
+    """(canonical_game_id, scheduled_tip_utc, game_date_et) of the team's most recent PLAYED game strictly before the
+    target -- the anchor for days-rest. A scheduled-but-unplayed record can never reset rest (Stage 2.2)."""
+    season, tip, date_et = _target(con, target_game_id)
+    return con.execute("""SELECT canonical_game_id, scheduled_tip_utc, game_date_et FROM flagship.played_games
+        WHERE ? IN (home_team_id, away_team_id) AND season = ? AND canonical_game_id <> ?
+          AND (CASE WHEN ? IS NOT NULL AND scheduled_tip_utc IS NOT NULL THEN scheduled_tip_utc < ? ELSE game_date_et < ? END)
+        ORDER BY coalesce(scheduled_tip_utc, CAST(game_date_et AS TIMESTAMPTZ)) DESC, canonical_game_id DESC LIMIT 1""",
+                       [team_id, season, target_game_id, tip, tip, date_et]).fetchone()

@@ -13,12 +13,14 @@ import time
 
 def run() -> dict:
     from cbb_platform import (build_canonical, cbbd_client, coverage, dataset_manifest, event_audit, event_discovery,
-                              event_equivalence, game_identity_audit, game_identity_report, stage2_reports, wallclock_audit)
+                              event_equivalence, game_identity_audit, game_identity_report, game_status_report, stage2_reports,
+                              wallclock_audit)
     t = {}
     for name, fn in (("build_canonical", build_canonical.build), ("discovery", event_discovery.analyze),
                      ("equivalence", event_equivalence.analyze), ("game_identity", game_identity_audit.run),
                      ("wallclock", wallclock_audit.run), ("event_audit", event_audit.run),
-                     ("game_identity_resolution", game_identity_report.run), ("coverage", coverage.run),
+                     ("game_identity_resolution", game_identity_report.run),
+                     ("game_status_resolution", game_status_report.run), ("coverage", coverage.run),
                      ("reports", stage2_reports.run), ("backfill_manifest", cbbd_client.compile_manifest),
                      ("dataset_manifest", dataset_manifest.build)):
         t0 = time.time()

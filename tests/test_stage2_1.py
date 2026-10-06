@@ -175,11 +175,11 @@ def test_every_affected_team_season_is_recomputed_through_trusted_games(db):
     for r in impact:
         removed = int(r["removed_duplicate_contributions"])
         assert removed >= 1 and int(r["old_games"]) - int(r["new_games"]) == removed, r
-    # the derived table equals an independent recomputation over the trusted relation, for EVERY team-season
+    # the derived table equals an independent recomputation over the trusted (since 2.2: played) relation, every team-season
     assert scalar(db, """SELECT count(*) FROM fact.team_season_game_derived d JOIN (
         SELECT team, season, count(*) n, count(*) FILTER (WHERE p > o) w, count(*) FILTER (WHERE p < o) l, sum(p) pf, sum(o) pa FROM (
-            SELECT home_team_id team, season, home_points p, away_points o FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
-            UNION ALL SELECT away_team_id, season, away_points, home_points FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
+            SELECT home_team_id team, season, home_points p, away_points o FROM flagship.played_games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
+            UNION ALL SELECT away_team_id, season, away_points, home_points FROM flagship.played_games WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
         GROUP BY 1, 2) r ON r.team = d.canonical_team_id AND r.season = d.season
         WHERE (d.games_with_result, d.wins, d.losses, d.points_all_results, d.opp_points_all_results) IS DISTINCT FROM (r.n, r.w, r.l, r.pf, r.pa)""") == 0
     assert scalar(db, "SELECT count(*) FROM fact.team_season_game_derived") == json.loads(
@@ -206,7 +206,9 @@ def test_season_to_date_counts_each_duplicated_contest_once(db, amap):
             assert res["game_ids"].count(rep) == 1, (rep, team)
             assert not set(excluded) & set(res["game_ids"]), (rep, team)
             raw_n, raw_excluded = db.execute("""SELECT count(*), count(*) FILTER (WHERE canonical_game_id IN (
-                    SELECT source_canonical_game_id FROM metadata.game_alias_map WHERE excluded_from_trusted_games))
+                    SELECT source_canonical_game_id FROM metadata.game_alias_map WHERE excluded_from_trusted_games)
+                    OR canonical_game_id IN (SELECT canonical_game_id FROM metadata.game_status_resolution
+                                             WHERE excluded_from_played_games))   -- Stage 2.2 unplayed records
                 FROM core.games WHERE season = ? AND ? IN (home_team_id, away_team_id) AND home_points IS NOT NULL
                   AND scheduled_tip_utc < (SELECT scheduled_tip_utc FROM core.games WHERE canonical_game_id = ?)""",
                 [season, team, nxt[0]]).fetchone()
@@ -253,14 +255,16 @@ def test_resolution_is_deterministic(db):
 
 # ------------------------------------------------------------------ manifest / policy / guards (14-17 also in Stage 1/2 suites)
 def test_new_dataset_version_and_parent(db):
-    man = json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())
-    assert man["dataset_version"].startswith("cbb_data_v2.1+")
+    # the Stage 2.1 dataset is preserved verbatim as an ancestor of the current version
+    man = json.loads((C.MANIFESTS / "DATASET_MANIFEST_cbb_data_v2.1+292c2d2b1739.json").read_text())
+    assert man["dataset_version"] == "cbb_data_v2.1+292c2d2b1739"
     assert man["parent_dataset_version"] == "cbb_data_v2.0+b00e8d3dc798"
+    assert "cbb_data_v2.1+292c2d2b1739" in json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())["lineage"]
     parent = json.loads((C.MANIFESTS / "DATASET_MANIFEST_cbb_data_v2.0+b00e8d3dc798.json").read_text())
     assert parent["dataset_version"] == "cbb_data_v2.0+b00e8d3dc798"                # parent identity preserved
     gi = man["game_identity"]
     assert gi["aliases"] == 47 and gi["quarantined_corrupt"] == 1 and gi["affected_team_seasons"] == 85
-    assert gi["canonical_trusted_games"] == scalar(db, "SELECT count(*) FROM flagship.games")
+    assert gi["canonical_trusted_games"] == scalar(db, "SELECT count(*) FROM flagship.games")   # unchanged by 2.2
     assert man["excluded_lockbox_season"] == "2025-26" and man["lockbox_touched"] is False
 
 
