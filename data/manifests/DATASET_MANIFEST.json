@@ -1,6 +1,6 @@
 {
- "dataset_version": "cbb_data_v2.1+292c2d2b1739",
- "parent_dataset_version": "cbb_data_v2.0+b00e8d3dc798",
+ "dataset_version": "cbb_data_v2.2+95dd9c2fa5b7",
+ "parent_dataset_version": "cbb_data_v2.1+292c2d2b1739",
  "game_identity": {
   "resolution_hash": "1da90b6c090a1a282882f7bae3d4cf1c5335857d31db4d171c7bab4173855c87",
   "map_rows": 1204,
@@ -17,6 +17,31 @@
   "affected_team_seasons": 85,
   "removed_duplicate_contributions": 96
  },
+ "lineage": [
+  "cbb_data_v2.0+b00e8d3dc798",
+  "cbb_data_v2.1+292c2d2b1739"
+ ],
+ "game_status": {
+  "status_hash": "c88a4dedec7f6d9f28c927e9d81ecb5a0abc14097d449a6a584c2afa62b63896",
+  "trusted_games": 120631,
+  "played_games": 120499,
+  "excluded_from_played_games": 132,
+  "status_counts": {
+   "PLAYED_CONFIRMED": 120499,
+   "SCHEDULE_PLACEHOLDER": 41,
+   "SOURCE_STATUS_UNRESOLVED": 91
+  },
+  "zero_zero_by_status": {
+   "PLAYED_CONFIRMED": 0,
+   "UNPLAYED_OR_CANCELLED": 0,
+   "SCHEDULE_PLACEHOLDER": 41,
+   "SOURCE_STATUS_UNRESOLVED": 90
+  },
+  "affected_team_seasons": 172,
+  "excluded_in_model_window_2014_2025": 1
+ },
+ "pre_2005_policy": "OUT_OF_MODELING_SCOPE (preserved raw; never in trusted/modeling views)",
+ "modeling_game_relation": "flagship.played_games",
  "wallclock_policy": "UNTRUSTED_MIXED (raw preserved; prohibited for PIT, availability, latency, tip, live timing)",
  "fingerprints_before": {
   "availability.events": "0:None:None",
@@ -43,7 +68,7 @@
   "fact.play_on_floor": "41450717:14934174784649385682:382312762599273352011444104",
   "fact.play_participants": "28574421:14238379258684593465:263531044673961841174913205",
   "fact.player_games": "2368206:4591861363244304689:21851631581386221512217535",
-  "fact.player_season_game_derived": "99390:7066074568209806870:917931326302148855562236",
+  "fact.player_season_game_derived": "99390:1937859997578882420:915584412873639006171282",
   "fact.player_season_shooting": "55429:7821237910942722:512554550698787664225532",
   "fact.player_season_stats": "99596:18061503232672243849:918007395804337192222643",
   "fact.plays": "29021691:11248129471106088202:267691866211488877978763752",
@@ -52,10 +77,11 @@
   "fact.substitution_pairs": "517979:13182294454147488203:4773037099514036038827837",
   "fact.substitutions": "858399:14624741770436343681:7906345648404902452089173",
   "fact.team_games": "235612:3427783411827214217:2169535433019019508300731",
-  "fact.team_season_game_derived": "13034:945725527780871071:118938351427775875456087",
+  "fact.team_season_game_derived": "13034:2324136702671764007:120437379962813555242887",
   "fact.team_season_shooting": "4254:13912807624665163400:39087400977142766660052",
   "fact.team_season_stats": "7265:6652063825676688468:66461491720978583107936",
   "metadata.conference_id_map": "34:420939023503045506:319068624416807659884",
+  "metadata.game_alias_map": "1204:2865634036188908354:11322168633818491349984",
   "metadata.game_id_map": "273376:3132719505050340246:2525123414605934997663022",
   "metadata.player_id_map": "248031:10848519433341111709:2288279844566502027581337",
   "metadata.source_manifest": "111:17739978034927690541:969756568479364832467",
@@ -65,18 +91,17 @@
   "qa.pbp_game_reconciliation": "89292:4801463413515488179:824805305978613235648125",
   "qa.player_season_summary_conflicts": "6095:9559132346219174944:55196322443266873131610",
   "qa.reconciliation": "3096:12698305989043173735:28450150073103159244893",
-  "qa.season_summary_conflicts": "3167:16634770125507067435:29549381129434585230265",
+  "qa.season_summary_conflicts": "3167:452617658610305681:29528326581528604340509",
   "qa.source_defects": "439325:16325621406928137160:4059386783680538271109492"
  },
  "fingerprints_changed_vs_parent": [
-  "fact.player_season_game_derived",
   "fact.team_season_game_derived",
-  "metadata.game_alias_map",
+  "metadata.game_status_resolution",
   "qa.season_summary_conflicts"
  ],
- "canonical_build_id": "20261006T014459Z",
- "build_timestamp_utc": "2026-10-05 21:44:59.298042-04:00",
- "generated_at_utc": "2026-10-06T01:55:33+00:00",
+ "canonical_build_id": "20261006T022302Z",
+ "build_timestamp_utc": "2026-10-05 22:23:02.165906-04:00",
+ "generated_at_utc": "2026-10-06T02:34:44+00:00",
  "cbbd_api_schema_version": "CBBD OpenAPI v1.29.0 (reference/CBBD_OPENAPI_VERIFICATION_v1_1.md)",
  "ingestion_version": "stage1-1.0.0",
  "schema_version": "canonical-1.0.0",
@@ -170,7 +195,7 @@
    "bytes": 113583
   }
  },
- "canonical_content_digest": "e1ee8612415718565e2ecc72cac6c167b9d838666270a1c13122e8f8cfb456ed",
+ "canonical_content_digest": "72a03e3d42499d1e7311feed0c4d564a793e4c227a1d701b73f11d9d51c7426c",
  "canonical_tables": {
   "availability.events": {
    "rows": 0,
@@ -305,8 +330,8 @@
    "fingerprint": "235612:3427783411827214217:2169535433019019508300731"
   },
   "fact.team_season_game_derived": {
-   "rows": 13034,
-   "fingerprint": "13034:2324136702671764007:120437379962813555242887"
+   "rows": 13031,
+   "fingerprint": "13031:17673994157873849271:120160630604113653521739"
   },
   "fact.team_season_shooting": {
    "rows": 4254,
@@ -327,6 +352,10 @@
   "metadata.game_id_map": {
    "rows": 273376,
    "fingerprint": "273376:3132719505050340246:2525123414605934997663022"
+  },
+  "metadata.game_status_resolution": {
+   "rows": 120631,
+   "fingerprint": "120631:14762026265589743094:1110503418194590918313962"
   },
   "metadata.player_id_map": {
    "rows": 248031,
@@ -362,7 +391,7 @@
   },
   "qa.season_summary_conflicts": {
    "rows": 3167,
-   "fingerprint": "3167:452617658610305681:29528326581528604340509"
+   "fingerprint": "3167:16632088545624642764:29521627468383922840028"
   },
   "qa.source_defects": {
    "rows": 439325,
@@ -451,7 +480,7 @@
  "excluded_lockbox_season": "2025-26",
  "lockbox_touched": false,
  "code_commit": {
-  "head": "c2c1b1edd45e43d50b1cc5e816f2ce43bcf8a9fa",
+  "head": "73a7dec2809789b498856507e4a70db404daa1c7",
   "tracked_changes_at_build": true
  },
  "unresolved_defect_counts": {

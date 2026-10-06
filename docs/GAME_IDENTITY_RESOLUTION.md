@@ -225,7 +225,7 @@ Full table: `data/qa/game_identity_aggregate_impact.csv`.
 
 ## Scope of the trusted relation
 
-`flagship.games` covers the audited development seasons 2005..2025 (end-year). Seasons < 2005 (151,881 raw records) remain raw-only in `core.games`: the same duplicate pattern exists there (877 candidate pairs, {'UNRESOLVED': 135, 'POSSIBLE_DUPLICATE': 740, 'TRUE_DUPLICATE': 2}), it has not been adjudicated, and no box or event data exist for those seasons.
+`flagship.games` covers the audited development seasons 2005..2025 (end-year). Seasons < 2005 (151,881 raw records) remain raw-only in `core.games`: the same duplicate pattern exists there (877 candidate pairs, {'POSSIBLE_DUPLICATE': 740, 'UNRESOLVED': 135, 'TRUE_DUPLICATE': 2}), it has not been adjudicated, and no box or event data exist for those seasons.
 
 ## Wallclock (architect ruling, closed)
 

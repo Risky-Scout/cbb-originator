@@ -125,7 +125,8 @@ def test_measured_root_cause_of_summary_conflicts(db):
         for r in csv.DictReader((C.QA / f).open()):
             k = (r["canonical_team_id"], int(r["season"]))
             g, pts = removed.get(k, (0, 0))
-            removed[k] = (g + int(r["old_games"]) - int(r["new_games"]), pts + int(r["old_points_for"]) - int(r["new_points_for"]))
+            i = lambda v: int(v or 0)          # empty "new" = the team-season has no played game left
+            removed[k] = (g + i(r["old_games"]) - i(r["new_games"]), pts + i(r["old_points_for"]) - i(r["new_points_for"]))
     diff = {(t, s): (g, p) for t, s, g, p in db.execute("""SELECT canonical_team_id, season, s.games - d.games_with_result,
         s.points - d.points_all_results FROM fact.team_season_stats s JOIN fact.team_season_game_derived d
         USING (canonical_team_id, season) WHERE s.games <> d.games_with_result OR s.points <> d.points_all_results""").fetchall()}

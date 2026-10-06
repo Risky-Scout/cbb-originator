@@ -182,8 +182,10 @@ def test_every_affected_team_season_is_recomputed_through_trusted_games(db):
             UNION ALL SELECT away_team_id, season, away_points, home_points FROM flagship.played_games WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
         GROUP BY 1, 2) r ON r.team = d.canonical_team_id AND r.season = d.season
         WHERE (d.games_with_result, d.wins, d.losses, d.points_all_results, d.opp_points_all_results) IS DISTINCT FROM (r.n, r.w, r.l, r.pf, r.pa)""") == 0
+    # same team-season set as v2.0, except team-seasons left with NO played game by Stage 2.2 (only 0-0 records)
+    no_played = [r for r in csv.DictReader((C.QA / "game_status_aggregate_impact.csv").open()) if r["new_games"] == ""]
     assert scalar(db, "SELECT count(*) FROM fact.team_season_game_derived") == json.loads(
-        (C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.team_season_game_derived"]
+        (C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.team_season_game_derived"] - len(no_played)
 
 
 # ------------------------------------------------------------------ 12. PIT counts the contest once

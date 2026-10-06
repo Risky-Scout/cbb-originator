@@ -76,8 +76,12 @@ def test_played_game_aggregates_exclude_unplayed_games(db):
     summary = json.loads((C.QA / "game_status_resolution.json").read_text())
     assert len(impact) == summary["affected_team_seasons"] > 0
     for r in impact:
-        assert int(r["old_games"]) - int(r["new_games"]) == int(r["removed_unplayed_contributions"]) >= 1, r
-        assert (r["old_wins"], r["old_losses"]) == (r["new_wins"], r["new_losses"]) or r["source_game_ids_excluded"] == "47251"
+        # an empty "new" row = the team-season has no played game left (non-D-I teams whose only records were 0-0)
+        assert int(r["old_games"]) - int(r["new_games"] or 0) == int(r["removed_unplayed_contributions"]) >= 1, r
+        if r["new_games"] == "":
+            assert scalar(db, "SELECT count(*) FROM flagship.played_games WHERE season = ? AND ? IN (home_team_id, away_team_id)",
+                          [int(r["season"]), r["canonical_team_id"]]) == 0
+        assert (r["old_wins"], r["old_losses"]) == (r["new_wins"] or "0", r["new_losses"] or "0") or r["source_game_ids_excluded"] == "47251"
     # 0-0 records only change the games count (never wins/losses/points) -- the forfeit-signature record is the only W/L change
     assert summary["zero_zero_in_model_window"] == 0
 

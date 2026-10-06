@@ -1,0 +1,61 @@
+{
+ "zero_zero_trusted_games": 131,
+ "zero_zero_by_status": {
+  "PLAYED_CONFIRMED": 0,
+  "UNPLAYED_OR_CANCELLED": 0,
+  "SCHEDULE_PLACEHOLDER": 41,
+  "SOURCE_STATUS_UNRESOLVED": 90
+ },
+ "zero_zero_seasons": [
+  2012,
+  2013
+ ],
+ "zero_zero_in_model_window": 0,
+ "all_status_counts": {
+  "PLAYED_CONFIRMED": 120499,
+  "SCHEDULE_PLACEHOLDER": 41,
+  "SOURCE_STATUS_UNRESOLVED": 91
+ },
+ "excluded_from_played_games": 132,
+ "excluded_outside_zero_zero": [
+  {
+   "source_game_id": "47251",
+   "season": 2018,
+   "home_team": "Hampton",
+   "away_team": "Morgan State",
+   "home_points": 2,
+   "away_points": 0,
+   "status": "SOURCE_STATUS_UNRESOLVED",
+   "resolution_method": "NO_EVIDENCE_FORFEIT_SIGNATURE_SCORE"
+  }
+ ],
+ "excluded_in_model_window": 1,
+ "trusted_games": 120631,
+ "played_games": 120499,
+ "affected_team_seasons": 172,
+ "affected_team_seasons_in_model_window": 2,
+ "aggregate_totals_old_new": {
+  "games": [
+   5323,
+   5059
+  ],
+  "wins": [
+   2446,
+   2445
+  ],
+  "losses": [
+   2615,
+   2614
+  ],
+  "points_for": [
+   339756,
+   339754
+  ],
+  "points_against": [
+   340023,
+   340021
+  ]
+ },
+ "status_hash": "c88a4dedec7f6d9f28c927e9d81ecb5a0abc14097d449a6a584c2afa62b63896",
+ "pre_2005_policy": "OUT_OF_MODELING_SCOPE"
+}

@@ -111,8 +111,8 @@
   "raw_records": 151881,
   "candidate_pairs": 877,
   "by_class": {
-   "UNRESOLVED": 135,
    "POSSIBLE_DUPLICATE": 740,
+   "UNRESOLVED": 135,
    "TRUE_DUPLICATE": 2
   },
   "status": "raw-only in core.games; excluded from flagship.games (identity not audited/adjudicated)"

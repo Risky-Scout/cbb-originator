@@ -1,6 +1,6 @@
 # Stage 1 Coverage Summary
 
-Rendered from `data/qa/STAGE_1_COVERAGE_SUMMARY.json`, which is derived from the authoritative `data/qa/COVERAGE_AUDIT.json` (canonical build `20261006T014459Z`). Every number is measured from physically present data. Nothing here is estimated from documentation.
+Rendered from `data/qa/STAGE_1_COVERAGE_SUMMARY.json`, which is derived from the authoritative `data/qa/COVERAGE_AUDIT.json` (canonical build `20261006T022302Z`). Every number is measured from physically present data. Nothing here is estimated from documentation.
 
 ## Season coverage by family (CBBD season = year the season ends)
 
