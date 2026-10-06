@@ -55,7 +55,7 @@ def utc_dates(con, season: int) -> list[str]:
 
 def plan() -> list:
     sel = selected_seasons()
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     jobs = []
     kw = lambda s, scope: {"purpose": PURPOSE, "season": s, "scope": scope}
@@ -82,7 +82,7 @@ def run(workers: int = 3, min_interval: float | None = None) -> dict:
     from cbb_platform.cbbd_client import Client, compile_manifest
     import time
     t0 = time.time()
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     seasons = dict(con.execute("SELECT replace(source_record_key, 'id=', ''), season FROM core.games").fetchall())
     con.close()
     # same answer as lockbox.canonical_game_season, cached in memory for the worker threads

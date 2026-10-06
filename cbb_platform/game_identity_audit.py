@@ -117,7 +117,7 @@ def downstream_scope(con, pairs: list[dict]) -> dict:
 
 
 def run(db_path=None) -> dict:
-    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     try:
         df = con.execute(CANDIDATES_SQL + " ORDER BY season, date_a, game_a").df()

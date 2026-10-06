@@ -637,7 +637,7 @@ def build_events(con: duckdb.DuckDBPyConnection, root: Path | None = None) -> No
         con.execute("SET VARIABLE proc = now()")
     con.execute("SET preserve_insertion_order = false")
     con.execute("SET memory_limit = '18GB'")
-    con.execute("SET threads = 6")
+    con.execute(f"SET threads = {C.DUCKDB_THREADS}")
     con.execute(f"SET temp_directory = '{C.DATA / 'duckdb_tmp'}'")
     _game_pit(con)
     build_rosters(con, root)

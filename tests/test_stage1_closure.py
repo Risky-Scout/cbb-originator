@@ -91,14 +91,15 @@ FIELDS = ["points", "fgm", "fga", "two_pm", "two_pa", "three_pm", "three_pa", "f
 def test_game_derived_season_totals_recompute_from_game_rows(db):
     sums = ", ".join(f"sum({f}) {f}" for f in FIELDS)
     bad = scalar(db, f"""SELECT count(*) FROM fact.team_season_game_derived d
-        LEFT JOIN (SELECT canonical_team_id, season, count(*) n, {sums} FROM fact.team_games GROUP BY 1, 2) g
+        LEFT JOIN (SELECT canonical_team_id, season, count(*) n, {sums} FROM flagship.team_game_outcomes GROUP BY 1, 2) g
         USING (canonical_team_id, season)
         WHERE d.games_with_team_box <> coalesce(g.n, 0) OR {' OR '.join(f'd.{f} IS DISTINCT FROM g.{f}' for f in FIELDS)}""")
     assert bad == 0
     bad = scalar(db, """SELECT count(*) FROM fact.team_season_game_derived d JOIN (
         SELECT team, season, count(*) n, sum(p) p FROM (
-            SELECT home_team_id team, season, home_points p FROM core.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
-            UNION ALL SELECT away_team_id, season, away_points FROM core.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
+            -- Stage 2.1: game-derived totals are defined over the TRUSTED game relation (one real contest once)
+            SELECT home_team_id team, season, home_points p FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
+            UNION ALL SELECT away_team_id, season, away_points FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL)
         GROUP BY 1, 2) r ON r.team = d.canonical_team_id AND r.season = d.season
         WHERE d.games_with_result <> r.n OR d.points_all_results <> r.p""")
     assert bad == 0
@@ -114,9 +115,20 @@ def test_every_summary_conflict_is_recorded_with_game_derived_authority(db):
 
 
 def test_measured_root_cause_of_summary_conflicts(db):
-    """Raw summaries count games/points over ALL results but shot primitives over BOXED games only."""
-    assert scalar(db, """SELECT count(*) FROM fact.team_season_stats s JOIN fact.team_season_game_derived d
-        USING (canonical_team_id, season) WHERE s.games <> d.games_with_result OR s.points <> d.points_all_results""") == 0
+    """Raw summaries count games/points over ALL source results but shot primitives over BOXED games only.
+    Stage 2.1: the raw summaries also count the duplicate source records, so they now differ from the trusted
+    game-derived totals on EXACTLY the remediated team-seasons, by EXACTLY the removed duplicate contributions."""
+    import csv
+    removed = {(r["canonical_team_id"], int(r["season"])): (int(r["old_games"]) - int(r["new_games"]),
+                                                            int(r["old_points_for"]) - int(r["new_points_for"]))
+               for r in csv.DictReader((C.QA / "game_identity_aggregate_impact.csv").open())}
+    diff = {(t, s): (g, p) for t, s, g, p in db.execute("""SELECT canonical_team_id, season, s.games - d.games_with_result,
+        s.points - d.points_all_results FROM fact.team_season_stats s JOIN fact.team_season_game_derived d
+        USING (canonical_team_id, season) WHERE s.games <> d.games_with_result OR s.points <> d.points_all_results""").fetchall()}
+    with_summary = {(t, s) for t, s in db.execute("SELECT canonical_team_id, season FROM fact.team_season_stats").fetchall()}
+    expected = {k: v for k, v in removed.items() if k in with_summary}
+    assert expected and diff == expected
+    assert all(v[0] > 0 for v in diff.values())
     assert scalar(db, "SELECT count(*) FROM qa.season_summary_conflicts WHERE field NOT IN ('games', 'points')") == 0
 
 

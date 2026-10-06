@@ -156,7 +156,7 @@ def _first_run(ok: dict) -> int | None:
 def render_windows(db_path=None) -> str:
     pbp, flo, sh = _csv("cbbd_pbp_quality_by_season.csv"), _csv("cbbd_onfloor_quality_by_season.csv"), _csv("cbbd_shot_quality_by_season.csv")
     su, li = _csv("cbbd_substitution_quality_by_season.csv"), _csv("cbbd_lineup_quality_by_season.csv")
-    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     ident = {s: (n, r) for s, n, r in con.execute("""SELECT p.season, count(*), count(p.canonical_player_id) FROM fact.player_games p
              JOIN core.team_seasons ts ON ts.canonical_team_id = p.canonical_team_id AND ts.season = p.season
              WHERE ts.is_division_one GROUP BY 1""").fetchall()}

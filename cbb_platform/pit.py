@@ -62,3 +62,27 @@ def completed_season_aggregate_is_legal(aggregate_season: int, aggregate_knowabl
                                         cutoff) -> bool:
     """HR-3: a completed-season aggregate never describes its own season's games."""
     return aggregate_season < target_season and aggregate_knowable_at < cutoff
+
+
+RESULTS_AS_OF_SQL = """
+SELECT g.canonical_game_id,
+       CASE WHEN g.home_team_id = $team THEN g.home_points ELSE g.away_points END AS pts_for,
+       CASE WHEN g.home_team_id = $team THEN g.away_points ELSE g.home_points END AS pts_against
+FROM flagship.games g                                         -- TRUSTED games: an alias never adds a result
+WHERE $team IN (g.home_team_id, g.away_team_id) AND g.season = $season
+  AND g.home_points IS NOT NULL AND g.away_points IS NOT NULL
+  AND g.canonical_game_id <> $target
+  AND (CASE WHEN $tip IS NOT NULL AND g.scheduled_tip_utc IS NOT NULL THEN g.scheduled_tip_utc < $tip
+            ELSE g.game_date_et < $date_et END)
+"""
+
+
+def team_results_to_date(con: duckdb.DuckDBPyConnection, team_id: str, target_game_id: str) -> dict:
+    """Season-to-date ALL-RESULTS record (games, wins, losses, points for/against) before a target game,
+    computed only from the trusted game relation (Stage 2.1)."""
+    season, tip, date_et = _target(con, target_game_id)
+    return dict(zip(("games", "wins", "losses", "points_for", "points_against", "game_ids"), con.execute(f"""
+        SELECT count(*), count(*) FILTER (WHERE pts_for > pts_against), count(*) FILTER (WHERE pts_for < pts_against),
+               sum(pts_for), sum(pts_against), list(canonical_game_id ORDER BY canonical_game_id)
+        FROM ({RESULTS_AS_OF_SQL})""", {"team": team_id, "season": season, "target": target_game_id, "tip": tip,
+                                        "date_et": date_et}).fetchone()))

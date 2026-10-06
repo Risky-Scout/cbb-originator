@@ -240,3 +240,20 @@ On-floor quality classes (first failing rule wins; `cbb_platform/event_metrics.p
 Trusted views: `flagship.plays` (games without PBP-level defects), `flagship.on_floor_trusted` (VALID_5V5 plays of trusted
 games), `flagship.shots_trusted`, `flagship.substitutions`, `flagship.lineup_stats`, `flagship.rosters`.
 PIT: every event row carries the game's `event_time` / `historical_knowable_at` (rule HR-1); event-level times are not trusted.
+
+## 13. Stage 2.1 canonical game identity (one real contest = one trusted game)
+
+* `core.games` keeps every source record unchanged (raw truth).
+* `metadata.game_alias_map` (built by `cbb_platform/game_identity.py` inside every build) gives each game of every
+  candidate pair an explicit class: `CANONICAL`, `DUPLICATE_ALIAS` (-> `resolved_canonical_game_id`),
+  `SOURCE_CORRUPT_MISATTRIBUTED` (excluded, resolves to nothing) or `LEGITIMATE_DISTINCT_GAME`, with method,
+  evidence and confidence. Unadjudicated POSSIBLE/UNRESOLVED pairs, or evidence contradicting a ruling, STOP the build.
+* `metadata.trusted_game_map` maps every source game id of the audited window to its trusted game id.
+* `flagship.games` is THE trusted game relation: each real contest exactly once, seasons 2004-05..2024-25 only.
+  Every flagship fact view and every game-derived aggregate (`fact.team_season_game_derived`,
+  `fact.player_season_game_derived`) and the PIT primitives (`cbb_platform/pit.py`) read through it.
+* After all facts are built, `assert_fact_safety` stops the build if any fact would be lost (fact on a corrupt record)
+  or duplicated (same fact on an alias and its survivor).
+* Reports: `docs/GAME_IDENTITY_RESOLUTION.md`, `data/qa/game_identity_resolution.csv`,
+  `data/qa/game_identity_aggregate_impact.csv`.
+* CBBD raw wallclock is `UNTRUSTED_MIXED` (architect ruling, closed): preserved verbatim, never an authoritative time.

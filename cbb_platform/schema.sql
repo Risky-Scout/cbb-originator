@@ -633,6 +633,22 @@ CREATE TABLE IF NOT EXISTS metadata.game_id_map (
     match_method VARCHAR NOT NULL, match_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
     source_context VARCHAR, created_by_version VARCHAR NOT NULL
 );
+-- Stage 2.1: explicit canonical game identity resolution (cbb_platform/game_identity.py). ONE real contest =
+-- ONE trusted canonical game. core.games keeps every source record; this map says which records are the same
+-- contest (DUPLICATE_ALIAS -> resolved_canonical_game_id) or no real contest (SOURCE_CORRUPT_MISATTRIBUTED).
+-- A game absent from this map is CANONICAL by default.
+CREATE TABLE IF NOT EXISTS metadata.game_alias_map (
+    provider VARCHAR NOT NULL, source_game_id VARCHAR NOT NULL, source_canonical_game_id VARCHAR NOT NULL,
+    resolved_canonical_game_id VARCHAR,       -- NULL only for SOURCE_CORRUPT_MISATTRIBUTED
+    resolution_class VARCHAR NOT NULL,        -- CANONICAL | DUPLICATE_ALIAS | SOURCE_CORRUPT_MISATTRIBUTED | LEGITIMATE_DISTINCT_GAME
+    canonical_representative BOOLEAN NOT NULL,
+    adjudication_method VARCHAR NOT NULL, adjudication_evidence VARCHAR NOT NULL, confidence DOUBLE NOT NULL,
+    excluded_from_trusted_games BOOLEAN NOT NULL,
+    notes VARCHAR,                            -- paired source game ids
+    season INTEGER, created_by_version VARCHAR NOT NULL,
+    PRIMARY KEY (provider, source_game_id)
+);
+
 CREATE TABLE IF NOT EXISTS metadata.conference_id_map (
     provider VARCHAR NOT NULL, provider_conference_key VARCHAR NOT NULL, canonical_conference_id VARCHAR,
     match_method VARCHAR NOT NULL, match_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
@@ -686,12 +702,32 @@ CREATE TABLE IF NOT EXISTS qa.reconciliation (
 -- The flagship basketball-feature namespace: the ONLY place later PIT feature builders may
 -- read from. It exposes basketball facts with their PIT columns and never touches benchmark.*.
 -- tests/test_market_isolation.py proves no sportsbook column or benchmark reference appears here.
-CREATE OR REPLACE VIEW flagship.games                  AS SELECT * FROM core.games;
-CREATE OR REPLACE VIEW flagship.game_schedule_versions AS SELECT * FROM core.game_schedule_versions;
+-- Stage 2.1: every flagship game and game-level fact view is routed through the trusted game relation.
+-- source canonical game id -> trusted canonical game id (aliases resolve to their representative; corrupt
+-- records have no row, so their facts can never reach a trusted view).
+CREATE OR REPLACE VIEW metadata.trusted_game_map AS
+    SELECT g.canonical_game_id AS source_canonical_game_id,
+           coalesce(m.resolved_canonical_game_id, g.canonical_game_id) AS canonical_game_id
+    FROM core.games g LEFT JOIN metadata.game_alias_map m ON m.source_canonical_game_id = g.canonical_game_id
+    WHERE coalesce(m.resolution_class, 'CANONICAL') <> 'SOURCE_CORRUPT_MISATTRIBUTED'
+      AND g.season BETWEEN 2005 AND 2025;    -- the AUDITED identity window (config.AUDITED_SEASONS)
+-- THE trusted game relation: each real contest exactly once, within the audited development seasons
+-- 2004-05 .. 2024-25. Older source records stay raw-only in core.games (identity not audited).
+CREATE OR REPLACE VIEW flagship.games AS
+    SELECT g.* FROM core.games g WHERE g.season BETWEEN 2005 AND 2025 AND NOT EXISTS (SELECT 1 FROM metadata.game_alias_map m
+        WHERE m.source_canonical_game_id = g.canonical_game_id AND m.excluded_from_trusted_games);
+CREATE OR REPLACE VIEW flagship.game_schedule_versions AS
+    SELECT s.* FROM core.game_schedule_versions s JOIN flagship.games g USING (canonical_game_id);
 CREATE OR REPLACE VIEW flagship.team_seasons           AS SELECT * FROM core.team_seasons;
-CREATE OR REPLACE VIEW flagship.player_game_outcomes   AS SELECT * FROM fact.player_games;
-CREATE OR REPLACE VIEW flagship.team_game_outcomes     AS SELECT * FROM fact.team_games;
-CREATE OR REPLACE VIEW flagship.participation          AS SELECT * FROM fact.participation;
+CREATE OR REPLACE VIEW flagship.player_game_outcomes   AS
+    SELECT f.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.player_games f
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = f.canonical_game_id;
+CREATE OR REPLACE VIEW flagship.team_game_outcomes     AS
+    SELECT f.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.team_games f
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = f.canonical_game_id;
+CREATE OR REPLACE VIEW flagship.participation          AS
+    SELECT f.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.participation f
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = f.canonical_game_id;
 CREATE OR REPLACE VIEW flagship.player_season_stats    AS SELECT * FROM fact.player_season_stats;
 CREATE OR REPLACE VIEW flagship.player_season_shooting AS SELECT * FROM fact.player_season_shooting;
 -- Raw season summaries: secondary / QA / completed-season prior only (game-derived wins on conflict).
@@ -706,17 +742,26 @@ CREATE OR REPLACE VIEW flagship.availability_events    AS
 -- ----------------------------------------------------------------------------- Stage 2 trusted event views
 -- Defective records (qa.source_defects with excluded_from_trusted) never reach these views.
 CREATE OR REPLACE VIEW flagship.plays AS
-    SELECT * FROM fact.plays p WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
+    SELECT p.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.plays p
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = p.canonical_game_id
+    WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
         AND d.family = 'PBP' AND d.canonical_game_id = p.canonical_game_id);
 CREATE OR REPLACE VIEW flagship.on_floor_trusted AS
-    SELECT f.* FROM fact.play_on_floor f JOIN flagship.plays p USING (canonical_game_id, source_play_id)
+    SELECT f.* REPLACE (p.canonical_game_id AS canonical_game_id) FROM fact.play_on_floor f
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = f.canonical_game_id
+    JOIN flagship.plays p ON p.canonical_game_id = r.canonical_game_id AND p.source_play_id = f.source_play_id
     WHERE p.on_floor_quality = 'VALID_5V5';
 CREATE OR REPLACE VIEW flagship.shots_trusted AS
-    SELECT s.* FROM fact.shots s JOIN flagship.plays p USING (canonical_game_id, source_play_id)
+    SELECT s.* REPLACE (p.canonical_game_id AS canonical_game_id) FROM fact.shots s
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = s.canonical_game_id
+    JOIN flagship.plays p ON p.canonical_game_id = r.canonical_game_id AND p.source_play_id = s.source_play_id
     WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted AND d.family = 'SHOT'
         AND d.record_key = 'gameId=' || p.source_game_id || ';playId=' || s.source_play_id);
 CREATE OR REPLACE VIEW flagship.substitutions AS
-    SELECT s.* FROM fact.substitutions s WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
+    SELECT s.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.substitutions s
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = s.canonical_game_id WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted
         AND d.family = 'SUBSTITUTION' AND d.canonical_game_id = s.canonical_game_id);
-CREATE OR REPLACE VIEW flagship.lineup_stats AS SELECT * FROM fact.lineup_stats;
+CREATE OR REPLACE VIEW flagship.lineup_stats AS
+    SELECT l.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.lineup_stats l
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = l.canonical_game_id;
 CREATE OR REPLACE VIEW flagship.rosters AS SELECT * FROM core.rosters;

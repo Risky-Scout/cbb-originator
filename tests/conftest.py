@@ -24,6 +24,7 @@ def db():
         pytest.fail(f"{C.DUCKDB_PATH} missing — run `.venv/bin/python -m cbb_platform.build_canonical` first")
     con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
     con.execute("SET TimeZone = 'UTC'")
+    con.execute(f"SET threads = {C.DUCKDB_THREADS}")
     yield con
     con.close()
 

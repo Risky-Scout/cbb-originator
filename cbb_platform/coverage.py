@@ -269,7 +269,7 @@ def write_unresolved_identities(con) -> int:
 
 
 def run() -> dict:
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     audit = build_audit(con)
     (C.QA / "COVERAGE_AUDIT.json").write_text(json.dumps(audit, indent=1, default=str))

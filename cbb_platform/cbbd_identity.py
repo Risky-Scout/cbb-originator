@@ -352,7 +352,7 @@ def render_smoke_md(r: dict) -> str:
 
 
 def main(blocked_reason: str | None = None) -> dict:
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True) if C.DUCKDB_PATH.exists() else None
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS}) if C.DUCKDB_PATH.exists() else None
     if con is not None:
         con.execute("SET TimeZone = 'UTC'")      # cid() is persisted in the database by the build
     try:

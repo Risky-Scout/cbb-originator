@@ -357,7 +357,7 @@ def bdl_qa(con) -> dict:
 
 
 def run(db_path=None) -> dict:
-    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     con.execute("SET enable_progress_bar = false")
     request_log_tables(con)

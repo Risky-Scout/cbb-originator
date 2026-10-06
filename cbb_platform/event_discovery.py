@@ -120,7 +120,7 @@ def spread(dates_by_volume: list, k: int) -> list:
 
 
 def write_sample() -> dict:
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     try:
         man = build_sample(con)
     finally:
@@ -358,7 +358,7 @@ TEAM_ESCALATION_CELLS = ("EARLY/MAJOR", "EARLY/MID", "EARLY/SMALL", "POST/MAJOR"
 
 
 def escalation_teams(man: dict) -> dict:
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     try:
         out = {}
         for s in SEASONS:

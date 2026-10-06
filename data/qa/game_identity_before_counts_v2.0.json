@@ -1,0 +1,24 @@
+{
+ "dataset_version": "cbb_data_v2.0+b00e8d3dc798",
+ "counts": {
+  "core.games": 272560,
+  "fact.player_games": 2368206,
+  "fact.team_games": 235612,
+  "fact.participation": 3189460,
+  "fact.plays": 29021691,
+  "fact.shots": 13638660,
+  "fact.substitutions": 858399,
+  "fact.lineup_stats": 370401,
+  "fact.play_on_floor": 41450717,
+  "fact.play_participants": 28574421,
+  "fact.team_season_game_derived": 13034,
+  "flagship.games": 272560,
+  "team_season_game_derived_all_results": [
+   241358,
+   120543,
+   120543,
+   16940907,
+   16940907
+  ]
+ }
+}

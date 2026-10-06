@@ -2,8 +2,10 @@
 
     .venv/bin/python -m cbb_platform.dataset_manifest
 
-DATASET_VERSION = "cbb_data_v2.0+" + first 12 hex of sha256(starter pack data digest | raw CBBD payload
-manifest hash | canonical content fingerprints). Identical inputs and identical canonical content give the
+DATASET_VERSION = "cbb_data_v2.1+" + first 12 hex of sha256(starter pack data digest | raw CBBD payload
+manifest hash | canonical content fingerprints | game identity resolution hash). v2.1 = Stage 2.1
+(canonical game identity remediation); its parent is cbb_data_v2.0+b00e8d3dc798, whose manifest is kept verbatim in
+data/manifests/DATASET_MANIFEST_cbb_data_v2.0+b00e8d3dc798.json. Identical inputs and identical canonical content give the
 identical version; any change to raw payloads or to canonical content gives a new one. Every future model
 experiment records this identifier as its upstream dataset.
 """
@@ -19,6 +21,8 @@ import duckdb
 from cbb_platform import config as C, lockbox, raw_store
 
 OUT = C.MANIFESTS / "DATASET_MANIFEST.json"
+PARENT_VERSION = "cbb_data_v2.0+b00e8d3dc798"
+PARENT_MANIFEST = C.MANIFESTS / f"DATASET_MANIFEST_{PARENT_VERSION}.json"
 CBBD_API_SCHEMA_VERSION = "CBBD OpenAPI v1.29.0 (reference/CBBD_OPENAPI_VERIFICATION_v1_1.md)"
 
 
@@ -42,7 +46,7 @@ def git_sha() -> dict:
 
 
 def build(db_path=None) -> dict:
-    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     build_id = con.execute("SELECT max(build_id) FROM metadata.data_versions").fetchone()[0]
     tables = {t: {"rows": n, "fingerprint": fp} for t, n, fp in con.execute(
         "SELECT table_name, row_count, content_fingerprint FROM metadata.data_versions WHERE build_id = ? ORDER BY 1",
@@ -65,8 +69,21 @@ def build(db_path=None) -> dict:
     reg = json.loads((C.MANIFESTS / "starter_pack_registration.json").read_text())
     raw_hash, n_raw, raw_by = raw_payload_manifest_hash()
     canon_digest = hashlib.sha256(json.dumps({t: v["fingerprint"] for t, v in tables.items()}, sort_keys=True).encode()).hexdigest()
-    version = "cbb_data_v2.0+" + hashlib.sha256(f"{reg['data_manifest_digest']}|{raw_hash}|{canon_digest}".encode()).hexdigest()[:12]
-    man = {"dataset_version": version, "canonical_build_id": build_id, "build_timestamp_utc": str(built_at),
+    gi = json.loads((C.QA / "game_identity_resolution.json").read_text())
+    version = "cbb_data_v2.1+" + hashlib.sha256(
+        f"{reg['data_manifest_digest']}|{raw_hash}|{canon_digest}|{gi['resolution_hash']}".encode()).hexdigest()[:12]
+    parent = json.loads(PARENT_MANIFEST.read_text())
+    man = {"dataset_version": version, "parent_dataset_version": PARENT_VERSION,
+           "game_identity": {"resolution_hash": gi["resolution_hash"], "map_rows": gi["map_rows"], "by_class": gi["by_class"],
+                             "raw_source_games": gi["raw_source_games"], "canonical_trusted_games": gi["trusted_games"],
+                             "aliases": gi["aliases"], "quarantined_corrupt": gi["quarantined_corrupt"],
+                             "affected_team_seasons": gi["affected_team_seasons"],
+                             "removed_duplicate_contributions": gi["removed_duplicate_contributions"]},
+           "wallclock_policy": "UNTRUSTED_MIXED (raw preserved; prohibited for PIT, availability, latency, tip, live timing)",
+           "fingerprints_before": {t: v["fingerprint"] for t, v in parent["canonical_tables"].items()},
+           "fingerprints_changed_vs_parent": sorted(t for t, v in tables.items()
+                                                    if parent["canonical_tables"].get(t, {}).get("fingerprint") != v["fingerprint"]),
+           "canonical_build_id": build_id, "build_timestamp_utc": str(built_at),
            "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "cbbd_api_schema_version": CBBD_API_SCHEMA_VERSION,
            "ingestion_version": C.INGESTION_VERSION, "schema_version": C.SCHEMA_VERSION,

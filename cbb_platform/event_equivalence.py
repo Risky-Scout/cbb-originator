@@ -31,7 +31,7 @@ OUT = C.QA / "cbbd_endpoint_equivalence.json"
 
 
 def _con():
-    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     return con
 

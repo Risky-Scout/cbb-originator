@@ -25,7 +25,9 @@ CANONICAL = DATA / "canonical"  # provider-independent Parquet + the DuckDB file
 MANIFESTS = DATA / "manifests"  # hashes, source manifest, data versions
 QA = DATA / "qa"                # audit/coverage/QA artifacts
 
-DUCKDB_PATH = CANONICAL / "cbb.duckdb"
+import os as _os_path
+# CBB_DUCKDB_PATH lets targeted tests run against a scratch copy before the single full rebuild.
+DUCKDB_PATH = Path(_os_path.environ.get("CBB_DUCKDB_PATH", str(CANONICAL / "cbb.duckdb")))
 SCHEMA_SQL = Path(__file__).with_name("schema.sql")
 
 # ---------------------------------------------------------------------------
@@ -72,3 +74,14 @@ FAMILY_DATE_COL = {
     "player_game_stats": "start_date",  # explicit UTC offset
     "team_game_stats": "startDate",     # explicit UTC offset
 }
+
+# ---------------------------------------------------------------------------
+# Machine resource cap (architect, Stage 2.1): heavy DuckDB work runs on TWO threads.
+# ---------------------------------------------------------------------------
+import os as _os
+DUCKDB_THREADS = int(_os.environ.get("CBB_DUCKDB_THREADS", "2"))
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    _os.environ.setdefault(_v, "2")
+
+# Stage 2.1: seasons whose game identity was audited; the trusted game relation (flagship.games) covers exactly these.
+AUDITED_SEASONS = (2005, 2025)

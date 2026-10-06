@@ -522,17 +522,18 @@ def build_season_authority(con: duckdb.DuckDBPyConnection) -> None:
     sums = ", ".join(f"sum(t.{f}) AS {f}" for f in SEASON_COMPARE_FIELDS[1:])
     con.execute(f"""
     INSERT INTO fact.team_season_game_derived
-    WITH results AS (   -- every game with a final score, boxed or not
-        SELECT home_team_id AS team, season, home_points AS pts, away_points AS opp FROM core.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
+    -- Stage 2.1: through the TRUSTED game relation, so a duplicate source record never adds a second result
+    WITH results AS (   -- every trusted game with a final score, boxed or not
+        SELECT home_team_id AS team, season, home_points AS pts, away_points AS opp FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL
         UNION ALL
-        SELECT away_team_id, season, away_points, home_points FROM core.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL),
+        SELECT away_team_id, season, away_points, home_points FROM flagship.games WHERE home_points IS NOT NULL AND away_points IS NOT NULL),
     r AS (SELECT team, season, count(*) AS n, count(*) FILTER (WHERE pts > opp) AS w, count(*) FILTER (WHERE pts < opp) AS l,
                  sum(pts) AS pts, sum(opp) AS opp FROM results GROUP BY 1, 2),
-    b AS (SELECT t.canonical_team_id AS team, t.season, count(*) AS games, {sums} FROM fact.team_games t GROUP BY 1, 2)
+    b AS (SELECT t.canonical_team_id AS team, t.season, count(*) AS games, {sums} FROM flagship.team_game_outcomes t GROUP BY 1, 2)
     SELECT r.team, r.season, r.n, r.w, r.l, r.pts, r.opp,
            coalesce(b.games, 0), {", ".join("b." + f for f in SEASON_COMPARE_FIELDS[1:])},
            sp.season_knowable_at,
-           'CANONICAL_DERIVED', 'derived: core.games + fact.team_games',
+           'CANONICAL_DERIVED', 'derived: flagship.games + flagship.team_game_outcomes (trusted games)',
            'team=' || r.team || ';season=' || r.season, getvariable('ver'), getvariable('recv'), getvariable('proc')
     FROM r LEFT JOIN b ON b.team = r.team AND b.season = r.season
     JOIN season_pit sp ON sp.season = r.season
@@ -563,10 +564,10 @@ def build_player_season_authority(con: duckdb.DuckDBPyConnection) -> None:
            count(*) FILTER (WHERE p.starter), {sums},
            NOT EXISTS (SELECT 1 FROM identity_gap g WHERE g.canonical_team_id = p.canonical_team_id AND g.season = p.season),
            sp.season_knowable_at,
-           'CANONICAL_DERIVED', 'derived: fact.player_games (resolved rows)',
+           'CANONICAL_DERIVED', 'derived: flagship.player_game_outcomes (resolved rows, trusted games)',
            'player=' || p.canonical_player_id || ';team=' || p.canonical_team_id || ';season=' || p.season,
            getvariable('ver'), getvariable('recv'), getvariable('proc')
-    FROM fact.player_games p JOIN season_pit sp ON sp.season = p.season
+    FROM flagship.player_game_outcomes p JOIN season_pit sp ON sp.season = p.season
     WHERE p.canonical_player_id IS NOT NULL
     GROUP BY p.canonical_player_id, p.canonical_team_id, p.season, sp.season_knowable_at;
 
@@ -698,6 +699,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     con = duckdb.connect(tmp)
     con.execute("SET TimeZone = 'UTC'")
     con.execute("SET enable_progress_bar = false")
+    con.execute(f"SET threads = {C.DUCKDB_THREADS}")
     con.execute(C.SCHEMA_SQL.read_text())
     con.execute(ID_MACROS)
     # Shared lineage values, read inside SQL via getvariable(...).
@@ -710,6 +712,8 @@ def build(db_path=None, parquet_root=None) -> dict:
     build_games(con)
     build_team_games(con)
     build_players_and_player_games(con)
+    from cbb_platform import game_identity          # Stage 2.1: before any game-derived aggregate
+    game_identity.resolve(con)
     build_season_tables(con)          # before participation: membership comes from season stats
     build_participation(con)
     flag_accounting(con)
@@ -721,6 +725,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     # re-normalized on every build so canonical tables stay a pure function of raw inputs.
     from cbb_platform.adapters import load_all_raw
     load_all_raw(con)
+    game_identity.assert_fact_safety(con)            # no fact duplicated on, or lost from, a trusted game
 
     results = export_parquet(con, build_id, built_at, parquet_root)
     con.close()

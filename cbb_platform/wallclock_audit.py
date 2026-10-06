@@ -106,7 +106,7 @@ def decide(groups: dict) -> tuple[str, dict]:
 
 
 def run(db_path=None) -> dict:
-    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True)
+    con = duckdb.connect(str(db_path or C.DUCKDB_PATH), read_only=True, config={"threads": C.DUCKDB_THREADS})
     con.execute("SET TimeZone = 'UTC'")
     rows = con.execute("""
         WITH w AS (SELECT canonical_game_id, arg_min(raw_wallclock, play_sequence) AS first_raw,
@@ -152,6 +152,10 @@ def run(db_path=None) -> dict:
     spans.sort()
     result = {
         "classification": cls,
+        # Architect ruling (Stage 2.1, closed for the pregame model): no further correction is attempted.
+        "policy": "UNTRUSTED_MIXED",
+        "prohibited_uses": ["historical point-in-time cutoffs", "feature availability", "event latency",
+                            "game tip reconstruction", "live-model timing"],
         "approved_for_pit_or_latency": False,
         "rule": "Raw wallclock is preserved unchanged and remains PROHIBITED for PIT cutoffs and live latency until "
                 "the architect approves a conversion rule backed by this classification.",
@@ -170,7 +174,8 @@ def run(db_path=None) -> dict:
 def render(r: dict) -> str:
     L = ["# CBBD PBP wallclock semantics (Stage 2L)", "",
          "Rendered from `data/qa/cbbd_wallclock_semantics.json` by `cbb_platform/wallclock_audit.py`. Do not edit by hand.", "",
-         f"## Classification: **{r['classification']}**", "",
+         f"## Classification: **{r['classification']}** -- policy **{r['policy']}** (architect ruling, Stage 2.1; closed)", "",
+         "Raw wallclock is preserved verbatim and is prohibited for: " + ", ".join(r["prohibited_uses"]) + ".", "",
          f"**Approved for PIT / live latency: {r['approved_for_pit_or_latency']}.** {r['rule']}", "",
          f"Games with wallclock and an exact tip: {r['games_with_wallclock_and_exact_tip']}. Excluded from the decision: "
          f"{r['excluded_from_decision']} (venues in split-timezone states or without a timezone).", "",
