@@ -437,8 +437,30 @@ def test_starter_pack_byte_identical():
     assert data(starter_pack_manifest()) == data(recorded)
 
 
+# Sibling-workspace immutability is asserted against the CURRENT accepted task baseline. Older baselines are kept
+# unchanged as historical evidence, and each successor must account for every difference from its predecessor.
+WORKSPACE_BASELINES = ("workspace_snapshot_stage2.json", "workspace_snapshot_pre_model_closure_v1.json")
+STAGE2_WORKSPACE_SNAPSHOT_SHA256 = "e040328548bc4aa82a9af82aef5ac1d7346b65174ab4e79ea86c11b87ac1fe98"
+
+
+def test_workspace_baseline_history_is_preserved_and_drift_is_accounted():
+    old_p = C.MANIFESTS / WORKSPACE_BASELINES[0]
+    assert hashlib.sha256(old_p.read_bytes()).hexdigest() == STAGE2_WORKSPACE_SNAPSHOT_SHA256   # history never rewritten
+    for prev_name, cur_name in zip(WORKSPACE_BASELINES, WORKSPACE_BASELINES[1:]):
+        prev_p, cur = C.MANIFESTS / prev_name, json.loads((C.MANIFESTS / cur_name).read_text())
+        prev = json.loads(prev_p.read_text())
+        assert cur["supersedes"]["file"] == prev_name
+        assert cur["supersedes"]["sha256"] == hashlib.sha256(prev_p.read_bytes()).hexdigest()
+        diff = {n for n in set(prev["entries"]) | set(cur["entries"]) if prev["entries"].get(n) != cur["entries"].get(n)}
+        ledger = {d["entry"]: d for d in cur["drift_from_superseded"]}
+        assert set(ledger) == diff, cur_name                                    # every difference recorded, nothing extra
+        for n, d in ledger.items():
+            assert (d["stage2"], d["baseline"]) == (prev["entries"].get(n), cur["entries"].get(n)), n
+            assert d["classification"] == "PRE_EXISTING_WORKSPACE_DRIFT", n
+
+
 def test_no_unrelated_project_was_modified():
-    snap = json.loads((C.MANIFESTS / "workspace_snapshot_stage2.json").read_text())
+    snap = json.loads((C.MANIFESTS / WORKSPACE_BASELINES[-1]).read_text())
     parent = Path(snap["parent"])
     for name, s in snap["entries"].items():
         p = parent / name

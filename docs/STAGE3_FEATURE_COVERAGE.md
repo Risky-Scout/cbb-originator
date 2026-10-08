@@ -1,25 +1,25 @@
 # Stage 3 feature coverage
 
-Rendered from `data/qa/STAGE3_FEATURE_COVERAGE.json` by `cbb_platform/stage3/coverage.py`. Upstream dataset `cbb_data_v2.3+7bef640cccde`; modeling seasons 2013-14..2024-25; lockbox 2025-26 untouched.
+Rendered from `data/qa/STAGE3_FEATURE_COVERAGE.json` by `cbb_platform/stage3/coverage.py`. Upstream dataset `cbb_data_v2.4+5f19d31e524a`; modeling seasons 2013-14..2024-25; lockbox 2025-26 untouched.
 
-Totals: {'game_examples': 65048, 'player_game_examples': 2970366, 'label_rows': 2970366, 'label_rows_with_box': 1279005, 'player_pool_misses_after': 16235, 'player_pool_misses_by_class': {'HISTORICALLY_UNOBSERVABLE': 13096, 'VALID_COLD_START_MISS': 3139}, 'player_pool_misses_by_season': {'2014': {'HISTORICALLY_UNOBSERVABLE': 3472}, '2015': {'HISTORICALLY_UNOBSERVABLE': 1000, 'VALID_COLD_START_MISS': 102}, '2016': {'HISTORICALLY_UNOBSERVABLE': 962, 'VALID_COLD_START_MISS': 140}, '2017': {'HISTORICALLY_UNOBSERVABLE': 927, 'VALID_COLD_START_MISS': 157}, '2018': {'HISTORICALLY_UNOBSERVABLE': 893, 'VALID_COLD_START_MISS': 207}, '2019': {'HISTORICALLY_UNOBSERVABLE': 884, 'VALID_COLD_START_MISS': 218}, '2020': {'HISTORICALLY_UNOBSERVABLE': 834, 'VALID_COLD_START_MISS': 283}, '2021': {'HISTORICALLY_UNOBSERVABLE': 941, 'VALID_COLD_START_MISS': 471}, '2022': {'VALID_COLD_START_MISS': 403, 'HISTORICALLY_UNOBSERVABLE': 748}, '2023': {'HISTORICALLY_UNOBSERVABLE': 825, 'VALID_COLD_START_MISS': 315}, '2024': {'HISTORICALLY_UNOBSERVABLE': 811, 'VALID_COLD_START_MISS': 423}, '2025': {'HISTORICALLY_UNOBSERVABLE': 799, 'VALID_COLD_START_MISS': 420}}}
+Totals: {'game_examples': 65048, 'player_game_examples': 2970075, 'label_rows': 2970075, 'label_rows_with_box': 1279149, 'player_pool_misses_after': 16232, 'player_pool_misses_by_class': {'HISTORICALLY_UNOBSERVABLE': 13096, 'VALID_COLD_START_MISS': 3136}, 'player_pool_misses_by_season': {'2014': {'HISTORICALLY_UNOBSERVABLE': 3472}, '2015': {'HISTORICALLY_UNOBSERVABLE': 1000, 'VALID_COLD_START_MISS': 102}, '2016': {'HISTORICALLY_UNOBSERVABLE': 962, 'VALID_COLD_START_MISS': 140}, '2017': {'HISTORICALLY_UNOBSERVABLE': 927, 'VALID_COLD_START_MISS': 157}, '2018': {'HISTORICALLY_UNOBSERVABLE': 893, 'VALID_COLD_START_MISS': 207}, '2019': {'HISTORICALLY_UNOBSERVABLE': 884, 'VALID_COLD_START_MISS': 218}, '2020': {'HISTORICALLY_UNOBSERVABLE': 834, 'VALID_COLD_START_MISS': 283}, '2021': {'HISTORICALLY_UNOBSERVABLE': 941, 'VALID_COLD_START_MISS': 471}, '2022': {'VALID_COLD_START_MISS': 402, 'HISTORICALLY_UNOBSERVABLE': 748}, '2023': {'HISTORICALLY_UNOBSERVABLE': 825, 'VALID_COLD_START_MISS': 314}, '2024': {'HISTORICALLY_UNOBSERVABLE': 811, 'VALID_COLD_START_MISS': 422}, '2025': {'HISTORICALLY_UNOBSERVABLE': 799, 'VALID_COLD_START_MISS': 420}}}
 
 ## Universe, labels, participation, cold start
 
 | season | games | player-games | played | DNP confirmed | unknown | not on roster | box row | identity unresolved | outside universe | cold start | cold (played) | no history | transfer in | early season |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2014 | 5503 | 144650 | 0.739 | 0.000 | 0.261 | 0.000 | 0.745 | 0.000 | 3472 | 0.139 | 0.081 | 0.027 | 0.000 | 0.113 |
-| 2015 | 5494 | 226293 | 0.482 | 0.000 | 0.473 | 0.045 | 0.484 | 0.000 | 1102 | 0.431 | 0.100 | 0.060 | 0.001 | 0.369 |
+| 2015 | 5494 | 226293 | 0.482 | 0.000 | 0.473 | 0.045 | 0.485 | 0.000 | 1102 | 0.431 | 0.100 | 0.060 | 0.001 | 0.369 |
 | 2016 | 5514 | 290029 | 0.377 | 0.000 | 0.559 | 0.064 | 0.380 | 0.000 | 1102 | 0.540 | 0.098 | 0.053 | 0.001 | 0.486 |
-| 2017 | 5488 | 290989 | 0.375 | 0.000 | 0.564 | 0.061 | 0.376 | 0.002 | 1084 | 0.539 | 0.099 | 0.060 | 0.001 | 0.478 |
+| 2017 | 5488 | 290989 | 0.375 | 0.000 | 0.564 | 0.061 | 0.377 | 0.000 | 1084 | 0.539 | 0.099 | 0.061 | 0.001 | 0.478 |
 | 2018 | 5500 | 268758 | 0.399 | 0.000 | 0.529 | 0.073 | 0.402 | 0.001 | 1100 | 0.505 | 0.100 | 0.033 | 0.001 | 0.470 |
 | 2019 | 5597 | 262648 | 0.414 | 0.000 | 0.509 | 0.077 | 0.417 | 0.000 | 1102 | 0.480 | 0.098 | 0.054 | 0.001 | 0.425 |
-| 2020 | 5328 | 244948 | 0.420 | 0.000 | 0.497 | 0.084 | 0.422 | 0.001 | 1117 | 0.469 | 0.105 | 0.042 | 0.002 | 0.424 |
+| 2020 | 5328 | 244919 | 0.420 | 0.000 | 0.497 | 0.084 | 0.423 | 0.000 | 1117 | 0.469 | 0.105 | 0.042 | 0.002 | 0.424 |
 | 2021 | 3944 | 185033 | 0.416 | 0.000 | 0.496 | 0.088 | 0.419 | 0.000 | 1412 | 0.471 | 0.145 | 0.036 | 0.006 | 0.429 |
-| 2022 | 5475 | 268860 | 0.396 | 0.000 | 0.536 | 0.068 | 0.398 | 0.000 | 1151 | 0.484 | 0.105 | 0.029 | 0.012 | 0.443 |
-| 2023 | 5715 | 273106 | 0.406 | 0.000 | 0.532 | 0.062 | 0.409 | 0.000 | 1140 | 0.476 | 0.099 | 0.033 | 0.012 | 0.431 |
-| 2024 | 5726 | 253894 | 0.441 | 0.486 | 0.064 | 0.008 | 0.441 | 0.000 | 1234 | 0.439 | 0.099 | 0.027 | 0.020 | 0.392 |
-| 2025 | 5764 | 261158 | 0.432 | 0.555 | 0.011 | 0.001 | 0.432 | 0.000 | 1219 | 0.440 | 0.097 | 0.041 | 0.020 | 0.378 |
+| 2022 | 5475 | 268829 | 0.396 | 0.000 | 0.536 | 0.068 | 0.398 | 0.000 | 1150 | 0.484 | 0.105 | 0.029 | 0.012 | 0.443 |
+| 2023 | 5715 | 273032 | 0.406 | 0.000 | 0.532 | 0.062 | 0.409 | 0.000 | 1139 | 0.476 | 0.099 | 0.033 | 0.012 | 0.431 |
+| 2024 | 5726 | 253767 | 0.441 | 0.486 | 0.064 | 0.008 | 0.441 | 0.000 | 1233 | 0.439 | 0.099 | 0.027 | 0.020 | 0.392 |
+| 2025 | 5764 | 261128 | 0.432 | 0.555 | 0.011 | 0.001 | 0.432 | 0.000 | 1219 | 0.440 | 0.097 | 0.041 | 0.020 | 0.378 |
 
 ## Feature availability (share of rows with status OK) by family
 
@@ -29,13 +29,13 @@ Totals: {'game_examples': 65048, 'player_game_examples': 2970366, 'label_rows': 
 | 2015 | 0.918 | 0.974 | 0.918 | 0.918 | 0.918 | 0.822 | 1.000 | 0.569 | 0.571 | 0.973 | 0.676 | 0.957 | 1.000 | 1.000 | 0.900 | 0.000 | 0.506 | 0.000 | 0.000 |
 | 2016 | 0.918 | 0.973 | 0.918 | 0.918 | 0.918 | 0.823 | 1.000 | 0.460 | 0.462 | 0.973 | 0.527 | 0.959 | 1.000 | 1.000 | 0.903 | 0.000 | 0.418 | 0.000 | 0.000 |
 | 2017 | 0.919 | 0.974 | 0.918 | 0.918 | 0.918 | 0.823 | 1.000 | 0.461 | 0.463 | 0.973 | 0.520 | 0.950 | 1.000 | 1.000 | 0.905 | 0.000 | 0.418 | 0.000 | 0.000 |
-| 2018 | 0.918 | 0.973 | 0.918 | 0.918 | 0.918 | 0.822 | 0.997 | 0.495 | 0.497 | 0.973 | 0.514 | 0.976 | 1.000 | 0.997 | 0.909 | 0.000 | 0.455 | 0.000 | 0.000 |
+| 2018 | 0.918 | 0.973 | 0.918 | 0.918 | 0.918 | 0.822 | 0.997 | 0.495 | 0.497 | 0.973 | 0.514 | 0.975 | 1.000 | 0.997 | 0.909 | 0.000 | 0.455 | 0.000 | 0.000 |
 | 2019 | 0.921 | 0.975 | 0.920 | 0.920 | 0.920 | 0.826 | 0.995 | 0.520 | 0.522 | 0.974 | 0.524 | 0.958 | 1.000 | 0.998 | 0.896 | 0.000 | 0.464 | 0.000 | 0.000 |
 | 2020 | 0.915 | 0.974 | 0.915 | 0.915 | 0.915 | 0.815 | 0.997 | 0.531 | 0.534 | 0.973 | 0.552 | 0.971 | 1.000 | 0.999 | 0.901 | 0.000 | 0.481 | 0.000 | 0.000 |
 | 2021 | 0.883 | 0.963 | 0.883 | 0.883 | 0.883 | 0.762 | 0.991 | 0.529 | 0.532 | 0.962 | 0.564 | 0.973 | 1.000 | 0.995 | 0.857 | 0.000 | 0.466 | 0.000 | 0.000 |
 | 2022 | 0.917 | 0.974 | 0.917 | 0.917 | 0.917 | 0.820 | 0.974 | 0.516 | 0.517 | 0.973 | 0.608 | 0.981 | 1.000 | 0.976 | 0.912 | 0.948 | 0.477 | 0.548 | 0.000 |
-| 2023 | 0.922 | 0.975 | 0.922 | 0.922 | 0.922 | 0.826 | 0.990 | 0.524 | 0.527 | 0.975 | 0.596 | 0.975 | 1.000 | 0.995 | 0.917 | 0.947 | 0.482 | 0.551 | 0.000 |
-| 2024 | 0.921 | 0.976 | 0.921 | 0.921 | 0.921 | 0.826 | 0.997 | 0.561 | 0.563 | 0.975 | 0.620 | 0.982 | 1.000 | 0.999 | 0.918 | 0.955 | 0.506 | 0.585 | 0.612 |
+| 2023 | 0.922 | 0.975 | 0.922 | 0.922 | 0.922 | 0.826 | 0.990 | 0.524 | 0.526 | 0.975 | 0.595 | 0.975 | 1.000 | 0.995 | 0.917 | 0.947 | 0.482 | 0.551 | 0.000 |
+| 2024 | 0.921 | 0.976 | 0.921 | 0.921 | 0.921 | 0.826 | 0.997 | 0.561 | 0.563 | 0.975 | 0.619 | 0.982 | 1.000 | 0.999 | 0.918 | 0.955 | 0.506 | 0.585 | 0.612 |
 | 2025 | 0.923 | 0.976 | 0.922 | 0.922 | 0.922 | 0.828 | 0.995 | 0.560 | 0.562 | 0.975 | 0.608 | 0.968 | 1.000 | 0.997 | 0.911 | 0.967 | 0.497 | 0.594 | 0.823 |
 
 Non-OK statuses are semantic (NO_PRIOR_HISTORY, INSUFFICIENT_SAMPLE, SOURCE_NOT_AVAILABLE, ...); per-code rates are in the JSON (`family_missingness`). Nothing is imputed.

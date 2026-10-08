@@ -72,6 +72,7 @@ last_team AS (   -- each player's most recent window season before s (s-1 or s-2
     JOIN box b1 ON b1.season < s.season
     WHERE b1.season = (SELECT max(b2.season) FROM box b2 WHERE b2.canonical_player_id = b1.canonical_player_id AND b2.season < s.season)
       AND b1.season >= s.season - 2
+      AND {spec.link_guard('b1.canonical_player_id', 'b1.season', 's.season')}
       AND (SELECT count(DISTINCT b3.season) FROM box b3 WHERE b3.canonical_player_id = b1.canonical_player_id AND b3.season < s.season)
           < CASE WHEN s.season IN (2022, 2023) THEN 5 ELSE 4 END),
 portal_out AS (SELECT coalesce(canonical_player_id, candidate_canonical_player_id) AS canonical_player_id, origin_team_id AS canonical_team_id,
@@ -87,7 +88,8 @@ ev AS (
     SELECT r.canonical_player_id, r.canonical_team_id, r.season + 1, 'PRIOR_SEASON_ROSTER_RETURNER', {PRESEASON}
     FROM src.rosters r JOIN ts ON ts.canonical_team_id = r.canonical_team_id AND ts.season = r.season + 1
     -- eligibility from the COMPLETED previous-season snapshot (start_season is past information)
-    WHERE r.start_season IS NULL OR (r.season + 1) - r.start_season < CASE WHEN r.season + 1 IN (2022, 2023) THEN 5 ELSE 4 END
+    WHERE (r.start_season IS NULL OR (r.season + 1) - r.start_season < CASE WHEN r.season + 1 IN (2022, 2023) THEN 5 ELSE 4 END)
+      AND {spec.link_guard('r.canonical_player_id', 'r.season', 'r.season + 1')}
     UNION ALL
     SELECT coalesce(t.canonical_player_id, t.candidate_canonical_player_id), t.destination_team_id, t.transfer_year + 1,
            'TRANSFER_PRESEASON_EVIDENCE', {PRESEASON}

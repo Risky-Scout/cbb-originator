@@ -667,6 +667,32 @@ CREATE TABLE IF NOT EXISTS metadata.player_identity_resolution (
     rows_affected BIGINT NOT NULL, evidence VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
 );
 
+-- Pre-Model Integrity Closure v1 (dataset v2.4): game-level team-attribution decisions (cbb_platform/team_attribution.py).
+CREATE TABLE IF NOT EXISTS metadata.team_attribution_resolution (
+    canonical_game_id VARCHAR NOT NULL, season INTEGER, defect_class VARCHAR NOT NULL,   -- MIRRORED_BOX_LINES | EVENT_TEAM_NOT_IN_GAME
+    decision VARCHAR NOT NULL,          -- REMEDIATED_RECONCILED | QUARANTINED_UNRECONCILED | QUARANTINED_EVENTS
+    rows_considered BIGINT NOT NULL, rows_restored BIGINT NOT NULL, rows_quarantined BIGINT NOT NULL,
+    home_box_points INTEGER, home_player_points_after INTEGER, away_box_points INTEGER, away_player_points_after INTEGER,
+    reconciles BOOLEAN, evidence VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+-- Row-level decisions of the mirrored-box repair (KEEP = true-team copy restored, QUARANTINE = opponent-side copy removed).
+CREATE TABLE IF NOT EXISTS metadata.player_game_team_attribution (
+    player_game_key VARCHAR NOT NULL, canonical_game_id VARCHAR NOT NULL, canonical_team_id VARCHAR NOT NULL,
+    canonical_player_id VARCHAR, decision VARCHAR NOT NULL, rule_id VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+-- Cross-season identity LINKS that lack positive evidence: history before to_season may not be linked to the player
+-- at or after to_season (the rows themselves stay; only the cross-season join is quarantined).
+CREATE TABLE IF NOT EXISTS metadata.identity_link_quarantine (
+    canonical_player_id VARCHAR NOT NULL, from_season INTEGER NOT NULL, to_season INTEGER NOT NULL,
+    from_team_id VARCHAR, to_team_id VARCHAR, reason VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+-- Derived canonical rows removed by a remediation rule, preserved verbatim (row_json). Raw sources are never touched.
+CREATE TABLE IF NOT EXISTS qa.identity_remediation_quarantine (
+    rule_id VARCHAR NOT NULL, rule_type VARCHAR NOT NULL, table_name VARCHAR NOT NULL, record_key VARCHAR,
+    canonical_game_id VARCHAR, canonical_team_id VARCHAR, canonical_player_id VARCHAR, season INTEGER,
+    reason VARCHAR NOT NULL, row_json VARCHAR NOT NULL, created_by_version VARCHAR NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS metadata.conference_id_map (
     provider VARCHAR NOT NULL, provider_conference_key VARCHAR NOT NULL, canonical_conference_id VARCHAR,
     match_method VARCHAR NOT NULL, match_confidence DOUBLE NOT NULL, needs_manual_review BOOLEAN NOT NULL,
@@ -786,5 +812,8 @@ CREATE OR REPLACE VIEW flagship.substitutions AS
         AND d.family = 'SUBSTITUTION' AND d.canonical_game_id = s.canonical_game_id);
 CREATE OR REPLACE VIEW flagship.lineup_stats AS
     SELECT l.* REPLACE (r.canonical_game_id AS canonical_game_id) FROM fact.lineup_stats l
-    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = l.canonical_game_id;
+    JOIN metadata.trusted_game_map r ON r.source_canonical_game_id = l.canonical_game_id
+    -- v2.4: a game whose event feed names a team that did not play it is quarantined (team_attribution.py)
+    WHERE NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.excluded_from_trusted AND d.family = 'LINEUP'
+        AND d.reason_code = 'TEAM_ATTRIBUTION_DEFECT' AND d.canonical_game_id = l.canonical_game_id);
 CREATE OR REPLACE VIEW flagship.rosters AS SELECT * FROM core.rosters;

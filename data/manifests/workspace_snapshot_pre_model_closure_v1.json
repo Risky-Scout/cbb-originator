@@ -1,0 +1,92 @@
+{
+ "baseline_id": "workspace_baseline_pre_model_closure_v1",
+ "taken_at_utc": "2026-10-07T17:51:48+00:00",
+ "parent": "/Users/josephshackelford/CBB Predictive Model 2026",
+ "note": "Sibling entries of CBB_Originator_Model accepted as the task baseline for Pre-Model Integrity Closure v1 (Finder .DS_Store and Office ~$ lock files excluded, as in Stage 2). Unrelated-project immutability is asserted against THIS baseline from now on; the Stage 2 snapshot is kept unchanged as historical evidence.",
+ "supersedes": {
+  "file": "workspace_snapshot_stage2.json",
+  "sha256": "e040328548bc4aa82a9af82aef5ac1d7346b65174ab4e79ea86c11b87ac1fe98",
+  "taken_at_utc": "2026-10-05T18:56:47+00:00"
+ },
+ "drift_from_superseded": [
+  {
+   "entry": "CBB Starter Pack.zip",
+   "change": "REMOVED",
+   "stage2": {
+    "type": "file",
+    "size": 164104745,
+    "mtime_ns": 1791145737230898978
+   },
+   "baseline": null,
+   "classification": "PRE_EXISTING_WORKSPACE_DRIFT",
+   "last_change_utc_at_or_before": "2026-10-07T00:22:09+00:00"
+  },
+  {
+   "entry": "CBB_Originator_Model.zip",
+   "change": "MODIFIED",
+   "stage2": {
+    "type": "file",
+    "size": 361964,
+    "mtime_ns": 1791144688803545931
+   },
+   "baseline": {
+    "type": "file",
+    "size": 7599567013,
+    "mtime_ns": 1791332529743682997
+   },
+   "classification": "PRE_EXISTING_WORKSPACE_DRIFT",
+   "last_change_utc_at_or_before": "2026-10-07T00:22:09+00:00"
+  },
+  {
+   "entry": "SSH root.docx",
+   "change": "ADDED",
+   "stage2": null,
+   "baseline": {
+    "type": "file",
+    "size": 13571,
+    "mtime_ns": 1791326489589043367
+   },
+   "classification": "PRE_EXISTING_WORKSPACE_DRIFT",
+   "last_change_utc_at_or_before": "2026-10-06T22:41:29+00:00"
+  }
+ ],
+ "drift_evidence": {
+  "pre_model_closure_session_start_utc": "2026-10-07T00:45:26+00:00",
+  "parent_dir_mtime_utc": "2026-10-07T00:22:09+00:00",
+  "argument": "A directory's mtime changes whenever an entry is added or removed. The parent's mtime (2026-10-07T00:22:09+00:00) precedes the Pre-Model Closure session start (2026-10-07T00:45:26+00:00), so every add/remove happened before the task began; the one modified entry's own mtime also precedes it. The session transcripts contain no command that removed, moved or wrote any sibling entry.",
+  "starter_pack_zip_restorable": false,
+  "starter_pack_zip_note": "No copy exists (the new CBB_Originator_Model.zip contains only the repository); the Stage 2 snapshot recorded size/mtime only, no hash, so a byte-identical restore is impossible. The extracted Starter Pack (the registered source) is byte-identical to data/manifests/starter_pack_sha256.json for every data file (digest cc6ced32...)."
+ },
+ "entries": {
+  "CBB Starter Pack": {
+   "type": "dir",
+   "entries": 138,
+   "newest_mtime_ns": 1791052552134132751
+  },
+  "CBB_ORIGINATOR_ARCHITECTURE_AMENDMENT_AND_STAGE1_DIRECTIVE_V2.md": {
+   "type": "file",
+   "size": 35074,
+   "mtime_ns": 1791175570944015045
+  },
+  "CBB_Originator_Model.zip": {
+   "type": "file",
+   "size": 7599567013,
+   "mtime_ns": 1791332529743682997
+  },
+  "SSH root.docx": {
+   "type": "file",
+   "size": 13571,
+   "mtime_ns": 1791326489589043367
+  },
+  "The complete mission is now clear.docx": {
+   "type": "file",
+   "size": 27121,
+   "mtime_ns": 1791171445356857098
+  },
+  "cbbd-openapi.json": {
+   "type": "file",
+   "size": 169262,
+   "mtime_ns": 1791055108846198401
+  }
+ }
+}

@@ -80,6 +80,10 @@ def bind(con, canonical_path=None) -> None:
     CREATE OR REPLACE VIEW src.rosters AS SELECT r.* FROM cdb.flagship.rosters r
         WHERE {S("r.season")} AND NOT EXISTS (SELECT 1 FROM src.identity_conflicts c
                                          WHERE c.canonical_player_id = r.canonical_player_id AND c.season = r.season);
+    -- v2.4 (Pre-Model Integrity Closure): cross-season identity links without positive evidence. History of a season
+    -- <= from_season may never be joined to the same canonical player at a season >= to_season (spec.link_guard).
+    CREATE OR REPLACE VIEW src.identity_link_quarantine AS
+    SELECT canonical_player_id, from_season, to_season, reason FROM cdb.metadata.identity_link_quarantine;
     CREATE OR REPLACE VIEW src.teams AS SELECT canonical_team_id, school FROM cdb.core.teams;
     CREATE OR REPLACE VIEW src.team_seasons AS SELECT * FROM cdb.core.team_seasons WHERE {w};
     CREATE OR REPLACE VIEW src.recruits AS SELECT * FROM cdb.core.recruits;

@@ -1,0 +1,1 @@
+{"dataset_version": "cbb_data_v2.4+5f19d31e524a", "tables_compared": 55, "excluded": ["metadata.data_versions (build-id log; not part of the manifest)"], "identical": true} []

@@ -9,7 +9,7 @@ from pathlib import Path
 from cbb_platform import config as C
 
 STAGE3_VERSION = "stage3-features-1.0.0"
-UPSTREAM_DATASET = "cbb_data_v2.3+7bef640cccde"
+UPSTREAM_DATASET = "cbb_data_v2.4+5f19d31e524a"
 
 # ------------------------------------------------------------------ scope (architect data-scope freeze)
 MODEL_SEASONS = tuple(range(2014, 2026))     # end-year: 2013-14 .. 2024-25
@@ -64,6 +64,12 @@ LABELS_PARQUET = MODELING / "labels"          # partitioned Parquet (gitignored)
 FOLDS_DIR = MODELING / "folds"
 REGISTRY_JSON = MODELING / "FEATURE_REGISTRY.json"
 STAGE3_MANIFEST = MODELING / "STAGE3_MANIFEST.json"
+
+
+def link_guard(player: str, hist_season: str, target_season: str) -> str:
+    """SQL predicate: history of `player` at `hist_season` may be linked to `target_season` (no quarantined link between)."""
+    return (f"NOT EXISTS (SELECT 1 FROM src.identity_link_quarantine lq WHERE lq.canonical_player_id = {player} "
+            f"AND {hist_season} <= lq.from_season AND {target_season} >= lq.to_season)")
 
 
 def season_sql(col: str = "season") -> str:

@@ -55,7 +55,8 @@ def run(features_db, labels_db) -> dict:
     import csv as _csv
     miss_rows = rows("SELECT * EXCLUDE (prediction_cutoff_utc, scheduled_tip_utc) FROM lb.lab.player_pool_misses ORDER BY ALL")
     with (C.QA / "player_pool_misses_after.csv").open("w", newline="") as fh:
-        w = _csv.DictWriter(fh, fieldnames=list(miss_rows[0]) if miss_rows else ["season"])
+        # explicit Unix line endings (csv's default is \r\n, which git diff --check reports as trailing whitespace)
+        w = _csv.DictWriter(fh, fieldnames=list(miss_rows[0]) if miss_rows else ["season"], lineterminator="\n")
         w.writeheader()
         w.writerows(miss_rows)
     miss_by = {}

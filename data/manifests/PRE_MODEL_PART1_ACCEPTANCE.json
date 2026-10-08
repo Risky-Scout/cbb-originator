@@ -1,0 +1,58 @@
+{
+ "record": "Pre-Model Integrity Part 1 acceptance",
+ "accepted_at_utc": "2026-10-08",
+ "accepted_by": "quantitative architect",
+ "accepted_git_sha": "the commit tagged pre-model-integrity-part1-v2.4 (git rev-parse pre-model-integrity-part1-v2.4^{commit}); a committed file cannot contain its own commit hash",
+ "accepted_git_parent_sha": "956ccdd6812c9bae4451a690d80e155ada5ac64e",
+ "tag": "pre-model-integrity-part1-v2.4",
+ "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+ "parent_dataset_version": "cbb_data_v2.3+7bef640cccde",
+ "dataset_status": "ACCEPTED_RESEARCH_BASELINE (not MODEL_READY)",
+ "accepted_research_baseline_for": "next pre-model stage (Pre-Model Integrity Part 2)",
+ "model_ready": false,
+ "remaining_before_model_ready": [
+  "bitemporal five-checkpoint PIT materialization",
+  "possession reconstruction",
+  "chronological lineup-stint reconstruction",
+  "availability-source validation",
+  "clean-room final pre-model acceptance"
+ ],
+ "canonical_manifest_hash": {
+  "DATASET_MANIFEST.json_sha256": "e0d1e20ff0404fa658aea089aa1917198d4d02fc65b483633d3fea476b864847",
+  "canonical_content_digest": "12fd1841e611c046468c165b34163231bb2131454f28489111c74474bcb17c34"
+ },
+ "identity_resolution_hash": "83f45c35337afb9d4ebe6dd2e068d53a80a9232c9dfc26f6d0ed869cab9d3d09",
+ "team_attribution_resolution_hash": "52a691a2b61ce500a8ceb8c0c4e59677f16b7e0a6bfb88dc6751ca16fbdd14b6",
+ "feature_fingerprint": "745bff8354a3d07dfef4efd45ccc6411c2a78470c1e1415e00eb24d28212b605",
+ "label_fingerprint": "0f8e5616d44dc1716148faaf4741bf7417795d630c184bac48459c3c20d615d9",
+ "fold_manifest_fingerprint": {
+  "modeling/folds/fold_manifests.json_sha256": "9e9577ebf3650aa2774e9d8d33983c0ba8292ef4d3bc7535ffff5f518760ccd0",
+  "modeling/folds/core_walk_forward.json_sha256": "ad1d843410c7b1436a46c4231c6aaa4d6983ed7fbdf7e5ac02962081e62624da"
+ },
+ "full_test_result": {
+  "passed": 418,
+  "failed": 0,
+  "skipped": 0,
+  "runtime_s": 1222.17,
+  "thread_limits": "OMP/OPENBLAS/MKL_NUM_THREADS=2",
+  "includes_deterministic_rebuild": true
+ },
+ "full_test_log": "data/qa/pre_model_closure/full_test_suite_final_lf.log",
+ "git_diff_check": "PASS (exit 0)",
+ "python_version": "3.12.13",
+ "duckdb_version": "1.5.6",
+ "lockbox_touched": false,
+ "starter_pack_modified": false,
+ "raw_source_modified": false,
+ "unrelated_project_modified": false,
+ "predictive_model_trained": false,
+ "evidence": [
+  "docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md",
+  "data/qa/pre_model_closure/four_failure_reconciliation.json",
+  "data/qa/pre_model_closure/player_game_154_row_reconciliation.csv",
+  "data/manifests/workspace_snapshot_pre_model_closure_v1.json"
+ ],
+ "excluded_from_commit": [
+  "data/qa/game_identity_questionable_only.csv (user-created historical QA material; untracked by ruling)"
+ ]
+}

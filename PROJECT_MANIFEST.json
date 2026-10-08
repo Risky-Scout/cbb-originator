@@ -1,17 +1,52 @@
 {
   "project": "CBB Originator Interconnected Player Prop Predictive Model",
-  "status": "source_architecture_frozen_ready_for_data_platform",
-  "date": "2026-10-04",
-  "next_stage": "canonical_schema_and_point_in_time_policy_then_data_platform_v1",
+  "status": "pre_model_integrity_closure_part1_complete_awaiting_architect_review",
+  "date": "2026-10-07",
+  "current_dataset": "cbb_data_v2.4+5f19d31e524a",
+  "current_dataset_status": "RESEARCH_CANDIDATE",
+  "next_stage": "phase_A2_pre_model_integrity_closure_part2 (only after architect review)",
+  "precedence_map": "docs/ARCHITECTURE_PRECEDENCE.md",
   "authoritative_documents": [
+    "docs/ARCHITECTURE_PRECEDENCE.md",
+    "CBB_Blueprint_v1_4.md",
+    "PROJECT_EXECUTION_ORDER_v1_1.md",
+    "docs/STAGE_CROSSWALK.md",
+    "docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md",
+    "POINT_IN_TIME_POLICY_v2_0.md",
+    "docs/BITEMPORAL_CHECKPOINT_SCHEMA.md",
+    "docs/POSSESSION_AND_LINEUP_RECONSTRUCTION_POLICY.md",
+    "docs/MODEL_ELIGIBILITY_POLICY.md",
+    "docs/PBP_QUARANTINE_SELECTION_BIAS_PLAN.md",
+    "PRODUCTION_SCORING_RETRAINING_AND_DEPLOYMENT_POLICY_v1_0.md",
+    "docs/PREDICTION_LEDGER_SCHEMA.md",
+    "WIZARDOFODDS_CBB_ORIGINATOR_INTEGRATION_SPEC_v1_0.md",
+    "docs/LOCKBOX_OPENING_PROTOCOL.md",
+    "docs/COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY.md",
+    "docs/REPRODUCIBLE_ENVIRONMENT_POLICY.md",
+    "docs/AVAILABILITY_SOURCE_GATES_G4A_G4B.md",
+    "docs/OFF_MACHINE_BACKUP_PLAN.md",
+    "docs/PLAYER_IDENTITY_CLUSTER_AUDIT.md",
+    "LOCKBOX_POLICY.md",
+    "CANONICAL_SCHEMA.md",
+    "docs/MODEL_ARCHITECTURE_FREEZE_v1_0.md",
+    "docs/PROBABILITY_ENGINE_POLICY.md"
+  ],
+  "authoritative_except_where_superseded": [
     "docs/CBB_Blueprint_v1_3.docx",
     "docs/CBB_Blueprint_v1_3.pdf",
-    "docs/MODEL_ARCHITECTURE_FREEZE.md",
-    "docs/DATA_SOURCE_POLICY.md",
-    "docs/SOURCE_MATRIX.md",
-    "docs/DATA_REQUIREMENTS.md",
-    "docs/PROBABILITY_ENGINE_POLICY.md",
+    "POINT_IN_TIME_POLICY.md",
+    "docs/CBB_ORIGINATOR_ARCHITECTURE_AMENDMENT_AND_STAGE1_DIRECTIVE_V2.md",
+    "docs/DATA_SOURCE_POLICY_v1_0.md",
+    "docs/SOURCE_MATRIX_v1_0.md",
+    "docs/DATA_REQUIREMENTS_v1_4.md",
+    "docs/AMENDMENT_2026-10-04_DATA_SOURCE_FREEZE.md",
+    "docs/SHARP_STATS_CAPTURE_WORKFLOW.md"
+  ],
+  "historical_records": [
+    "docs/PROJECT_EXECUTION_ORDER_v1_0.md",
     "docs/PROJECT_EXECUTION_ORDER.md",
-    "docs/AMENDMENT_2026-10-04_DATA_SOURCE_FREEZE.md"
-  ]
+    "docs/PLAYER_IDENTITY_COLLISION_AUDIT.md",
+    "docs/STAGE_1_DATA_PLATFORM_FOUNDATION_DIRECTIVE.md"
+  ],
+  "previous_manifest_status": "source_architecture_frozen_ready_for_data_platform (2026-10-04)"
 }

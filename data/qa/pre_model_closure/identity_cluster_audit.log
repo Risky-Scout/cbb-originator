@@ -1,0 +1,109 @@
+{
+ "window": "2013-14 .. 2024-25",
+ "mode": "AFTER_REMEDIATION",
+ "revoked_rule": "non-overlapping multi-team appearances => CONFIRMED_SINGLE_PLAYER (Stage 3.1) -- chronology is not identity evidence",
+ "canonical_players_scanned": 23916,
+ "candidates": 8027,
+ "multi_team_candidates": 8021,
+ "by_kind": {
+  "IN_SEASON_MULTI_TEAM": 166,
+  "CROSS_SEASON_LINK": 7568,
+  "EVENT_FOREIGN_ACTOR": 281,
+  "ROSTER_MULTI_TEAM": 6,
+  "PLAYER_IMPOSSIBILITY": 6
+ },
+ "by_class": {
+  "TEAM_ATTRIBUTION_DEFECT": 174,
+  "SOURCE_ID_COLLISION": 8,
+  "CONFIRMED_TRANSFER": 6986,
+  "UNRESOLVED": 596,
+  "CANONICAL_MAPPING_ERROR": 263
+ },
+ "by_kind_class": {
+  "CROSS_SEASON_LINK": {
+   "CONFIRMED_TRANSFER": 6986,
+   "UNRESOLVED": 582
+  },
+  "EVENT_FOREIGN_ACTOR": {
+   "CANONICAL_MAPPING_ERROR": 261,
+   "UNRESOLVED": 14,
+   "TEAM_ATTRIBUTION_DEFECT": 6
+  },
+  "IN_SEASON_MULTI_TEAM": {
+   "TEAM_ATTRIBUTION_DEFECT": 164,
+   "SOURCE_ID_COLLISION": 2
+  },
+  "PLAYER_IMPOSSIBILITY": {
+   "SOURCE_ID_COLLISION": 6
+  },
+  "ROSTER_MULTI_TEAM": {
+   "TEAM_ATTRIBUTION_DEFECT": 4,
+   "CANONICAL_MAPPING_ERROR": 2
+  }
+ },
+ "by_confidence": {
+  "HIGH": 2978,
+  "MEDIUM": 4467,
+  "LOW": 582
+ },
+ "team_pair_clusters": 7404,
+ "in_season_clusters": 17,
+ "cross_season_clusters_size_ge_2": 114,
+ "whole_team_clusters": 10,
+ "whole_team_members_accepted_without_positive_evidence": 0,
+ "every_candidate_has_evidence_class_confidence": true,
+ "team_alias_pairs": {
+  "LIU Brooklyn": "Long Island University"
+ },
+ "provider_dob_reliability": {
+  "roster_rows_with_dob": 44280,
+  "roster_rows_age_under_16_at_season_start": 9700,
+  "by_season": {
+   "2005": 3471,
+   "2006": 2651,
+   "2007": 1856,
+   "2008": 1026,
+   "2009": 238,
+   "2010": 37,
+   "2011": 35,
+   "2012": 36,
+   "2013": 35,
+   "2014": 35,
+   "2015": 62,
+   "2016": 29,
+   "2017": 51,
+   "2018": 44,
+   "2019": 45,
+   "2020": 47,
+   "2023": 1,
+   "2024": 1
+  },
+  "most_frequent_dob_values": [
+   [
+    "2003-09-18",
+    861
+   ],
+   [
+    "2003-09-19",
+    785
+   ],
+   [
+    "2004-10-07",
+    697
+   ],
+   [
+    "2004-10-14",
+    696
+   ],
+   [
+    "2003-09-12",
+    570
+   ]
+  ]
+ },
+ "remaining_in_season_box_multi_team": 0,
+ "remaining_in_season_season_file_multi_team": 0,
+ "repaired_games_unreconciled": 0,
+ "identity_links_quarantined": 936,
+ "classification_hash": "6580c7e06f165c01e00ab91850b62802f9fedcded5059019d900098129218372"
+}

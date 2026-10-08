@@ -648,6 +648,8 @@ def build_events(con: duckdb.DuckDBPyConnection, root: Path | None = None) -> No
     build_recruiting(con, root)
     from cbb_platform import player_identity     # Stage 3.1: before reconciliation / defects
     player_identity.apply_events(con)
+    from cbb_platform import team_attribution    # v2.4: event team-attribution / collision quarantines
+    team_attribution.apply_events(con)
     build_reconciliation(con)
     build_defects(con)
     for t in ("pl", "of_norm", "of_class", "pp_norm", "play_lists", "sub", "lu", "lu2"):

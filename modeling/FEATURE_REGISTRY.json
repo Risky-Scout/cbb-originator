@@ -1,6 +1,6 @@
 {
  "version": "stage3-features-1.0.0",
- "upstream_dataset": "cbb_data_v2.3+7bef640cccde",
+ "upstream_dataset": "cbb_data_v2.4+5f19d31e524a",
  "cutoff_rule": "prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT tip); start of the US/Eastern game date (00:00 ET) when the tip is not exact. A source game may contribute only when its historical_knowable_at (canonical PIT rule HR-1: tip + 4 h, or 06:00 ET next day for inexact tips) <= prediction_cutoff_utc. Since the target game is knowable only at tip + 4 h it can never contribute to its own features. CBBD wallclock is UNTRUSTED_MIXED and is never read.",
  "missing_codes": [
   "NO_PRIOR_HISTORY",

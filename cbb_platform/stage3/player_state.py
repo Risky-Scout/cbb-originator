@@ -102,6 +102,10 @@ def build(con) -> None:
     CREATE OR REPLACE TEMP TABLE player_team_prev_minutes AS
     SELECT canonical_player_id, canonical_team_id, season, sum(coalesce(minutes, 0)) AS min_for_team
     FROM src.player_games WHERE canonical_player_id IS NOT NULL GROUP BY 1, 2, 3;
+    -- v2.4: previous-season rows usable for season + 1 only when that cross-season link is not quarantined
+    CREATE OR REPLACE TEMP TABLE pseason_linkable AS
+    SELECT * FROM pseason p WHERE {spec.link_guard('p.canonical_player_id', 'p.season', 'p.season + 1')};
+    DELETE FROM player_team_prev_minutes t WHERE NOT ({spec.link_guard('t.canonical_player_id', 't.season', 't.season + 1')});
     CREATE OR REPLACE TEMP TABLE rec AS     -- recruiting class known before the season (class year < season)
     SELECT canonical_player_id, arg_max(stars, recruit_year) AS stars, arg_max(rating, recruit_year) AS rating,
            arg_max(ranking, recruit_year) AS ranking, max(recruit_year) AS recruit_year,
@@ -171,15 +175,16 @@ def build(con) -> None:
            (tr.canonical_player_id IS NOT NULL) AS prof_portal_transfer_in, tr.stars AS prof_portal_stars,
            tr.origin_team_id AS prof_portal_origin_team_id,
            EXISTS (SELECT 1 FROM pseason h WHERE h.canonical_player_id = x.canonical_player_id AND h.season < x.season
-                   AND h.n_app > 0) AS prof_has_prior_season_in_window,
+                   AND h.n_app > 0 AND {spec.link_guard('h.canonical_player_id', 'h.season', 'x.season')}) AS prof_has_prior_season_in_window,
            CASE WHEN b.last_position IS NULL AND rc.canonical_player_id IS NULL AND tr.canonical_player_id IS NULL
-                AND NOT EXISTS (SELECT 1 FROM pseason h WHERE h.canonical_player_id = x.canonical_player_id AND h.season < x.season AND h.n_app > 0)
+                AND NOT EXISTS (SELECT 1 FROM pseason h WHERE h.canonical_player_id = x.canonical_player_id AND h.season < x.season AND h.n_app > 0
+                                AND {spec.link_guard('h.canonical_player_id', 'h.season', 'x.season')})
                 THEN 'SOURCE_NOT_AVAILABLE' ELSE 'OK' END AS prof_status,
            tpm.min_for_team AS ret_prev_season_min_for_team, tpmt.team_min AS ret_prev_season_team_min
     FROM ex.player_game_examples x
     JOIN f_pbox b USING (player_game_example_id)
     JOIN f_part pa USING (player_game_example_id)
-    LEFT JOIN pseason ps ON ps.canonical_player_id = x.canonical_player_id AND ps.season = x.season - 1
+    LEFT JOIN pseason_linkable ps ON ps.canonical_player_id = x.canonical_player_id AND ps.season = x.season - 1
     LEFT JOIN rec rc ON rc.canonical_player_id = x.canonical_player_id AND rc.recruit_year < x.season
     LEFT JOIN trf tr ON tr.canonical_player_id = x.canonical_player_id AND tr.season = x.season
     LEFT JOIN player_team_prev_minutes tpm ON tpm.canonical_player_id = x.canonical_player_id

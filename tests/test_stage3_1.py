@@ -173,6 +173,10 @@ def test_split_identities_do_not_mix_feature_histories(fx):
 
 
 def test_stage3_rebuilt_from_v2_3():
+    # v2.3 is preserved verbatim as an ancestor (Pre-Model Integrity Closure v1 created the successor v2.4); Stage 3 is
+    # rebuilt from the CURRENT dataset, whose lineage must contain v2.3 (same pattern as test_stage2_2 for v2.2)
+    v23 = json.loads((C.MANIFESTS / "DATASET_MANIFEST_cbb_data_v2.3+7bef640cccde.json").read_text())
+    assert v23["dataset_version"] == "cbb_data_v2.3+7bef640cccde" and v23["parent_dataset_version"] == "cbb_data_v2.2+95dd9c2fa5b7"
     man = json.loads((C.MANIFESTS / "DATASET_MANIFEST.json").read_text())
-    assert man["dataset_version"].startswith("cbb_data_v2.3+") and man["parent_dataset_version"] == "cbb_data_v2.2+95dd9c2fa5b7"
+    assert "cbb_data_v2.3+7bef640cccde" in man["lineage"]
     assert json.loads(spec.STAGE3_MANIFEST.read_text())["upstream_dataset"] == man["dataset_version"] == spec.UPSTREAM_DATASET

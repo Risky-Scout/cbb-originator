@@ -722,6 +722,8 @@ def build(db_path=None, parquet_root=None) -> dict:
     build_season_tables(con)          # before participation: membership comes from season stats
     from cbb_platform import player_identity     # Stage 3.1: adjudicated identity repairs (derived rows only)
     player_identity.apply_box(con)
+    from cbb_platform import team_attribution    # v2.4: reconciliation-gated team-attribution / collision repairs
+    team_attribution.apply_box(con)
     build_participation(con)
     flag_accounting(con)
     record_source_manifest(con, reg)
@@ -734,6 +736,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     # Stage 2.2: played-game status needs every box AND event fact, so game-derived aggregates are built after it
     from cbb_platform import game_status
     game_status.resolve(con)
+    team_attribution.apply_links(con)                # v2.4: cross-season links without positive evidence
     con.execute(KNOWABLE_SQL)
     build_season_authority(con)
     build_player_season_authority(con)
