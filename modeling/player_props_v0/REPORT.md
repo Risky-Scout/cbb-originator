@@ -60,3 +60,38 @@ score and CRPS. Full tables are in `metrics.json`; the summary table is in the s
 | count labels unavailable (MIN still scored; counts kept NaN, never 0) | 0 | 4 |
 | target box row of a player outside the pregame universe | 1,233 | 1,219 |
 | target box row with unresolved identity | 10 | 29 |
+
+## Participation layer (branch `modeling/player-props-v0-participation`; v0 frozen at tag `cbb-player-props-v0`)
+
+Code: `cbb_platform/props_v0_participation.py`. Metrics and the end-to-end sample: `participation_metrics.json`
+(`python -m cbb_platform.props_v0_participation`, about 10 s). Tests: `tests/test_props_v0_participation.py`.
+
+**Target:** P(player appears). Labels: PLAYED = 1, DNP_CONFIRMED = 0. UNKNOWN_PARTICIPATION and NOT_ON_ROSTER (an
+end-of-season roster label, not a confirmed DNP) are excluded and never relabeled. **Confirmed DNPs exist only from
+2023-24**, because they require a complete substitution feed. Identifiable history through 2023-24 is therefore the
+2023-24 season alone: 111,954 PLAYED and 123,369 DNP, with 16,359 UNKNOWN and 2,085 NOT_ON_ROSTER excluded. Earlier
+seasons have positives only and would bias the model, so they are not used. Validation is 2024-25: 112,897 PLAYED,
+144,931 DNP (2,987 UNKNOWN and 313 NOT_ON_ROSTER excluded).
+
+**Model:** L2-regularized logistic regression, fit by numpy IRLS (penalty 1e-4·n on standardized coefficients, fixed).
+23 approved pregame inputs: season and recent participation counts and rate, games since played, last-game status,
+EWM, last and season minutes, start rate, prior-season minutes, minutes rank, rotation depth, roster / transfer /
+recruit evidence, cold-start flags. Missing-value indicators are added on top.
+**Benchmark:** (played + 2·last_played + 3·base_rate) / (played + DNP + 2·last_known + 3), counting season-to-date
+identifiable games.
+
+| 2024-25 | Brier | log loss | AUC | calibration-in-the-large | calibration slope |
+|---|---|---|---|---|---|
+| benchmark | 0.0712 | 0.2567 | 0.9690 | −0.202 | 1.657 |
+| logistic | **0.0572** | **0.1922** | **0.9771** | −0.056 | 0.998 |
+
+The weakest region is the middle: the 50–75 % bucket predicts 0.636 vs observed 0.545, and the 25–50 % bucket 0.375
+vs 0.324.
+
+**Wrapper:** `pregame_outputs()` returns, per pregame candidate, `participation_probability`, `conditional_minutes`
+and `conditional_stat_distribution` (PTS / REB / AST / FG3M / STL / BLK / TOV pmfs plus MIN, all from the unchanged v0
+state). DNP mass is never folded into the stat distributions, since a book may void the prop when the player does not
+play. Conditional values for candidates with near-zero P(play) (for example departed players still in the pregame
+pool) describe the case where they do appear, and should be read together with P(play).
+v0 is unchanged: `metrics.json` regenerates byte-identically, and the wrapper's conditional means equal v0's on every
+2024-25 appearance (tested).

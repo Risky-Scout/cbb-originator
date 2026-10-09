@@ -43,8 +43,12 @@ def _pos_sql(col: str) -> str:
 
 
 # ============================================================================ data
-def load_frames(cfg: dict, seasons=None) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    """(scoring frame, training player-season finals, exclusion counts). Reads only seasons in spec.MODEL_SEASONS."""
+def load_frames(cfg: dict, seasons=None, population: str = "scored") -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """(scoring frame, training player-season finals, exclusion counts). Reads only seasons in spec.MODEL_SEASONS.
+    population="scored": observed appearances (the v0 training / scoring population). population="candidates": every
+    pregame player candidate, with its participation label attached for evaluation only (participation wrapper)."""
+    if population not in ("scored", "candidates"):
+        raise ValueError(population)
     seasons = sorted(seasons or spec.MODEL_SEASONS)
     for s in seasons:
         lockbox.check_season(s)                       # raises on 2025-26
@@ -72,10 +76,10 @@ def load_frames(cfg: dict, seasons=None) -> tuple[pd.DataFrame, pd.DataFrame, di
                f.is_home::DOUBLE AS is_home, {_pos_sql('f.prof_last_box_position')} AS pos, f.cold_start_class,
                f.pstd_sum_min::DOUBLE AS cur_min, f.pstd_appearances::DOUBLE AS cur_n_app, {cur}, {feats}, {hist},
                l.min::DOUBLE AS y_min, {", ".join(f"l.{t}::DOUBLE AS y_{t}" for t in targets)},
-               l.counting_labels_available AS counts_ok
+               l.counting_labels_available AS counts_ok{", l.participation_status, f.canonical_game_id" if population == "candidates" else ""}
         FROM feat.player_features f JOIN lb.lab.player_game_labels l USING (player_game_example_id) {hjoin}
-        WHERE f.season BETWEEN {lo} AND {hi} AND l.participation_status = 'PLAYED' AND l.box_row_present
-          AND l.minutes_label_available
+        WHERE f.season BETWEEN {lo} AND {hi}{"" if population == "candidates" else """ AND l.participation_status = 'PLAYED' AND l.box_row_present
+          AND l.minutes_label_available"""}
         ORDER BY f.player_game_example_id""").df()
     finals = con.execute(f"WITH {fin_sql} SELECT * EXCLUDE (available_at) FROM fin ORDER BY canonical_player_id, season").df()
     excl = {}
