@@ -1,0 +1,604 @@
+{
+ "artifact_version": "cbb-props-v1-refit-2024-25",
+ "model_version": "cbb-props-v0@53c0c2c+participation@f9cf4df+props-v1-pricing-1.0.0",
+ "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+ "training_through_season": 2025,
+ "stat_training_seasons": [
+  2014,
+  2025
+ ],
+ "participation_training_seasons": [
+  2024,
+  2025
+ ],
+ "participation_rows": {
+  "2024": {
+   "played": 111954,
+   "dnp": 123369,
+   "unknown_excluded": 16359,
+   "not_on_roster_excluded": 2085
+  },
+  "2025": {
+   "played": 112897,
+   "dnp": 144931,
+   "unknown_excluded": 2987,
+   "not_on_roster_excluded": 313
+  }
+ },
+ "spec_fingerprint": "baa24b754be10fcb6926e21c947a5ce0e0489f74c0cde393e2162cf82597655b",
+ "config": {
+  "version": "props-v0-challenger-1.0.0",
+  "upstream_dataset": "cbb_data_v2.4+5f19d31e524a",
+  "status": "CHALLENGER_V0_RESEARCH (not production; no market data; 2025-26 never read)",
+  "evaluations": [
+   {
+    "name": "A",
+    "train_through": 2023,
+    "validate": 2024,
+    "label": "train 2013-14..2022-23, validate 2023-24"
+   },
+   {
+    "name": "B",
+    "train_through": 2024,
+    "validate": 2025,
+    "label": "train 2013-14..2023-24, validate 2024-25"
+   }
+  ],
+  "recency": {
+   "half_life_seasons": 1.0,
+   "prior_seasons_used": 3,
+   "rule": "weight = 0.5 ** (season_age / half_life): current season 1, previous 0.5, two back 0.25, three back 0.125; older seasons dropped (< 0.07). Applied to the player's rate history AND to training-row weights (age measured from the last training season). Fixed, not tuned."
+  },
+  "scoring_population": "participation_status = 'PLAYED' AND box_row_present AND minutes_label_available (MIN) / counting_labels_available (counts). Predictions are conditional on the player appearing.",
+  "count_targets": {
+   "PTS": "pts",
+   "REB": "reb",
+   "AST": "ast",
+   "FG3M": "three_pm",
+   "STL": "stl",
+   "BLK": "blk",
+   "TOV": "tov"
+  },
+  "history_sums": {
+   "pts": [
+    "pts"
+   ],
+   "reb": [
+    "orb",
+    "drb"
+   ],
+   "ast": [
+    "ast"
+   ],
+   "three_pm": [
+    "tpm"
+   ],
+   "stl": [
+    "stl"
+   ],
+   "blk": [
+    "blk"
+   ],
+   "tov": [
+    "tov"
+   ]
+  },
+  "minutes_features": [
+   "pr_ewm_min_per_app",
+   "pr_l3_min_per_app",
+   "pr_l5_min_per_app",
+   "pr_l10_min_per_app",
+   "pstd_min_per_app",
+   "pr_last_box_minutes",
+   "pps_min_per_app",
+   "pr_ewm_start_rate",
+   "pr_last_box_started",
+   "pr_l5_starts",
+   "pp_participation_rate",
+   "pp_games_since_played",
+   "role_l5_minutes_rank",
+   "role_team_rotation_depth_l5",
+   "role_teammates_l5_minutes",
+   "ret_team_returning_min_share",
+   "pstd_appearances",
+   "pps_appearances",
+   "pps_same_team",
+   "prof_portal_transfer_in",
+   "pr_ewm_usage",
+   "pstd_usage"
+  ],
+  "log1p_features": [
+   "pstd_appearances",
+   "pps_appearances",
+   "pp_games_since_played"
+  ],
+  "ridge_alpha": 0.0001,
+  "minutes_clip": [
+   1.0,
+   45.0
+  ],
+  "mean_floor": 0.01,
+  "baseline_pseudo_games": 5.0,
+  "rate_prior_min_minutes": 100,
+  "negbin_overdispersion_ratio_threshold": 1.1,
+  "pmf_support_max": 120,
+  "minutes_support_max": 60,
+  "minutes_sigma_buckets": [
+   0,
+   10,
+   20,
+   30,
+   1000
+  ],
+  "count_mean_buckets": [
+   0,
+   0.5,
+   1,
+   2,
+   4,
+   8,
+   15,
+   1000
+  ],
+  "interval_levels": [
+   0.5,
+   0.8,
+   0.95
+  ]
+ },
+ "v0_state": {
+  "train_through": 2025,
+  "n_train_rows": 1272278,
+  "train_max_cutoff": "2025-04-07 19:50:00-04:00",
+  "transform": {
+   "mean": {
+    "pr_ewm_min_per_app": 20.266172102188367,
+    "pr_l3_min_per_app": 20.467326705292393,
+    "pr_l5_min_per_app": 20.415132255379206,
+    "pr_l10_min_per_app": 20.296762266950587,
+    "pstd_min_per_app": 20.020484170404284,
+    "pr_last_box_minutes": 20.495482445328427,
+    "pps_min_per_app": 19.499897262393425,
+    "pr_ewm_start_rate": 0.5026891253277734,
+    "pr_last_box_started": 0.5086791946607975,
+    "pr_l5_starts": 2.376887892877766,
+    "pp_participation_rate": 0.8934113690928299,
+    "pp_games_since_played": 0.0994552357558303,
+    "role_l5_minutes_rank": 6.5745003817702745,
+    "role_team_rotation_depth_l5": 9.01503298517592,
+    "role_teammates_l5_minutes": 1038.0726611205123,
+    "ret_team_returning_min_share": 0.752925179432294,
+    "pstd_appearances": 2.469713597158261,
+    "pps_appearances": 3.2105992282924936,
+    "pps_same_team": 0.6632250616585798,
+    "prof_portal_transfer_in": 0.16599039474586513,
+    "pr_ewm_usage": 0.18938715003446316,
+    "pstd_usage": 0.1901102303895809
+   },
+   "sd": {
+    "pr_ewm_min_per_app": 9.136546387860143,
+    "pr_l3_min_per_app": 9.917530354393438,
+    "pr_l5_min_per_app": 9.603355843515692,
+    "pr_l10_min_per_app": 9.229431411454664,
+    "pstd_min_per_app": 8.769966681138802,
+    "pr_last_box_minutes": 10.950185037357883,
+    "pps_min_per_app": 9.380041280859594,
+    "pr_ewm_start_rate": 0.440602688254208,
+    "pr_last_box_started": 0.4999246659048141,
+    "pr_l5_starts": 2.250948462949118,
+    "pp_participation_rate": 0.20127332547481322,
+    "pp_games_since_played": 0.36669466677843693,
+    "role_l5_minutes_rank": 3.952869308703857,
+    "role_team_rotation_depth_l5": 3.009834872087044,
+    "role_teammates_l5_minutes": 298.9984956896543,
+    "ret_team_returning_min_share": 0.18522252714028825,
+    "pstd_appearances": 0.8255227515764572,
+    "pps_appearances": 0.5300745831055486,
+    "pps_same_team": 0.47260721455194993,
+    "prof_portal_transfer_in": 0.372072013994572,
+    "pr_ewm_usage": 0.06081524766181568,
+    "pstd_usage": 0.05921721009865344
+   },
+   "ind": [
+    "pr_ewm_min_per_app",
+    "pr_l3_min_per_app",
+    "pr_l5_min_per_app",
+    "pr_l10_min_per_app",
+    "pstd_min_per_app",
+    "pr_last_box_minutes",
+    "pps_min_per_app",
+    "pr_ewm_start_rate",
+    "pr_last_box_started",
+    "pr_l5_starts",
+    "pp_participation_rate",
+    "pp_games_since_played",
+    "ret_team_returning_min_share",
+    "pps_appearances",
+    "pps_same_team",
+    "pr_ewm_usage",
+    "pstd_usage"
+   ]
+  },
+  "coef": {
+   "intercept": 20.822234243690353,
+   "pr_ewm_min_per_app": 3.32734249225457,
+   "pr_ewm_min_per_app__missing": -0.9202962801822581,
+   "pr_l3_min_per_app": 1.1855681979414092,
+   "pr_l3_min_per_app__missing": -1.3504567232149716,
+   "pr_l5_min_per_app": 0.6104558607037134,
+   "pr_l5_min_per_app__missing": -0.9202962801830719,
+   "pr_l10_min_per_app": 0.9982285028336606,
+   "pr_l10_min_per_app__missing": -0.920296280182914,
+   "pstd_min_per_app": -0.08558496341911523,
+   "pstd_min_per_app__missing": -0.9202962801827951,
+   "pr_last_box_minutes": 1.503873520147007,
+   "pr_last_box_minutes__missing": 0.7394081873816647,
+   "pps_min_per_app": 0.5712310653776537,
+   "pps_min_per_app__missing": -0.5146075612793969,
+   "pr_ewm_start_rate": 0.14592434253041084,
+   "pr_ewm_start_rate__missing": 0.7394081873799145,
+   "pr_last_box_started": 1.2014184272150246,
+   "pr_last_box_started__missing": 0.7394081873809901,
+   "pr_l5_starts": -0.3418858631592385,
+   "pr_l5_starts__missing": 0.7394081873806801,
+   "pp_participation_rate": 0.20466001022113026,
+   "pp_participation_rate__missing": 1.0010095538320167,
+   "pp_games_since_played": -0.6116798496617519,
+   "pp_games_since_played__missing": 1.0010095538320698,
+   "role_l5_minutes_rank": -0.48355879476571445,
+   "role_team_rotation_depth_l5": 0.03967188167427448,
+   "role_teammates_l5_minutes": 0.2597501166668004,
+   "ret_team_returning_min_share": -0.048471953104378726,
+   "ret_team_returning_min_share__missing": 0.33546542761703485,
+   "pstd_appearances": 0.019149491288642476,
+   "pps_appearances": 0.10418812715204992,
+   "pps_appearances__missing": -0.012244044615620788,
+   "pps_same_team": 0.13933902900210465,
+   "pps_same_team__missing": -0.01224404461562077,
+   "prof_portal_transfer_in": 0.010867967817369368,
+   "pr_ewm_usage": 1.0293844980856894,
+   "pr_ewm_usage__missing": -0.004415379655545142,
+   "pstd_usage": -0.6657556898037436,
+   "pstd_usage__missing": -0.0044153796558728114,
+   "pos_F": -0.3583539806923838,
+   "pos_C": -0.6599674300856535,
+   "pos_U": 0.0517229575388189,
+   "cold_COLD_EARLY_SEASON": 0.05795788537396888,
+   "cold_COLD_NO_HISTORY": -6.003577358659575,
+   "cold_COLD_TRANSFER_IN": 0.7738239362955066,
+   "is_home": -0.05916176793441218
+  },
+  "minutes_sigma": [
+   5.080959581709732,
+   6.870449630077577,
+   6.577504016171553,
+   5.455467845922145
+  ],
+  "prior_rate": {
+   "pts": {
+    "G": 0.35972863698929386,
+    "F": 0.3535971065506698,
+    "C": 0.3651935029682949,
+    "U": 0.37686750209039105
+   },
+   "reb": {
+    "G": 0.12271081871870157,
+    "F": 0.20841942294270946,
+    "C": 0.2509448877260754,
+    "U": 0.17109515964270178
+   },
+   "ast": {
+    "G": 0.07660856789232351,
+    "F": 0.04596569033778283,
+    "C": 0.04423786692705737,
+    "U": 0.06914772248416813
+   },
+   "three_pm": {
+    "G": 0.045582979146136716,
+    "F": 0.02467971452716143,
+    "C": 0.008335670574255542,
+    "U": 0.03865396612183258
+   },
+   "stl": {
+    "G": 0.03546781922459461,
+    "F": 0.027705621451990816,
+    "C": 0.022078110215479955,
+    "U": 0.03631326140024729
+   },
+   "blk": {
+    "G": 0.008174093287269719,
+    "F": 0.02790861499982741,
+    "C": 0.04880768215463346,
+    "U": 0.019203182347577223
+   },
+   "tov": {
+    "G": 0.05701308701487472,
+    "F": 0.054410406409490054,
+    "C": 0.06068377215555648,
+    "U": 0.062003385013789394
+   }
+  },
+  "prior_k_minutes": {
+   "pts": 31.00907828761606,
+   "reb": 71.80892999065682,
+   "ast": 60.12389772398329,
+   "three_pm": 71.39034843407414,
+   "stl": 258.6111197175812,
+   "blk": 79.16020732495437,
+   "tov": 157.00643640519942
+  },
+  "dispersion": {
+   "pts": {
+    "family": "NEGBIN",
+    "phi": 0.24701238618960028,
+    "overdispersion_ratio": 3.4666713413069923
+   },
+   "reb": {
+    "family": "NEGBIN",
+    "phi": 0.11304436911415755,
+    "overdispersion_ratio": 1.4956417562822215
+   },
+   "ast": {
+    "family": "NEGBIN",
+    "phi": 0.13194600437194856,
+    "overdispersion_ratio": 1.293276274936706
+   },
+   "three_pm": {
+    "family": "NEGBIN",
+    "phi": 0.19522785166291096,
+    "overdispersion_ratio": 1.2652823602331755
+   },
+   "stl": {
+    "family": "POISSON",
+    "phi": 0.0,
+    "overdispersion_ratio": 1.0985743999731228
+   },
+   "blk": {
+    "family": "NEGBIN",
+    "phi": 0.21278177858405006,
+    "overdispersion_ratio": 1.1624428679407588
+   },
+   "tov": {
+    "family": "POISSON",
+    "phi": 0.0,
+    "overdispersion_ratio": 1.0499276462879406
+   }
+  },
+  "baseline": {
+   "population_per_appearance": {
+    "min": 20.477702714684423,
+    "pts": 7.33790975379233,
+    "reb": 3.205611227075054,
+    "ast": 1.3367990200329642,
+    "three_pm": 0.7612370340505885,
+    "stl": 0.664126219966056,
+    "blk": 0.3365348031956176,
+    "tov": 1.1556637672370857
+   },
+   "dispersion": {
+    "pts": {
+     "family": "NEGBIN",
+     "phi": 0.30842906250994573,
+     "overdispersion_ratio": 3.754293836860827
+    },
+    "reb": {
+     "family": "NEGBIN",
+     "phi": 0.16815210928085011,
+     "overdispersion_ratio": 1.6495028227832524
+    },
+    "ast": {
+     "family": "NEGBIN",
+     "phi": 0.19197161475521057,
+     "overdispersion_ratio": 1.36762433311412
+    },
+    "three_pm": {
+     "family": "NEGBIN",
+     "phi": 0.26193902007329384,
+     "overdispersion_ratio": 1.300962482575038
+    },
+    "stl": {
+     "family": "NEGBIN",
+     "phi": 0.13953346850715023,
+     "overdispersion_ratio": 1.121426482193512
+    },
+    "blk": {
+     "family": "NEGBIN",
+     "phi": 0.3466430797719545,
+     "overdispersion_ratio": 1.2098725343975816
+    },
+    "tov": {
+     "family": "NEGBIN",
+     "phi": 0.08663197359455771,
+     "overdispersion_ratio": 1.1215021243673302
+    }
+   },
+   "minutes_sigma": [
+    6.672549238605792,
+    8.138064992052628,
+    7.370331778407517,
+    6.119123582994948
+   ]
+  },
+  "state_hash": "d2af8a352d08a3ed9eebd08e269f2f0a360f54e007f41253b1b62a93ff1cfa8e"
+ },
+ "participation_state": {
+  "train_seasons": [
+   2024,
+   2025
+  ],
+  "n_train": 493151,
+  "n_inputs": 23,
+  "train_max_cutoff": "2025-04-07 19:50:00-04:00",
+  "base_rate": 0.4559475698112748,
+  "transform": {
+   "mean": {
+    "pp_participation_rate": 0.4738306915955609,
+    "pp_played": 1.3949690808961657,
+    "pp_dnp_confirmed": 1.5480608240785705,
+    "pp_unknown": 0.1593845761593264,
+    "pp_l3_played": 1.331430330332204,
+    "pp_l5_played": 2.1518305225043104,
+    "pp_games_since_played": 1.2838745975952512,
+    "pr_ewm_min_per_app": 17.143759564153328,
+    "pr_last_box_minutes": 16.884389698763865,
+    "pr_ewm_start_rate": 0.4052113577228847,
+    "pstd_min_per_app": 17.03365450231665,
+    "pstd_appearances": 1.5377929466106932,
+    "pps_min_per_app": 16.9889458260506,
+    "role_l5_minutes_rank": 11.87186885963934,
+    "role_team_rotation_depth_l5": 9.113748121772034
+   },
+   "sd": {
+    "pp_participation_rate": 0.4463489918711519,
+    "pp_played": 1.3123002270295918,
+    "pp_dnp_confirmed": 1.2706257216326045,
+    "pp_unknown": 0.4551593321009014,
+    "pp_l3_played": 1.3869739376745975,
+    "pp_l5_played": 2.2387413311181907,
+    "pp_games_since_played": 1.3460127023529247,
+    "pr_ewm_min_per_app": 10.219898253098595,
+    "pr_last_box_minutes": 11.862979391122078,
+    "pr_ewm_start_rate": 0.4387068467186898,
+    "pstd_min_per_app": 9.868957846354826,
+    "pstd_appearances": 1.297875556607417,
+    "pps_min_per_app": 10.324270457203331,
+    "role_l5_minutes_rank": 7.083641809596995,
+    "role_team_rotation_depth_l5": 2.9538247670422257
+   },
+   "ind": [
+    "pp_participation_rate",
+    "pp_l3_played",
+    "pp_l5_played",
+    "pp_games_since_played",
+    "pr_ewm_min_per_app",
+    "pr_last_box_minutes",
+    "pr_ewm_start_rate",
+    "pstd_min_per_app",
+    "pps_min_per_app"
+   ]
+  },
+  "coef": {
+   "intercept": 0.10377858254819668,
+   "pp_participation_rate": 0.09460713747699503,
+   "pp_participation_rate__missing": 0.2855864307610736,
+   "pp_played": 1.8330919071157055,
+   "pp_dnp_confirmed": -0.6126439932517037,
+   "pp_unknown": 0.07923952707321433,
+   "pp_l3_played": 0.4815176310326218,
+   "pp_l3_played__missing": 0.2855864307610736,
+   "pp_l5_played": 0.29391498735238797,
+   "pp_l5_played__missing": 0.2855864307610736,
+   "pp_games_since_played": -0.6247839673975045,
+   "pp_games_since_played__missing": 0.2855864307610736,
+   "pr_ewm_min_per_app": 0.18813765595790083,
+   "pr_ewm_min_per_app__missing": -0.49571006895428743,
+   "pr_last_box_minutes": 0.7667048938478714,
+   "pr_last_box_minutes__missing": -0.8086813862541522,
+   "pr_ewm_start_rate": -0.15104909642025677,
+   "pr_ewm_start_rate__missing": -0.8086813862541522,
+   "pstd_min_per_app": -0.29348592152456465,
+   "pstd_min_per_app__missing": -0.49571006895428743,
+   "pstd_appearances": -1.4753706927711974,
+   "pps_min_per_app": 0.0380526873927287,
+   "pps_min_per_app__missing": -0.11989681406028627,
+   "role_l5_minutes_rank": -0.27871258819987543,
+   "role_team_rotation_depth_l5": -0.12963175846413302,
+   "last_played": 0.19264520525507725,
+   "last_dnp": -0.44360068718206075,
+   "last_unknown": -0.03463094883402542,
+   "ev_prior_season_roster": -0.13305424691551346,
+   "ev_transfer_preseason": -0.10854956650722558,
+   "ev_recruit_preseason": 0.10140572335928304,
+   "cold_no_history": 0.479716071660217,
+   "cold_transfer_in": 1.1706271200365042
+  },
+  "state_hash": "14f34edca55669bb49d6b5c3a0d02f4c0801e6a1bbb97ed1d4ec44dd35c793ea"
+ },
+ "coef_order": {
+  "v0": [
+   "intercept",
+   "pr_ewm_min_per_app",
+   "pr_ewm_min_per_app__missing",
+   "pr_l3_min_per_app",
+   "pr_l3_min_per_app__missing",
+   "pr_l5_min_per_app",
+   "pr_l5_min_per_app__missing",
+   "pr_l10_min_per_app",
+   "pr_l10_min_per_app__missing",
+   "pstd_min_per_app",
+   "pstd_min_per_app__missing",
+   "pr_last_box_minutes",
+   "pr_last_box_minutes__missing",
+   "pps_min_per_app",
+   "pps_min_per_app__missing",
+   "pr_ewm_start_rate",
+   "pr_ewm_start_rate__missing",
+   "pr_last_box_started",
+   "pr_last_box_started__missing",
+   "pr_l5_starts",
+   "pr_l5_starts__missing",
+   "pp_participation_rate",
+   "pp_participation_rate__missing",
+   "pp_games_since_played",
+   "pp_games_since_played__missing",
+   "role_l5_minutes_rank",
+   "role_team_rotation_depth_l5",
+   "role_teammates_l5_minutes",
+   "ret_team_returning_min_share",
+   "ret_team_returning_min_share__missing",
+   "pstd_appearances",
+   "pps_appearances",
+   "pps_appearances__missing",
+   "pps_same_team",
+   "pps_same_team__missing",
+   "prof_portal_transfer_in",
+   "pr_ewm_usage",
+   "pr_ewm_usage__missing",
+   "pstd_usage",
+   "pstd_usage__missing",
+   "pos_F",
+   "pos_C",
+   "pos_U",
+   "cold_COLD_EARLY_SEASON",
+   "cold_COLD_NO_HISTORY",
+   "cold_COLD_TRANSFER_IN",
+   "is_home"
+  ],
+  "participation": [
+   "intercept",
+   "pp_participation_rate",
+   "pp_participation_rate__missing",
+   "pp_played",
+   "pp_dnp_confirmed",
+   "pp_unknown",
+   "pp_l3_played",
+   "pp_l3_played__missing",
+   "pp_l5_played",
+   "pp_l5_played__missing",
+   "pp_games_since_played",
+   "pp_games_since_played__missing",
+   "pr_ewm_min_per_app",
+   "pr_ewm_min_per_app__missing",
+   "pr_last_box_minutes",
+   "pr_last_box_minutes__missing",
+   "pr_ewm_start_rate",
+   "pr_ewm_start_rate__missing",
+   "pstd_min_per_app",
+   "pstd_min_per_app__missing",
+   "pstd_appearances",
+   "pps_min_per_app",
+   "pps_min_per_app__missing",
+   "role_l5_minutes_rank",
+   "role_team_rotation_depth_l5",
+   "last_played",
+   "last_dnp",
+   "last_unknown",
+   "ev_prior_season_roster",
+   "ev_transfer_preseason",
+   "ev_recruit_preseason",
+   "cold_no_history",
+   "cold_transfer_in"
+  ]
+ },
+ "artifact_fingerprint": "f1ea655dff61cb2510479df0406ba9df562be00383844e995d040cf5dd59b6cd"
+}

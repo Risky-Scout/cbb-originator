@@ -47,3 +47,34 @@ reduced from the accepted 4-game version by changing only `SAMPLE_GAMES`; its ro
 
 The only noticeable cost is the one-time model load and fit, which reads the Stage 3 stores. Per-call cost is
 dominated by fixed overhead (two read-only DuckDB lookups for names and tips), not by pricing.
+
+## Final development refit through 2024-25 (tag `cbb-props-v1-refit-2024-25`)
+
+Code: `cbb_platform/props_v1_refit.py`. Artifact: `refit_2024_25_artifact.json` (JSON, 15 KB). Tests:
+`tests/test_props_v1_refit.py`. The frozen v1 specification is refit unchanged. The model, pricing and config files
+are identical to the `cbb-props-production-candidate-v1` tag (tested). No parameter or hyperparameter was selected.
+
+| component | training data |
+|---|---|
+| minutes and count rates | 1,272,278 appearances, 2013-14..2024-25. Same recency weights, now measured from 2024-25 |
+| participation | 2023-24 and 2024-25 identifiable rows: 224,851 PLAYED, 268,300 DNP. Excluded: 19,346 UNKNOWN and 2,398 NOT_ON_ROSTER |
+
+The artifact holds only what scoring needs:
+- the v0 state: minutes preprocessing and coefficients, position prior rates, shrinkage k, dispersion and family per
+  target, minutes residual SDs, baseline population means;
+- the participation state: preprocessing and coefficients;
+- the frozen config;
+- versions, the training range, the coefficient order, and the spec and artifact fingerprints.
+
+Player rates are computed at scoring time from point-in-time features, as designed. `load()` refuses an artifact
+whose fingerprint, specification, coefficient order or training range does not check out.
+
+**Reproducibility:** two refits in separate processes write byte-identical artifacts. Loading the artifact in a fresh
+process, with both fit functions disabled, scores the fixed demonstration games identically to the in-memory refit.
+**Bug found and fixed during the refit:** a first version serialized with sorted keys. That reordered the coefficient
+dicts, which the frozen scorers read positionally, and the fresh-process test caught the mismatch. Insertion order is
+now preserved, and `load()` checks the order.
+
+**2024-25 is now training data.** Scoring it with this artifact is a functional check only, not out-of-sample evidence.
+The promotion evidence remains the frozen 2023-24 / 2024-25 validation in `modeling/player_props_v0/metrics.json` and
+`participation_metrics.json` (unchanged).
