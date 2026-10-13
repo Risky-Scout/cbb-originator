@@ -1,0 +1,30 @@
+{
+ "candidate_name": "cbb-props-v1-prelockbox-2024-25",
+ "base_commit": "c123a3bf0ac615c6d7f864768f5e77dc18405a8d",
+ "base_tag": "cbb-props-v1-refit-2024-25",
+ "base_artifact": "modeling/player_props_v1/refit_2024_25_artifact.json",
+ "base_artifact_sha256": "3d343eb9511c31c6e50ff465d94a76a98ee929534cb3f3e61df7bd5cbc0639b1",
+ "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+ "training_through": "2024-25",
+ "training_through_season": 2025,
+ "accepted_changes": {
+  "STL": {
+   "family": "negative_binomial",
+   "phi": 0.16,
+   "variance": "mean + phi * mean^2",
+   "implementation": "props_v0.pmf_matrix(mu, phi, kmax)",
+   "mean_changed": false,
+   "evidence": "modeling/player_props_v1/stl_nb_challenger.json (decision ACCEPT, acceptance A-J all PASS)"
+  }
+ },
+ "rejected_changes_activated": [],
+ "rejected_changes_not_activated": [
+  "FG3M dispersion challenger",
+  "PTS mean challenger",
+  "participation calibration challenger",
+  "TOV mean challenger",
+  "minutes role interaction challenger"
+ ],
+ "lockbox_season": "2025-26",
+ "lockbox_touched": false
+}
