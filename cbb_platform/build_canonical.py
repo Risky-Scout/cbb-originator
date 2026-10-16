@@ -705,7 +705,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     con.execute("SET TimeZone = 'UTC'")
     con.execute("SET enable_progress_bar = false")
     con.execute(f"SET threads = {C.DUCKDB_THREADS}")
-    con.execute(C.SCHEMA_SQL.read_text())
+    con.execute(C.schema_sql())                    # trusted window rendered from AUDITED_SEASONS
     con.execute(ID_MACROS)
     # Shared lineage values, read inside SQL via getvariable(...).
     con.execute("SET VARIABLE src = ?", [SRC])

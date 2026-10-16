@@ -1,0 +1,606 @@
+{
+ "TRUSTED_DATA_2005_2025_CHANGED": false,
+ "counts": {
+  "new": {
+   "core_games_2026": 6300,
+   "core_games_2026_di_vs_di": 5752,
+   "flagship_games_2026": 6300,
+   "flagship_participation_2026": 173351,
+   "flagship_played_games_2026": 6300,
+   "flagship_seasons_after_2026": 0,
+   "game_alias_map_2026": 0,
+   "game_status_excluded_2026": 0,
+   "game_status_resolution_2026": 6300,
+   "team_seasons_2026_di": 365,
+   "trusted_game_map_2026": 6300
+  },
+  "pre": {
+   "core_games_2026": 6300,
+   "core_games_2026_di_vs_di": 5752,
+   "flagship_games_2026": 0,
+   "flagship_participation_2026": 0,
+   "flagship_played_games_2026": 0,
+   "flagship_seasons_after_2026": 0,
+   "game_alias_map_2026": 0,
+   "game_status_excluded_2026": 0,
+   "game_status_resolution_2026": 0,
+   "team_seasons_2026_di": 365,
+   "trusted_game_map_2026": 0
+  }
+ },
+ "method": "Compares the pre-remediation lockbox build with the remediated one, read-only, table by table, with the canonical\nbuild's own order-independent content fingerprint (build_canonical.fingerprint: count, bit_xor and sum of row hashes,\nprocessed_at excluded), split into rows of 2025-26 and all other rows. A row is 2025-26 when the table carries `season`\n= 2026, or its canonical_game_id / source_canonical_game_id is a 2025-26 game of that build. Required: every non-2026\nfingerprint unchanged (2005-2025 trusted content unchanged), and the trusted relations now populated for 2026.",
+ "pass": true,
+ "pre_remediation_db": "data/lockbox_2025_26/canonical_pre_remediation/cbb.duckdb",
+ "relations_compared": 68,
+ "relations_with_non_2026_changes": [],
+ "remediated_db": "data/lockbox_2025_26/canonical/cbb.duckdb",
+ "season": 2026,
+ "tables": {
+  "availability.events": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "benchmark.bdl_games": {
+   "fingerprint_non_2026": "816:2813297028881559283:7534640451716950072477",
+   "non_2026_rows": 816,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "benchmark.bdl_player_games": {
+   "fingerprint_non_2026": "130:11818551700518417877:1113492599438700647615",
+   "non_2026_rows": 130,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "benchmark.bdl_team_games": {
+   "fingerprint_non_2026": "8:7866945610511673173:81155583978563100715",
+   "non_2026_rows": 8,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "benchmark.game_odds": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "benchmark.opening_odds": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "core.conferences": {
+   "fingerprint_non_2026": "34:642483520258836427:290653243389125917657",
+   "non_2026_rows": 34,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.game_schedule_versions": {
+   "fingerprint_non_2026": "272560:8331757522010754119:2513778979255381842409259",
+   "non_2026_rows": 272560,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 6300,
+   "rows_2026_remediated": 6300,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "core.games": {
+   "fingerprint_non_2026": "272560:9858785848240968337:2514619389991490352853993",
+   "non_2026_rows": 272560,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 6300,
+   "rows_2026_remediated": 6300,
+   "rule": "season = 2026"
+  },
+  "core.players": {
+   "fingerprint_non_2026": "94034:10322979709097894429:868012162791759067399353",
+   "non_2026_rows": 94034,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.recruits": {
+   "fingerprint_non_2026": "10701:6765267005272426464:99081098511043536057808",
+   "non_2026_rows": 10701,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.rosters": {
+   "fingerprint_non_2026": "202638:13982428700089302461:1866219529822158646042863",
+   "non_2026_rows": 202638,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 5643,
+   "rows_2026_remediated": 5643,
+   "rule": "season = 2026"
+  },
+  "core.team_recruiting_rankings": {
+   "fingerprint_non_2026": "4445:5857203269648133469:40557606616395888521193",
+   "non_2026_rows": 4445,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.team_seasons": {
+   "fingerprint_non_2026": "26700:11507907417698344569:245906141269370792776169",
+   "non_2026_rows": 26700,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 727,
+   "rows_2026_remediated": 727,
+   "rule": "season = 2026"
+  },
+  "core.teams": {
+   "fingerprint_non_2026": "1535:4988570942015417856:14058679984540571931472",
+   "non_2026_rows": 1535,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.transfers": {
+   "fingerprint_non_2026": "5102:11583421787154916601:47585474400664861974927",
+   "non_2026_rows": 5102,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.venue_directory": {
+   "fingerprint_non_2026": "988:16154834561262348790:8745265786674488497508",
+   "non_2026_rows": 988,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "core.venues": {
+   "fingerprint_non_2026": "758:16607811690608447199:6913477262198217671559",
+   "non_2026_rows": 758,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "fact.lineup_stats": {
+   "fingerprint_non_2026": "370401:17814722756844384134:3416787890263997746828878",
+   "non_2026_rows": 370401,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "fact.lineup_stints": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "fact.participation": {
+   "fingerprint_non_2026": "3183742:10480887910622737365:29359271204923639089656875",
+   "non_2026_rows": 3183742,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 173351,
+   "rows_2026_remediated": 173351,
+   "rule": "season = 2026"
+  },
+  "fact.play_on_floor": {
+   "fingerprint_non_2026": "41450717:14342732091287262308:382312666402795938539964898",
+   "non_2026_rows": 41450717,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "fact.play_participants": {
+   "fingerprint_non_2026": "28574421:11430351570788356916:263531154901087786180264798",
+   "non_2026_rows": 28574421,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "fact.player_games": {
+   "fingerprint_non_2026": "2368052:7633487366808133242:21850173626739225905011838",
+   "non_2026_rows": 2368052,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 127500,
+   "rows_2026_remediated": 127500,
+   "rule": "season = 2026"
+  },
+  "fact.player_season_game_derived": {
+   "fingerprint_non_2026": "99372:2997835259948912:915505755973497937990814",
+   "non_2026_rows": 99372,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 5025,
+   "rule": "season = 2026"
+  },
+  "fact.player_season_shooting": {
+   "fingerprint_non_2026": "55425:657585187921083507:512516288366587361801681",
+   "non_2026_rows": 55425,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "fact.player_season_stats": {
+   "fingerprint_non_2026": "99424:516280162885752080:916359479837328141304630",
+   "non_2026_rows": 99424,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 5035,
+   "rows_2026_remediated": 5035,
+   "rule": "season = 2026"
+  },
+  "fact.plays": {
+   "fingerprint_non_2026": "29021691:2801812936774509626:267693276328130851479950034",
+   "non_2026_rows": 29021691,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "fact.possessions": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "fact.shots": {
+   "fingerprint_non_2026": "13638660:8950278673723216944:125774255868632265683163934",
+   "non_2026_rows": 13638660,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "fact.substitution_pairs": {
+   "fingerprint_non_2026": "517979:13182294454147488203:4773037099514036038827837",
+   "non_2026_rows": 517979,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 283397,
+   "rows_2026_remediated": 283397,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "fact.substitutions": {
+   "fingerprint_non_2026": "858399:4008469258483632532:7906347433647975199340062",
+   "non_2026_rows": 858399,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 469704,
+   "rows_2026_remediated": 469704,
+   "rule": "season = 2026"
+  },
+  "fact.team_games": {
+   "fingerprint_non_2026": "235612:3650959581584649287:2169567783416980625226165",
+   "non_2026_rows": 235612,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 12600,
+   "rows_2026_remediated": 12600,
+   "rule": "season = 2026"
+  },
+  "fact.team_season_game_derived": {
+   "fingerprint_non_2026": "13031:17673994157873849271:120160630604113653521739",
+   "non_2026_rows": 13031,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 727,
+   "rule": "season = 2026"
+  },
+  "fact.team_season_shooting": {
+   "fingerprint_non_2026": "4254:13912807624665163400:39087400977142766660052",
+   "non_2026_rows": 4254,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "fact.team_season_stats": {
+   "fingerprint_non_2026": "7265:6652063825676688468:66461491720978583107936",
+   "non_2026_rows": 7265,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 365,
+   "rows_2026_remediated": 365,
+   "rule": "season = 2026"
+  },
+  "flagship.games": {
+   "fingerprint_non_2026": "120631:17287817056458006082:1110458187050868498089650",
+   "non_2026_rows": 120631,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 6300,
+   "rule": "season = 2026"
+  },
+  "flagship.participation": {
+   "fingerprint_non_2026": "3183742:10480887910622737365:29359271204923639089656875",
+   "non_2026_rows": 3183742,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 173351,
+   "rule": "season = 2026"
+  },
+  "flagship.played_games": {
+   "fingerprint_non_2026": "120499:13626006659771476849:1109221276368182201255133",
+   "non_2026_rows": 120499,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 6300,
+   "rule": "season = 2026"
+  },
+  "flagship.player_game_outcomes": {
+   "fingerprint_non_2026": "2368052:7633487366808133242:21850173626739225905011838",
+   "non_2026_rows": 2368052,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 127500,
+   "rule": "season = 2026"
+  },
+  "flagship.team_game_outcomes": {
+   "fingerprint_non_2026": "235612:3650959581584649287:2169567783416980625226165",
+   "non_2026_rows": 235612,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 12600,
+   "rule": "season = 2026"
+  },
+  "metadata.conference_id_map": {
+   "fingerprint_non_2026": "34:420939023503045506:319068624416807659884",
+   "non_2026_rows": 34,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "metadata.game_alias_map": {
+   "fingerprint_non_2026": "1204:2865634036188908354:11322168633818491349984",
+   "non_2026_rows": 1204,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "metadata.game_id_map": {
+   "fingerprint_non_2026": "273376:3132719505050340246:2525123414605934997663022",
+   "non_2026_rows": 273376,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 6300,
+   "rows_2026_remediated": 6300,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "metadata.game_status_resolution": {
+   "fingerprint_non_2026": "120631:11211286893110608813:1110490952458040017887005",
+   "non_2026_rows": 120631,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 6300,
+   "rule": "season = 2026"
+  },
+  "metadata.identity_link_quarantine": {
+   "fingerprint_non_2026": "985:2590708656722617620:9079250718399198516786",
+   "non_2026_rows": 985,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "metadata.player_game_team_attribution": {
+   "fingerprint_non_2026": "308:2482359417374643495:2809263021712412073087",
+   "non_2026_rows": 308,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "metadata.player_id_map": {
+   "fingerprint_non_2026": "249814:5391129938660339922:2304817946175183833140748",
+   "non_2026_rows": 249814,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 10023,
+   "rows_2026_remediated": 10023,
+   "rule": "season = 2026"
+  },
+  "metadata.player_identity_resolution": {
+   "fingerprint_non_2026": "62:17168443344987695643:598531965583117250235",
+   "non_2026_rows": 62,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "metadata.source_manifest": {
+   "fingerprint_non_2026": "111:17739978034927690541:969756568479364832467",
+   "non_2026_rows": 111,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "metadata.team_attribution_resolution": {
+   "fingerprint_non_2026": "15:944970406061046730:132236489506016221834",
+   "non_2026_rows": 15,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 20,
+   "rows_2026_remediated": 20,
+   "rule": "season = 2026"
+  },
+  "metadata.team_id_map": {
+   "fingerprint_non_2026": "1914:5551230777084019870:17308452620316036718484",
+   "non_2026_rows": 1914,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "metadata.trusted_game_map": {
+   "fingerprint_non_2026": "120678:15555050592756411294:1111782027889896228320124",
+   "non_2026_rows": 120678,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 6300,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "qa.exceptions": {
+   "fingerprint_non_2026": "158932:3028546392106071080:1465022693655681996613610",
+   "non_2026_rows": 158932,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "qa.identity_remediation_quarantine": {
+   "fingerprint_non_2026": "343:18199230978719127757:3034117805473089382685",
+   "non_2026_rows": 343,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "qa.lineup_units_quarantine": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "qa.pbp_game_reconciliation": {
+   "fingerprint_non_2026": "89292:4801463413515488179:824805305978613235648125",
+   "non_2026_rows": 89292,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "qa.player_season_summary_conflicts": {
+   "fingerprint_non_2026": "1160:6396698450913110585:10480738897858415863511",
+   "non_2026_rows": 1160,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 100700,
+   "rows_2026_remediated": 200,
+   "rule": "season = 2026"
+  },
+  "qa.reconciliation": {
+   "fingerprint_non_2026": "3096:12698305989043173735:28450150073103159244893",
+   "non_2026_rows": 3096,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "canonical_game_id IN <2025-26 games>"
+  },
+  "qa.season_summary_conflicts": {
+   "fingerprint_non_2026": "3167:16632088545624642764:29521627468383922840028",
+   "non_2026_rows": 3167,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "season = 2026"
+  },
+  "qa.source_defects": {
+   "fingerprint_non_2026": "440748:11404207506723233208:4072035722101973987856782",
+   "non_2026_rows": 440748,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 10985,
+   "rows_2026_remediated": 10985,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_conferences": {
+   "fingerprint_non_2026": "34:10353410473552729090:297684980978672447478",
+   "non_2026_rows": 34,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  },
+  "staging.cbbd_games": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 6300,
+   "rows_2026_remediated": 6300,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_player_game_stats": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 127500,
+   "rows_2026_remediated": 127500,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_player_season_stats": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 5035,
+   "rows_2026_remediated": 5035,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_team_game_stats": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 12600,
+   "rows_2026_remediated": 12600,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_team_season_stats": {
+   "fingerprint_non_2026": "0:None:None",
+   "non_2026_rows": 0,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 365,
+   "rows_2026_remediated": 365,
+   "rule": "season = 2026"
+  },
+  "staging.cbbd_teams": {
+   "fingerprint_non_2026": "1535:3116229511930212388:13980665962411362556416",
+   "non_2026_rows": 1535,
+   "non_2026_unchanged": true,
+   "rows_2026_pre": 0,
+   "rows_2026_remediated": 0,
+   "rule": "FALSE"
+  }
+ },
+ "trusted_view_window": {
+  "new": {
+   "flagship.games": [
+    true,
+    false
+   ],
+   "metadata.trusted_game_map": [
+    true,
+    false
+   ]
+  },
+  "pre": {
+   "flagship.games": [
+    false,
+    true
+   ],
+   "metadata.trusted_game_map": [
+    false,
+    true
+   ]
+  }
+ }
+}

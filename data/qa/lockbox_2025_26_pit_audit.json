@@ -1,0 +1,232 @@
+{
+ "route_build_dir": "/private/tmp/claude-501/-Users-josephshackelford-CBB-Predictive-Model-2026-CBB-Originator-Model/a49acb70-57d5-41a1-a0f7-6f40fc6584ba/scratchpad/lockbox_pit_view",
+ "route_build": {
+  "canonical_content_digest": "c1f8f1d6a84c3129e2de5b2a56cafa7a1e03919050a2cb77a1cc8dd1dd8624f1",
+  "dataset_version": "cbb_data_v3.0+86a63cb6d902",
+  "route_payload_set_sha256": "4aedc8c150d47e5afdbb7d2e3354b293031e3b0a6f391ba4a4b866cd06aa057b"
+ },
+ "route_version": "cbbd-box-route-1.2.0",
+ "route_module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+ "audit_module_sha256": "141de368633ae4d5b557aaf1248d33d725a2b458196c41a6f26b4e873308f9d3",
+ "checks": {
+  "feat.team_features.res_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features.res_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features.res_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features.box_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features.box_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features.box_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.pbox_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.pbox_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.pbox_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.part_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.part_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features.part_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_event_features.tev_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_event_features.tev_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_event_features.tev_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_shot_features.pshot_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_shot_features.pshot_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_shot_features.pshot_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_lineup_features.onc_state_available_at > cutoff": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_lineup_features.onc_state_source_game_id = target game": {
+   "category": "TARGET_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_lineup_features.onc_state_source_game_id tipped at/after cutoff": {
+   "category": "SAME_GAME_LEAKAGE",
+   "violations": 0
+  },
+  "cutoff = tip - 1h (EXACT)": {
+   "category": "LOOKAHEAD_BIAS",
+   "violations": 0
+  },
+  "cutoff before tip": {
+   "category": "LOOKAHEAD_BIAS",
+   "violations": 0
+  },
+  "pool evidence class legal": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "membership evidence class legal": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "every pool member has evidence knowable at cutoff": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "appearance evidence knowable before cutoff, never the target box": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "end-of-season roster never creates a pool member": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "no lab schema in the feature store": {
+   "category": "LABEL_LEAKAGE",
+   "violations": 0
+  },
+  "no live views in the feature store": {
+   "category": "LABEL_LEAKAGE",
+   "violations": 0
+  },
+  "DNP only from a complete substitution feed (never box absence)": {
+   "category": "LABEL_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_box_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_results_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_box_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_participation_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_event_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_shot_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_oncourt_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.lineup_unit_state: only played, trusted games in history": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "ex.game_examples: no unauthorized season (season > 2026)": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.team_features: no unauthorized season (season > 2026)": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feat.player_features: no unauthorized season (season > 2026)": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "lb.lab.player_game_labels: no unauthorized season (season > 2026)": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "feature code never reads labels / season summaries / wallclock / route repair logic": {
+   "category": "LABEL_LEAKAGE",
+   "violations": 0
+  },
+  "feature history never consults the season roster snapshot": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  },
+  "POINTS_ONLY team box minutes implied by the game's own period line": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "POINTS_ONLY team box knowable no earlier than its game": {
+   "category": "FUTURE_DATA_LEAKAGE",
+   "violations": 0
+  },
+  "route echo/team-assignment logic lives only in staging (not Stage 3 / live scoring)": {
+   "category": "FUTURE_ROSTER_LEAKAGE",
+   "violations": 0
+  }
+ },
+ "violations_by_category": {
+  "FUTURE_DATA_LEAKAGE": 0,
+  "TARGET_LEAKAGE": 0,
+  "SAME_GAME_LEAKAGE": 0,
+  "LOOKAHEAD_BIAS": 0,
+  "FUTURE_ROSTER_LEAKAGE": 0,
+  "LABEL_LEAKAGE": 0
+ },
+ "PIT_VIOLATIONS": 0,
+ "season_rule": {
+  "mode": "LOCKBOX_OPEN_2025_26",
+  "unauthorized": "season > 2026",
+  "authorized": "season = 2026"
+ },
+ "AUTHORIZED_LOCKBOX_2026_ROWS": {
+  "ex.game_examples": 5752,
+  "feat.team_features": 11504,
+  "feat.player_features": 259616,
+  "lb.lab.player_game_labels": 259616
+ },
+ "AUTHORIZED_LOCKBOX_2026_ROWS_TOTAL": 536488,
+ "UNAUTHORIZED_FUTURE_SEASON_ROWS": 0,
+ "GENUINE_PIT_VIOLATIONS": 0,
+ "counts": {
+  "pool_rows": 3229691,
+  "points_only_team_boxes": 0
+ }
+}

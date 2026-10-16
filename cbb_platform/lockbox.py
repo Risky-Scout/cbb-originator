@@ -117,7 +117,7 @@ def _values(v) -> list:
 #   4. the provider is CBBD (or the canonical/Stage 3 readers) and the endpoint is in the frozen data plan.
 # Seasons after 2025-26 stay refused.
 OPEN_DECISION_PATH = Path(__file__).resolve().parents[1] / "data" / "manifests" / "LOCKBOX_OPEN_DECISION_2025_26.json"
-OPEN_DECISION_SHA256: str | None = "819eae1fb6086514101edcca77be0027d7a56d3e4d8d7741d8068f34758e7013"   # LOCKBOX_OPEN_DECISION_2025_26.json (opening commit only)
+OPEN_DECISION_SHA256: str | None = None
 OPEN_PLAN_ENDPOINTS = frozenset({"games", "games/players", "games/teams", "teams/roster", "substitutions/team",
                                  "stats/player/season", "stats/team/season", "recruiting/players",
                                  "recruiting/portal"})   # frozen data plan (v3: + stats/team/season, the D-I proxy)

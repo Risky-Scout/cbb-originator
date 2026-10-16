@@ -1,0 +1,425 @@
+{
+ "build_id": "20261016T185800Z",
+ "identity": {
+  "canonical_content_digest": "841252e0bea37ef656cdf24b577a6cb0601b5e21a79f0022be85fac99c757535",
+  "dataset_version": "cbb_data_v3.0+85c8a2e5d04d",
+  "route_payload_set_sha256": "4aedc8c150d47e5afdbb7d2e3354b293031e3b0a6f391ba4a4b866cd06aa057b"
+ },
+ "route_seasons": [
+  2026
+ ],
+ "route_version": "cbbd-box-route-1.2.0",
+ "staging": {
+  "conferences_duplicates_collapsed": 0,
+  "conferences_rows": 34,
+  "final_only": {
+   "non_final_by_status": {
+    "cancelled": 4,
+    "postponed": 14
+   },
+   "non_final_games": [
+    {
+     "away_team": "East Texas A&M",
+     "game_id": "211095",
+     "home_team": "Northwestern State",
+     "season": "2026",
+     "start_date": "2026-01-24 21:30:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Abilene Christian",
+     "game_id": "211128",
+     "home_team": "Tarleton State",
+     "season": "2026",
+     "start_date": "2026-01-27 00:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Wagner",
+     "game_id": "211142",
+     "home_team": "Long Island University",
+     "season": "2026",
+     "start_date": "2026-01-27 00:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Purdue Fort Wayne",
+     "game_id": "211144",
+     "home_team": "IU Indianapolis",
+     "season": "2026",
+     "start_date": "2026-01-25 19:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "East Texas A&M",
+     "game_id": "211149",
+     "home_team": "Lamar",
+     "season": "2026",
+     "start_date": "2026-01-27 00:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Georgia Southern",
+     "game_id": "211210",
+     "home_team": "UL Monroe",
+     "season": "2026",
+     "start_date": "2026-01-30 00:30:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Bellarmine",
+     "game_id": "213591",
+     "home_team": "Northern Illinois",
+     "season": "2026",
+     "start_date": "2025-11-29 20:00:00",
+     "status": "cancelled"
+    },
+    {
+     "away_team": "Blackburn",
+     "game_id": "213650",
+     "home_team": "Eastern Illinois",
+     "season": "2026",
+     "start_date": "2025-12-02 01:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "St. Francis (PA)",
+     "game_id": "214647",
+     "home_team": "New Haven",
+     "season": "2026",
+     "start_date": "2026-01-25 18:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Alabama A&M",
+     "game_id": "214654",
+     "home_team": "Prairie View A&M",
+     "season": "2026",
+     "start_date": "2026-01-27 00:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Howard",
+     "game_id": "214655",
+     "home_team": "Coppin State",
+     "season": "2026",
+     "start_date": "2026-01-27 00:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Barber Scotia",
+     "game_id": "215499",
+     "home_team": "Florida A&M",
+     "season": "2026",
+     "start_date": "2025-12-05 22:00:00",
+     "status": "cancelled"
+    },
+    {
+     "away_team": "East-West University",
+     "game_id": "358404",
+     "home_team": "Southern Indiana",
+     "season": "2026",
+     "start_date": "2025-12-16 01:00:00",
+     "status": "cancelled"
+    },
+    {
+     "away_team": "Austin Peay",
+     "game_id": "358439",
+     "home_team": "Kansas City",
+     "season": "2026",
+     "start_date": "2025-12-21 23:00:00",
+     "status": "cancelled"
+    },
+    {
+     "away_team": "Delaware State",
+     "game_id": "358703",
+     "home_team": "North Carolina Central",
+     "season": "2026",
+     "start_date": "2026-01-24 21:30:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Southern Illinois",
+     "game_id": "358719",
+     "home_team": "Evansville",
+     "season": "2026",
+     "start_date": "2026-01-25 21:00:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "North Carolina Central",
+     "game_id": "358760",
+     "home_team": "South Carolina State",
+     "season": "2026",
+     "start_date": "2026-01-31 21:30:00",
+     "status": "postponed"
+    },
+    {
+     "away_team": "Morgan State",
+     "game_id": "358877",
+     "home_team": "South Carolina State",
+     "season": "2026",
+     "start_date": "2026-02-14 21:30:00",
+     "status": "postponed"
+    }
+   ],
+   "non_final_games_excluded": 18,
+   "player_game_stats_rows_of_non_final_games_dropped": 0,
+   "player_game_stats_rows_without_a_games_record_dropped": 0,
+   "rule": "normalized_status == 'final' (case / surrounding whitespace only); all other values fail closed",
+   "team_game_stats_rows_of_non_final_games_dropped": 34,
+   "team_game_stats_rows_without_a_games_record_dropped": 0
+  },
+  "games_duplicates_collapsed": 245,
+  "games_rows": 6300,
+  "payload_set_sha256": "4aedc8c150d47e5afdbb7d2e3354b293031e3b0a6f391ba4a4b866cd06aa057b",
+  "payloads": 257,
+  "player_game_stats_duplicates_collapsed": 153634,
+  "player_game_stats_rows": 127500,
+  "player_season_stats_duplicates_collapsed": 0,
+  "player_season_stats_non_di_rows_dropped": 4995,
+  "player_season_stats_rows": 5035,
+  "same_name_records": [],
+  "team_assignment": {
+   "flagged_but_provider_rows_reconcile": [],
+   "games_quarantined": [],
+   "games_repaired": [],
+   "quarantined": 0,
+   "quarantines": [],
+   "repaired": 0,
+   "repairs": [],
+   "rule": "generic belongs/denies evidence + PTS/FGM/3PM/FTM team-box reconciliation gate",
+   "season_stats_echo_rows_removed": [],
+   "unresolved": 0
+  },
+  "team_game_stats_duplicates_collapsed": 490,
+  "team_game_stats_rows": 12600,
+  "team_season_stats_duplicates_collapsed": 0,
+  "team_season_stats_non_di_rows_dropped": 362,
+  "team_season_stats_rows": 365,
+  "teams_duplicates_collapsed": 0,
+  "teams_rows": 1535
+ },
+ "tables": {
+  "availability.events": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "benchmark.bdl_games": {
+   "fingerprint": "816:2813297028881559283:7534640451716950072477",
+   "rows": 816
+  },
+  "benchmark.bdl_player_games": {
+   "fingerprint": "130:11818551700518417877:1113492599438700647615",
+   "rows": 130
+  },
+  "benchmark.bdl_team_games": {
+   "fingerprint": "8:7866945610511673173:81155583978563100715",
+   "rows": 8
+  },
+  "benchmark.game_odds": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "benchmark.opening_odds": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "core.conferences": {
+   "fingerprint": "34:642483520258836427:290653243389125917657",
+   "rows": 34
+  },
+  "core.game_schedule_versions": {
+   "fingerprint": "278860:11776972579127987348:2571554236650824026340566",
+   "rows": 278860
+  },
+  "core.games": {
+   "fingerprint": "278860:15860508587430837827:2572750396766167010799181",
+   "rows": 278860
+  },
+  "core.players": {
+   "fingerprint": "94034:10322979709097894429:868012162791759067399353",
+   "rows": 94034
+  },
+  "core.recruits": {
+   "fingerprint": "10701:6765267005272426464:99081098511043536057808",
+   "rows": 10701
+  },
+  "core.rosters": {
+   "fingerprint": "208281:17372133154652213669:1918594977035853842037601",
+   "rows": 208281
+  },
+  "core.team_recruiting_rankings": {
+   "fingerprint": "4445:5857203269648133469:40557606616395888521193",
+   "rows": 4445
+  },
+  "core.team_seasons": {
+   "fingerprint": "27427:9580369675227253951:252764428762650283239867",
+   "rows": 27427
+  },
+  "core.teams": {
+   "fingerprint": "1535:4988570942015417856:14058679984540571931472",
+   "rows": 1535
+  },
+  "core.transfers": {
+   "fingerprint": "5102:11583421787154916601:47585474400664861974927",
+   "rows": 5102
+  },
+  "core.venue_directory": {
+   "fingerprint": "988:16154834561262348790:8745265786674488497508",
+   "rows": 988
+  },
+  "core.venues": {
+   "fingerprint": "758:16607811690608447199:6913477262198217671559",
+   "rows": 758
+  },
+  "fact.lineup_stats": {
+   "fingerprint": "370401:17814722756844384134:3416787890263997746828878",
+   "rows": 370401
+  },
+  "fact.lineup_stints": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "fact.participation": {
+   "fingerprint": "3357093:8198895902491513298:30953714217572880946660284",
+   "rows": 3357093
+  },
+  "fact.play_on_floor": {
+   "fingerprint": "41450717:14342732091287262308:382312666402795938539964898",
+   "rows": 41450717
+  },
+  "fact.play_participants": {
+   "fingerprint": "28574421:11430351570788356916:263531154901087786180264798",
+   "rows": 28574421
+  },
+  "fact.player_games": {
+   "fingerprint": "2495552:16026719117778260086:23024788318483430363095578",
+   "rows": 2495552
+  },
+  "fact.player_season_game_derived": {
+   "fingerprint": "99372:2997835259948912:915505755973497937990814",
+   "rows": 99372
+  },
+  "fact.player_season_shooting": {
+   "fingerprint": "55425:657585187921083507:512516288366587361801681",
+   "rows": 55425
+  },
+  "fact.player_season_stats": {
+   "fingerprint": "104459:993817857258470200:962888903676622354936564",
+   "rows": 104459
+  },
+  "fact.plays": {
+   "fingerprint": "29021691:2801812936774509626:267693276328130851479950034",
+   "rows": 29021691
+  },
+  "fact.possessions": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "fact.shots": {
+   "fingerprint": "13638660:8950278673723216944:125774255868632265683163934",
+   "rows": 13638660
+  },
+  "fact.substitution_pairs": {
+   "fingerprint": "801376:9844461819067493305:7384110399180249360806947",
+   "rows": 801376
+  },
+  "fact.substitutions": {
+   "fingerprint": "1328103:7269559559105871200:12240382617700515013780290",
+   "rows": 1328103
+  },
+  "fact.team_games": {
+   "fingerprint": "248212:10743030062338493474:2285481664668960159285042",
+   "rows": 248212
+  },
+  "fact.team_season_game_derived": {
+   "fingerprint": "13031:17673994157873849271:120160630604113653521739",
+   "rows": 13031
+  },
+  "fact.team_season_shooting": {
+   "fingerprint": "4254:13912807624665163400:39087400977142766660052",
+   "rows": 4254
+  },
+  "fact.team_season_stats": {
+   "fingerprint": "7630:5326976465969863856:69676291001288306664156",
+   "rows": 7630
+  },
+  "metadata.conference_id_map": {
+   "fingerprint": "34:420939023503045506:319068624416807659884",
+   "rows": 34
+  },
+  "metadata.game_alias_map": {
+   "fingerprint": "1204:2865634036188908354:11322168633818491349984",
+   "rows": 1204
+  },
+  "metadata.game_id_map": {
+   "fingerprint": "279676:12384148017385622329:2583120731042852241199113",
+   "rows": 279676
+  },
+  "metadata.game_status_resolution": {
+   "fingerprint": "120631:11211286893110608813:1110490952458040017887005",
+   "rows": 120631
+  },
+  "metadata.identity_link_quarantine": {
+   "fingerprint": "985:2590708656722617620:9079250718399198516786",
+   "rows": 985
+  },
+  "metadata.player_game_team_attribution": {
+   "fingerprint": "308:2482359417374643495:2809263021712412073087",
+   "rows": 308
+  },
+  "metadata.player_id_map": {
+   "fingerprint": "259837:18295173063209400930:2397168227687622765780246",
+   "rows": 259837
+  },
+  "metadata.player_identity_resolution": {
+   "fingerprint": "62:17168443344987695643:598531965583117250235",
+   "rows": 62
+  },
+  "metadata.source_manifest": {
+   "fingerprint": "111:17739978034927690541:969756568479364832467",
+   "rows": 111
+  },
+  "metadata.team_attribution_resolution": {
+   "fingerprint": "35:15942098244536622418:303836592263238664954",
+   "rows": 35
+  },
+  "metadata.team_id_map": {
+   "fingerprint": "1914:5551230777084019870:17308452620316036718484",
+   "rows": 1914
+  },
+  "qa.exceptions": {
+   "fingerprint": "158932:3028546392106071080:1465022693655681996613610",
+   "rows": 158932
+  },
+  "qa.identity_remediation_quarantine": {
+   "fingerprint": "343:18199230978719127757:3034117805473089382685",
+   "rows": 343
+  },
+  "qa.lineup_units_quarantine": {
+   "fingerprint": "0:None:None",
+   "rows": 0
+  },
+  "qa.pbp_game_reconciliation": {
+   "fingerprint": "89292:4801463413515488179:824805305978613235648125",
+   "rows": 89292
+  },
+  "qa.player_season_summary_conflicts": {
+   "fingerprint": "101860:13817193450606841159:938992174064122899099755",
+   "rows": 101860
+  },
+  "qa.reconciliation": {
+   "fingerprint": "3096:12698305989043173735:28450150073103159244893",
+   "rows": 3096
+  },
+  "qa.season_summary_conflicts": {
+   "fingerprint": "3167:16632088545624642764:29521627468383922840028",
+   "rows": 3167
+  },
+  "qa.source_defects": {
+   "fingerprint": "451733:13175776799585701191:4173006613118119682451029",
+   "rows": 451733
+  }
+ }
+}

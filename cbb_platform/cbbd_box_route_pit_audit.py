@@ -13,7 +13,19 @@ from pathlib import Path
 
 import duckdb
 
-from cbb_platform import cbbd_box_route as RB, config as C
+from cbb_platform import cbbd_box_route as RB, config as C, lockbox
+
+SEASON_TABLES = ("ex.game_examples", "feat.team_features", "feat.player_features", "lb.lab.player_game_labels")
+
+
+def season_rule() -> dict:
+    """Which seasons a store may hold. Closed: nothing from 2025-26 on (canonical 2026+). Under the valid one-time
+    LOCKBOX_OPEN 2025-26 authorization (lockbox.opening_authorized): 2025-26 is the authorized evaluation season and
+    every later season stays unauthorized. The same generic predicate for every row; no row is special-cased."""
+    s = lockbox.LOCKBOX_SEASON
+    if lockbox.opening_authorized():
+        return {"mode": "LOCKBOX_OPEN_2025_26", "unauthorized": f"season > {s}", "authorized": f"season = {s}"}
+    return {"mode": "CLOSED", "unauthorized": f"season >= {s}", "authorized": None}
 from cbb_platform.stage3 import (event_stats, labels, lineup_stats, participation, pitlib, player_state, registry, sources,
                                  spec, team_state, universe)
 
@@ -75,8 +87,13 @@ def audit(d: Path) -> dict:
               "feat.team_event_state", "feat.player_shot_state", "feat.player_oncourt_state", "feat.lineup_unit_state"):
         add("FUTURE_DATA_LEAKAGE", f"{t}: only played, trusted games in history",
             one(f"SELECT count(*) FROM {t} WHERE source_game_id IN ({bad}) OR source_game_id NOT IN (SELECT canonical_game_id FROM cdb.flagship.played_games)"))
-    for t in ("ex.game_examples", "feat.team_features", "feat.player_features", "lb.lab.player_game_labels"):
-        add("FUTURE_DATA_LEAKAGE", f"{t}: no lockbox season", one(f"SELECT count(*) FROM {t} WHERE season >= 2026"))
+    rule = season_rule()
+    authorized = {}
+    for t in SEASON_TABLES:
+        add("FUTURE_DATA_LEAKAGE", f"{t}: no unauthorized season ({rule['unauthorized']})",
+            one(f"SELECT count(*) FROM {t} WHERE {rule['unauthorized']}"))
+        if rule["authorized"]:
+            authorized[t] = one(f"SELECT count(*) FROM {t} WHERE {rule['authorized']}")
     # code-level (source) contracts, as in the test suite
     src_bad = 0
     for m in FEATURE_MODULES + (sources,):
@@ -106,10 +123,16 @@ def audit(d: Path) -> dict:
     out = {"route_build_dir": str(d), "route_build": route_build, "route_version": RB.ROUTE_VERSION,
            "route_module_sha256": hashlib.sha256(Path(RB.__file__).read_bytes()).hexdigest(),
            "audit_module_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "checks": chk, "violations_by_category": by, "PIT_VIOLATIONS": pit,
+           "season_rule": rule, "AUTHORIZED_LOCKBOX_2026_ROWS": authorized,
+           "AUTHORIZED_LOCKBOX_2026_ROWS_TOTAL": sum(authorized.values()),
+           "UNAUTHORIZED_FUTURE_SEASON_ROWS": sum(chk[k]["violations"] for k in chk if ": no unauthorized season" in k),
+           "GENUINE_PIT_VIOLATIONS": sum(v["violations"] for k, v in chk.items() if ": no unauthorized season" not in k),
            "counts": {"pool_rows": one("SELECT count(*) FROM ex.player_game_examples"),
                       "points_only_team_boxes": one("SELECT count(*) FROM cdb.fact.team_games WHERE season IN (2024, 2025) AND fga IS NULL AND points IS NOT NULL")}}
     OUT.write_text(json.dumps(out, indent=1, default=str) + "\n")
-    print(json.dumps({"violations_by_category": by, "PIT_VIOLATIONS": pit, "counts": out["counts"]}, indent=1))
+    print(json.dumps({k: out[k] for k in ("season_rule", "violations_by_category", "PIT_VIOLATIONS", "AUTHORIZED_LOCKBOX_2026_ROWS",
+                                          "AUTHORIZED_LOCKBOX_2026_ROWS_TOTAL", "UNAUTHORIZED_FUTURE_SEASON_ROWS",
+                                          "GENUINE_PIT_VIOLATIONS", "counts")}, indent=1))
     return out
 
 

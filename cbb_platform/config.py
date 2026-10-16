@@ -84,4 +84,16 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     _os.environ.setdefault(_v, "2")
 
 # Stage 2.1: seasons whose game identity was audited; the trusted game relation (flagship.games) covers exactly these.
-AUDITED_SEASONS = (2005, 2025)
+# Lockbox-scoped extension (incident docs/lockbox/LOCKBOX_INCIDENT_2025_26_TRUSTED_WINDOW.md, architect ruling
+# 2026-10-16): 2025-26 joins the window ONLY under the authorized one-time opening, the condition of the scoring-enable
+# patch; otherwise the window is exactly 2004-05 .. 2024-25. The same generic rules apply to every season in it.
+from cbb_platform import lockbox as _lockbox
+AUDITED_SEASONS = (2005, _lockbox.LOCKBOX_SEASON if _lockbox.opening_authorized() else 2025)
+_FROZEN_WINDOW_SQL = "BETWEEN 2005 AND 2025"          # the window as written in schema.sql (frozen text)
+
+
+def schema_sql() -> str:
+    """schema.sql with its trusted-game window rendered from AUDITED_SEASONS: byte-identical to the file when closed."""
+    text = SCHEMA_SQL.read_text()
+    assert text.count(_FROZEN_WINDOW_SQL) == 2, "schema.sql trusted-window text changed"
+    return text.replace(_FROZEN_WINDOW_SQL, f"BETWEEN {AUDITED_SEASONS[0]} AND {AUDITED_SEASONS[1]}")

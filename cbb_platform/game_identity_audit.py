@@ -59,7 +59,7 @@ SELECT a.season, a.cbbd_game_id AS game_a, b.cbbd_game_id AS game_b,
        a.player_box_rows AS player_box_rows_a, b.player_box_rows AS player_box_rows_b
 FROM g a JOIN g b ON a.t1 = b.t1 AND a.t2 = b.t2 AND a.season = b.season AND a.cbbd_game_id < b.cbbd_game_id
  AND abs(date_diff('day', a.game_date_et, b.game_date_et)) <= 1
-"""
+""".replace("BETWEEN 2005 AND 2025", f"BETWEEN {C.AUDITED_SEASONS[0]} AND {C.AUDITED_SEASONS[1]}")
 
 
 def classify(r: dict) -> tuple[str, str]:
