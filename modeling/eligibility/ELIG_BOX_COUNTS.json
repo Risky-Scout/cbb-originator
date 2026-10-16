@@ -1,0 +1,294 @@
+{
+ "candidate": {
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "tag_original": "cbb-props-v1-prelockbox-2024-25"
+ },
+ "code_sha": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+ "created_at": "2026-10-13",
+ "dataset_linkage": {
+  "canonical_build_id": "20261007T055951Z",
+  "canonical_content_digest": "12fd1841e611c046468c165b34163231bb2131454f28489111c74474bcb17c34"
+ },
+ "dataset_status": "RESEARCH_CANDIDATE (not MODEL_READY; see docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md)",
+ "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+ "eligible_games": {
+  "count": 64980,
+  "rule": "distinct canonical_game_id of the eligible player-games",
+  "sha256": "d0769da4cbe467544e5f622e6fca8665cb07da1f5da2c77408be5b845e43e10c"
+ },
+ "eligible_player_games": {
+  "count": 1272227,
+  "rule": "ELIG_MINUTES rows whose counting labels are available (box row present and no source accounting issue); rows with unavailable count labels stay in ELIG_MINUTES with NaN counts and are excluded from every count fit and score (never imputed to 0)",
+  "sha256": "5dcfaf101c39ea3497d41b2331193dad355ead41045a52a137cbd0c4aa7b17cd"
+ },
+ "eligible_player_seasons_for_rate_prior": {
+  "count": 44499,
+  "rule": "player-season box finals (feat.player_box_state, last available row) with minutes >= 100; method-of-moments prior strength k uses seasons <= train_through",
+  "sha256": "06aa7c5f46a108b3197ac82049e633249ba63a9365c63a1f26241327022d38aa"
+ },
+ "exclusions_report": {
+  "2014": {
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 3472,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 784,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 36904,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 6
+  },
+  "2015": {
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 14,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1102,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 651,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 10200,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 106445,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 3
+  },
+  "2016": {
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1102,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 828,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 18436,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 161401,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 13
+  },
+  "2017": {
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1084,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 503,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 17804,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 163573,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 2
+  },
+  "2018": {
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 100,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1100,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 754,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 19517,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 141332,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 12
+  },
+  "2019": {
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1102,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 743,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 20230,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 133003,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 3
+  },
+  "2020": {
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 42,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1117,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 699,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 20458,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 120973,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 4
+  },
+  "2021": {
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1412,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 523,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 16253,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 91298,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 1
+  },
+  "2022": {
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 2,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1150,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 636,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 18197,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 143523,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 3
+  },
+  "2023": {
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 18,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1139,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 693,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 16861,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 144524
+  },
+  "2024": {
+   "EXCLUDED_BOX_ROW_DNP_CONFIRMED_NOT_AN_OBSERVED_APPEARANCE": 19,
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 10,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1233,
+   "EXCLUDED_BOX_ROW_UNKNOWN_PARTICIPATION_NOT_AN_OBSERVED_APPEARANCE": 6,
+   "EXCLUDED_PLAYED_NO_BOX_ROW_NO_OUTCOME": 6,
+   "NOT_SCORED_NO_BOX_ROW_DNP_CONFIRMED": 123350,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 2085,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 16353
+  },
+  "2025": {
+   "EXCLUDED_BOX_ROW_DNP_CONFIRMED_NOT_AN_OBSERVED_APPEARANCE": 32,
+   "EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED": 29,
+   "EXCLUDED_BOX_ROW_PLAYER_OUTSIDE_PREGAME_UNIVERSE": 1219,
+   "EXCLUDED_PLAYED_NO_BOX_ROW_NO_OUTCOME": 1,
+   "NOT_SCORED_NO_BOX_ROW_DNP_CONFIRMED": 144899,
+   "NOT_SCORED_NO_BOX_ROW_NOT_ON_ROSTER": 313,
+   "NOT_SCORED_NO_BOX_ROW_UNKNOWN_PARTICIPATION": 2987,
+   "SCORED_MIN_ONLY_COUNT_LABELS_UNAVAILABLE": 4
+  }
+ },
+ "feature_version": {
+  "features_db_sha_of_fingerprints": "745bff8354a3d07dfef4efd45ccc6411c2a78470c1e1415e00eb24d28212b605",
+  "labels_db_sha_of_fingerprints": "0f8e5616d44dc1716148faaf4741bf7417795d630c184bac48459c3c20d615d9",
+  "stage3_version": "stage3-features-1.0.0",
+  "upstream_dataset": "cbb_data_v2.4+5f19d31e524a"
+ },
+ "generator": "cbb_platform/eligibility_manifests.py",
+ "identity_requirements": "target player-game has a canonical player id (RESOLVED); cross-season history never crosses a quarantined identity link; identity-conflict player-seasons masked",
+ "lockbox_season_present": false,
+ "manifest_id": "ELIG_BOX_COUNTS",
+ "manifest_sha256_of_content": "fd8af6a896b56df014e411cd874c75170eeed996fdf48872f3e18e424204b254",
+ "missingness_mechanism": {
+  "count labels with a source accounting issue": {
+   "assumption": "MCAR with respect to the count given the box row (source defect)",
+   "code": "n/a",
+   "handling": "row excluded from count fits (NaN), kept for minutes"
+  },
+  "pregame inputs": {
+   "assumption": "MAR given X",
+   "code": "as ELIG_MINUTES",
+   "handling": "as ELIG_MINUTES"
+  }
+ },
+ "pbp_quarantine_overlap": {
+  "eligible_games_inside": 1804,
+  "quarantined_games_total": 4138
+ },
+ "pit_fidelity_requirement": {
+  "checkpoint": "single pregame cutoff = scheduled tip - 1 h (spec.CUTOFF_RULE), i.e. the T-1h checkpoint",
+  "inputs": {
+   "earlier-game box rows, participation and substitution feeds": "DATE_KNOWN (HR-1: tip + 4 h, or 06:00 ET next day)",
+   "prior-season finals, previous-season roster returners, recruiting class s-1, portal year s-1": "PRESEASON_ASSUMED"
+  },
+  "note": "no SOURCE_RECEIPT_UNKNOWN or UNUSABLE_FOR_HISTORICAL_PIT input enters these subsystems (end-of-season roster snapshots are used only for the NOT_ON_ROSTER LABEL, which is excluded). The PRESEASON_ASSUMED class is carried by the Stage 3 1900-01-01 preseason sentinel, not by an explicit fidelity column: the bitemporal rebuild (Phase A2 item 1) is outstanding (ARCHITECTURE_PRECEDENCE.md \u00a74.4)",
+  "prohibited_classes_admitted": []
+ },
+ "quarantine_rules": {
+  "event_team_attribution": "not applicable (no event rows are read)",
+  "identity": "target rows exist only for resolved canonical players in the pregame universe; unresolved box rows are counted in lab.target_box_rows_unresolved (EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED); identity_conflicts rows are masked in the src views (stage3/sources.py); history never crosses metadata.identity_link_quarantine (spec.link_guard)",
+  "pbp_score_mismatch": "4,138 PBP FINAL_SCORE_MISMATCH games are excluded from flagship.plays; these subsystems read box rows and the substitution feed, not plays, so the rule does not select their rows. The eligible rows inside those games are COUNTED below (pbp_quarantine_overlap)",
+  "reconstruction_class": "not applicable (no possessions or stints are read)",
+  "team_attribution": "v2.4 DEMIRROR_RECONCILED_GAMES copies are in qa.identity_remediation_quarantine and never reach fact.player_games / the trusted views"
+ },
+ "required_sources": {
+  "feat.player_features": "Stage 3 approved pregame features (prediction cutoff = tip - 1 h)",
+  "lab.player_game_labels": "Stage 3 label store (participation_status, box_row_present, minutes_label_available, counting_labels_available)",
+  "upstream": "flagship.played_games / fact.player_games (trusted), flagship.substitutions, core.rosters, core.recruits, core.transfers"
+ },
+ "rule": "ELIG_MINUTES rows whose counting labels are available (box row present and no source accounting issue); rows with unavailable count labels stay in ELIG_MINUTES with NaN counts and are excluded from every count fit and score (never imputed to 0)",
+ "rule_sql": "SELECT l.player_game_example_id AS id, l.canonical_game_id AS game, l.season FROM lb.lab.player_game_labels l JOIN feat.player_features f USING (player_game_example_id) WHERE l.season BETWEEN 2014 AND 2025 AND l.participation_status = 'PLAYED' AND l.box_row_present AND l.minutes_label_available AND l.counting_labels_available",
+ "sample_counts": {
+  "by_season": {
+   "2014": 106956,
+   "2015": 108994,
+   "2016": 109351,
+   "2017": 109107,
+   "2018": 107143,
+   "2019": 108669,
+   "2020": 102785,
+   "2021": 76958,
+   "2022": 106470,
+   "2023": 110954,
+   "2024": 111948,
+   "2025": 112892
+  },
+  "core_walk_forward_reference": [
+   "FOLD_1",
+   "FOLD_2",
+   "FOLD_3",
+   "FOLD_4",
+   "FOLD_5",
+   "FOLD_6",
+   "FOLD_7",
+   "LINEUP_ROTATION_DEV"
+  ],
+  "folds": {
+   "A": {
+    "train": {
+     "player_games": 1047387,
+     "seasons": [
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+     ],
+     "sha256": "85746f1359117ed982a55321b0e1b4cf10323bf52a0589b2bd53f38bbe29ab2c"
+    },
+    "validation": {
+     "player_games": 111948,
+     "seasons": [
+      2024
+     ],
+     "sha256": "cf6f093480e9ef48dffd6c43a5b4a3d1503adb72987b1f3d1c221ccc24db0e0f"
+    }
+   },
+   "B": {
+    "train": {
+     "player_games": 1159335,
+     "seasons": [
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+     ],
+     "sha256": "956a7026fdb7bac5b9e36cba28e8d22954438f67a6a2fe14c237c79c058edb1f"
+    },
+    "validation": {
+     "player_games": 112892,
+     "seasons": [
+      2025
+     ],
+     "sha256": "c77a77cf0e78a0f1e7d8ac38ca6044120bc2502646de755858345704bb73263b"
+    }
+   },
+   "FINAL": {
+    "train": {
+     "player_games": 1272227,
+     "seasons": [
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+     ],
+     "sha256": "5dcfaf101c39ea3497d41b2331193dad355ead41045a52a137cbd0c4aa7b17cd"
+    },
+    "validation": {
+     "player_games": 0,
+     "seasons": [],
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+   }
+  }
+ },
+ "seasons": [
+  2014,
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
+ ],
+ "selection_bias_reference": "docs/PBP_QUARANTINE_SELECTION_BIAS_PLAN.md (box-row absence is informative; the participation exclusion of UNKNOWN labels is non-random)",
+ "version": "1.0.0"
+}

@@ -1,0 +1,22 @@
+{
+ "check": "clean detached git worktree per tag; only the gitignored stores data/canonical, modeling/store and .venv are shared (symlinks); every tracked input comes from the tag itself",
+ "lockbox_touched": false,
+ "original_tag": {
+  "commit": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+  "result": "1 failed (FileNotFoundError: modeling/player_props_v1/stl_nb_challenger.json)",
+  "stl_evidence_files_present": false,
+  "tag": "cbb-props-v1-prelockbox-2024-25",
+  "test": "tests/test_props_v1_final_prelockbox.py::test_reproduces_accepted_stl_evidence"
+ },
+ "r2_tag": {
+  "commit": "425211071413735be8e1497105ae51830c971c12",
+  "result": "22 passed, 0 failed (63 s)",
+  "stl_evidence_files_present": true,
+  "tag": "cbb-props-v1-prelockbox-2024-25-r2",
+  "tests": [
+   "tests/test_props_v1_final_prelockbox.py",
+   "tests/test_props_v1_refit.py"
+  ]
+ },
+ "self_contained": true
+}

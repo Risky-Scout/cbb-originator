@@ -1,0 +1,425 @@
+{
+ "lockbox_touched": false,
+ "payloads": [
+  {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2024-11-12",
+    "season": 2025,
+    "startDateRange": "2024-11-04",
+    "team": "Purdue"
+   },
+   "sha256": "bc9ad70b4335110432ef0719bd258ba656fab4f811702512c0a58d4c79722071"
+  },
+  {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "Purdue"
+   },
+   "sha256": "312936dae2ca39e964fdf7621b32032b748b00b3c4fadbd76486545432a405c5"
+  },
+  {
+   "endpoint": "games/teams",
+   "params": {
+    "endDateRange": "2024-11-12",
+    "season": 2025,
+    "startDateRange": "2024-11-04",
+    "team": "Purdue"
+   },
+   "sha256": "bb92f329b4371bf70343426157544f6f0359af9063a4c5d13fdacf3c48bb61ef"
+  },
+  {
+   "endpoint": "games/teams",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "Purdue"
+   },
+   "sha256": "87cbf5d7c30514abc069ed3db2cfa9a7ae59e2261983bf0c629bfbf0e1f6ec25"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2024-11-12",
+    "season": 2025,
+    "startDateRange": "2024-11-04",
+    "team": "Purdue"
+   },
+   "sha256": "8058c1553e5b9e7e5431a68e8f9227d3e1ba84b8d1de6154c11b3a772ac49bf3"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "Purdue"
+   },
+   "sha256": "7a8f7ec01bfb2dc8949367fe2e6183dd4b6fa492ea578228b8580bf71b7a6545"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2024-11-16",
+    "season": 2025,
+    "startDateRange": "2024-11-04",
+    "team": "Alabama"
+   },
+   "sha256": "60506e364d51b05c770f9c8b777f55f3f275425b3d5d0f2b9ba8c3d5d846c1d3"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "Auburn"
+   },
+   "sha256": "056be0bb9a9b126a886215304e8669a21c61ac65cfd84887ec00c06f4f10a62e"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "Rutgers"
+   },
+   "sha256": "2b0cd633f03cbd1d4ae7dc798ad56f83e09bfe4de3aa61b570b6552a5fbfc28e"
+  },
+  {
+   "endpoint": "games/players",
+   "params": {
+    "endDateRange": "2023-11-14",
+    "season": 2024,
+    "startDateRange": "2023-11-06",
+    "team": "South Florida"
+   },
+   "sha256": "32e7e5eb82481995ae9f222804e5440de46dab2b88004097cfe96111550e4dd4"
+  }
+ ],
+ "scope": "SMOKE SAMPLE: the Stage 1 CBBD smoke payloads only (development seasons; a few teams and games). Not a full-season validation",
+ "seasons": [
+  2024,
+  2025
+ ],
+ "skipped_payloads": [
+  {
+   "endpoint": "stats/player/season",
+   "params": {
+    "endDateRange": "2024-11-15",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  },
+  {
+   "endpoint": "stats/player/season",
+   "params": {
+    "endDateRange": "2024-11-16",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  },
+  {
+   "endpoint": "stats/player/season",
+   "params": {
+    "endDateRange": "2024-11-12",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  },
+  {
+   "endpoint": "stats/team/season",
+   "params": {
+    "endDateRange": "2024-11-15",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  },
+  {
+   "endpoint": "stats/team/season",
+   "params": {
+    "endDateRange": "2024-11-16",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  },
+  {
+   "endpoint": "stats/team/season",
+   "params": {
+    "endDateRange": "2024-11-12",
+    "season": 2025,
+    "startDateRange": "2024-11-01",
+    "team": "Purdue"
+   },
+   "reason": "partial-season (date-windowed) aggregate: not comparable to a full-season Starter Pack row"
+  }
+ ],
+ "spec": "docs/lockbox/CBBD_BOX_ROUTE_RECONCILIATION_SPEC.md",
+ "spec_sha256": "0727835e26915a8dc44a1bfbafdbe2acb39b8017451db0b242a0a189748e9955",
+ "staging_reconciliation": {
+  "games": {
+   "columns_compared": [
+    "season",
+    "season_label",
+    "season_type",
+    "game_type",
+    "tournament",
+    "start_date",
+    "neutral_site",
+    "conference_game",
+    "home_team_id",
+    "away_team_id",
+    "home_conference_id",
+    "away_conference_id",
+    "home_seed",
+    "away_seed",
+    "home_points",
+    "away_points",
+    "home_period_points",
+    "away_period_points",
+    "venue_id"
+   ],
+   "differences": [],
+   "duplicate_route_keys": [],
+   "keys": 4,
+   "matched_keys": 4,
+   "route_only_classified": [],
+   "route_only_keys": [],
+   "route_rows": 4
+  },
+  "pass_exact": false,
+  "player_game_stats": {
+   "columns_compared": [
+    "opponent_id",
+    "season",
+    "is_home",
+    "position",
+    "starter",
+    "minutes",
+    "points",
+    "fieldGoals_made",
+    "fieldGoals_attempted",
+    "twoPointFieldGoals_made",
+    "twoPointFieldGoals_attempted",
+    "threePointFieldGoals_made",
+    "threePointFieldGoals_attempted",
+    "freeThrows_made",
+    "freeThrows_attempted",
+    "rebounds_offensive",
+    "rebounds_defensive",
+    "rebounds_total",
+    "assists",
+    "steals",
+    "blocks",
+    "turnovers",
+    "fouls",
+    "ejected",
+    "usage"
+   ],
+   "differences": [],
+   "duplicate_route_keys": [],
+   "keys": 159,
+   "matched_keys": 151,
+   "route_only_classified": [
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "297",
+      "5",
+      "Labaron Philon Jr."
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Labaron Philon"
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "297",
+      "5",
+      "Latrell Wrightsell"
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Latrell Wrightsell Jr."
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "469",
+      "5",
+      "Labaron Philon Jr."
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Labaron Philon"
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "469",
+      "5",
+      "Latrell Wrightsell"
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Latrell Wrightsell Jr."
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "5",
+      "5",
+      "Labaron Philon Jr."
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Labaron Philon"
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "5",
+      "5",
+      "Latrell Wrightsell"
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Latrell Wrightsell Jr."
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "671",
+      "5",
+      "Labaron Philon Jr."
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Labaron Philon"
+    },
+    {
+     "class": "PROVIDER_NAME_REVISION",
+     "key": [
+      "671",
+      "5",
+      "Latrell Wrightsell"
+     ],
+     "route_name_in_raw_cbbd_json": true,
+     "starter_pack_name": "Latrell Wrightsell Jr."
+    }
+   ],
+   "route_only_keys": [
+    "('297', '5', 'Labaron Philon Jr.')",
+    "('297', '5', 'Latrell Wrightsell')",
+    "('469', '5', 'Labaron Philon Jr.')",
+    "('469', '5', 'Latrell Wrightsell')",
+    "('5', '5', 'Labaron Philon Jr.')",
+    "('5', '5', 'Latrell Wrightsell')",
+    "('671', '5', 'Labaron Philon Jr.')",
+    "('671', '5', 'Latrell Wrightsell')"
+   ],
+   "route_rows": 159
+  },
+  "player_season_stats": {
+   "columns_compared": [
+    "name",
+    "position",
+    "games",
+    "starts",
+    "minutes",
+    "points",
+    "fieldGoals_made",
+    "fieldGoals_attempted",
+    "threePointFieldGoals_made",
+    "freeThrows_made",
+    "rebounds_total",
+    "assists",
+    "steals",
+    "blocks",
+    "turnovers",
+    "fouls",
+    "usage"
+   ],
+   "differences": [],
+   "duplicate_route_keys": [],
+   "keys": 0,
+   "matched_keys": 0,
+   "route_only_classified": [],
+   "route_only_keys": [],
+   "route_rows": 0
+  },
+  "team_game_stats": {
+   "columns_compared": [
+    "opponentId",
+    "season",
+    "isHome",
+    "neutralSite",
+    "gameMinutes",
+    "startTimeTbd",
+    "pace",
+    "teamStats_points_total",
+    "teamStats_fieldGoals_made",
+    "teamStats_fieldGoals_attempted",
+    "teamStats_twoPointFieldGoals_made",
+    "teamStats_twoPointFieldGoals_attempted",
+    "teamStats_threePointFieldGoals_made",
+    "teamStats_threePointFieldGoals_attempted",
+    "teamStats_freeThrows_made",
+    "teamStats_freeThrows_attempted",
+    "teamStats_rebounds_offensive",
+    "teamStats_rebounds_defensive",
+    "teamStats_rebounds_total",
+    "teamStats_assists",
+    "teamStats_steals",
+    "teamStats_blocks",
+    "teamStats_turnovers_total",
+    "teamStats_turnovers_teamTotal",
+    "teamStats_fouls_total",
+    "teamStats_fouls_technical",
+    "teamStats_fouls_flagrant",
+    "teamStats_possessions",
+    "teamStats_points_inPaint",
+    "teamStats_points_fastBreak",
+    "teamStats_points_offTurnovers",
+    "teamStats_points_largestLead",
+    "teamStats_points_byPeriod_0",
+    "teamStats_points_byPeriod_1"
+   ],
+   "differences": [],
+   "duplicate_route_keys": [],
+   "keys": 4,
+   "matched_keys": 4,
+   "route_only_classified": [],
+   "route_only_keys": [],
+   "route_rows": 4
+  },
+  "team_season_stats": {
+   "columns_compared": [
+    "games",
+    "wins",
+    "losses",
+    "totalMinutes",
+    "teamStats_points_total",
+    "teamStats_possessions",
+    "opponentStats_points_total"
+   ],
+   "differences": [],
+   "duplicate_route_keys": [],
+   "keys": 0,
+   "matched_keys": 0,
+   "route_only_classified": [],
+   "route_only_keys": [],
+   "route_rows": 0
+  },
+  "unexplained": 0
+ }
+}

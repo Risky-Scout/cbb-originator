@@ -460,8 +460,19 @@ def test_workspace_baseline_history_is_preserved_and_drift_is_accounted():
 
 
 def test_no_unrelated_project_was_modified():
+    """Relocation accommodation (architect ruling P / option 1, 2026-10-16), for the known project move only: the recorded
+    sibling names are stat'ed at the same names under the current parent -- metadata only (existence, size, mtime; the
+    recorded folder-level metadata for the Starter Pack, whose content is also proven by its registered digest). The
+    five other siblings are never opened or recursed into, and the new parent is never listed: the no-extra-entries
+    assertion applies only at the historical parent. No baseline is taken of the new parent."""
+    from cbb_platform import relocation as RL
     snap = json.loads((C.MANIFESTS / WORKSPACE_BASELINES[-1]).read_text())
-    parent = Path(snap["parent"])
+    recorded = Path(snap["parent"])
+    moved = RL.relocated() and recorded == RL.HISTORICAL_PROJECT_PARENT and not recorded.exists()
+    parent = C.PROJECT_ROOT.parent if moved else recorded
+    if moved:
+        assert {n for n, s in snap["entries"].items() if s["type"] != "file"} == {C.STARTER_PACK_ROOT.parent.name}
+        assert RL.starter_pack_identity()["pass"]                        # content identity, not the recorded path
     for name, s in snap["entries"].items():
         p = parent / name
         assert p.exists(), name
@@ -471,8 +482,9 @@ def test_no_unrelated_project_was_modified():
             entries = [q for q in p.rglob("*") if q.name != ".DS_Store"]
             assert len(entries) == s["entries"], name
             assert max(q.lstat().st_mtime_ns for q in entries) == s["newest_mtime_ns"], name
-    extra = {p.name for p in parent.iterdir()} - set(snap["entries"]) - {"CBB_Originator_Model", ".DS_Store"}
-    assert not {x for x in extra if not x.startswith("~$")}, extra
+    if not moved:
+        extra = {p.name for p in parent.iterdir()} - set(snap["entries"]) - {"CBB_Originator_Model", ".DS_Store"}
+        assert not {x for x in extra if not x.startswith("~$")}, extra
 
 
 # =========================================================================== 21. deterministic rebuild

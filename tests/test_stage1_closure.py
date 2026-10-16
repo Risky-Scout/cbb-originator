@@ -137,7 +137,8 @@ def test_measured_root_cause_of_summary_conflicts(db):
     assert scalar(db, "SELECT count(*) FROM qa.season_summary_conflicts WHERE field NOT IN ('games', 'points')") == 0
 
 
-def test_raw_season_summaries_are_preserved_unchanged(db):
+def test_raw_season_summaries_are_preserved_unchanged(starter_db):
+    db = starter_db
     bad = scalar(db, """SELECT count(*) FROM fact.team_season_stats f JOIN (
             SELECT DISTINCT ON (season, teamId) * FROM staging.sp_team_season_stats
             ORDER BY season, teamId, conference NULLS LAST, filename) s

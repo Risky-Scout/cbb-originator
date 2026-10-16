@@ -1,0 +1,16 @@
+{
+ "command": "OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 VECLIB_MAXIMUM_THREADS=2 nice -n 10 .venv/bin/python -m pytest -q -p no:cacheprovider tests",
+ "errors": 0,
+ "failed": 0,
+ "head": "425211071413735be8e1497105ae51830c971c12",
+ "passed": 560,
+ "prior_run_note": "the previous complete run (route closure, 2026-10-16) had 5 failures: 4 repository-relocation path failures (fixed by cbb_platform/relocation.py under ruling P/S without rewriting frozen evidence) and the stale readiness hash (regenerated under the route-closure ruling)",
+ "run_utc": {
+  "end": "2026-10-16T17:35:51Z",
+  "start": "2026-10-16T17:07:10Z"
+ },
+ "runtime_seconds": 1720.78,
+ "scope": "every test under tests/ in the readiness-closure working tree (tracked tests at 4252110 plus the readiness, route, reconciler, relocation and eligibility tests committed by the readiness-closure commit)",
+ "skipped": 0,
+ "warnings": 0
+}

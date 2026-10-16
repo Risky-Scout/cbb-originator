@@ -1,0 +1,68 @@
+{
+ "evaluation_B": {
+  "artifact_sha256": "2e3aec8113564c216349c9f9262f73754c13578370c22d386229e246f0c9858e",
+  "deterministic_rerun_byte_identical": true,
+  "fit_calls": [
+   0,
+   0
+  ],
+  "gates": {
+   "G1_aggregate": true,
+   "G2_per_target": true,
+   "G3_minutes": true,
+   "G4_participation": true,
+   "G5_participation_calibration": true,
+   "G6_pricing_integrity": true,
+   "verdict": "GO"
+  },
+  "reproduction": {
+   "max_abs_difference": {
+    "AST.candidate": 0.0,
+    "AST.rolling_baseline": 0.0,
+    "BLK.candidate": 0.0,
+    "BLK.rolling_baseline": 0.0,
+    "FG3M.candidate": 0.0,
+    "FG3M.rolling_baseline": 0.0,
+    "MIN.candidate": 0.0,
+    "MIN.rolling_baseline": 0.0,
+    "PTS.candidate": 0.0,
+    "PTS.rolling_baseline": 0.0,
+    "REB.candidate": 0.0,
+    "REB.rolling_baseline": 0.0,
+    "STL.candidate": 0.0,
+    "STL.rolling_baseline": 0.0,
+    "TOV.candidate": 0.0,
+    "TOV.rolling_baseline": 0.0,
+    "participation.candidate": 0.0,
+    "participation.heuristic": 0.0
+   },
+   "reproduced": true,
+   "row_counts_equal": true,
+   "tolerance": 1e-10
+  },
+  "result_sha256": "3ee8eefed83dba69419b8d1faa7c0d03d7a20e7fd42891ba0a0ffe3b950eedbc"
+ },
+ "final_artifact_in_sample_functional_check": {
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "deterministic_rerun_byte_identical": true,
+  "fit_calls": [
+   0,
+   0
+  ],
+  "gates": {
+   "G1_aggregate": true,
+   "G2_per_target": true,
+   "G3_minutes": true,
+   "G4_participation": true,
+   "G5_participation_calibration": true,
+   "G6_pricing_integrity": true,
+   "verdict": "GO"
+  },
+  "note": "the final artifact was trained through 2024-25, so these 2024-25 numbers are IN-SAMPLE (not evidence)",
+  "result_sha256": "ebd84e2970a6f4072df20f22dd94cd885c2a260162925e4c2dfe92f8762a59ec"
+ },
+ "lockbox_touched": false,
+ "runner": "cbb_platform/lockbox_runner.py",
+ "runner_sha256": "3dc8917f61bdb119288750aa067ca58f9a0f5b713766432c3c8006b299028f28",
+ "season": 2025
+}

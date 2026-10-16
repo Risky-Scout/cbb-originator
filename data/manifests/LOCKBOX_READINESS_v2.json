@@ -1,0 +1,720 @@
+{
+ "record_id": "LOCKBOX_READINESS_CBB_PROPS_V1",
+ "version": "3.1.0",
+ "supersedes": "content 3.0.0 of this file (uncommitted; route FAIL, guard v3 ruling pending), content 2.0.0 (candidate tag cbb-props-v1-prelockbox-2024-25) and LOCKBOX_READINESS_v1.json (c123a3b; archived outside the repository)",
+ "lockbox_open": false,
+ "lockbox_touched": false,
+ "touched_2025_26": false,
+ "used_2026_27_preseason_data": false,
+ "protocol": "docs/LOCKBOX_OPENING_PROTOCOL.md v1.0 + LOCKBOX_POLICY.md + docs/REPRODUCIBLE_ENVIRONMENT_POLICY.md",
+ "rulings": {
+  "path": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md",
+  "sha256": "53ac04545cfde03a804e8a37460e1a396f82f255796e05e6d1e2d885376e9e80",
+  "route_closure": {
+   "path": "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md",
+   "sha256": "8945cddea21ab881ce16dc66385d1d3fc4e50b071f51040ed1f8c80d78c8e79e"
+  }
+ },
+ "cbbd_route": {
+  "module": "cbb_platform/cbbd_box_route.py",
+  "module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+  "reconciler": "cbb_platform/cbbd_box_route_reconcile.py",
+  "reconciler_sha256": "e185fbb4be27b94da3878712d929e990015439b78b6a2557a689db960a791179",
+  "reconciliation_report": "data/qa/cbbd_box_route_reconciliation.json",
+  "reconciliation_report_sha256": "023b7bf14cd6331c81d0d40893f579742b8bbb6c93bef737c3895f85093f82c0",
+  "pit_audit": "data/qa/cbbd_box_route_pit_audit.json",
+  "pit_audit_sha256": "22623d86e22b77dd57dc48322c71c9d061c08a15af0c94f491d2a74a5f45dff4",
+  "CBBD_INGESTION_ROUTE": "PASS",
+  "CBBD_AUTHORITY": "ACCEPTED (ruling K)",
+  "E8_FROZEN_REFERENCE_COMPARISON": "FAIL",
+  "E8_MAX_GATED_METRIC_DIFFERENCE": 0.002015458809679148,
+  "E8_DIFFERENCE_CLASSIFICATION": "EXPLAINED_PROVIDER_DATA_REVISION",
+  "E8_GATE_VERDICTS_IDENTICAL": "PASS",
+  "ANTI_LEAKAGE_CONTRACT": "PASS",
+  "PIT_VIOLATIONS": 0,
+  "DETERMINISTIC_A_B": "PASS",
+  "FIT_CALLS": 0,
+  "PREDICTIVE_SPEC_CHANGED": false
+ },
+ "starter_pack": {
+  "registered_root": "/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack/starter_pack",
+  "current_root": "/Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB Starter Pack/starter_pack",
+  "registered_data_files": 111,
+  "registered_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+  "current_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83"
+ },
+ "candidate": {
+  "authoritative_tag": "cbb-props-v1-prelockbox-2024-25-r2",
+  "authoritative_commit": "425211071413735be8e1497105ae51830c971c12",
+  "original_tag": "cbb-props-v1-prelockbox-2024-25",
+  "original_commit": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+  "superseded_tag_preserved": true
+ },
+ "model_artifact": {
+  "model_version": "cbb-props-v0@53c0c2c+participation@f9cf4df+props-v1-pricing-1.0.0+stl-negbin-phi-0.16",
+  "artifact_version": "cbb-props-v1-prelockbox-2024-25",
+  "subsystem": "player_props_marginal (participation + minutes + 7 counts)",
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "storage_uri": "modeling/player_props_v1/final_prelockbox_2024_25_artifact.json",
+  "specification_fingerprint": "3e343c1ad1e8668dc1fadade4c85a92c4bc8cbb651ff49284ac4a8a7106b8a9f",
+  "artifact_fingerprint": "191175928969a38edd431cd8410a9fd8050cf68f23a9fb1836814bb771839997",
+  "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+  "dataset_status": "RESEARCH_CANDIDATE (not MODEL_READY; see docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md)",
+  "dataset_linkage": {
+   "canonical_content_digest": "12fd1841e611c046468c165b34163231bb2131454f28489111c74474bcb17c34",
+   "manifest_sha256": "e0d1e20ff0404fa658aea089aa1917198d4d02fc65b483633d3fea476b864847"
+  },
+  "feature_version": {
+   "stage3_version": "stage3-features-1.0.0",
+   "features_db_sha_of_fingerprints": "745bff8354a3d07dfef4efd45ccc6411c2a78470c1e1415e00eb24d28212b605",
+   "labels_db_sha_of_fingerprints": "0f8e5616d44dc1716148faaf4741bf7417795d630c184bac48459c3c20d615d9"
+  },
+  "eligibility_manifests": {
+   "ELIG_BOX_COUNTS": {
+    "sha256": "3fda535cffdcfc6c55d331381b80abe88cc12e4e7b1aa3e7e828bbb08d49ff9b",
+    "eligible_player_games_sha256": "5dcfaf101c39ea3497d41b2331193dad355ead41045a52a137cbd0c4aa7b17cd"
+   },
+   "ELIG_MINUTES": {
+    "sha256": "7631762badf71bac0b12dfbff1bca3e57ccb58c5dd2ae13e50e7a6e237d122a5",
+    "eligible_player_games_sha256": "5d966e301c94919bd68df591322231cd660312e9c1fac10175d3fc640c2f2873"
+   },
+   "ELIG_PARTICIPATION": {
+    "sha256": "d5229c31b4e5712898a7876b2c772da94df3a7b9267f019760fbbfde8322da52",
+    "eligible_player_games_sha256": "26fb96b50102a041451c6680ca21d9ca5a030a0bffe4c8f27bb27b1422478772"
+   }
+  },
+  "code_sha": "425211071413735be8e1497105ae51830c971c12",
+  "model_tag": "cbb-props-v1-prelockbox-2024-25-r2",
+  "environment_lock_sha256": "cab2bcfbaac16e8777f5a3798f23536944642887a952b516a4061b3c6108e36b",
+  "environment_fingerprint": "6e7270e899fb8d8a90f6ba075d7783841fd22a52dcdd2284a1041ccf30122def",
+  "hyperparameters": {
+   "base_spec_fingerprint": "baa24b754be10fcb6926e21c947a5ce0e0489f74c0cde393e2162cf82597655b",
+   "config_sha256": "0e144cde42efb4886b71a62d92720b6575a5732f324d640d3184ee8a34868303",
+   "participation_l2_alpha": 0.0001,
+   "stl_family": "NEGBIN",
+   "stl_phi": 0.16
+  },
+  "seed": 0,
+  "seed_note": "no randomness: closed-form ridge / IRLS / method of moments",
+  "train_seasons": {
+   "stat_minutes": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+   ],
+   "participation": [
+    2024,
+    2025
+   ]
+  },
+  "training_through": "2024-25",
+  "validation_evidence": {
+   "modeling/player_props_v0/metrics.json": "ac426477731e9744129d20265dc0c035ae025340a4007b85d2251e3190db9314",
+   "modeling/player_props_v0/participation_metrics.json": "0138968e2c7b6dcc15e9c040ce19e79299c97bd4fd740b8202b985b02f98cbac",
+   "modeling/player_props_v1/final_prelockbox_validation.json": "6ff1391d0aad6cf5c744c28e9949635fe4ef18a094936b55fa060dcbb6e086a9",
+   "modeling/player_props_v1/final_prelockbox_spec.json": "b6d911b82c62a87938102bed1d45893906835fee1a20f41e0bf560e51bd223ad",
+   "modeling/player_props_v1/stl_nb_challenger.json": "1438d4facca9e3b717c22f3d5125664584964eee95118ff947428a29e272fc53"
+  },
+  "lockbox_touched": false
+ },
+ "calibration_artifact": {
+  "calibration_version": "NONE",
+  "note": "v1 applies no post-hoc calibration layer"
+ },
+ "scorecard": {
+  "path": "docs/lockbox/lockbox_scorecard_v2.json",
+  "sha256": "27bdfbdd35b182b6eb88710d34310e9f5f71a262b850a88071b8ac085ce26ecd"
+ },
+ "data_opening_plan": {
+  "path": "docs/lockbox/LOCKBOX_DATA_OPENING_PLAN_2025_26.md",
+  "sha256": "381a5d178388bdc06ee6ac9a419ee0137dab8aaa3dcb2289480a3ce69cbe1559"
+ },
+ "guard": {
+  "patch": "docs/lockbox/lockbox_open_2025_26_guard_v2.patch",
+  "patch_sha256": "c1ffec876bfb278585bd01d12a67c0bdd07d3736fee2ab8b7321bd2600c6076e",
+  "v3_patch": "docs/lockbox/lockbox_open_2025_26_guard_v3.patch",
+  "v3_patch_sha256": "366ba2d1d1e2aa88491cf0370e05695f020f436a5c83e818bb237a54641cba4e",
+  "scoring_enable_patch": "docs/lockbox/lockbox_open_2025_26_scoring_enable.patch",
+  "scoring_enable_patch_sha256": "8f964e01062937fde8ff44a7c8af595d3659884ff223771bced2e6d32aff2be7",
+  "design_approval": "ruling Q (design approval only)",
+  "applied": false,
+  "season_2026_refused": true
+ },
+ "fit_free_runner": {
+  "path": "cbb_platform/lockbox_runner.py",
+  "sha256": "3dc8917f61bdb119288750aa067ca58f9a0f5b713766432c3c8006b299028f28"
+ },
+ "archive_manifest": {
+  "path": "/Users/josephshackelford/CBB_Project_External_Artifacts/CBB_Originator_Prelockbox_Archive/ARCHIVE_MANIFEST.json",
+  "sha256": "d039209bbd1dca51e92d5dfba5bafa426fa9c2a73a0daac5c6fb6354670b06d5"
+ },
+ "approval_record": {
+  "decision_id": "LOCKBOX_OPEN_2025_26_CBB_PROPS_V1",
+  "decision_type": "LOCKBOX_OPEN",
+  "lockbox_open": false,
+  "status": "NOT_GRANTED",
+  "from_bundle": null,
+  "to_bundle": {
+   "player_props_marginal": "cbb-props-v1-prelockbox-2024-25",
+   "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+   "tag": "cbb-props-v1-prelockbox-2024-25-r2"
+  },
+  "evidence_uri": "docs/lockbox/LOCKBOX_READINESS_v2.md",
+  "approved_by": [],
+  "approved_at": null,
+  "effective_at": null,
+  "approval_mode_required": "two human approvals, OR one architect ruling that states only one person is available"
+ },
+ "gates": {
+  "CANDIDATE_IDENTITY": {
+   "status": "PASS",
+   "evidence": {
+    "tag": "cbb-props-v1-prelockbox-2024-25-r2",
+    "tag_commit": "425211071413735be8e1497105ae51830c971c12",
+    "tag_is_annotated": true,
+    "original_tag_commit": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+    "original_tag_preserved": true,
+    "files_changed_original_to_r2": [
+     "modeling/player_props_v1/STL_NB_CHALLENGER.md",
+     "modeling/player_props_v1/stl_nb_challenger.json"
+    ],
+    "artifact_sha256_working_tree": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+    "artifact_sha256_at_tag": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+    "artifact_sha256_at_original_tag": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+    "specification_fingerprint": "3e343c1ad1e8668dc1fadade4c85a92c4bc8cbb651ff49284ac4a8a7106b8a9f",
+    "artifact_fingerprint": "191175928969a38edd431cd8410a9fd8050cf68f23a9fb1836814bb771839997",
+    "stl": "NEGBIN phi=0.16",
+    "rejected_changes_activated": [],
+    "pass": true
+   }
+  },
+  "STL_EVIDENCE_SELF_CONTAINED": {
+   "status": "PASS",
+   "evidence": {
+    "files": {
+     "modeling/player_props_v1/stl_nb_challenger.json": {
+      "in_r2_tag": true,
+      "in_original_tag": false,
+      "sha256_at_r2": "1438d4facca9e3b717c22f3d5125664584964eee95118ff947428a29e272fc53",
+      "sha256_working_tree": "1438d4facca9e3b717c22f3d5125664584964eee95118ff947428a29e272fc53"
+     },
+     "modeling/player_props_v1/STL_NB_CHALLENGER.md": {
+      "in_r2_tag": true,
+      "in_original_tag": false,
+      "sha256_at_r2": "d74d829223994c9a7705fccb45df34542825d164e36a06996af572b079b4becf",
+      "sha256_working_tree": "d74d829223994c9a7705fccb45df34542825d164e36a06996af572b079b4becf"
+     }
+    },
+    "pass": true
+   }
+  },
+  "ELIGIBILITY_MANIFESTS": {
+   "status": "PASS",
+   "evidence": {
+    "index": "modeling/eligibility/INDEX.json",
+    "index_sha256": "1ea13628dce98ad34d5ff14028a28eaec21d739c24c2c795373e808cdc428db3",
+    "required": {
+     "ELIG_BOX_COUNTS": {
+      "path": "modeling/eligibility/ELIG_BOX_COUNTS.json",
+      "sha256": "3fda535cffdcfc6c55d331381b80abe88cc12e4e7b1aa3e7e828bbb08d49ff9b",
+      "tracked": true,
+      "eligible_player_games_sha256": "5dcfaf101c39ea3497d41b2331193dad355ead41045a52a137cbd0c4aa7b17cd",
+      "count": 1272227
+     },
+     "ELIG_MINUTES": {
+      "path": "modeling/eligibility/ELIG_MINUTES.json",
+      "sha256": "7631762badf71bac0b12dfbff1bca3e57ccb58c5dd2ae13e50e7a6e237d122a5",
+      "tracked": true,
+      "eligible_player_games_sha256": "5d966e301c94919bd68df591322231cd660312e9c1fac10175d3fc640c2f2873",
+      "count": 1272278
+     },
+     "ELIG_PARTICIPATION": {
+      "path": "modeling/eligibility/ELIG_PARTICIPATION.json",
+      "sha256": "d5229c31b4e5712898a7876b2c772da94df3a7b9267f019760fbbfde8322da52",
+      "tracked": true,
+      "eligible_player_games_sha256": "26fb96b50102a041451c6680ca21d9ca5a030a0bffe4c8f27bb27b1422478772",
+      "count": 493151
+     }
+    },
+    "not_required": {
+     "ELIG_EVENT_HEADS": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+     "ELIG_GAME_ENVIRONMENT": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+     "ELIG_LINEUP_INTERACTIONS": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+     "ELIG_LOCATION": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+     "ELIG_SHOT_OPPORTUNITY": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)"
+    },
+    "gate_1_linkage": "recorded in data/manifests/LOCKBOX_READINESS_v2.json model_artifact.eligibility_manifests (the frozen artifact itself cannot carry the hash without changing its sha256)",
+    "gate_3_enforcement": "equality test: rule SQL rows == frozen loader rows (tests/test_eligibility_manifests.py)",
+    "pass": true
+   }
+  },
+  "DATASET_MODEL_READY_BLUEPRINT_A2": {
+   "status": "OPEN",
+   "evidence": {
+    "dataset_status": "RESEARCH_CANDIDATE (not MODEL_READY; see docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md)",
+    "phase_a2": {
+     "A2.1 bitemporal five-checkpoint rebuild (PRESEASON_ASSUMED replaces the 1900-01-01 sentinel)": false,
+     "A2.2 exact possession reconstruction + exact lineup stints": false,
+     "A2.3 PBP quarantine selection-bias audit": false,
+     "A2.4 per-subsystem eligibility manifests": true,
+     "A2.5 team-identity alias remediation (LIU / Carver; changes dataset contents)": false,
+     "A2.6a environment lock": true,
+     "A2.6b clean-room rebuild reproducing the accepted fingerprints (independent machine / container, policy \u00a74)": false,
+     "A2.7 off-machine baseline (owner's destination choice)": false
+    },
+    "a2_n_a_for_v1": {
+     "A2.1 bitemporal five-checkpoint rebuild (PRESEASON_ASSUMED replaces the 1900-01-01 sentinel)": "N/A for v1: scored at the single T-1h cutoff (ruling E); open for the Blueprint program"
+    },
+    "scope": "the broader Blueprint v1.4 \u00a78 dataset-level program; informational for this frozen candidate under ruling R (amends ruling A only to separate candidate readiness); items marked false are NOT done and are not marked complete; DATASET_MANIFEST.json unchanged"
+   }
+  },
+  "MARKET_BENCHMARK": {
+   "status": "N/A",
+   "evidence": {
+    "ruling": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md C"
+   }
+  },
+  "ENERGY_VARIOGRAM": {
+   "status": "N/A",
+   "evidence": {
+    "ruling": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md D"
+   }
+  },
+  "FIVE_PIT_CHECKPOINTS": {
+   "status": "N/A",
+   "evidence": {
+    "ruling": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md E",
+    "scored_checkpoint": "T-1h"
+   }
+  },
+  "SCORECARD_FROZEN": {
+   "status": "PASS",
+   "evidence": {
+    "path": "docs/lockbox/lockbox_scorecard_v2.json",
+    "sha256": "27bdfbdd35b182b6eb88710d34310e9f5f71a262b850a88071b8ac085ce26ecd",
+    "g1_g6_verbatim": true,
+    "committed": true
+   }
+  },
+  "CBBD_INGESTION_ROUTE": {
+   "status": "PASS",
+   "evidence": {
+    "module": "cbb_platform/cbbd_box_route.py",
+    "module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+    "route_version": "cbbd-box-route-1.2.0",
+    "reconciler": "cbb_platform/cbbd_box_route_reconcile.py",
+    "reconciler_sha256": "e185fbb4be27b94da3878712d929e990015439b78b6a2557a689db960a791179",
+    "reconciliation_spec": "docs/lockbox/CBBD_BOX_ROUTE_RECONCILIATION_SPEC.md",
+    "reconciliation_spec_sha256": "0727835e26915a8dc44a1bfbafdbe2acb39b8017451db0b242a0a189748e9955",
+    "rulings": "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md (K-O)",
+    "lockbox_season_refused_while_closed": true,
+    "context_plan_matches_development_requests": "tests/test_cbbd_box_route.py (2023-24, 2024-25)",
+    "smoke_scale": {
+     "evidence": "data/qa/cbbd_box_route_smoke_reconciliation.json",
+     "evidence_sha256": "af00ceff64b9708dd07780b04bf9a7947a9c7f1f6681d149d7b3defddc6d2886",
+     "unexplained": 0
+    },
+    "full_development_seasons": {
+     "evidence": "data/qa/cbbd_box_route_reconciliation.json",
+     "evidence_sha256": "023b7bf14cd6331c81d0d40893f579742b8bbb6c93bef737c3895f85093f82c0",
+     "seasons": [
+      2024,
+      2025
+     ],
+     "report_route_module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+     "route_build": {
+      "canonical_content_digest": "8a0a987862ed3a6d48bdc9066d21c63ba0118d4ee00e35c99a2e9284cd93c0a4",
+      "dataset_version": "cbb_data_v3.0+13dd3e8ccd3e",
+      "route_payload_set_sha256": "d57cf56bc618c66d8ecc9e612846604d5ad5ff6ed2e1b55565f106b196fb2fbb"
+     },
+     "architect_ruling": {
+      "cbbd_authority": "ACCEPTED",
+      "date": "2026-10-16",
+      "e8": "frozen tolerance unchanged; E8_FROZEN_REFERENCE_COMPARISON is reported as measured. Route closure accepts an E8 difference only when the ablation (route minus the accepted team boxes) reproduces the reference within the frozen tolerance, gate verdicts are identical, and nothing else is unexplained",
+      "provider_labels": "a Stage 3 row differing only in a provider display-text column that no feature, label or scoring code reads is EXPLAINED_PROVIDER_LABEL_REVISION; provider strings are not rewritten",
+      "team_boxes": "route-only CBBD team boxes of final games the Starter Pack has none for, satisfying the integrity checks A-D, are EXPLAINED_PROVIDER_DATA_REVISION (the 10 games' matchup/date/score were verified against official school records by the architect); they are kept, never removed to match the reference"
+     },
+     "verdict": {
+      "CBBD_INGESTION_ROUTE": "PASS",
+      "CBBD_AUTHORITY": "ACCEPTED",
+      "BOUNDARY_DATE_LOSSES": 0,
+      "FALSE_DI_CLASSIFICATIONS": 0,
+      "NON_FINAL_GAMES_IN_MODELING_STATE": 0,
+      "UNRESOLVED_TEAM_ASSIGNMENTS": 0,
+      "SURVIVING_CANONICAL_DUPLICATES": 0,
+      "UNRESOLVED_PLAYER_IDENTITIES": 0,
+      "EXPLAINED_PROVIDER_DATA_REVISIONS": 20,
+      "EXPLAINED_PROVIDER_LABEL_REVISIONS": 456,
+      "UNEXPLAINED_CANONICAL_DIFFERENCES": 0,
+      "UNTRACED_E6_FEATURE_ROWS": 0,
+      "E1": "PASS",
+      "E2": "PASS",
+      "E3": "PASS",
+      "E4": "PASS",
+      "E5": "PASS",
+      "E6": "PASS",
+      "E7": "PASS",
+      "E8_FROZEN_REFERENCE_COMPARISON": "FAIL",
+      "E8_MAX_GATED_METRIC_DIFFERENCE": 0.002015458809679148,
+      "E8_DIFFERENCE_CLASSIFICATION": "EXPLAINED_PROVIDER_DATA_REVISION",
+      "E8_ABLATION_MAX_GATED_METRIC_DIFFERENCE": 0.0,
+      "E8_GATE_VERDICTS_IDENTICAL": "PASS",
+      "DETERMINISTIC": "PASS",
+      "FIT_CALLS": 0,
+      "PREDICTIVE_SPEC_CHANGED": false,
+      "GUARD_REFUSES_2025_26": true,
+      "2025_26_TOUCHED": false
+     }
+    },
+    "pit_audit": {
+     "evidence": "data/qa/cbbd_box_route_pit_audit.json",
+     "evidence_sha256": "22623d86e22b77dd57dc48322c71c9d061c08a15af0c94f491d2a74a5f45dff4",
+     "audit_module_sha256": "b536e8d03dc6f6ce0f256d84132e89699351f8edfcc4fd02aeae057c45bf1426",
+     "route_module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+     "route_build": {
+      "canonical_content_digest": "8a0a987862ed3a6d48bdc9066d21c63ba0118d4ee00e35c99a2e9284cd93c0a4",
+      "dataset_version": "cbb_data_v3.0+13dd3e8ccd3e",
+      "route_payload_set_sha256": "d57cf56bc618c66d8ecc9e612846604d5ad5ff6ed2e1b55565f106b196fb2fbb"
+     },
+     "violations_by_category": {
+      "FUTURE_DATA_LEAKAGE": 0,
+      "TARGET_LEAKAGE": 0,
+      "SAME_GAME_LEAKAGE": 0,
+      "LOOKAHEAD_BIAS": 0,
+      "FUTURE_ROSTER_LEAKAGE": 0,
+      "LABEL_LEAKAGE": 0
+     },
+     "PIT_VIOLATIONS": 0
+    },
+    "anti_leakage_contract": "PASS",
+    "pass": true,
+    "remaining": ""
+   }
+  },
+  "ANTI_LEAKAGE_CONTRACT": {
+   "status": "PASS",
+   "evidence": {
+    "evidence": "data/qa/cbbd_box_route_pit_audit.json",
+    "evidence_sha256": "22623d86e22b77dd57dc48322c71c9d061c08a15af0c94f491d2a74a5f45dff4",
+    "audit_module_sha256": "b536e8d03dc6f6ce0f256d84132e89699351f8edfcc4fd02aeae057c45bf1426",
+    "route_module_sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24",
+    "route_build": {
+     "canonical_content_digest": "8a0a987862ed3a6d48bdc9066d21c63ba0118d4ee00e35c99a2e9284cd93c0a4",
+     "dataset_version": "cbb_data_v3.0+13dd3e8ccd3e",
+     "route_payload_set_sha256": "d57cf56bc618c66d8ecc9e612846604d5ad5ff6ed2e1b55565f106b196fb2fbb"
+    },
+    "violations_by_category": {
+     "FUTURE_DATA_LEAKAGE": 0,
+     "TARGET_LEAKAGE": 0,
+     "SAME_GAME_LEAKAGE": 0,
+     "LOOKAHEAD_BIAS": 0,
+     "FUTURE_ROSTER_LEAKAGE": 0,
+     "LABEL_LEAKAGE": 0
+    },
+    "PIT_VIOLATIONS": 0
+   }
+  },
+  "STARTER_PACK_CONTENT_IDENTITY": {
+   "status": "PASS",
+   "evidence": {
+    "registered_root": "/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack/starter_pack",
+    "current_root": "/Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB Starter Pack/starter_pack",
+    "resolved_root": "/Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB Starter Pack/starter_pack",
+    "registered_data_files": 111,
+    "current_data_files": 111,
+    "registered_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+    "current_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+    "inventory_files": 129,
+    "inventory_identical": true,
+    "excluded": ".DS_Store (Finder metadata; excluded by the registration contract)",
+    "frozen_manifests_sha256": {
+     "data/manifests/starter_pack_registration.json": "7779aa10410521688680eebc322b02310554a55ca79cd42a36af3a4a6079ab1f",
+     "data/manifests/starter_pack_sha256.json": "4a797c4be56dda8b7eb96242abf1e3c9998d155135cd265091b526050806d9b5"
+    },
+    "pass": true
+   }
+  },
+  "RELOCATION_SAFE_RESOLUTION": {
+   "status": "PASS",
+   "evidence": {
+    "historical_project_parent": "/Users/josephshackelford/CBB Predictive Model 2026",
+    "relocated": true,
+    "rule": "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md (P); cbb_platform/relocation.py",
+    "starter_pack": {
+     "registered_root": "/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack/starter_pack",
+     "current_root": "/Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB Starter Pack/starter_pack",
+     "resolved_root": "/Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB Starter Pack/starter_pack",
+     "registered_data_files": 111,
+     "current_data_files": 111,
+     "registered_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+     "current_data_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+     "inventory_files": 129,
+     "inventory_identical": true,
+     "excluded": ".DS_Store (Finder metadata; excluded by the registration contract)",
+     "frozen_manifests_sha256": {
+      "data/manifests/starter_pack_registration.json": "7779aa10410521688680eebc322b02310554a55ca79cd42a36af3a4a6079ab1f",
+      "data/manifests/starter_pack_sha256.json": "4a797c4be56dda8b7eb96242abf1e3c9998d155135cd265091b526050806d9b5"
+     },
+     "pass": true
+    },
+    "frozen_manifests": {
+     "data/manifests/starter_pack_registration.json": "7779aa10410521688680eebc322b02310554a55ca79cd42a36af3a4a6079ab1f",
+     "data/manifests/starter_pack_sha256.json": "4a797c4be56dda8b7eb96242abf1e3c9998d155135cd265091b526050806d9b5",
+     "data/manifests/workspace_snapshot_stage2.json": "e040328548bc4aa82a9af82aef5ac1d7346b65174ab4e79ea86c11b87ac1fe98",
+     "data/manifests/workspace_snapshot_pre_model_closure_v1.json": "759e0740332abf1481305c7dde533bf0447b32065fb60701b28e16f5d26bb5b5"
+    },
+    "frozen_manifests_modified": false,
+    "frozen_dev_db": {
+     "path": "data/canonical/cbb.duckdb",
+     "size": 9342300160,
+     "mtime_ns": 1791353471760495878,
+     "binding": "tests/conftest.py::starter_db (READ_ONLY attach + in-memory staging overlay)"
+    }
+   }
+  },
+  "FIT_FREE_LOCKBOX_RUNNER": {
+   "status": "PASS",
+   "evidence": {
+    "runner": "cbb_platform/lockbox_runner.py",
+    "runner_sha256": "3dc8917f61bdb119288750aa067ca58f9a0f5b713766432c3c8006b299028f28",
+    "evidence": "data/qa/lockbox_runner_validation.json",
+    "evidence_sha256": "ad6ee1f5425611a15b46c12c740bbaa36a4bfedd53ba24a90b9183385d53e815",
+    "runner_sha256_matches_evidence": true,
+    "development_reproduction": true,
+    "fit_calls": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deterministic": true,
+    "development_gates": {
+     "G1_aggregate": true,
+     "G2_per_target": true,
+     "G3_minutes": true,
+     "G4_participation": true,
+     "G5_participation_calibration": true,
+     "G6_pricing_integrity": true,
+     "verdict": "GO"
+    },
+    "lockbox_season_refused_while_closed": true,
+    "pass": true
+   }
+  },
+  "GUARD_ENGINEERING_REVIEW": {
+   "status": "PASS",
+   "evidence": {
+    "live_guard_closed": true,
+    "decision_record_absent": true,
+    "v2": {
+     "patch": "docs/lockbox/lockbox_open_2025_26_guard_v2.patch",
+     "sha256": "c1ffec876bfb278585bd01d12a67c0bdd07d3736fee2ab8b7321bd2600c6076e",
+     "applies_cleanly": true,
+     "human_design_ruling": "PASS under ruling H for the reviewed v2 bytes; superseded by v3 (ruling Q)"
+    },
+    "v3": {
+     "patch": "docs/lockbox/lockbox_open_2025_26_guard_v3.patch",
+     "sha256": "366ba2d1d1e2aa88491cf0370e05695f020f436a5c83e818bb237a54641cba4e",
+     "applies_cleanly": true,
+     "difference_from_v2": "adds exactly 'stats/team/season' to OPEN_PLAN_ENDPOINTS",
+     "opens_stats_team_season": true,
+     "closed_by_default": true,
+     "later_seasons_refused": true,
+     "engineering_review": "PASS (synthetic + extended checks; tests/test_guard_v2_review.py)",
+     "human_design_ruling": "PASS: design approved as reviewed, design approval only (ruling Q, docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md)"
+    },
+    "scoring_enable": {
+     "patch": "docs/lockbox/lockbox_open_2025_26_scoring_enable.patch",
+     "sha256": "8f964e01062937fde8ff44a7c8af595d3659884ff223771bced2e6d32aff2be7",
+     "applies_cleanly": true,
+     "applies_after_v3": true,
+     "enables_only_when_authorized": true,
+     "human_design_ruling": "PASS: design approved as reviewed, design approval only (ruling Q)"
+    },
+    "design_approved": true,
+    "checks_sha256": {
+     "docs/lockbox/guard_v2_synthetic_check.py": "d1ba9c0ee62be331f526a56a7f024512b80af93c19304cbf0935ca2ad8e1469f",
+     "docs/lockbox/guard_v2_extended_check.py": "3551a9990627e6772581fa8e8547e5cdb3cc5c6117a6c1040de555609808d16f"
+    },
+    "applied": false
+   }
+  },
+  "GUARD_HUMAN_DESIGN_RULING": {
+   "status": "PASS",
+   "evidence": {
+    "v3": "PASS: design approved as reviewed, design approval only (ruling Q, docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md)",
+    "scoring_enable": "PASS: design approved as reviewed, design approval only (ruling Q)",
+    "scope": "design approval only; neither patch applied (ruling Q)"
+   }
+  },
+  "GUARD_V3_READY": {
+   "status": "PASS",
+   "evidence": {
+    "patch": "docs/lockbox/lockbox_open_2025_26_guard_v3.patch",
+    "sha256": "366ba2d1d1e2aa88491cf0370e05695f020f436a5c83e818bb237a54641cba4e",
+    "applies_cleanly": true,
+    "difference_from_v2": "adds exactly 'stats/team/season' to OPEN_PLAN_ENDPOINTS",
+    "opens_stats_team_season": true,
+    "closed_by_default": true,
+    "later_seasons_refused": true,
+    "engineering_review": "PASS (synthetic + extended checks; tests/test_guard_v2_review.py)",
+    "human_design_ruling": "PASS: design approved as reviewed, design approval only (ruling Q, docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md)"
+   }
+  },
+  "SCORING_LOADER_PATCH_READY": {
+   "status": "PASS",
+   "evidence": {
+    "patch": "docs/lockbox/lockbox_open_2025_26_scoring_enable.patch",
+    "sha256": "8f964e01062937fde8ff44a7c8af595d3659884ff223771bced2e6d32aff2be7",
+    "applies_cleanly": true,
+    "applies_after_v3": true,
+    "enables_only_when_authorized": true,
+    "human_design_ruling": "PASS: design approved as reviewed, design approval only (ruling Q)"
+   }
+  },
+  "GUARD_APPLIED": {
+   "status": "FALSE",
+   "evidence": {
+    "live_guard_closed": true
+   }
+  },
+  "ENVIRONMENT_LOCK": {
+   "status": "PASS",
+   "evidence": {
+    "locked_packages": 19,
+    "version_drift": [],
+    "installed_not_locked": [],
+    "locked_not_installed": [
+     "colorama",
+     "tzdata"
+    ],
+    "all_wheels_sha256_hashed": true,
+    "requirements_lock_matches_uv_lock": true,
+    "requirements_lock_all_hashed": true,
+    "python_matches_policy": true,
+    "duckdb": "1.5.6",
+    "required_versions": {
+     "python": "3.12.13",
+     "duckdb": "1.5.6",
+     "numpy": "2.5.3",
+     "pandas": "3.0.6"
+    },
+    "observed_versions": {
+     "python": "3.12.13",
+     "duckdb": "1.5.6",
+     "numpy": "2.5.3",
+     "pandas": "3.0.6"
+    },
+    "required_versions_match": true,
+    "pass": true,
+    "lock_files_committed": true,
+    "uv_lock_sha256": "cab2bcfbaac16e8777f5a3798f23536944642887a952b516a4061b3c6108e36b",
+    "environment_fingerprint": "6e7270e899fb8d8a90f6ba075d7783841fd22a52dcdd2284a1041ccf30122def"
+   }
+  },
+  "WORKTREE_CLEANLINESS": {
+   "status": "PASS",
+   "evidence": {
+    "definition": "protocol \u00a71.5 'a clean, committed working tree': no tracked modification and no untracked file, except the single user-owned path of architect ruling I",
+    "exception": {
+     "path": "data/qa/game_identity_questionable_only.csv",
+     "ruling": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md (ruling I)",
+     "present": true
+    },
+    "tracked_modifications": [],
+    "untracked_other_than_exception": [],
+    "pass": true
+   }
+  },
+  "DATA_OPENING_PLAN_FROZEN": {
+   "status": "PASS",
+   "evidence": {
+    "path": "docs/lockbox/LOCKBOX_DATA_OPENING_PLAN_2025_26.md",
+    "sha256": "381a5d178388bdc06ee6ac9a419ee0137dab8aaa3dcb2289480a3ce69cbe1559",
+    "committed": true
+   }
+  },
+  "LOCKBOX_GUARD_CLOSED": {
+   "status": "PASS",
+   "evidence": {
+    "season_2026_refused": true
+   }
+  },
+  "TRACKED_TEST_SUITE": {
+   "status": "PASS",
+   "evidence": {
+    "command": "OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 VECLIB_MAXIMUM_THREADS=2 nice -n 10 .venv/bin/python -m pytest -q -p no:cacheprovider tests",
+    "errors": 0,
+    "failed": 0,
+    "head": "425211071413735be8e1497105ae51830c971c12",
+    "passed": 560,
+    "prior_run_note": "the previous complete run (route closure, 2026-10-16) had 5 failures: 4 repository-relocation path failures (fixed by cbb_platform/relocation.py under ruling P/S without rewriting frozen evidence) and the stale readiness hash (regenerated under the route-closure ruling)",
+    "run_utc": {
+     "end": "2026-10-16T17:35:51Z",
+     "start": "2026-10-16T17:07:10Z"
+    },
+    "runtime_seconds": 1720.78,
+    "scope": "every test under tests/ in the readiness-closure working tree (tracked tests at 4252110 plus the readiness, route, reconciler, relocation and eligibility tests committed by the readiness-closure commit)",
+    "skipped": 0,
+    "warnings": 0
+   }
+  },
+  "CANDIDATE_MODEL_READY": {
+   "status": "PASS",
+   "evidence": {
+    "ruling": "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md (R)",
+    "candidate": "cbb-props-v1-prelockbox-2024-25-r2",
+    "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+    "required_gates": [
+     "CANDIDATE_IDENTITY",
+     "STL_EVIDENCE_SELF_CONTAINED",
+     "ELIGIBILITY_MANIFESTS",
+     "MARKET_BENCHMARK",
+     "ENERGY_VARIOGRAM",
+     "FIVE_PIT_CHECKPOINTS",
+     "SCORECARD_FROZEN",
+     "CBBD_INGESTION_ROUTE",
+     "ANTI_LEAKAGE_CONTRACT",
+     "STARTER_PACK_CONTENT_IDENTITY",
+     "RELOCATION_SAFE_RESOLUTION",
+     "FIT_FREE_LOCKBOX_RUNNER",
+     "GUARD_ENGINEERING_REVIEW",
+     "GUARD_HUMAN_DESIGN_RULING",
+     "GUARD_V3_READY",
+     "SCORING_LOADER_PATCH_READY",
+     "GUARD_APPLIED",
+     "ENVIRONMENT_LOCK",
+     "WORKTREE_CLEANLINESS",
+     "DATA_OPENING_PLAN_FROZEN",
+     "LOCKBOX_GUARD_CLOSED",
+     "TRACKED_TEST_SUITE"
+    ],
+    "failing": [],
+    "meaning": "the frozen candidate is technically ready for the one-time lockbox evaluation; NOT lockbox opened, NOT production approved, NOT deployed"
+   }
+  },
+  "LOCKBOX_OPEN_APPROVAL": {
+   "status": "WITHHELD",
+   "evidence": {
+    "approved_by": [],
+    "lockbox_open": false
+   }
+  }
+ },
+ "non_approval_blockers": [],
+ "MODEL_READY": "PASS",
+ "MODEL_READY_SCOPE": "candidate-specific (ruling R); dataset status stays RESEARCH_CANDIDATE (not MODEL_READY; see docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md)",
+ "NON_APPROVAL_LOCKBOX_GATES": "PASS",
+ "LOCKBOX_OPEN_APPROVAL": "WITHHELD",
+ "LOCKBOX_READY": "FAIL_APPROVAL_ONLY",
+ "record_sha256": "d5fe3384d8d2de50ad162762a6d584bc255ce86600f3b194d67cc9be219e14c5"
+}
