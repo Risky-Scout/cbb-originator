@@ -1,0 +1,80 @@
+{
+ "approval_mode": "one architect ruling stating that only one architect/approver is available (protocol \u00a71.1.4; readiness approval_mode_required)",
+ "approved_by": [
+  "Joseph Shackelford (model owner and quantitative architect)"
+ ],
+ "authorization_date": "2026-10-16",
+ "authorization_text": "ARCHITECT RULING: LOCKBOX_OPEN 2025-26. Only one architect/approver is available, and this message is the explicit human authorization required by the lockbox protocol. This authorization is for the ONE-TIME frozen 2025-26 evaluation of the existing CBB player-props v1 candidate.",
+ "candidate": {
+  "artifact": "modeling/player_props_v1/final_prelockbox_2024_25_artifact.json",
+  "artifact_fingerprint": "191175928969a38edd431cd8410a9fd8050cf68f23a9fb1836814bb771839997",
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "commit": "425211071413735be8e1497105ae51830c971c12",
+  "specification_fingerprint": "3e343c1ad1e8668dc1fadade4c85a92c4bc8cbb651ff49284ac4a8a7106b8a9f",
+  "tag": "cbb-props-v1-prelockbox-2024-25-r2"
+ },
+ "canonical_season": 2026,
+ "cbbd_season": 2026,
+ "data_opening_plan": {
+  "freeze_blockers_closed_by": "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md rulings O (route), Q (guard design), R (candidate MODEL_READY)",
+  "path": "docs/lockbox/LOCKBOX_DATA_OPENING_PLAN_2025_26.md",
+  "sha256": "381a5d178388bdc06ee6ac9a419ee0137dab8aaa3dcb2289480a3ce69cbe1559"
+ },
+ "decision_id": "LOCKBOX_OPEN_2025_26_CBB_PROPS_V1",
+ "decision_type": "LOCKBOX_OPEN",
+ "eligibility_manifests": {
+  "ELIG_BOX_COUNTS": {
+   "path": "modeling/eligibility/ELIG_BOX_COUNTS.json",
+   "sha256": "3fda535cffdcfc6c55d331381b80abe88cc12e4e7b1aa3e7e828bbb08d49ff9b"
+  },
+  "ELIG_MINUTES": {
+   "path": "modeling/eligibility/ELIG_MINUTES.json",
+   "sha256": "7631762badf71bac0b12dfbff1bca3e57ccb58c5dd2ae13e50e7a6e237d122a5"
+  },
+  "ELIG_PARTICIPATION": {
+   "path": "modeling/eligibility/ELIG_PARTICIPATION.json",
+   "sha256": "d5229c31b4e5712898a7876b2c772da94df3a7b9267f019760fbbfde8322da52"
+  }
+ },
+ "environment": {
+  "environment_fingerprint": "6e7270e899fb8d8a90f6ba075d7783841fd22a52dcdd2284a1041ccf30122def",
+  "uv_lock_sha256": "cab2bcfbaac16e8777f5a3798f23536944642887a952b516a4061b3c6108e36b"
+ },
+ "fit_free_runner": {
+  "path": "cbb_platform/lockbox_runner.py",
+  "sha256": "3dc8917f61bdb119288750aa067ca58f9a0f5b713766432c3c8006b299028f28"
+ },
+ "guard_v3": {
+  "path": "docs/lockbox/lockbox_open_2025_26_guard_v3.patch",
+  "sha256": "366ba2d1d1e2aa88491cf0370e05695f020f436a5c83e818bb237a54641cba4e"
+ },
+ "ingestion_route": {
+  "module": "cbb_platform/cbbd_box_route.py",
+  "reconciliation_report_sha256": "023b7bf14cd6331c81d0d40893f579742b8bbb6c93bef737c3895f85093f82c0",
+  "sha256": "00c29532366120faf7acaab09aa4d4a1e6e8df21e504a7fa5dda8ac5c9b35e24"
+ },
+ "lockbox_open": true,
+ "pre_lockbox_tag": "pre-lockbox-2026-10-16",
+ "readiness": {
+  "MODEL_READY": "PASS",
+  "NON_APPROVAL_LOCKBOX_GATES": "PASS",
+  "commit": "d65aac908c5b910476d95d299ae3cf49093d4733",
+  "record": "data/manifests/LOCKBOX_READINESS_v2.json",
+  "record_file_sha256": "bca7c8a7e96d3eb0aa76e6c4fbfb9ba683d94a4dede2eb23a5ab19917c74fafa",
+  "record_sha256": "d5fe3384d8d2de50ad162762a6d584bc255ce86600f3b194d67cc9be219e14c5"
+ },
+ "rulings": [
+  "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md",
+  "docs/lockbox/ARCHITECT_RULINGS_2026-10-16_ROUTE_CLOSURE.md"
+ ],
+ "scope": "one-time frozen go/no-go evaluation of the frozen candidate only; CBBD only; endpoints = guard v3 OPEN_PLAN_ENDPOINTS; no refit, recalibration, re-selection, tuning or scorecard change after opening (protocol \u00a72.4, \u00a73)",
+ "scorecard": {
+  "path": "docs/lockbox/lockbox_scorecard_v2.json",
+  "sha256": "27bdfbdd35b182b6eb88710d34310e9f5f71a262b850a88071b8ac085ce26ecd"
+ },
+ "scoring_enable": {
+  "path": "docs/lockbox/lockbox_open_2025_26_scoring_enable.patch",
+  "sha256": "8f964e01062937fde8ff44a7c8af595d3659884ff223771bced2e6d32aff2be7"
+ },
+ "season": "2025-26"
+}

@@ -98,7 +98,8 @@ def load_frames(cfg: dict, seasons=None, population: str = "scored") -> tuple[pd
         for s, n in con.execute(f"SELECT season, count(*) FROM lb.lab.{table} WHERE season BETWEEN {lo} AND {hi} GROUP BY 1").fetchall():
             excl.setdefault(int(s), {})[reason] = int(n)
     con.close()
-    if frame["season"].max() >= lockbox.LOCKBOX_SEASON or finals["season"].max() >= lockbox.LOCKBOX_SEASON:
+    top = max(frame["season"].max(), finals["season"].max())
+    if top > lockbox.LOCKBOX_SEASON or (top == lockbox.LOCKBOX_SEASON and not lockbox.opening_authorized()):
         raise lockbox.LockboxViolation("2025-26 row reached the challenger")
     for t in targets:                                  # count labels unavailable -> NaN, never 0
         frame.loc[~frame["counts_ok"].astype(bool), f"y_{t}"] = np.nan

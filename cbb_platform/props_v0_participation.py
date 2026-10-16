@@ -67,7 +67,8 @@ def load(seasons=TRAIN_SEASONS + (VALIDATE_SEASON,)) -> tuple[pd.DataFrame, dict
         JOIN lb.lab.player_game_labels l USING (player_game_example_id)
         WHERE f.season IN ({sl}) ORDER BY f.player_game_example_id""").df()
     con.close()
-    if df["season"].max() >= lockbox.LOCKBOX_SEASON:
+    top = df["season"].max()
+    if top > lockbox.LOCKBOX_SEASON or (top == lockbox.LOCKBOX_SEASON and not lockbox.opening_authorized()):
         raise lockbox.LockboxViolation("2025-26 row reached the participation model")
     for c in FLAGS:
         df[c] = df[c].fillna(0.0)

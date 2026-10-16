@@ -6,13 +6,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cbb_platform import config as C
+from cbb_platform import config as C, lockbox as _lockbox
 
 STAGE3_VERSION = "stage3-features-1.0.0"
 UPSTREAM_DATASET = "cbb_data_v2.4+5f19d31e524a"
 
 # ------------------------------------------------------------------ scope (architect data-scope freeze)
-MODEL_SEASONS = tuple(range(2014, 2026))     # end-year: 2013-14 .. 2024-25
+# 2025-26 joins ONLY as an evaluation season, and only under the reviewed, authorized one-time opening (guard v3,
+# docs/LOCKBOX_OPENING_PROTOCOL.md §2); folds, subsystem windows and every training range below are unchanged
+EVALUATION_SEASONS = (_lockbox.LOCKBOX_SEASON,) if _lockbox.opening_authorized() else ()
+MODEL_SEASONS = tuple(range(2014, 2026)) + EVALUATION_SEASONS     # end-year: 2013-14 .. 2024-25 (+ 2025-26 if opened)
 LOCKBOX_SEASON = 2026                        # 2025-26: never read
 SOURCE_SEASONS = MODEL_SEASONS               # history may come ONLY from these seasons (no silent pre-2013-14 priors)
 
