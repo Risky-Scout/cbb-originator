@@ -1,0 +1,588 @@
+{
+ "report_version": "cbb-v2-provenance-1.0.0",
+ "historical_api_calls": 0,
+ "starter_pack": {
+  "edition_or_version_recorded": false,
+  "edition_note": "the export carries no edition/version string; its identity is the registered content digest. The Data Files Guide PDF is dated 2026-02-10 (PDF metadata); data files are dated 2025-09-30.",
+  "registered_data_manifest_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+  "current_data_manifest_digest": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+  "registered_data_files": 111,
+  "inventory_identical": true,
+  "identity_pass": true,
+  "frozen_manifests_sha256": {
+   "data/manifests/starter_pack_registration.json": "7779aa10410521688680eebc322b02310554a55ca79cd42a36af3a4a6079ab1f",
+   "data/manifests/starter_pack_sha256.json": "4a797c4be56dda8b7eb96242abf1e3c9998d155135cd265091b526050806d9b5"
+  },
+  "known_defects_present_in_this_export": {
+   "historical_athleteId_semantics": "PRESENT: player_game_stats.athleteId is a per-record id (audit 6b)",
+   "duplicate_statistical_rows": "PRESENT: conference fan-out duplicate keys (audit 6c)",
+   "shifted_timestamps": "PRESENT: box-file +00:00 stamps 4-5 h late (CANONICAL_SCHEMA.md 9)"
+  },
+  "remediation": {
+   "historical_athleteId_semantics": "box rows resolved to persistent season-file ids by exact (season, team, name); record ids are never used as player ids; ambiguous / unmatched rows stay UNRESOLVED",
+   "duplicate_statistical_rows": "canonical layer collapses each fan-out group to one row; conference from games.csv ids",
+   "shifted_timestamps": "box-file stamps are not used; tips are games.csv read as UTC (BDL-verified)"
+  }
+ },
+ "datasets": {
+  "dev_canonical": {
+   "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+   "canonical_build_id": "20261007T055951Z",
+   "canonical_content_digest": "12fd1841e611c046468c165b34163231bb2131454f28489111c74474bcb17c34",
+   "starter_pack_manifest_hash": "cc6ced32d28fd026f06179fd2c0cecbdd6c40a554e5d9927e52528777cd1ab83",
+   "raw_cbbd_payload_manifest_hash": "b055525a97845b01c299328b1e12cbc91a46b0c049f3706e7d07d56c1d6bd71f",
+   "identity_resolution_hash": "83f45c35337afb9d4ebe6dd2e068d53a80a9232c9dfc26f6d0ed869cab9d3d09",
+   "team_attribution_resolution_hash": "52a691a2b61ce500a8ceb8c0c4e59677f16b7e0a6bfb88dc6751ca16fbdd14b6",
+   "player_identity_resolution_hash": "892e3d9f4cf7c0a1e431de37fe8888a5ea641fbc38451d328cea0b2d26f60495",
+   "game_identity_resolution_hash": "1da90b6c090a1a282882f7bae3d4cf1c5335857d31db4d171c7bab4173855c87",
+   "ingestion_version": "stage1-1.0.0",
+   "schema_version": "canonical-1.0.0",
+   "wallclock_policy": "UNTRUSTED_MIXED (raw preserved; prohibited for PIT, availability, latency, tip, live timing)",
+   "code_commit": {
+    "head": "956ccdd6812c9bae4451a690d80e155ada5ac64e",
+    "tracked_changes_at_build": true
+   }
+  },
+  "lockbox_canonical": {
+   "dataset_version": "cbb_data_v3.0+86a63cb6d902",
+   "canonical_content_digest": "c1f8f1d6a84c3129e2de5b2a56cafa7a1e03919050a2cb77a1cc8dd1dd8624f1",
+   "route_version": "cbbd-box-route-1.2.0",
+   "route_seasons": [
+    2026
+   ],
+   "route_payload_set_sha256": "4aedc8c150d47e5afdbb7d2e3354b293031e3b0a6f391ba4a4b866cd06aa057b"
+  },
+  "stage3": {
+   "feature_code_version": "stage3-features-1.0.0",
+   "dev_upstream_dataset": "cbb_data_v2.4+5f19d31e524a",
+   "dev_features_fingerprint": "745bff8354a3d07dfef4efd45ccc6411c2a78470c1e1415e00eb24d28212b605",
+   "dev_labels_fingerprint": "0f8e5616d44dc1716148faaf4741bf7417795d630c184bac48459c3c20d615d9",
+   "cutoff_rule": "prediction_cutoff_utc = scheduled_tip_utc - 1 hour (EXACT tip); start of the US/Eastern game date (00:00 ET) when the tip is not exact. A source game may contribute only when its historical_knowable_at (canonical PIT rule HR-1: tip + 4 h, or 06:00 ET next day for inexact tips) <= prediction_cutoff_utc. Since the target game is knowable only at tip + 4 h it can never contribute to its own features. CBBD wallclock is UNTRUSTED_MIXED and is never read."
+  },
+  "tip_rule_revision": {
+   "initial": "share_tips_23_to_04_et < 0.02",
+   "revised": "modal ET hour in 18-20 and share < 0.10",
+   "reason": "dev 2014-2025 share 0.0204 from legitimate West Coast 8 pm PT tips; BDL 804/804 exact"
+  },
+  "timestamp_policy": "POINT_IN_TIME_POLICY_v2_0.md: prediction_cutoff = scheduled tip - 1 h (EXACT); 00:00 ET otherwise; a source game is usable only when historical_knowable_at (tip + 4 h) <= cutoff",
+  "v1_model": {
+   "artifact": "modeling/player_props_v1/final_prelockbox_2024_25_artifact.json",
+   "sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+   "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+   "training_through_season": 2025,
+   "stat_training_seasons": [
+    2014,
+    2025
+   ],
+   "participation_training_seasons": [
+    2024,
+    2025
+   ],
+   "train_max_cutoff": "2025-04-07 19:50:00-04:00"
+  }
+ },
+ "checks": {
+  "dev_canonical_2014_2025": {
+   "path": "data/canonical/cbb.duckdb",
+   "seasons": [
+    2014,
+    2025
+   ],
+   "build_versions": [
+    [
+     "20261007T055951Z",
+     "stage1-1.0.0",
+     "canonical-1.0.0"
+    ]
+   ],
+   "player_game_rows": 1427770,
+   "source_systems": {
+    "CBBD_STARTER_PACK": 1427770
+   },
+   "duplicates": {
+    "player_game_key_duplicates": 0,
+    "resolved_game_player_duplicates": 0,
+    "team_game_duplicates": 0,
+    "game_id_duplicates": 0
+   },
+   "athlete_identity": {
+    "identity_status": {
+     "QUARANTINED_SOURCE_ID_COLLISION": 13,
+     "RESOLVED": 1360286,
+     "UNRESOLVED_AMBIGUOUS": 216,
+     "UNRESOLVED_NO_MATCH": 67255
+    },
+    "resolved_rows": 1360286,
+    "canonical_players": 23916,
+    "players_with_2plus_games": 23524,
+    "players_with_2plus_seasons": 17833,
+    "share_single_game_ids": 0.016390700786084622
+   },
+   "timestamps": {
+    "tip_time_quality": {
+     "EXACT": 70587
+    },
+    "player_rows": 1427770,
+    "player_event_time_equals_tip": 1427770,
+    "exact_tip_rows": 1427770,
+    "exact_knowable_at_tip_plus_4h": 1427770,
+    "bdl_exact_tip_games": 804,
+    "bdl_tip_equal_within_60s": 804,
+    "bdl_tip_shifted_3p5_to_5p5h": 0,
+    "exact_tips": 70587,
+    "exact_tips_23_to_04_et": 1439,
+    "share_tips_23_to_04_et": 0.02038619009165994,
+    "exact_tip_hour_et_histogram": {
+     "0": 49,
+     "1": 39,
+     "2": 6,
+     "3": 1,
+     "4": 2,
+     "5": 4,
+     "6": 3,
+     "7": 2,
+     "8": 4,
+     "9": 6,
+     "10": 27,
+     "11": 348,
+     "12": 2433,
+     "13": 2611,
+     "14": 5982,
+     "15": 3113,
+     "16": 5602,
+     "17": 3221,
+     "18": 4489,
+     "19": 19592,
+     "20": 10939,
+     "21": 6981,
+     "22": 3791,
+     "23": 1342
+    },
+    "modal_tip_hour_et": 19
+   },
+   "pass": {
+    "no_duplicates": true,
+    "persistent_player_ids": true,
+    "box_event_time_is_tip": true,
+    "no_shifted_tips": true
+   }
+  },
+  "lockbox_canonical_2014_2025": {
+   "path": "data/lockbox_2025_26/canonical/cbb.duckdb",
+   "seasons": [
+    2014,
+    2025
+   ],
+   "build_versions": [
+    [
+     "20261016T194136Z",
+     "stage1-1.0.0",
+     "canonical-1.0.0"
+    ]
+   ],
+   "player_game_rows": 1427770,
+   "source_systems": {
+    "CBBD_STARTER_PACK": 1427770
+   },
+   "duplicates": {
+    "player_game_key_duplicates": 0,
+    "resolved_game_player_duplicates": 0,
+    "team_game_duplicates": 0,
+    "game_id_duplicates": 0
+   },
+   "athlete_identity": {
+    "identity_status": {
+     "QUARANTINED_SOURCE_ID_COLLISION": 13,
+     "RESOLVED": 1360286,
+     "UNRESOLVED_AMBIGUOUS": 216,
+     "UNRESOLVED_NO_MATCH": 67255
+    },
+    "resolved_rows": 1360286,
+    "canonical_players": 23916,
+    "players_with_2plus_games": 23561,
+    "players_with_2plus_seasons": 19110,
+    "share_single_game_ids": 0.014843619334336866
+   },
+   "timestamps": {
+    "tip_time_quality": {
+     "EXACT": 70587
+    },
+    "player_rows": 1427770,
+    "player_event_time_equals_tip": 1427770,
+    "exact_tip_rows": 1427770,
+    "exact_knowable_at_tip_plus_4h": 1427770,
+    "bdl_exact_tip_games": 804,
+    "bdl_tip_equal_within_60s": 804,
+    "bdl_tip_shifted_3p5_to_5p5h": 0,
+    "exact_tips": 70587,
+    "exact_tips_23_to_04_et": 1439,
+    "share_tips_23_to_04_et": 0.02038619009165994,
+    "exact_tip_hour_et_histogram": {
+     "0": 49,
+     "1": 39,
+     "2": 6,
+     "3": 1,
+     "4": 2,
+     "5": 4,
+     "6": 3,
+     "7": 2,
+     "8": 4,
+     "9": 6,
+     "10": 27,
+     "11": 348,
+     "12": 2433,
+     "13": 2611,
+     "14": 5982,
+     "15": 3113,
+     "16": 5602,
+     "17": 3221,
+     "18": 4489,
+     "19": 19592,
+     "20": 10939,
+     "21": 6981,
+     "22": 3791,
+     "23": 1342
+    },
+    "modal_tip_hour_et": 19
+   },
+   "pass": {
+    "no_duplicates": true,
+    "persistent_player_ids": true,
+    "box_event_time_is_tip": true,
+    "no_shifted_tips": true
+   }
+  },
+  "lockbox_canonical_2026": {
+   "path": "data/lockbox_2025_26/canonical/cbb.duckdb",
+   "seasons": [
+    2026,
+    2026
+   ],
+   "build_versions": [
+    [
+     "20261016T194136Z",
+     "stage1-1.0.0",
+     "canonical-1.0.0"
+    ]
+   ],
+   "player_game_rows": 127500,
+   "source_systems": {
+    "CBBD_STARTER_PACK": 127500
+   },
+   "duplicates": {
+    "player_game_key_duplicates": 0,
+    "resolved_game_player_duplicates": 0,
+    "team_game_duplicates": 0,
+    "game_id_duplicates": 0
+   },
+   "athlete_identity": {
+    "identity_status": {
+     "RESOLVED": 120244,
+     "UNRESOLVED_AMBIGUOUS": 139,
+     "UNRESOLVED_NO_MATCH": 7117
+    },
+    "resolved_rows": 120244,
+    "canonical_players": 5025,
+    "players_with_2plus_games": 4990,
+    "players_with_2plus_seasons": 3208,
+    "share_single_game_ids": 0.006965174129353269
+   },
+   "timestamps": {
+    "tip_time_quality": {
+     "EXACT": 6300
+    },
+    "player_rows": 127500,
+    "player_event_time_equals_tip": 127500,
+    "exact_tip_rows": 127500,
+    "exact_knowable_at_tip_plus_4h": 127500,
+    "bdl_exact_tip_games": 0,
+    "bdl_tip_equal_within_60s": 0,
+    "bdl_tip_shifted_3p5_to_5p5h": 0,
+    "exact_tips": 6300,
+    "exact_tips_23_to_04_et": 101,
+    "share_tips_23_to_04_et": 0.016031746031746032,
+    "exact_tip_hour_et_histogram": {
+     "1": 1,
+     "8": 1,
+     "10": 1,
+     "11": 42,
+     "12": 268,
+     "13": 285,
+     "14": 672,
+     "15": 296,
+     "16": 474,
+     "17": 290,
+     "18": 522,
+     "19": 1602,
+     "20": 866,
+     "21": 567,
+     "22": 313,
+     "23": 100
+    },
+    "modal_tip_hour_et": 19
+   },
+   "pass": {
+    "no_duplicates": true,
+    "persistent_player_ids": true,
+    "box_event_time_is_tip": true,
+    "no_shifted_tips": true
+   }
+  },
+  "stage3_dev_vs_lockbox_store_2014_2025": {
+   "feat.player_features": {
+    "rows_dev": 2970075,
+    "rows_lockbox": 2970075,
+    "schema_identical": true,
+    "columns": 121,
+    "differing_columns": {
+     "pstd_usage": {
+      "type": "DOUBLE",
+      "rows_differing": 157007,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.220446049250313e-16,
+      "max_rel_diff": 7.490306511911563e-16
+     },
+     "pr_ewm_min_per_app": {
+      "type": "DOUBLE",
+      "rows_differing": 194833,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.842170943040401e-14,
+      "max_rel_diff": 8.658580888253908e-16
+     },
+     "pr_ewm_pts_per_app": {
+      "type": "DOUBLE",
+      "rows_differing": 194137,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 1.7763568394002505e-14,
+      "max_rel_diff": 9.381230780731323e-16
+     },
+     "pr_ewm_usage": {
+      "type": "DOUBLE",
+      "rows_differing": 137093,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.7755575615628914e-16,
+      "max_rel_diff": 8.96138880243992e-16
+     },
+     "pr_ewm_start_rate": {
+      "type": "DOUBLE",
+      "rows_differing": 110422,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 7.771561172376096e-16,
+      "max_rel_diff": 8.378567711870533e-16
+     },
+     "pps_usage": {
+      "type": "DOUBLE",
+      "rows_differing": 432128,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 1.6653345369377348e-16,
+      "max_rel_diff": 8.406706838029899e-16
+     }
+    },
+    "equivalent": true
+   },
+   "feat.player_box_state": {
+    "rows_dev": 1360235,
+    "rows_lockbox": 1360235,
+    "schema_identical": true,
+    "columns": 59,
+    "differing_columns": {
+     "s_team_used_on": {
+      "type": "DOUBLE",
+      "rows_differing": 164002,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 1.3642420526593924e-12,
+      "max_rel_diff": 7.221014997141175e-16
+     },
+     "e_app": {
+      "type": "DOUBLE",
+      "rows_differing": 183316,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.6645352591003757e-15,
+      "max_rel_diff": 4.72425965242698e-16
+     },
+     "e_st": {
+      "type": "DOUBLE",
+      "rows_differing": 86652,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 3.552713678800501e-15,
+      "max_rel_diff": 5.384084702124249e-16
+     },
+     "e_w": {
+      "type": "DOUBLE",
+      "rows_differing": 184393,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.6645352591003757e-15,
+      "max_rel_diff": 3.597570337425167e-16
+     },
+     "e_min": {
+      "type": "DOUBLE",
+      "rows_differing": 84371,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 1.1368683772161603e-13,
+      "max_rel_diff": 5.804937647381996e-16
+     },
+     "e_pts": {
+      "type": "DOUBLE",
+      "rows_differing": 82984,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 8.526512829121202e-14,
+      "max_rel_diff": 5.67810478471514e-16
+     },
+     "e_used": {
+      "type": "DOUBLE",
+      "rows_differing": 85344,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 8.526512829121202e-14,
+      "max_rel_diff": 6.290504675382514e-16
+     },
+     "e_team_used_on": {
+      "type": "DOUBLE",
+      "rows_differing": 85159,
+      "null_pattern_differs": 0,
+      "max_abs_diff": 2.2737367544323206e-13,
+      "max_rel_diff": 5.740971088324248e-16
+     }
+    },
+    "equivalent": true
+   },
+   "ex.player_game_examples": {
+    "rows_dev": 2970075,
+    "rows_lockbox": 2970075,
+    "schema_identical": true,
+    "columns": 16,
+    "differing_columns": {},
+    "equivalent": true
+   },
+   "lab.player_game_labels": {
+    "rows_dev": 2970075,
+    "rows_lockbox": 2970075,
+    "schema_identical": true,
+    "columns": 37,
+    "differing_columns": {},
+    "equivalent": true
+   },
+   "lab.target_box_rows_outside_universe": {
+    "rows_dev": 16232,
+    "rows_lockbox": 16232,
+    "schema_identical": true,
+    "columns": 5,
+    "differing_columns": {},
+    "equivalent": true
+   },
+   "lab.target_box_rows_unresolved": {
+    "rows_dev": 215,
+    "rows_lockbox": 215,
+    "schema_identical": true,
+    "columns": 5,
+    "differing_columns": {},
+    "equivalent": true
+   }
+  },
+  "stage3_lockbox_store_cutoff_rule": {
+   "by_season": {
+    "2014": {
+     "rows": 144650,
+     "exact": 144650,
+     "exact_cutoff_tip_minus_1h": 144650,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2015": {
+     "rows": 226293,
+     "exact": 226293,
+     "exact_cutoff_tip_minus_1h": 226293,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2016": {
+     "rows": 290029,
+     "exact": 290029,
+     "exact_cutoff_tip_minus_1h": 290029,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2017": {
+     "rows": 290989,
+     "exact": 290989,
+     "exact_cutoff_tip_minus_1h": 290989,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2018": {
+     "rows": 268758,
+     "exact": 268758,
+     "exact_cutoff_tip_minus_1h": 268758,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2019": {
+     "rows": 262648,
+     "exact": 262648,
+     "exact_cutoff_tip_minus_1h": 262648,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2020": {
+     "rows": 244919,
+     "exact": 244919,
+     "exact_cutoff_tip_minus_1h": 244919,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2021": {
+     "rows": 185033,
+     "exact": 185033,
+     "exact_cutoff_tip_minus_1h": 185033,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2022": {
+     "rows": 268829,
+     "exact": 268829,
+     "exact_cutoff_tip_minus_1h": 268829,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2023": {
+     "rows": 273032,
+     "exact": 273032,
+     "exact_cutoff_tip_minus_1h": 273032,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2024": {
+     "rows": 253767,
+     "exact": 253767,
+     "exact_cutoff_tip_minus_1h": 253767,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2025": {
+     "rows": 261128,
+     "exact": 261128,
+     "exact_cutoff_tip_minus_1h": 261128,
+     "cutoff_at_or_after_tip": 0
+    },
+    "2026": {
+     "rows": 259616,
+     "exact": 259616,
+     "exact_cutoff_tip_minus_1h": 259616,
+     "cutoff_at_or_after_tip": 0
+    }
+   },
+   "pass": true
+  },
+  "lockbox_pit_audit": {
+   "path": "data/qa/lockbox_2025_26_pit_audit.json",
+   "genuine_pit_violations": 0
+  }
+ },
+ "checks_pass": {
+  "starter_pack_identity": true,
+  "dev.no_duplicates": true,
+  "dev.persistent_player_ids": true,
+  "dev.box_event_time_is_tip": true,
+  "dev.no_shifted_tips": true,
+  "lockbox_2014_2025.no_duplicates": true,
+  "lockbox_2014_2025.persistent_player_ids": true,
+  "lockbox_2014_2025.box_event_time_is_tip": true,
+  "lockbox_2014_2025.no_shifted_tips": true,
+  "lockbox_2026.no_duplicates": true,
+  "lockbox_2026.persistent_player_ids": true,
+  "lockbox_2026.box_event_time_is_tip": true,
+  "lockbox_2026.no_shifted_tips": true,
+  "stage3_store_equivalence": true,
+  "stage3_cutoff_rule": true
+ },
+ "DATA_PROVENANCE": "VERIFIED_INDEPENDENTLY_REMEDIATED",
+ "report_sha256_of_checks": "3baa1d6530aeb5338d02d03428ab8c95e2caa2a24e9272e0d12f1603eadb626e"
+}
