@@ -1,0 +1,153 @@
+{
+ "folds": [
+  {
+   "fold": "FOLD_1",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018
+   ],
+   "validation_season": 2019
+  },
+  {
+   "fold": "FOLD_2",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019
+   ],
+   "validation_season": 2020
+  },
+  {
+   "fold": "FOLD_3",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020
+   ],
+   "validation_season": 2021
+  },
+  {
+   "fold": "FOLD_4",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "validation_season": 2022
+  },
+  {
+   "fold": "FOLD_5",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "validation_season": 2023
+  },
+  {
+   "fold": "FOLD_6",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+   ],
+   "validation_season": 2024
+  },
+  {
+   "fold": "FOLD_7",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+   ],
+   "validation_season": 2025
+  }
+ ],
+ "lockbox": {
+  "season": 2026,
+  "label": "2025-26",
+  "role": "FINAL_UNTOUCHED_HOLDOUT_NOT_A_TUNING_FOLD"
+ },
+ "subsystem_windows": {
+  "core_player_team_game_state": {
+   "seasons": [
+    2014,
+    2025
+   ]
+  },
+  "shot_event_model_no_location": {
+   "seasons": [
+    2014,
+    2025
+   ]
+  },
+  "shot_location_model": {
+   "seasons": [
+    2022,
+    2025
+   ],
+   "note": "primary high-quality x/y window"
+  },
+  "lineup_on_court_interaction": {
+   "seasons": [
+    2024,
+    2025
+   ],
+   "development_train": [
+    2024
+   ],
+   "development_validation": [
+    2025
+   ]
+  },
+  "rotation_substitution": {
+   "seasons": [
+    2024,
+    2025
+   ],
+   "development_train": [
+    2024
+   ],
+   "development_validation": [
+    2025
+   ]
+  }
+ },
+ "rule": "The lockbox is not a tuning fold; no model or feature choice may be selected from lockbox performance."
+}

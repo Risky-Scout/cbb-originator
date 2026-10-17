@@ -1,0 +1,834 @@
+{
+ "protocol": "expanding-window walk-forward; one validation season per fold; lockbox excluded",
+ "upstream_dataset": "cbb_data_v2.4+5f19d31e524a",
+ "lockbox": {
+  "season": 2026,
+  "label": "2025-26",
+  "role": "FINAL_UNTOUCHED_HOLDOUT_NOT_A_TUNING_FOLD"
+ },
+ "subsystem_windows": {
+  "core_player_team_game_state": {
+   "seasons": [
+    2014,
+    2025
+   ]
+  },
+  "shot_event_model_no_location": {
+   "seasons": [
+    2014,
+    2025
+   ]
+  },
+  "shot_location_model": {
+   "seasons": [
+    2022,
+    2025
+   ],
+   "note": "primary high-quality x/y window"
+  },
+  "lineup_on_court_interaction": {
+   "seasons": [
+    2024,
+    2025
+   ],
+   "development_train": [
+    2024
+   ],
+   "development_validation": [
+    2025
+   ]
+  },
+  "rotation_substitution": {
+   "seasons": [
+    2024,
+    2025
+   ],
+   "development_train": [
+    2024
+   ],
+   "development_validation": [
+    2025
+   ]
+  }
+ },
+ "folds": [
+  {
+   "fold": "FOLD_1",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018
+   ],
+   "validation_season": 2019,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018
+    ],
+    "game_examples": {
+     "count": 27499,
+     "sha256": "24b384a285b319cb370e0d37951a290eead8c007f686c90387bf2c75c9666c93"
+    },
+    "player_game_examples": {
+     "count": 1220719,
+     "sha256": "611d07adffd8df56722c1d60315c3ab04ada2433cc7058f878b4b1e7cbede18f"
+    },
+    "player_game_labels": {
+     "count": 1220719,
+     "sha256": "5a3764846e22239de494d60430c304d252ccd2cda4dbcde830f1f77c7f657a58"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 54998,
+      "fingerprint": "54998:17610466028159490933:511104529340884544029229"
+     },
+     "feat.player_features": {
+      "rows": 1220719,
+      "fingerprint": "1220719:12828328892832147434:11262927381372736727740338"
+     },
+     "feat.team_event_features": {
+      "rows": 54998,
+      "fingerprint": "54998:7125968467756882567:505435870780216835399869"
+     },
+     "feat.player_shot_features": {
+      "rows": 1220719,
+      "fingerprint": "1220719:16590879550877595892:11252272536098025737004250"
+     },
+     "feat.player_lineup_features": {
+      "rows": 1220719,
+      "fingerprint": "1220719:7455229643074456660:11262115827831962472088398"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2019
+    ],
+    "game_examples": {
+     "count": 5597,
+     "sha256": "d608639d3dd084ac3183977ae1cdde2b918c69f1a132597159750fafa49c5929"
+    },
+    "player_game_examples": {
+     "count": 262648,
+     "sha256": "1080908996990a273a47108f1164b07676894889053aff070210f023749a2a6a"
+    },
+    "player_game_labels": {
+     "count": 262648,
+     "sha256": "defb5cf86dd67f68ef5624faf1dea20d30a5d253a8f324fdc2a710cdab4b6dfc"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11194,
+      "fingerprint": "11194:8262843498586181816:102910182619453714199234"
+     },
+     "feat.player_features": {
+      "rows": 262648,
+      "fingerprint": "262648:12588347802106003397:2423051895854552889616003"
+     },
+     "feat.team_event_features": {
+      "rows": 11194,
+      "fingerprint": "11194:1380338760777283021:103813112494713046931697"
+     },
+     "feat.player_shot_features": {
+      "rows": 262648,
+      "fingerprint": "262648:598052014061453095:2425097162190707655586091"
+     },
+     "feat.player_lineup_features": {
+      "rows": 262648,
+      "fingerprint": "262648:202210441006747128:2422524671119238393176958"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_2",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019
+   ],
+   "validation_season": 2020,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019
+    ],
+    "game_examples": {
+     "count": 33096,
+     "sha256": "5ebf7d9f9336f0b7d04b62c493a9754aa96c39cd5f6c8e4fdbb41759cb7dab5c"
+    },
+    "player_game_examples": {
+     "count": 1483367,
+     "sha256": "89a0da6a8b7950a787375e15b48eb5809c82ce7f48dbe39bd91322af14f29f29"
+    },
+    "player_game_labels": {
+     "count": 1483367,
+     "sha256": "aabe51a8cec07276d86b7173392a5384833ed9c8fc67c47c3ffeaf4e722b9b11"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 66192,
+      "fingerprint": "66192:9714112587639540685:614014711960338258228463"
+     },
+     "feat.player_features": {
+      "rows": 1483367,
+      "fingerprint": "1483367:2068747106326878255:13685979277227289617356341"
+     },
+     "feat.team_event_features": {
+      "rows": 66192,
+      "fingerprint": "66192:8197523681482485578:609248983274929882331566"
+     },
+     "feat.player_shot_features": {
+      "rows": 1483367,
+      "fingerprint": "1483367:17181813325677135827:13677369698288733392590341"
+     },
+     "feat.player_lineup_features": {
+      "rows": 1483367,
+      "fingerprint": "1483367:7329659586342764972:13684640498951200865265356"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2020
+    ],
+    "game_examples": {
+     "count": 5328,
+     "sha256": "828a671a47eceea4ab8b4f0e41dd5e16db54743a6c7b15f3f5987827fc0115e3"
+    },
+    "player_game_examples": {
+     "count": 244919,
+     "sha256": "f80cda2eaeaf1c2c89a73d5677689bb6d4fc4a5fc316e8142651a95399a69d66"
+    },
+    "player_game_labels": {
+     "count": 244919,
+     "sha256": "93efbc87f33d99bf842cdda765d2e829d5b762addbf5c3e4315a18475e5debdd"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 10656,
+      "fingerprint": "10656:8782821866649691924:98477346641191407678090"
+     },
+     "feat.player_features": {
+      "rows": 244919,
+      "fingerprint": "244919:3679157948738747324:2259063303637837115464434"
+     },
+     "feat.team_event_features": {
+      "rows": 10656,
+      "fingerprint": "10656:11119365691260196841:98506427251537265420753"
+     },
+     "feat.player_shot_features": {
+      "rows": 244919,
+      "fingerprint": "244919:5177480616231004559:2256001405661413652336333"
+     },
+     "feat.player_lineup_features": {
+      "rows": 244919,
+      "fingerprint": "244919:14481094004750459173:2256633920223124670249275"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_3",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020
+   ],
+   "validation_season": 2021,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020
+    ],
+    "game_examples": {
+     "count": 38424,
+     "sha256": "a1fae412929c1b6efd07adf841ca1266606dc2d08ea1a7fe683693f789e2b89f"
+    },
+    "player_game_examples": {
+     "count": 1728286,
+     "sha256": "abf1c5d836d0f3d0d02950a5ad3dce77e3f0654b1fa0f855d93025c33aaa144d"
+    },
+    "player_game_labels": {
+     "count": 1728286,
+     "sha256": "6c6e2e3e2ffdb0989ff45424fbd98b2d325736f0f7667c4aca8d198debe0c57c"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 76848,
+      "fingerprint": "76848:18387542081315269849:712492058601529665906553"
+     },
+     "feat.player_features": {
+      "rows": 1728286,
+      "fingerprint": "1728286:3439435241634898835:15945042580865126732820775"
+     },
+     "feat.team_event_features": {
+      "rows": 76848,
+      "fingerprint": "76848:16973108727347902627:707755410526467147752319"
+     },
+     "feat.player_shot_features": {
+      "rows": 1728286,
+      "fingerprint": "1728286:12225033419018759772:15933371103950147044926674"
+     },
+     "feat.player_lineup_features": {
+      "rows": 1728286,
+      "fingerprint": "1728286:12488201162263093385:15941274419174325535514631"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2021
+    ],
+    "game_examples": {
+     "count": 3944,
+     "sha256": "bd257156a5463cc4627bda9ad801247ca519044dfb8846a0846cec9061659580"
+    },
+    "player_game_examples": {
+     "count": 185033,
+     "sha256": "5246c9bd4798fa969420b40fc79639c74914e119bf3e9b223275e600eb7b41e8"
+    },
+    "player_game_labels": {
+     "count": 185033,
+     "sha256": "3656fdc320a204550df64d4848d9d80f807185102b2209979cee32eae3542f1f"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 7888,
+      "fingerprint": "7888:748857120026199967:72900104548174808897889"
+     },
+     "feat.player_features": {
+      "rows": 185033,
+      "fingerprint": "185033:9697104935820539141:1704745686977385301838325"
+     },
+     "feat.team_event_features": {
+      "rows": 7888,
+      "fingerprint": "7888:8714527250251404076:72773296624681823099256"
+     },
+     "feat.player_shot_features": {
+      "rows": 185033,
+      "fingerprint": "185033:18161929683989710173:1705420237156130723482515"
+     },
+     "feat.player_lineup_features": {
+      "rows": 185033,
+      "fingerprint": "185033:11477878972886014784:1705639994333373321779002"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_4",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "validation_season": 2022,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021
+    ],
+    "game_examples": {
+     "count": 42368,
+     "sha256": "30790e52bdf1615c69bd1a35d9ec1b2bdde331c4942a05b506d9e47819ff5d5b"
+    },
+    "player_game_examples": {
+     "count": 1913319,
+     "sha256": "95cface12589b58c466392b02a7d5b6ec9264e172d5af68ce87ee0020d22d0f9"
+    },
+    "player_game_labels": {
+     "count": 1913319,
+     "sha256": "f8cfe4b48736aed8f9f60f8c44db5cf244f16790fb97826ea4d3cd93eac3b893"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 84736,
+      "fingerprint": "84736:17674893023889648454:785392163149704474804442"
+     },
+     "feat.player_features": {
+      "rows": 1913319,
+      "fingerprint": "1913319:12189095396955297430:17649788267842512034659100"
+     },
+     "feat.team_event_features": {
+      "rows": 84736,
+      "fingerprint": "84736:10627545319096003471:780528707151148970851575"
+     },
+     "feat.player_shot_features": {
+      "rows": 1913319,
+      "fingerprint": "1913319:6171103353912699649:17638791341106277768409189"
+     },
+     "feat.player_lineup_features": {
+      "rows": 1913319,
+      "fingerprint": "1913319:3604743201124269001:17646914413507698857293633"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2022
+    ],
+    "game_examples": {
+     "count": 5475,
+     "sha256": "0a348cd8cd4e5d7b5242f3967ea2b6b62e53f5d900a2d58ebcb0e654b96dac33"
+    },
+    "player_game_examples": {
+     "count": 268829,
+     "sha256": "8ec198cd8522cf54ffa4dc1f2c7afeaef6c51d63caa2ff4ccb1989add8329c2f"
+    },
+    "player_game_labels": {
+     "count": 268829,
+     "sha256": "79c0fa1e256fd7931db1f074b833ca88127ad291cb89ada9937395254b6ea7ba"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 10950,
+      "fingerprint": "10950:13905605332905444143:101646562939365802765547"
+     },
+     "feat.player_features": {
+      "rows": 268829,
+      "fingerprint": "268829:3756049795087665288:2479110393718909203593554"
+     },
+     "feat.team_event_features": {
+      "rows": 10950,
+      "fingerprint": "10950:18052912036550122493:101319336507271785213077"
+     },
+     "feat.player_shot_features": {
+      "rows": 268829,
+      "fingerprint": "268829:9364152113234167430:2480066460391762105173156"
+     },
+     "feat.player_lineup_features": {
+      "rows": 268829,
+      "fingerprint": "268829:9531615509117278043:2479730072645245823662323"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_5",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ],
+   "validation_season": 2023,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021,
+     2022
+    ],
+    "game_examples": {
+     "count": 47843,
+     "sha256": "25cafb65a9bcd7333d6dd3bc9b6c7397c8949ee841e475153025d69d441a16e1"
+    },
+    "player_game_examples": {
+     "count": 2182148,
+     "sha256": "e2c995df253722bcb538af5c08547ec7ef2aefe450e2dab2468fad840c572d67"
+    },
+    "player_game_labels": {
+     "count": 2182148,
+     "sha256": "ec6e1db82f573306d13f8f524d849590f5f868cd0a0080a1c09e50764aa67956"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 95686,
+      "fingerprint": "95686:3869568374520653929:887038726089070277569989"
+     },
+     "feat.player_features": {
+      "rows": 2182148,
+      "fingerprint": "2182148:11315424689666367006:20128898661561421238252654"
+     },
+     "feat.team_event_features": {
+      "rows": 95686,
+      "fingerprint": "95686:7634854744286343282:881848043658420756064652"
+     },
+     "feat.player_shot_features": {
+      "rows": 2182148,
+      "fingerprint": "2182148:15298744934702247303:20118857801498039873582345"
+     },
+     "feat.player_lineup_features": {
+      "rows": 2182148,
+      "fingerprint": "2182148:13132926532870614162:20126644486152944680955956"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2023
+    ],
+    "game_examples": {
+     "count": 5715,
+     "sha256": "20b57385d8654e4ead0e627889a97f4374c6597390912082601d7328d39ea8c5"
+    },
+    "player_game_examples": {
+     "count": 273032,
+     "sha256": "3fa32d99e9ba72d9a66e2cfab1fb50e6aa04c78ae98860ce368ccf962f5f32aa"
+    },
+    "player_game_labels": {
+     "count": 273032,
+     "sha256": "281ce68d25906381856e1e428e19b8ef0cbb79747073d6f7479cb32fa338f8d1"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11430,
+      "fingerprint": "11430:8622367675412632215:106605518478012136858381"
+     },
+     "feat.player_features": {
+      "rows": 273032,
+      "fingerprint": "273032:4417433349869112209:2519602941644873354038909"
+     },
+     "feat.team_event_features": {
+      "rows": 11430,
+      "fingerprint": "11430:11727474529893775884:105224943915086175421084"
+     },
+     "feat.player_shot_features": {
+      "rows": 273032,
+      "fingerprint": "273032:3229617348434292378:2517925762722383548651406"
+     },
+     "feat.player_lineup_features": {
+      "rows": 273032,
+      "fingerprint": "273032:8840922212767937992:2514623657818061666099026"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_6",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+   ],
+   "validation_season": 2024,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021,
+     2022,
+     2023
+    ],
+    "game_examples": {
+     "count": 53558,
+     "sha256": "a804a318ba142d8af9c288ca91712753424440b0fc9253d46da6de1724c4d429"
+    },
+    "player_game_examples": {
+     "count": 2455180,
+     "sha256": "90b110668ed4310ce8dc28363d698efb9bb6e62150c0b6367208410296c080dc"
+    },
+    "player_game_labels": {
+     "count": 2455180,
+     "sha256": "a225a0228ff17ca25eb99297d45108daca8b059b96ee672b12495b0aa3214a9a"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 107116,
+      "fingerprint": "107116:4763605921796750078:993644244567082414428370"
+     },
+     "feat.player_features": {
+      "rows": 2455180,
+      "fingerprint": "2455180:11548802809542874511:22648501603206294592291563"
+     },
+     "feat.team_event_features": {
+      "rows": 107116,
+      "fingerprint": "107116:14642372283619265150:987072987573506931485736"
+     },
+     "feat.player_shot_features": {
+      "rows": 2455180,
+      "fingerprint": "2455180:17906849417825518365:22636783564220423422233751"
+     },
+     "feat.player_lineup_features": {
+      "rows": 2455180,
+      "fingerprint": "2455180:14767519717512616282:22641268143971006347054982"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2024
+    ],
+    "game_examples": {
+     "count": 5726,
+     "sha256": "7d47b7048c5cac60224a9d3669c179eea2407223fbd26cd3620161dc40cd4c07"
+    },
+    "player_game_examples": {
+     "count": 253767,
+     "sha256": "47131ad49523ceeb1147ad0eaa2e418cd8cb658b3cf65b1194ef3a28eaf9d100"
+    },
+    "player_game_labels": {
+     "count": 253767,
+     "sha256": "2f7c82a0b508d14e0cce2dd90438544685ddbb0e196e8a5f2ca6e8a5bf95aa47"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11452,
+      "fingerprint": "11452:15307510561331197801:104861587130855420139325"
+     },
+     "feat.player_features": {
+      "rows": 253767,
+      "fingerprint": "253767:110320649761102777:2342058162685681394183853"
+     },
+     "feat.team_event_features": {
+      "rows": 11452,
+      "fingerprint": "11452:6799717778113839932:106682517349111318315006"
+     },
+     "feat.player_shot_features": {
+      "rows": 253767,
+      "fingerprint": "253767:2629639633009280590:2336304086608656052782040"
+     },
+     "feat.player_lineup_features": {
+      "rows": 253767,
+      "fingerprint": "253767:17269223065451068042:2340085199400995190592390"
+     }
+    }
+   }
+  },
+  {
+   "fold": "FOLD_7",
+   "train_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+   ],
+   "validation_season": 2025,
+   "train": {
+    "seasons": [
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021,
+     2022,
+     2023,
+     2024
+    ],
+    "game_examples": {
+     "count": 59284,
+     "sha256": "0f4ef19be0d7fd565084f34e7cfe50699a201c0e90e870dbcce89abf232efcdf"
+    },
+    "player_game_examples": {
+     "count": 2708947,
+     "sha256": "f6613f931640b3a862b40e156f5eb54a41d53e16465a85eb4768d7e3a500b606"
+    },
+    "player_game_labels": {
+     "count": 2708947,
+     "sha256": "0af8043e596d5d1ecb6a23165c24d0a0e50d6998d4247b469baad531f37c7d82"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 118568,
+      "fingerprint": "118568:10841441490409606551:1098505831697937834567695"
+     },
+     "feat.player_features": {
+      "rows": 2708947,
+      "fingerprint": "2708947:11655992020114116150:24990559765891975986475416"
+     },
+     "feat.team_event_features": {
+      "rows": 118568,
+      "fingerprint": "118568:10766236755901581634:1093755504922618249800742"
+     },
+     "feat.player_shot_features": {
+      "rows": 2708947,
+      "fingerprint": "2708947:15924644700559508819:24973087650829079475015791"
+     },
+     "feat.player_lineup_features": {
+      "rows": 2708947,
+      "fingerprint": "2708947:2546889017540731856:24981353343372001537647372"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2025
+    ],
+    "game_examples": {
+     "count": 5764,
+     "sha256": "b8e79bc93d143671fa6229430c9b9abf1afe262054d6a57a6f14b8d36c598a64"
+    },
+    "player_game_examples": {
+     "count": 261128,
+     "sha256": "7b9a5b37e2c9afaae63b8e2d14e70c2120c5f829aa225e7700cbe02d273c64da"
+    },
+    "player_game_labels": {
+     "count": 261128,
+     "sha256": "e7d0ea0991b595bb7945342af57b3a47d626e80588409f9f438315f9b0e3760d"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11528,
+      "fingerprint": "11528:14227489920129487131:105314468330502784456533"
+     },
+     "feat.player_features": {
+      "rows": 261128,
+      "fingerprint": "261128:9544408134488455355:2407764704816500422997921"
+     },
+     "feat.team_event_features": {
+      "rows": 11528,
+      "fingerprint": "11528:8447720301127949312:106908128944198658222282"
+     },
+     "feat.player_shot_features": {
+      "rows": 261128,
+      "fingerprint": "261128:13210200175784986236:2412567037455599878570234"
+     },
+     "feat.player_lineup_features": {
+      "rows": 261128,
+      "fingerprint": "261128:12534387535105597680:2402677067066941556979314"
+     }
+    }
+   }
+  },
+  {
+   "fold": "LINEUP_ROTATION_DEV",
+   "train_seasons": [
+    2024
+   ],
+   "validation_season": 2025,
+   "train": {
+    "seasons": [
+     2024
+    ],
+    "game_examples": {
+     "count": 5726,
+     "sha256": "7d47b7048c5cac60224a9d3669c179eea2407223fbd26cd3620161dc40cd4c07"
+    },
+    "player_game_examples": {
+     "count": 253767,
+     "sha256": "47131ad49523ceeb1147ad0eaa2e418cd8cb658b3cf65b1194ef3a28eaf9d100"
+    },
+    "player_game_labels": {
+     "count": 253767,
+     "sha256": "2f7c82a0b508d14e0cce2dd90438544685ddbb0e196e8a5f2ca6e8a5bf95aa47"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11452,
+      "fingerprint": "11452:15307510561331197801:104861587130855420139325"
+     },
+     "feat.player_features": {
+      "rows": 253767,
+      "fingerprint": "253767:110320649761102777:2342058162685681394183853"
+     },
+     "feat.team_event_features": {
+      "rows": 11452,
+      "fingerprint": "11452:6799717778113839932:106682517349111318315006"
+     },
+     "feat.player_shot_features": {
+      "rows": 253767,
+      "fingerprint": "253767:2629639633009280590:2336304086608656052782040"
+     },
+     "feat.player_lineup_features": {
+      "rows": 253767,
+      "fingerprint": "253767:17269223065451068042:2340085199400995190592390"
+     }
+    }
+   },
+   "validation": {
+    "seasons": [
+     2025
+    ],
+    "game_examples": {
+     "count": 5764,
+     "sha256": "b8e79bc93d143671fa6229430c9b9abf1afe262054d6a57a6f14b8d36c598a64"
+    },
+    "player_game_examples": {
+     "count": 261128,
+     "sha256": "7b9a5b37e2c9afaae63b8e2d14e70c2120c5f829aa225e7700cbe02d273c64da"
+    },
+    "player_game_labels": {
+     "count": 261128,
+     "sha256": "e7d0ea0991b595bb7945342af57b3a47d626e80588409f9f438315f9b0e3760d"
+    },
+    "feature_sets": {
+     "feat.team_features": {
+      "rows": 11528,
+      "fingerprint": "11528:14227489920129487131:105314468330502784456533"
+     },
+     "feat.player_features": {
+      "rows": 261128,
+      "fingerprint": "261128:9544408134488455355:2407764704816500422997921"
+     },
+     "feat.team_event_features": {
+      "rows": 11528,
+      "fingerprint": "11528:8447720301127949312:106908128944198658222282"
+     },
+     "feat.player_shot_features": {
+      "rows": 261128,
+      "fingerprint": "261128:13210200175784986236:2412567037455599878570234"
+     },
+     "feat.player_lineup_features": {
+      "rows": 261128,
+      "fingerprint": "261128:12534387535105597680:2402677067066941556979314"
+     }
+    }
+   }
+  }
+ ]
+}

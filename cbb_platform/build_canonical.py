@@ -577,7 +577,11 @@ def build_player_season_authority(con: duckdb.DuckDBPyConnection) -> None:
     SELECT s.canonical_player_id, s.canonical_team_id, s.season, '{f}', s."{f}", d."{f}",
            coalesce(d.identity_complete, NOT EXISTS (SELECT 1 FROM identity_gap g
                     WHERE g.canonical_team_id = s.canonical_team_id AND g.season = s.season)),
-           CASE WHEN coalesce(d.identity_complete, FALSE) THEN 'GAME_DERIVED' ELSE 'IDENTITY_GAP_NO_AUTHORITY' END
+           -- one expression for completeness and authority (a complete team-season with NO derived row means the
+           -- game-derived truth is zero games, e.g. a summary row created by a misattributed box line)
+           CASE WHEN coalesce(d.identity_complete, NOT EXISTS (SELECT 1 FROM identity_gap g
+                    WHERE g.canonical_team_id = s.canonical_team_id AND g.season = s.season))
+                THEN 'GAME_DERIVED' ELSE 'IDENTITY_GAP_NO_AUTHORITY' END
     FROM fact.player_season_stats s LEFT JOIN fact.player_season_game_derived d USING (canonical_player_id, canonical_team_id, season)
     WHERE s."{f}" IS DISTINCT FROM d."{f}" """ for f in ("games", "starts") + PLAYER_SEASON_FIELDS)};
     """)
@@ -701,7 +705,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     con.execute("SET TimeZone = 'UTC'")
     con.execute("SET enable_progress_bar = false")
     con.execute(f"SET threads = {C.DUCKDB_THREADS}")
-    con.execute(C.SCHEMA_SQL.read_text())
+    con.execute(C.schema_sql())                    # trusted window rendered from AUDITED_SEASONS
     con.execute(ID_MACROS)
     # Shared lineage values, read inside SQL via getvariable(...).
     con.execute("SET VARIABLE src = ?", [SRC])
@@ -716,6 +720,10 @@ def build(db_path=None, parquet_root=None) -> dict:
     from cbb_platform import game_identity          # Stage 2.1: before any game-derived aggregate
     game_identity.resolve(con)
     build_season_tables(con)          # before participation: membership comes from season stats
+    from cbb_platform import player_identity     # Stage 3.1: adjudicated identity repairs (derived rows only)
+    player_identity.apply_box(con)
+    from cbb_platform import team_attribution    # v2.4: reconciliation-gated team-attribution / collision repairs
+    team_attribution.apply_box(con)
     build_participation(con)
     flag_accounting(con)
     record_source_manifest(con, reg)
@@ -728,6 +736,7 @@ def build(db_path=None, parquet_root=None) -> dict:
     # Stage 2.2: played-game status needs every box AND event fact, so game-derived aggregates are built after it
     from cbb_platform import game_status
     game_status.resolve(con)
+    team_attribution.apply_links(con)                # v2.4: cross-season links without positive evidence
     con.execute(KNOWABLE_SQL)
     build_season_authority(con)
     build_player_season_authority(con)

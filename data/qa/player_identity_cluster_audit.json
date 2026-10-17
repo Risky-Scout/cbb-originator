@@ -1,0 +1,862 @@
+{
+ "window": "2013-14 .. 2024-25",
+ "mode": "AFTER_REMEDIATION",
+ "revoked_rule": "non-overlapping multi-team appearances => CONFIRMED_SINGLE_PLAYER (Stage 3.1) -- chronology is not identity evidence",
+ "canonical_players_scanned": 23916,
+ "candidates": 8027,
+ "multi_team_candidates": 8021,
+ "by_kind": {
+  "IN_SEASON_MULTI_TEAM": 166,
+  "CROSS_SEASON_LINK": 7568,
+  "EVENT_FOREIGN_ACTOR": 281,
+  "ROSTER_MULTI_TEAM": 6,
+  "PLAYER_IMPOSSIBILITY": 6
+ },
+ "by_class": {
+  "TEAM_ATTRIBUTION_DEFECT": 174,
+  "SOURCE_ID_COLLISION": 8,
+  "CONFIRMED_TRANSFER": 6986,
+  "UNRESOLVED": 596,
+  "CANONICAL_MAPPING_ERROR": 263
+ },
+ "by_kind_class": {
+  "CROSS_SEASON_LINK": {
+   "CONFIRMED_TRANSFER": 6986,
+   "UNRESOLVED": 582
+  },
+  "EVENT_FOREIGN_ACTOR": {
+   "CANONICAL_MAPPING_ERROR": 261,
+   "UNRESOLVED": 14,
+   "TEAM_ATTRIBUTION_DEFECT": 6
+  },
+  "IN_SEASON_MULTI_TEAM": {
+   "TEAM_ATTRIBUTION_DEFECT": 164,
+   "SOURCE_ID_COLLISION": 2
+  },
+  "PLAYER_IMPOSSIBILITY": {
+   "SOURCE_ID_COLLISION": 6
+  },
+  "ROSTER_MULTI_TEAM": {
+   "TEAM_ATTRIBUTION_DEFECT": 4,
+   "CANONICAL_MAPPING_ERROR": 2
+  }
+ },
+ "by_confidence": {
+  "HIGH": 2978,
+  "MEDIUM": 4467,
+  "LOW": 582
+ },
+ "team_pair_clusters": 7404,
+ "in_season_clusters": 17,
+ "cross_season_clusters_size_ge_2": 114,
+ "whole_team_clusters": 10,
+ "whole_team_clusters_list": [
+  {
+   "cluster_key": "2017|T-78e88036be40a9bf/T-cf2771d63aeecf02|G-288463c94080f2e0,G-515680720ab90acb",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "TCU / Washington",
+   "boundary": "G-288463c94080f2e0,G-515680720ab90acb",
+   "size": 24,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 24
+   },
+   "confidence": {
+    "HIGH": 24
+   }
+  },
+  {
+   "cluster_key": "2017|T-0b2888570e7bb9e3/T-7dd7b1683d08fb35|G-a6397d60414a8581,G-b4c16eed109ac6d8",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "DePaul / Missouri State",
+   "boundary": "G-a6397d60414a8581,G-b4c16eed109ac6d8",
+   "size": 22,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 22
+   },
+   "confidence": {
+    "HIGH": 22
+   }
+  },
+  {
+   "cluster_key": "2017|T-6031e28fdd4c8935/T-cc286af960db9fc8|G-f0b13435540b773e",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Saint Joseph's / Pennsylvania",
+   "boundary": "G-f0b13435540b773e",
+   "size": 20,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 20
+   },
+   "confidence": {
+    "HIGH": 20
+   }
+  },
+  {
+   "cluster_key": "2020|T-15268382895e06f6/T-e6ae2d3ced544537|G-155528a23b53dd69",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2020,
+   "teams": "Kansas State / Bradley",
+   "boundary": "G-155528a23b53dd69",
+   "size": 20,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 20
+   },
+   "confidence": {
+    "HIGH": 20
+   }
+  },
+  {
+   "cluster_key": "2017|T-ac5ed60df62aa41e/T-f96156a09400fe48|G-3d7b8c395555939b",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Old Dominion / LSU",
+   "boundary": "G-3d7b8c395555939b",
+   "size": 19,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 19
+   },
+   "confidence": {
+    "HIGH": 19
+   }
+  },
+  {
+   "cluster_key": "2017|T-2df5ca2c186a42e6/T-9e263661fcf86fae|G-8f1577be74220798",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Southern Utah / Coastal Carolina",
+   "boundary": "G-8f1577be74220798",
+   "size": 18,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 18
+   },
+   "confidence": {
+    "HIGH": 18
+   }
+  },
+  {
+   "cluster_key": "2025|T-2b9903d17b7af850/T-d089e0f37b7fa960|G-068f83d05e504f44",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2025,
+   "teams": "Presbyterian / Illinois State",
+   "boundary": "G-068f83d05e504f44",
+   "size": 10,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 10
+   },
+   "confidence": {
+    "HIGH": 10
+   }
+  },
+  {
+   "cluster_key": "2025|T-94d18d70359b7d73/T-ca63a05e8e224cda|G-069441892260ad5e",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2025,
+   "teams": "Southeast Missouri State / UNC Asheville",
+   "boundary": "G-069441892260ad5e",
+   "size": 10,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 10
+   },
+   "confidence": {
+    "HIGH": 10
+   }
+  },
+  {
+   "cluster_key": "2015|T-0ef2ade650d5a7c8/T-8499883bf85c6f3d|G-384f6902b0ad6852",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2015,
+   "teams": "High Point / Arkansas-Pine Bluff",
+   "boundary": "G-384f6902b0ad6852",
+   "size": 9,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 9
+   },
+   "confidence": {
+    "HIGH": 9
+   }
+  },
+  {
+   "cluster_key": "2023>2024|T-54cf2735beaa29e8>T-8615e0dfa7358290",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2024,
+   "teams": "Northwestern State / Austin Peay",
+   "boundary": "2023>2024",
+   "size": 6,
+   "whole_team": true,
+   "classes": {
+    "UNRESOLVED": 4,
+    "CONFIRMED_TRANSFER": 2
+   },
+   "confidence": {
+    "LOW": 4,
+    "HIGH": 2
+   }
+  }
+ ],
+ "whole_team_members_accepted_without_positive_evidence": 0,
+ "every_candidate_has_evidence_class_confidence": true,
+ "team_alias_pairs": {
+  "LIU Brooklyn": "Long Island University"
+ },
+ "provider_dob_reliability": {
+  "roster_rows_with_dob": 44280,
+  "roster_rows_age_under_16_at_season_start": 9700,
+  "by_season": {
+   "2005": 3471,
+   "2006": 2651,
+   "2007": 1856,
+   "2008": 1026,
+   "2009": 238,
+   "2010": 37,
+   "2011": 35,
+   "2012": 36,
+   "2013": 35,
+   "2014": 35,
+   "2015": 62,
+   "2016": 29,
+   "2017": 51,
+   "2018": 44,
+   "2019": 45,
+   "2020": 47,
+   "2023": 1,
+   "2024": 1
+  },
+  "most_frequent_dob_values": [
+   [
+    "2003-09-18",
+    861
+   ],
+   [
+    "2003-09-19",
+    785
+   ],
+   [
+    "2004-10-07",
+    697
+   ],
+   [
+    "2004-10-14",
+    696
+   ],
+   [
+    "2003-09-12",
+    570
+   ]
+  ]
+ },
+ "team_attribution_resolution": [
+  {
+   "game": "G-0b587005073ee457",
+   "season": 2014,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 2,
+   "rows_restored": 1,
+   "rows_quarantined": 1,
+   "home_box_pts": 74,
+   "home_player_pts": 74,
+   "away_box_pts": 57,
+   "away_player_pts": 57,
+   "reconciles": true
+  },
+  {
+   "game": "G-384f6902b0ad6852",
+   "season": 2015,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 18,
+   "rows_restored": 9,
+   "rows_quarantined": 9,
+   "home_box_pts": 62,
+   "home_player_pts": 62,
+   "away_box_pts": 74,
+   "away_player_pts": 74,
+   "reconciles": true
+  },
+  {
+   "game": "G-4bafed5047218ab4",
+   "season": 2015,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 4,
+   "rows_restored": 2,
+   "rows_quarantined": 2,
+   "home_box_pts": 35,
+   "home_player_pts": 35,
+   "away_box_pts": 53,
+   "away_player_pts": 53,
+   "reconciles": true
+  },
+  {
+   "game": "G-288463c94080f2e0",
+   "season": 2017,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 48,
+   "rows_restored": 24,
+   "rows_quarantined": 24,
+   "home_box_pts": 93,
+   "home_player_pts": 93,
+   "away_box_pts": 80,
+   "away_player_pts": 80,
+   "reconciles": true
+  },
+  {
+   "game": "G-3d7b8c395555939b",
+   "season": 2017,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 38,
+   "rows_restored": 19,
+   "rows_quarantined": 19,
+   "home_box_pts": 66,
+   "home_player_pts": 66,
+   "away_box_pts": 60,
+   "away_player_pts": 60,
+   "reconciles": true
+  },
+  {
+   "game": "G-8f1577be74220798",
+   "season": 2017,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 36,
+   "rows_restored": 18,
+   "rows_quarantined": 18,
+   "home_box_pts": 83,
+   "home_player_pts": 83,
+   "away_box_pts": 68,
+   "away_player_pts": 68,
+   "reconciles": true
+  },
+  {
+   "game": "G-b4c16eed109ac6d8",
+   "season": 2017,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 44,
+   "rows_restored": 22,
+   "rows_quarantined": 22,
+   "home_box_pts": 58,
+   "home_player_pts": 58,
+   "away_box_pts": 69,
+   "away_player_pts": 69,
+   "reconciles": true
+  },
+  {
+   "game": "G-f0b13435540b773e",
+   "season": 2017,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 40,
+   "rows_restored": 20,
+   "rows_quarantined": 20,
+   "home_box_pts": 78,
+   "home_player_pts": 78,
+   "away_box_pts": 71,
+   "away_player_pts": 71,
+   "reconciles": true
+  },
+  {
+   "game": "G-e32279065f8bdb15",
+   "season": 2018,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 2,
+   "rows_restored": 1,
+   "rows_quarantined": 1,
+   "home_box_pts": 68,
+   "home_player_pts": 68,
+   "away_box_pts": 58,
+   "away_player_pts": 58,
+   "reconciles": true
+  },
+  {
+   "game": "G-155528a23b53dd69",
+   "season": 2020,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 40,
+   "rows_restored": 20,
+   "rows_quarantined": 20,
+   "home_box_pts": 60,
+   "home_player_pts": 60,
+   "away_box_pts": 73,
+   "away_player_pts": 73,
+   "reconciles": true
+  },
+  {
+   "game": "G-6da0b160c8d909f8",
+   "season": 2021,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 6,
+   "rows_restored": 3,
+   "rows_quarantined": 3,
+   "home_box_pts": 74,
+   "home_player_pts": 74,
+   "away_box_pts": 69,
+   "away_player_pts": 69,
+   "reconciles": true
+  },
+  {
+   "game": "G-c215c3b3eb09ee2c",
+   "season": 2022,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 8,
+   "rows_restored": 4,
+   "rows_quarantined": 4,
+   "home_box_pts": 65,
+   "home_player_pts": 65,
+   "away_box_pts": 56,
+   "away_player_pts": 56,
+   "reconciles": true
+  },
+  {
+   "game": "G-f2fe6558fc10a03d",
+   "season": 2022,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 2,
+   "rows_restored": 1,
+   "rows_quarantined": 1,
+   "home_box_pts": 78,
+   "home_player_pts": 78,
+   "away_box_pts": 62,
+   "away_player_pts": 62,
+   "reconciles": true
+  },
+  {
+   "game": "G-068f83d05e504f44",
+   "season": 2025,
+   "defect_class": "EVENT_TEAM_NOT_IN_GAME",
+   "decision": "QUARANTINED_EVENTS",
+   "rows_considered": 790,
+   "rows_restored": 0,
+   "rows_quarantined": 790,
+   "home_box_pts": null,
+   "home_player_pts": null,
+   "away_box_pts": null,
+   "away_player_pts": null,
+   "reconciles": null
+  },
+  {
+   "game": "G-069441892260ad5e",
+   "season": 2025,
+   "defect_class": "MIRRORED_BOX_LINES",
+   "decision": "REMEDIATED_RECONCILED",
+   "rows_considered": 20,
+   "rows_restored": 10,
+   "rows_quarantined": 10,
+   "home_box_pts": 64,
+   "home_player_pts": 64,
+   "away_box_pts": 72,
+   "away_player_pts": 72,
+   "reconciles": true
+  }
+ ],
+ "remaining_in_season_box_multi_team": 0,
+ "remaining_in_season_season_file_multi_team": 0,
+ "repaired_games_unreconciled": 0,
+ "identity_links_quarantined": 936,
+ "largest_clusters": [
+  {
+   "cluster_key": "2017|T-78e88036be40a9bf/T-cf2771d63aeecf02|G-288463c94080f2e0,G-515680720ab90acb",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "TCU / Washington",
+   "boundary": "G-288463c94080f2e0,G-515680720ab90acb",
+   "size": 24,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 24
+   },
+   "confidence": {
+    "HIGH": 24
+   }
+  },
+  {
+   "cluster_key": "2017|T-0b2888570e7bb9e3/T-7dd7b1683d08fb35|G-a6397d60414a8581,G-b4c16eed109ac6d8",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "DePaul / Missouri State",
+   "boundary": "G-a6397d60414a8581,G-b4c16eed109ac6d8",
+   "size": 22,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 22
+   },
+   "confidence": {
+    "HIGH": 22
+   }
+  },
+  {
+   "cluster_key": "2017|T-6031e28fdd4c8935/T-cc286af960db9fc8|G-f0b13435540b773e",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Saint Joseph's / Pennsylvania",
+   "boundary": "G-f0b13435540b773e",
+   "size": 20,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 20
+   },
+   "confidence": {
+    "HIGH": 20
+   }
+  },
+  {
+   "cluster_key": "2020|T-15268382895e06f6/T-e6ae2d3ced544537|G-155528a23b53dd69",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2020,
+   "teams": "Kansas State / Bradley",
+   "boundary": "G-155528a23b53dd69",
+   "size": 20,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 20
+   },
+   "confidence": {
+    "HIGH": 20
+   }
+  },
+  {
+   "cluster_key": "2017|T-ac5ed60df62aa41e/T-f96156a09400fe48|G-3d7b8c395555939b",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Old Dominion / LSU",
+   "boundary": "G-3d7b8c395555939b",
+   "size": 19,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 19
+   },
+   "confidence": {
+    "HIGH": 19
+   }
+  },
+  {
+   "cluster_key": "2017|T-2df5ca2c186a42e6/T-9e263661fcf86fae|G-8f1577be74220798",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2017,
+   "teams": "Southern Utah / Coastal Carolina",
+   "boundary": "G-8f1577be74220798",
+   "size": 18,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 18
+   },
+   "confidence": {
+    "HIGH": 18
+   }
+  },
+  {
+   "cluster_key": "2025|T-2b9903d17b7af850/T-d089e0f37b7fa960|G-068f83d05e504f44",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2025,
+   "teams": "Presbyterian / Illinois State",
+   "boundary": "G-068f83d05e504f44",
+   "size": 10,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 10
+   },
+   "confidence": {
+    "HIGH": 10
+   }
+  },
+  {
+   "cluster_key": "2025|T-94d18d70359b7d73/T-ca63a05e8e224cda|G-069441892260ad5e",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2025,
+   "teams": "Southeast Missouri State / UNC Asheville",
+   "boundary": "G-069441892260ad5e",
+   "size": 10,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 10
+   },
+   "confidence": {
+    "HIGH": 10
+   }
+  },
+  {
+   "cluster_key": "2015|T-0ef2ade650d5a7c8/T-8499883bf85c6f3d|G-384f6902b0ad6852",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2015,
+   "teams": "High Point / Arkansas-Pine Bluff",
+   "boundary": "G-384f6902b0ad6852",
+   "size": 9,
+   "whole_team": true,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 9
+   },
+   "confidence": {
+    "HIGH": 9
+   }
+  },
+  {
+   "cluster_key": "2023>2024|T-54cf2735beaa29e8>T-8615e0dfa7358290",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2024,
+   "teams": "Northwestern State / Austin Peay",
+   "boundary": "2023>2024",
+   "size": 6,
+   "whole_team": true,
+   "classes": {
+    "UNRESOLVED": 4,
+    "CONFIRMED_TRANSFER": 2
+   },
+   "confidence": {
+    "LOW": 4,
+    "HIGH": 2
+   }
+  },
+  {
+   "cluster_key": "2022>2023|T-34ca3cb013944831>T-a0872d6f669210f1",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2023,
+   "teams": "Cleveland State / Missouri",
+   "boundary": "2022>2023",
+   "size": 4,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 4
+   },
+   "confidence": {
+    "HIGH": 2,
+    "MEDIUM": 2
+   }
+  },
+  {
+   "cluster_key": "2022|T-1a9e558a301cf056/T-8499883bf85c6f3d|G-c215c3b3eb09ee2c,G-126911bec914c14b",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2022,
+   "teams": "High Point / Winthrop",
+   "boundary": "G-c215c3b3eb09ee2c,G-126911bec914c14b",
+   "size": 4,
+   "whole_team": false,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 4
+   },
+   "confidence": {
+    "HIGH": 4
+   }
+  },
+  {
+   "cluster_key": "2024>2025|T-3062010809b10e73>T-079651bf85ec9cc7",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2025,
+   "teams": "Kentucky / Arkansas",
+   "boundary": "2024>2025",
+   "size": 4,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 4
+   },
+   "confidence": {
+    "HIGH": 3,
+    "MEDIUM": 1
+   }
+  },
+  {
+   "cluster_key": "2024>2025|T-e20a3042aeed02ba>T-bc937613fef6d0d1",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2025,
+   "teams": "Eastern Washington / Washington State",
+   "boundary": "2024>2025",
+   "size": 4,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 4
+   },
+   "confidence": {
+    "HIGH": 4
+   }
+  },
+  {
+   "cluster_key": "2014>2016|T-29f153e69b95afda>T-c3a55c03c625da8e",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2016,
+   "teams": "Loyola Chicago / IU Indianapolis",
+   "boundary": "2014>2016",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "MEDIUM": 3
+   }
+  },
+  {
+   "cluster_key": "2021>2022|T-9625fb47a311c96d>T-5ebc95189141f6ec",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2022,
+   "teams": "UNC Greensboro / Cincinnati",
+   "boundary": "2021>2022",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "HIGH": 1,
+    "MEDIUM": 2
+   }
+  },
+  {
+   "cluster_key": "2021>2022|T-abb0c9c290f1fd39>T-53acc554d02371df",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2022,
+   "teams": "Penn State / Fordham",
+   "boundary": "2021>2022",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "HIGH": 3
+   }
+  },
+  {
+   "cluster_key": "2021>2022|T-e20a3042aeed02ba>T-6b472af42da14679",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2022,
+   "teams": "Eastern Washington / Portland",
+   "boundary": "2021>2022",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "MEDIUM": 3
+   }
+  },
+  {
+   "cluster_key": "2021|T-21e57d257133ab84/T-741bbe7f2eef9df3|G-718dbb3af4550135,G-6da0b160c8d909f8",
+   "kind": "IN_SEASON_MULTI_TEAM",
+   "season": 2021,
+   "teams": "Oklahoma State / Texas Tech",
+   "boundary": "G-718dbb3af4550135,G-6da0b160c8d909f8",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "TEAM_ATTRIBUTION_DEFECT": 3
+   },
+   "confidence": {
+    "HIGH": 3
+   }
+  },
+  {
+   "cluster_key": "2022>2023|T-0b2888570e7bb9e3>T-54cf2735beaa29e8",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2023,
+   "teams": "Missouri State / Northwestern State",
+   "boundary": "2022>2023",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "MEDIUM": 1,
+    "HIGH": 2
+   }
+  },
+  {
+   "cluster_key": "2022>2023|T-8105ae18388a83f9>T-ac5ed60df62aa41e",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2023,
+   "teams": "Murray State / LSU",
+   "boundary": "2022>2023",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "HIGH": 3
+   }
+  },
+  {
+   "cluster_key": "2023>2024|T-733be5839fe6bb13>T-5f19b78c4a0a91dd",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2024,
+   "teams": "Iona / St. John's",
+   "boundary": "2023>2024",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "HIGH": 2,
+    "MEDIUM": 1
+   }
+  },
+  {
+   "cluster_key": "2023>2024|T-a646e58ba46256a0>T-04628678dec561a1",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2024,
+   "teams": "Utah State / VCU",
+   "boundary": "2023>2024",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "MEDIUM": 1,
+    "HIGH": 2
+   }
+  },
+  {
+   "cluster_key": "2024>2025|T-009f8d48fa60b794>T-84846d5112415644",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2025,
+   "teams": "Indiana State / Saint Louis",
+   "boundary": "2024>2025",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "HIGH": 2,
+    "MEDIUM": 1
+   }
+  },
+  {
+   "cluster_key": "2024>2025|T-0961634b0b84e1ee>T-a250df98d6193f68",
+   "kind": "CROSS_SEASON_LINK",
+   "season": 2025,
+   "teams": "Charleston / Louisville",
+   "boundary": "2024>2025",
+   "size": 3,
+   "whole_team": false,
+   "classes": {
+    "CONFIRMED_TRANSFER": 3
+   },
+   "confidence": {
+    "MEDIUM": 1,
+    "HIGH": 2
+   }
+  }
+ ],
+ "classification_hash": "6580c7e06f165c01e00ab91850b62802f9fedcded5059019d900098129218372"
+}

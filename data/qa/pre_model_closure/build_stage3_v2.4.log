@@ -1,0 +1,2 @@
+{'features': 28, 'labels': 5} 210s
+.venv/bin/python -m cbb_platform.stage3.build  347.38s user 23.18s system 176% cpu 3:30.31 total

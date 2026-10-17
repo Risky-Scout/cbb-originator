@@ -1,0 +1,249 @@
+{
+ "scorecard_id": "CBB_PROPS_V1_LOCKBOX_SCORECARD",
+ "version": "2.1.0",
+ "status": "FROZEN_CONTENT: G1-G6 ratified exactly as written (architect ruling F, 2026-10-13). Binding for the opening once committed before opening and cited by sha256 in the LOCKBOX_OPEN decision (protocol \u00a71.2 / \u00a71.4)",
+ "supersedes": "content 2.0.0 of this file (identical G1-G6, aggregation, metrics and reference values; 2.1.0 adds the r2 candidate identity, the architect rulings and the fail-closed missing-data semantics)",
+ "rulings": "docs/lockbox/ARCHITECT_RULINGS_2026-10-13_LOCKBOX_READINESS.md",
+ "candidate": {
+  "model_tag": "cbb-props-v1-prelockbox-2024-25-r2",
+  "model_commit": "425211071413735be8e1497105ae51830c971c12",
+  "original_tag": "cbb-props-v1-prelockbox-2024-25",
+  "original_commit": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+  "artifact": "modeling/player_props_v1/final_prelockbox_2024_25_artifact.json",
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "specification_fingerprint": "3e343c1ad1e8668dc1fadade4c85a92c4bc8cbb651ff49284ac4a8a7106b8a9f",
+  "artifact_fingerprint": "191175928969a38edd431cd8410a9fd8050cf68f23a9fb1836814bb771839997"
+ },
+ "season": "2025-26 (canonical 2026), every game scored under the frozen 2024-25 eligibility rules",
+ "checkpoint": "T-1h only (prediction cutoff = scheduled tip - 1 h, spec.CUTOFF_RULE); the other four pregame checkpoints are N/A for v1 (ruling E)",
+ "procedure": "the artifact is loaded, never refit, recalibrated or re-selected (protocol \u00a72.4); the rolling baseline and the participation heuristic are computed by their frozen code with the same inputs",
+ "evaluator": "cbb_platform/lockbox_runner.py (gates() implements pass_criteria; development reproduction in data/qa/lockbox_runner_validation.json)",
+ "scoring_populations": {
+  "participation": "pregame candidates labelled PLAYED (1) or DNP_CONFIRMED (0); UNKNOWN_PARTICIPATION and NOT_ON_ROSTER are excluded and counted (props_v0_participation)",
+  "minutes_and_counts": "PLAYED rows with a box row and an available label (props_v0); predictions are conditional on appearance; rows with an unavailable label are excluded and counted"
+ },
+ "metrics": {
+  "minutes": [
+   "mae",
+   "rmse"
+  ],
+  "counts": {
+   "targets": [
+    "PTS",
+    "REB",
+    "AST",
+    "FG3M",
+    "STL",
+    "BLK",
+    "TOV"
+   ],
+   "gated": [
+    "log_score",
+    "crps"
+   ],
+   "descriptive": [
+    "mae",
+    "coverage_50",
+    "coverage_80",
+    "coverage_95",
+    "mean_bias"
+   ]
+  },
+  "participation": {
+   "gated": [
+    "brier",
+    "log_loss",
+    "calibration_slope",
+    "calibration_in_the_large"
+   ],
+   "descriptive": [
+    "auc",
+    "calibration buckets 0-10/10-25/25-50/50-75/75-90/90-100 %"
+   ]
+  },
+  "prop_threshold_calibration": {
+   "descriptive": "per target, P(over) vs observed rate, Brier and log loss at the half-lines 0.5 / 1.5 / 2.5 (STL, BLK, FG3M, TOV, AST), 2.5 / 4.5 / 6.5 (REB), 5.5 / 9.5 / 14.5 (PTS); flagged (not failed) when |gap| > 0.02"
+  },
+  "pricing_integrity": [
+   "max PMF row-sum error",
+   "min PMF entry",
+   "P(over) monotone in the line",
+   "integer-line push = P(Y = L), half-line push = 0",
+   "finite coherent fair prices"
+  ]
+ },
+ "aggregation": {
+  "per_target": "unweighted mean over the scored player-game rows of the 2025-26 season (one row per player-game)",
+  "aggregate_counts": "scored-row-weighted mean over the 7 count targets",
+  "participation": "mean over scored candidates; calibration slope / in-the-large from the logistic recalibration fit of y on logit(p), as in props_v0_participation",
+  "uncertainty": "game-clustered CR1 95 % intervals reported for every gated difference (descriptive; gates use point estimates)"
+ },
+ "pass_criteria": {
+  "G1_aggregate": "candidate aggregate log score < baseline AND candidate aggregate CRPS < baseline",
+  "G2_per_target": "candidate beats baseline on BOTH log score and CRPS for >= 6 of 7 count targets",
+  "G3_minutes": "candidate MAE < baseline MAE AND candidate RMSE < baseline RMSE",
+  "G4_participation": "candidate Brier < heuristic Brier AND candidate log loss < heuristic log loss",
+  "G5_participation_calibration": "calibration slope in [0.80, 1.25] AND |calibration-in-the-large| <= 0.25",
+  "G6_pricing_integrity": "every PMF row sums to 1 within 1e-9, no negative entry, 0 P(over) monotonicity violations, push semantics exact, every fair price finite where 0 < p < 1",
+  "verdict": "GO only if G1-G6 all hold; any failure = NO-GO for this frozen candidate, never tuned on (protocol \u00a73)"
+ },
+ "pass_fail_semantics": {
+  "comparisons": "strict inequalities exactly as written; bounds in G5 are inclusive; G6 'push semantics exact' = integer-line push equals P(Y = L) and P(over) + P(under) + P(push) = 1 within 1e-12, half-line push = 0 exactly",
+  "missing_data": "a gated value that cannot be computed (no scored rows, missing, NaN or infinite) FAILS its gate; the verdict is then NO-GO. Rows with an unavailable label are excluded from that metric and counted, never imputed",
+  "no_reinterpretation": "no gate may be added, removed, re-weighted or re-thresholded after opening; the verdict is the mechanical output of the evaluator"
+ },
+ "threshold_basis": "G1-G5 carried unchanged from the v1 proposal (fixed from the protocol and the frozen 2023-24 / 2024-25 evidence); G6 restates the development integrity checks; nothing from 2025-26",
+ "development_check": "on the frozen 2024-25 forward validation the candidate meets G1-G6 (reference values below; reproduced fit-free by the evaluator)",
+ "not_applicable_by_ruling": {
+  "market_benchmark": "NOT_APPLICABLE_FOR_LOCKBOX_GO_NO_GO (ruling C): no rights-cleared historical CBB player-prop market data exists; none is invented, scraped, synthesized or backfilled. No result may be described as a market or sportsbook comparison",
+  "energy_variogram_scores": "NOT_APPLICABLE (ruling D): v1 prices marginal player-stat distributions; there is no joint distribution to score",
+  "five_pit_checkpoints": "NOT_APPLICABLE (ruling E): v1 is scored at the single pregame T-1h cutoff; the five checkpoints are all pregame, and only T-1h exists in the v1 feature store"
+ },
+ "labels_unavailable": "excluded and counted; never imputed",
+ "no_post_open_changes": "this file's sha256 is recorded in the readiness record and must be cited in the LOCKBOX_OPEN decision; any change after opening voids the evaluation",
+ "frozen_reference_values_2024_25": {
+  "source": "frozen 2024-25 forward validation (evaluation B: fit through 2023-24); final candidate = baseline for every non-STL target, STL = NegBin phi 0.16 (final_prelockbox_validation.json)",
+  "counts_candidate": {
+   "PTS": {
+    "mae": 3.875251,
+    "log_score": 2.85215,
+    "crps": 2.71576,
+    "coverage_50": 0.501665,
+    "coverage_80": 0.775431,
+    "coverage_95": 0.935266
+   },
+   "REB": {
+    "mae": 1.67983,
+    "log_score": 2.006752,
+    "crps": 1.150432,
+    "coverage_50": 0.651658,
+    "coverage_80": 0.882587,
+    "coverage_95": 0.974657
+   },
+   "AST": {
+    "mae": 0.958931,
+    "log_score": 1.359157,
+    "crps": 0.625405,
+    "coverage_50": 0.789498,
+    "coverage_80": 0.931235,
+    "coverage_95": 0.982922
+   },
+   "FG3M": {
+    "mae": 0.670075,
+    "log_score": 1.000686,
+    "crps": 0.421401,
+    "coverage_50": 0.846207,
+    "coverage_80": 0.944628,
+    "coverage_95": 0.984516
+   },
+   "STL": {
+    "mae": 0.652906,
+    "log_score": 1.022283,
+    "crps": 0.399317,
+    "coverage_50": 0.859538,
+    "coverage_80": 0.949066,
+    "coverage_95": 0.986819
+   },
+   "BLK": {
+    "mae": 0.406124,
+    "log_score": 0.644366,
+    "crps": 0.230008,
+    "coverage_50": 0.883685,
+    "coverage_80": 0.954532,
+    "coverage_95": 0.988679
+   },
+   "TOV": {
+    "mae": 0.844369,
+    "log_score": 1.296868,
+    "crps": 0.54557,
+    "coverage_50": 0.796974,
+    "coverage_80": 0.939827,
+    "coverage_95": 0.985375
+   }
+  },
+  "counts_rolling_baseline": {
+   "PTS": {
+    "mae": 4.221484,
+    "log_score": 2.957385,
+    "crps": 2.935835
+   },
+   "REB": {
+    "mae": 1.813713,
+    "log_score": 2.086625,
+    "crps": 1.236882
+   },
+   "AST": {
+    "mae": 1.030247,
+    "log_score": 1.416914,
+    "crps": 0.664746
+   },
+   "FG3M": {
+    "mae": 0.72712,
+    "log_score": 1.048781,
+    "crps": 0.442511
+   },
+   "STL": {
+    "mae": 0.687586,
+    "log_score": 1.051124,
+    "crps": 0.413332
+   },
+   "BLK": {
+    "mae": 0.433015,
+    "log_score": 0.665395,
+    "crps": 0.237411
+   },
+   "TOV": {
+    "mae": 0.883929,
+    "log_score": 1.337903,
+    "crps": 0.570844
+   }
+  },
+  "minutes": {
+   "candidate": {
+    "mae": 4.858878,
+    "rmse": 6.250371
+   },
+   "rolling_baseline": {
+    "mae": 6.297411,
+    "rmse": 7.634217
+   }
+  },
+  "participation": {
+   "candidate": {
+    "brier": 0.057234,
+    "log_loss": 0.192185,
+    "calibration_slope": 0.998354,
+    "calibration_in_the_large": -0.055966,
+    "auc": 0.977135
+   },
+   "heuristic": {
+    "brier": 0.071177,
+    "log_loss": 0.256683,
+    "auc": 0.968957
+   }
+  },
+  "stl_thresholds": {
+   "0.5": {
+    "pred": 0.439672,
+    "observed": 0.433113,
+    "gap": 0.006559,
+    "brier": 0.208147,
+    "log_loss": 0.602287
+   },
+   "1.5": {
+    "pred": 0.162117,
+    "observed": 0.162837,
+    "gap": -0.00072,
+    "brier": 0.120267,
+    "log_loss": 0.385066
+   },
+   "2.5": {
+    "pred": 0.055501,
+    "observed": 0.055221,
+    "gap": 0.000281,
+    "brier": 0.048539,
+    "log_loss": 0.184047
+   }
+  }
+ }
+}

@@ -1,0 +1,80 @@
+........................................................................ [ 17%]
+......................................................F................. [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 69%]
+.........................................F..........F.F................. [ 86%]
+........................................................                 [100%]
+=================================== FAILURES ===================================
+________________ test_raw_starter_pack_still_carries_the_mirror ________________
+
+    def test_raw_starter_pack_still_carries_the_mirror():
+        """Repairs live in derived rows only: the Starter Pack still lists Xavier Sneed under Bradley in the 2019-11-27 game."""
+        n = duckdb.sql(f"""SELECT count(DISTINCT team) FROM read_csv('{C.STARTER_PACK_DATA}/player_game_stats/*.csv', all_varchar=true,
+                           union_by_name=true) WHERE name = 'Xavier Sneed' AND team IN ('Bradley', 'Kansas State')
+                           AND start_date LIKE '2019-11-27%'""").fetchone()[0]
+>       assert n == 2
+E       assert 0 == 2
+
+tests/test_pre_model_closure.py:261: AssertionError
+____________________ test_no_unrelated_project_was_modified ____________________
+
+    def test_no_unrelated_project_was_modified():
+        snap = json.loads((C.MANIFESTS / "workspace_snapshot_stage2.json").read_text())
+        parent = Path(snap["parent"])
+        for name, s in snap["entries"].items():
+            p = parent / name
+>           assert p.exists(), name
+E           AssertionError: CBB Starter Pack.zip
+E           assert False
+E            +  where False = exists()
+E            +    where exists = PosixPath('/Users/josephshackelford/CBB Predictive Model 2026/CBB Starter Pack.zip').exists
+
+tests/test_stage2.py:445: AssertionError
+_ test_box_facts_are_not_lost[fact.player_games-flagship.player_game_outcomes] _
+
+db = <_duckdb.DuckDBPyConnection object at 0x10f423d70>
+raw = 'fact.player_games', trusted = 'flagship.player_game_outcomes'
+
+    @pytest.mark.parametrize("raw,trusted", [("fact.player_games", "flagship.player_game_outcomes"),
+                                             ("fact.team_games", "flagship.team_game_outcomes"),
+                                             ("fact.participation", "flagship.participation")])
+    def test_box_facts_are_not_lost(db, raw, trusted):
+        before = json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"][raw]
+        if raw == "fact.participation":
+            # Stage 3.1 identity repairs move box rows between team-seasons, which changes the SEASON-MEMBERSHIP candidate
+            # rows; the BOX-derived participation rows (the box facts) must equal the unchanged player-game count
+            assert scalar(db, "SELECT count(*) FROM fact.participation WHERE candidate_source = 'BOX_SCORE_ROW'") == \
+                json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.player_games"]
+            before = scalar(db, f"SELECT count(*) FROM {raw}")
+>       assert scalar(db, f"SELECT count(*) FROM {raw}") == before               # raw facts untouched
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 2368052 == 2368206
+E        +  where 2368052 = scalar(<_duckdb.DuckDBPyConnection object at 0x10f423d70>, 'SELECT count(*) FROM fact.player_games')
+
+tests/test_stage2_1.py:144: AssertionError
+____ test_box_facts_are_not_lost[fact.participation-flagship.participation] ____
+
+db = <_duckdb.DuckDBPyConnection object at 0x10f423d70>
+raw = 'fact.participation', trusted = 'flagship.participation'
+
+    @pytest.mark.parametrize("raw,trusted", [("fact.player_games", "flagship.player_game_outcomes"),
+                                             ("fact.team_games", "flagship.team_game_outcomes"),
+                                             ("fact.participation", "flagship.participation")])
+    def test_box_facts_are_not_lost(db, raw, trusted):
+        before = json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"][raw]
+        if raw == "fact.participation":
+            # Stage 3.1 identity repairs move box rows between team-seasons, which changes the SEASON-MEMBERSHIP candidate
+            # rows; the BOX-derived participation rows (the box facts) must equal the unchanged player-game count
+>           assert scalar(db, "SELECT count(*) FROM fact.participation WHERE candidate_source = 'BOX_SCORE_ROW'") == \
+                json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.player_games"]
+E           assert 2368052 == 2368206
+E            +  where 2368052 = scalar(<_duckdb.DuckDBPyConnection object at 0x10f423d70>, "SELECT count(*) FROM fact.participation WHERE candidate_source = 'BOX_SCORE_ROW'")
+
+tests/test_stage2_1.py:141: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pre_model_closure.py::test_raw_starter_pack_still_carries_the_mirror
+FAILED tests/test_stage2.py::test_no_unrelated_project_was_modified - Asserti...
+FAILED tests/test_stage2_1.py::test_box_facts_are_not_lost[fact.player_games-flagship.player_game_outcomes]
+FAILED tests/test_stage2_1.py::test_box_facts_are_not_lost[fact.participation-flagship.participation]
+4 failed, 412 passed in 1412.52s (0:23:32)
+.venv/bin/python -m pytest -q -p no:cacheprovider  2372.47s user 170.93s system 15% cpu 4:33:01.66 total

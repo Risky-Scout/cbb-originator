@@ -69,16 +69,33 @@ def test_no_lockbox_rows_in_canonical_event_tables(db):
 
 
 def test_request_log_never_targets_the_lockbox():
+    """Pre-opening: no request names 2025-26. Post-lockbox (cbb_platform/lockbox_state.py): the only exception is the
+    exact authorized fetch, the 987 lines the closure commit added, each present exactly once, CBBD, frozen-plan
+    endpoints (or the guard-exempt season-less reference lists), nothing after 2025-26; any other 2025-26 request, and any 2026-27+ request, still fails."""
+    from collections import Counter
+    from cbb_platform import lockbox, lockbox_state as S
     if not cbbd_client.REQUEST_LOG.exists():
         pytest.skip("no Stage 2 requests")
+    authorized = set() if S.current() == S.PRE_LOCKBOX_READINESS else set(S.authorized_lockbox_requests())
+    seen_authorized = Counter()
     for line in cbbd_client.REQUEST_LOG.read_text().splitlines():
         e = json.loads(line)
         p = e["params"]
+        if line in authorized:
+            seen_authorized[line] += 1
+            assert e["provider"] == "cbbd" and (e["endpoint"] in lockbox.OPEN_PLAN_ENDPOINTS or (     # or a season-less
+                e["endpoint"] in lockbox.PROVIDERS["cbbd"]["reference"] and not p and e.get("season") is None)), e["request_key"]
+            assert e.get("season") in (None, 2026) and str(p.get("season")) in ("2026", "None"), e["request_key"]
+            assert p.get("year") is None or int(p["year"]) <= 2026, e["request_key"]
+            if "date" in p:
+                assert p["date"] <= "2026-07-31", e["request_key"]
+            continue
         assert str(p.get("season")) not in ("2026", "2025-26"), e["request_key"]
         assert p.get("year") is None or int(p["year"]) <= 2024, e["request_key"]
         if "date" in p:
             assert not ("2025-08-01" <= p["date"] <= "2026-07-31"), e["request_key"]
         assert e.get("season") is None or e["season"] <= 2025, e["request_key"]
+    assert set(seen_authorized) == authorized and set(seen_authorized.values()) <= {1}   # each exactly once
 
 
 # =========================================================================== 3. raw payloads are immutable
@@ -236,9 +253,14 @@ def test_athlete_id_maps_to_one_canonical_id_everywhere(db):
                     ("fact.substitutions", "source_athlete_id", "canonical_player_id"),
                     ("fact.shots", "shooter_source_athlete_id", "shooter_player_id"),
                     ("core.rosters", "source_athlete_id", "canonical_player_id")):
+        # Stage 3.1: the ONLY permitted deviation from cid(athleteId) is an adjudicated SPLIT target
+        splits = "SELECT to_canonical_player_id FROM metadata.player_identity_resolution WHERE rule_type = 'SPLIT'"
+        split_ids = "SELECT provider_athlete_id FROM metadata.player_identity_resolution WHERE rule_type = 'SPLIT'"
         assert scalar(db, f"""SELECT count(*) FROM {t} WHERE {c} IS NOT NULL
-                              AND {c} <> 'P-' || substr(sha256('CBBD|athlete|' || {a}), 1, 16)""") == 0, t
-        assert scalar(db, f"SELECT count(*) FROM (SELECT {a} FROM {t} WHERE {c} IS NOT NULL GROUP BY 1 HAVING count(DISTINCT {c}) > 1)") == 0, t
+                              AND {c} <> 'P-' || substr(sha256('CBBD|athlete|' || {a}), 1, 16)
+                              AND NOT ({a} IN ({split_ids}) AND {c} IN ({splits}))""") == 0, t
+        assert scalar(db, f"""SELECT count(*) FROM (SELECT {a} FROM {t} WHERE {c} IS NOT NULL AND {a} NOT IN ({split_ids})
+                              GROUP BY 1 HAVING count(DISTINCT {c}) > 1)""") == 0, t
 
 
 def test_existing_canonical_player_ids_were_not_altered(db):
@@ -310,9 +332,12 @@ def test_trusted_shots_have_their_shooter_on_the_floor(db):
 
 
 def test_assisted_shots_resolve_the_assister_where_supplied(db):
+    # Stage 3.1: rows governed by an adjudicated QUARANTINE rule are deliberately unresolved
     assert scalar(db, """SELECT count(*) FROM fact.shots WHERE assister_source_athlete_id IS NOT NULL
                          AND assister_player_id IS NULL AND assister_source_athlete_id IN
-                         (SELECT provider_player_key FROM metadata.player_id_map WHERE provider = 'CBBD')""") == 0
+                         (SELECT provider_player_key FROM metadata.player_id_map WHERE provider = 'CBBD')
+                         AND assister_source_athlete_id NOT IN (SELECT provider_athlete_id FROM metadata.player_identity_resolution
+                                                                WHERE rule_type = 'QUARANTINE')""") == 0
     assert scalar(db, """SELECT count(*) FROM fact.shots WHERE assisted AND assister_source_athlete_id IS NULL
                          AND NOT EXISTS (SELECT 1 FROM qa.source_defects d WHERE d.reason_code = 'ASSISTED_WITHOUT_ASSISTER'
                          AND d.record_key LIKE '%;playId=' || source_play_id)""") == 0
@@ -429,9 +454,42 @@ def test_starter_pack_byte_identical():
     assert data(starter_pack_manifest()) == data(recorded)
 
 
+# Sibling-workspace immutability is asserted against the CURRENT accepted task baseline. Older baselines are kept
+# unchanged as historical evidence, and each successor must account for every difference from its predecessor.
+WORKSPACE_BASELINES = ("workspace_snapshot_stage2.json", "workspace_snapshot_pre_model_closure_v1.json")
+STAGE2_WORKSPACE_SNAPSHOT_SHA256 = "e040328548bc4aa82a9af82aef5ac1d7346b65174ab4e79ea86c11b87ac1fe98"
+
+
+def test_workspace_baseline_history_is_preserved_and_drift_is_accounted():
+    old_p = C.MANIFESTS / WORKSPACE_BASELINES[0]
+    assert hashlib.sha256(old_p.read_bytes()).hexdigest() == STAGE2_WORKSPACE_SNAPSHOT_SHA256   # history never rewritten
+    for prev_name, cur_name in zip(WORKSPACE_BASELINES, WORKSPACE_BASELINES[1:]):
+        prev_p, cur = C.MANIFESTS / prev_name, json.loads((C.MANIFESTS / cur_name).read_text())
+        prev = json.loads(prev_p.read_text())
+        assert cur["supersedes"]["file"] == prev_name
+        assert cur["supersedes"]["sha256"] == hashlib.sha256(prev_p.read_bytes()).hexdigest()
+        diff = {n for n in set(prev["entries"]) | set(cur["entries"]) if prev["entries"].get(n) != cur["entries"].get(n)}
+        ledger = {d["entry"]: d for d in cur["drift_from_superseded"]}
+        assert set(ledger) == diff, cur_name                                    # every difference recorded, nothing extra
+        for n, d in ledger.items():
+            assert (d["stage2"], d["baseline"]) == (prev["entries"].get(n), cur["entries"].get(n)), n
+            assert d["classification"] == "PRE_EXISTING_WORKSPACE_DRIFT", n
+
+
 def test_no_unrelated_project_was_modified():
-    snap = json.loads((C.MANIFESTS / "workspace_snapshot_stage2.json").read_text())
-    parent = Path(snap["parent"])
+    """Relocation accommodation (architect ruling P / option 1, 2026-10-16), for the known project move only: the recorded
+    sibling names are stat'ed at the same names under the current parent -- metadata only (existence, size, mtime; the
+    recorded folder-level metadata for the Starter Pack, whose content is also proven by its registered digest). The
+    five other siblings are never opened or recursed into, and the new parent is never listed: the no-extra-entries
+    assertion applies only at the historical parent. No baseline is taken of the new parent."""
+    from cbb_platform import relocation as RL
+    snap = json.loads((C.MANIFESTS / WORKSPACE_BASELINES[-1]).read_text())
+    recorded = Path(snap["parent"])
+    moved = RL.relocated() and recorded == RL.HISTORICAL_PROJECT_PARENT and not recorded.exists()
+    parent = C.PROJECT_ROOT.parent if moved else recorded
+    if moved:
+        assert {n for n, s in snap["entries"].items() if s["type"] != "file"} == {C.STARTER_PACK_ROOT.parent.name}
+        assert RL.starter_pack_identity()["pass"]                        # content identity, not the recorded path
     for name, s in snap["entries"].items():
         p = parent / name
         assert p.exists(), name
@@ -441,8 +499,9 @@ def test_no_unrelated_project_was_modified():
             entries = [q for q in p.rglob("*") if q.name != ".DS_Store"]
             assert len(entries) == s["entries"], name
             assert max(q.lstat().st_mtime_ns for q in entries) == s["newest_mtime_ns"], name
-    extra = {p.name for p in parent.iterdir()} - set(snap["entries"]) - {"CBB_Originator_Model", ".DS_Store"}
-    assert not {x for x in extra if not x.startswith("~$")}, extra
+    if not moved:
+        extra = {p.name for p in parent.iterdir()} - set(snap["entries"]) - {"CBB_Originator_Model", ".DS_Store"}
+        assert not {x for x in extra if not x.startswith("~$")}, extra
 
 
 # =========================================================================== 21. deterministic rebuild

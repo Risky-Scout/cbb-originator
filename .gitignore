@@ -24,3 +24,9 @@ data/qa/large/
 .DS_Store
 ~$*
 data/duckdb_tmp/
+# Stage 3 generated stores (rebuildable deterministically from v2.2 + code)
+modeling/store/
+modeling/features/
+modeling/labels/*/
+# 2025-26 lockbox generated stores (rebuildable from the preserved raw payloads; compact build records stay tracked)
+data/lockbox_2025_26/*/parquet/

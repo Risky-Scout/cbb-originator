@@ -1,0 +1,189 @@
+{
+ "guard": {
+  "GUARD_CURRENTLY_OPEN": false,
+  "behaviour": {
+   "flag_set": {
+    "audited_seasons": [
+     2005,
+     2025
+    ],
+    "authorized": false,
+    "binding": null,
+    "cbbd_2026": true,
+    "cbbd_2026_box": true,
+    "cbbd_2027": true,
+    "cbbd_2027_box": true,
+    "evaluation_seasons": [],
+    "model_seasons_max": 2025,
+    "opening_authorized_attr": true,
+    "response_2026": true,
+    "season_2026": true,
+    "stage3_2026": true,
+    "stage3_2027": true
+   },
+   "flag_unset": {
+    "audited_seasons": [
+     2005,
+     2025
+    ],
+    "authorized": false,
+    "binding": null,
+    "cbbd_2026": true,
+    "cbbd_2026_box": true,
+    "cbbd_2027": true,
+    "cbbd_2027_box": true,
+    "evaluation_seasons": [],
+    "model_seasons_max": 2025,
+    "opening_authorized_attr": true,
+    "response_2026": true,
+    "season_2026": true,
+    "stage3_2026": true,
+    "stage3_2027": true
+   }
+  },
+  "binding": null,
+  "guard_v3_and_scoring_enable_applied": true,
+  "schema_sql_is_frozen_text": true,
+  "trusted_window": [
+   2005,
+   2025
+  ]
+ },
+ "historical_pre_lockbox": {
+  "behaviour": {
+   "flag_set": {
+    "authorized": false,
+    "binding": null,
+    "cbbd_2026": true,
+    "cbbd_2026_box": true,
+    "cbbd_2027": true,
+    "cbbd_2027_box": true,
+    "opening_authorized_attr": false,
+    "response_2026": true,
+    "season_2026": true,
+    "stage3_2026": true,
+    "stage3_2027": true
+   },
+   "flag_unset": {
+    "authorized": false,
+    "binding": null,
+    "cbbd_2026": true,
+    "cbbd_2026_box": true,
+    "cbbd_2027": true,
+    "cbbd_2027_box": true,
+    "opening_authorized_attr": false,
+    "response_2026": true,
+    "season_2026": true,
+    "stage3_2026": true,
+    "stage3_2027": true
+   }
+  },
+  "commit": "d65aac908c5b910476d95d299ae3cf49093d4733",
+  "decision_record_absent": true,
+  "guard_patches_apply_cleanly": true,
+  "guard_patches_not_applied": true,
+  "readiness_record_unchanged_since": true,
+  "result_absent": true,
+  "unopened": true
+ },
+ "model": {
+  "MODEL_ARTIFACT_UNCHANGED": true,
+  "PREDICTIVE_SPEC_CHANGED": false,
+  "artifact_commits_after_r2": [],
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "artifact_sha256_at_r2_tag": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "changed_files_equal_reviewed_patch_output": true,
+  "guard_v3_is_the_reviewed_design": true,
+  "predictive_files_changed_since_r2": [
+   "cbb_platform/props_v0.py",
+   "cbb_platform/props_v0_participation.py",
+   "cbb_platform/stage3/spec.py"
+  ],
+  "predictive_files_dirty": [],
+  "scorecard_sha256": "27bdfbdd35b182b6eb88710d34310e9f5f71a262b850a88071b8ac085ce26ecd",
+  "scoring_enable_is_the_reviewed_window_gating": true
+ },
+ "opening": {
+  "OPENED_EXACTLY_ONCE_UNDER_AUTHORIZATION": true,
+  "binding_at_opening_commit": "819eae1fb6086514101edcca77be0027d7a56d3e4d8d7741d8068f34758e7013",
+  "commits_binding_the_guard": [
+   "7dbc0b569271a42c8079946e3e27e76be86703c2"
+  ],
+  "decision_candidate_artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "decision_lockbox_open": true,
+  "decision_record_commits": [
+   "7dbc0b569271a42c8079946e3e27e76be86703c2"
+  ],
+  "decision_record_sha256": "819eae1fb6086514101edcca77be0027d7a56d3e4d8d7741d8068f34758e7013",
+  "opening_commit_parent_is_readiness": true
+ },
+ "pass": true,
+ "pit": {
+  "GENUINE_PIT_VIOLATIONS": 0,
+  "current_season_rule": {
+   "authorized": null,
+   "mode": "CLOSED",
+   "unauthorized": "season >= 2026"
+  },
+  "development_audit_PIT_VIOLATIONS": 0,
+  "development_audit_module_at_readiness_commit": true,
+  "lockbox_audit": {
+   "AUTHORIZED_LOCKBOX_2026_ROWS_TOTAL": 536488,
+   "GENUINE_PIT_VIOLATIONS": 0,
+   "PIT_VIOLATIONS": 0,
+   "UNAUTHORIZED_FUTURE_SEASON_ROWS": 0,
+   "audit_module_sha256": "141de368633ae4d5b557aaf1248d33d725a2b458196c41a6f26b4e873308f9d3",
+   "season_rule": {
+    "authorized": "season = 2026",
+    "mode": "LOCKBOX_OPEN_2025_26",
+    "unauthorized": "season > 2026"
+   }
+  },
+  "lockbox_audit_module_is_current": true
+ },
+ "scoring": {
+  "EXACTLY_ONE_SCORING_RUN_GO": true,
+  "fit_calls": 0,
+  "fit_free": true,
+  "gates_pass": {
+   "G1_aggregate": true,
+   "G2_per_target": true,
+   "G3_minutes": true,
+   "G4_participation": true,
+   "G5_participation_calibration": true,
+   "G6_pricing_integrity": true
+  },
+  "go_tag_commit": "1d8d01f3820fa24f83c36b7656df16a8d481c384",
+  "refit_recalibrated_or_selected": false,
+  "result_artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "result_commits": [
+   "1d8d01f3820fa24f83c36b7656df16a8d481c384"
+  ],
+  "result_file_sha256": "e243aa84ad312a1b8578307148ac895d94a9d17c6be6070781d2a160f87d8aef",
+  "result_scorecard_sha256": "27bdfbdd35b182b6eb88710d34310e9f5f71a262b850a88071b8ac085ce26ecd",
+  "result_sha256": "c72f6a98c44f456234f0aca6807f63dc41db677c695bee39d6165385d569dda6",
+  "scoring_run_commits": [
+   "1d8d01f3820fa24f83c36b7656df16a8d481c384"
+  ],
+  "scoring_run_result_sha256": "c72f6a98c44f456234f0aca6807f63dc41db677c695bee39d6165385d569dda6",
+  "verdict": "GO"
+ },
+ "state": "POST_LOCKBOX_CLOSED_GO",
+ "summary": {
+  "2027_ACCESS": "REFUSED",
+  "CURRENT_LOCKBOX_ACCESS_WITHOUT_AUTHORIZATION": "REFUSED",
+  "EXACTLY_ONE_SCORING_RUN_GO": true,
+  "FIT_CALLS": 0,
+  "GENUINE_PIT_VIOLATIONS": 0,
+  "GUARD_CURRENTLY_OPEN": false,
+  "LOCKBOX_RESULT": "GO",
+  "LOCKBOX_STATE": "POST_LOCKBOX_CLOSED_GO",
+  "MODEL_ARTIFACT_SHA256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "MODEL_ARTIFACT_UNCHANGED": true,
+  "OPENED_EXACTLY_ONCE_UNDER_AUTHORIZATION": true,
+  "PREDICTIVE_SPEC_CHANGED": false,
+  "PRE_LOCKBOX_READINESS_UNOPENED_AT_d65aac9": true,
+  "RECALIBRATION_PERFORMED": false,
+  "REFIT_PERFORMED": false
+ }
+}

@@ -342,7 +342,8 @@ def test_every_player_season_conflict_is_recorded(db):
         assert n == scalar(db, "SELECT count(*) FROM qa.player_season_summary_conflicts WHERE field = ?", [f]), f
 
 
-def test_raw_player_season_summaries_are_preserved_unchanged(db):
+def test_raw_player_season_summaries_are_preserved_unchanged(starter_db):
+    db = starter_db
     assert scalar(db, """SELECT count(*) FROM fact.player_season_stats f JOIN (
             SELECT DISTINCT ON (season, teamId, athleteId) * FROM staging.sp_player_season_stats
             ORDER BY season, teamId, athleteId, conference NULLS LAST, filename) s

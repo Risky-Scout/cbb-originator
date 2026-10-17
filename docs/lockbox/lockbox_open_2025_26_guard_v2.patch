@@ -1,0 +1,149 @@
+diff --git a/cbb_platform/lockbox.py b/cbb_platform/lockbox.py
+index 0695357..035d6a7 100644
+--- a/cbb_platform/lockbox.py
++++ b/cbb_platform/lockbox.py
+@@ -24,8 +24,12 @@ file ingest, not a network fetch, and is classified ALLOWED_AVAILABILITY_CAPTURE
+ """
+ from __future__ import annotations
+ 
++import hashlib
++import json
++import os
+ import re
+ from datetime import date, datetime
++from pathlib import Path
+ 
+ LOCKBOX_SEASON = 2026                     # canonical end-year of 2025-26
+ LOCKBOX_LABEL = "2025-26"
+@@ -104,11 +108,47 @@ def _values(v) -> list:
+     return list(v) if isinstance(v, (list, tuple, set)) else [v]
+ 
+ 
+-def check_season(season, provider: str = "canonical") -> None:
+-    if season is not None and canonical_season(provider, season) == LOCKBOX_SEASON:
++# ----------------------------------------------------------------------------- one-time 2025-26 opening
++# docs/LOCKBOX_OPENING_PROTOCOL.md §2.2 (reviewed guard change). Fail closed: 2025-26 is allowed ONLY when ALL hold:
++#   1. OPEN_DECISION_SHA256 below is set by the reviewed opening commit (None = closed, the state of every other commit);
++#   2. the committed decision record at OPEN_DECISION_PATH hashes to exactly that value, is decision_type LOCKBOX_OPEN,
++#      has lockbox_open = true and at least one approver;
++#   3. the session sets LOCKBOX_OPEN_2025_26=1 (a flag alone never opens it: LOCKBOX_POLICY.md §4);
++#   4. the provider is CBBD (or the canonical/Stage 3 readers) and the endpoint is in the frozen data plan.
++# Seasons after 2025-26 stay refused.
++OPEN_DECISION_PATH = Path(__file__).resolve().parents[1] / "data" / "manifests" / "LOCKBOX_OPEN_DECISION_2025_26.json"
++OPEN_DECISION_SHA256: str | None = None
++OPEN_PLAN_ENDPOINTS = frozenset({"games", "games/players", "games/teams", "teams/roster", "substitutions/team",
++                                 "stats/player/season", "recruiting/players", "recruiting/portal"})   # frozen data plan
++
++
++def opening_authorized(provider: str = "canonical", endpoint: str | None = None) -> bool:
++    if OPEN_DECISION_SHA256 is None or os.environ.get("LOCKBOX_OPEN_2025_26") != "1":
++        return False
++    if provider not in ("cbbd", "canonical") or (endpoint is not None and endpoint not in OPEN_PLAN_ENDPOINTS):
++        return False
++    try:
++        raw = OPEN_DECISION_PATH.read_bytes()
++    except OSError:
++        return False
++    if hashlib.sha256(raw).hexdigest() != OPEN_DECISION_SHA256:
++        return False
++    rec = json.loads(raw)
++    return rec.get("decision_type") == "LOCKBOX_OPEN" and rec.get("lockbox_open") is True and bool(rec.get("approved_by"))
++
++
++def check_season(season, provider: str = "canonical", endpoint: str | None = None) -> None:
++    if season is not None and canonical_season(provider, season) == LOCKBOX_SEASON \
++            and not opening_authorized(provider, endpoint):
+         raise LockboxViolation(f"LOCKBOX: {provider} season {season} is {LOCKBOX_LABEL}, the frozen holdout")
+ 
+ 
++def _refuse_unless_opened(provider: str, s: int, opened: bool) -> None:
++    """2025-26 passes only when THIS request's provider and endpoint are authorized (never via the canonical default)."""
++    if s == LOCKBOX_SEASON and not opened:
++        raise LockboxViolation(f"LOCKBOX: {provider} season {s} is {LOCKBOX_LABEL}, the frozen holdout")
++
++
+ def check_request(provider: str, endpoint: str, params: dict | None, known_game_season=None) -> None:
+     """Raise unless the request provably cannot return 2025-26 data.
+ 
+@@ -124,24 +164,25 @@ def check_request(provider: str, endpoint: str, params: dict | None, known_game_
+         return
+     params = params or {}
+     bounded = False
++    opened = opening_authorized(provider, endpoint)
+ 
+     for name in rules["season"]:
+         for v in _values(params.get(name)):
+             s = canonical_season(provider, v)
+-            check_season(s)
++            _refuse_unless_opened(provider, s, opened)
+             if s > LOCKBOX_SEASON:
+                 raise LockboxViolation(f"LOCKBOX: {provider} season {v} = {season_label(s)} is current/future; "
+                                        "separate production rules apply")
+             bounded = True
+     for name in rules["date"]:
+         for v in _values(params.get(name)):
+-            if _overlaps_lockbox(v, v) or season_of_date(v) > LOCKBOX_SEASON:
++            if (_overlaps_lockbox(v, v) and not opened) or season_of_date(v) > LOCKBOX_SEASON:
+                 raise LockboxViolation(f"LOCKBOX: {provider} date {v} is not a development date")
+             bounded = True
+     for lo_name, hi_name in rules["range"]:
+         lo, hi = params.get(lo_name), params.get(hi_name)
+         if lo or hi:
+-            if _overlaps_lockbox(lo, hi):
++            if _overlaps_lockbox(lo, hi) and not opened:
+                 raise LockboxViolation(f"LOCKBOX: {provider} date range {lo}..{hi} touches "
+                                        f"{LOCKBOX_START}..{LOCKBOX_END}")
+             if hi and season_of_date(hi) > LOCKBOX_SEASON:
+@@ -152,8 +193,8 @@ def check_request(provider: str, endpoint: str, params: dict | None, known_game_
+             s = known_game_season(gid) if known_game_season else None
+             if s is None:
+                 raise LockboxViolation(f"LOCKBOX: season of {provider} game {gid} is not provable; refusing")
+-            check_season(s)
+-            if s > LAST_DEVELOPMENT_SEASON:
++            _refuse_unless_opened(provider, s, opened)
++            if s > (LOCKBOX_SEASON if opened else LAST_DEVELOPMENT_SEASON):
+                 raise LockboxViolation(f"LOCKBOX: {provider} game {gid} is season {season_label(s)}")
+             bounded = True
+     if not bounded:
+@@ -165,8 +206,9 @@ SEASON_KEYS = {"cbbd": ("season",), "bdl": ("season",), "torvik": ("year", "seas
+ GAME_DATE_KEYS = ("date", "startDate", "start_date", "gameDate", "game_date", "gameStartDate", "datetime", "wallclock")
+ 
+ 
+-def check_response(provider: str, payload) -> None:
++def check_response(provider: str, payload, endpoint: str | None = None) -> None:
+     """Refuse a parsed payload that contains any 2025-26 season or game date, at any nesting depth."""
++    opened = endpoint is not None and opening_authorized(provider, endpoint)   # the one authorized opening
+     season_keys = SEASON_KEYS.get(provider, ("season",))
+     stack = [payload]
+     while stack:
+@@ -180,11 +222,15 @@ def check_response(provider: str, payload) -> None:
+                         s = canonical_season(provider, v)
+                     except ValueError:
+                         s = None
+-                    if s == LOCKBOX_SEASON:
++                    if s == LOCKBOX_SEASON and not opened:
+                         raise LockboxViolation(f"LOCKBOX: {provider} response contains {k}={v} ({LOCKBOX_LABEL})")
++                    if opened and s is not None and s > LOCKBOX_SEASON:          # never a season after 2025-26
++                        raise LockboxViolation(f"LOCKBOX: {provider} response contains {k}={v} after {LOCKBOX_LABEL}")
+                 elif k in GAME_DATE_KEYS and isinstance(v, str) and re.match(r"\d{4}-?\d{2}-?\d{2}", v):
+-                    if _overlaps_lockbox(v, v):
++                    if _overlaps_lockbox(v, v) and not opened:
+                         raise LockboxViolation(f"LOCKBOX: {provider} response contains {k}={v[:10]} inside 2025-26")
++                    if opened and season_of_date(v[:10]) > LOCKBOX_SEASON:        # never a date after 2026-07-31
++                        raise LockboxViolation(f"LOCKBOX: {provider} response contains {k}={v[:10]} after {LOCKBOX_LABEL}")
+                 elif isinstance(v, (dict, list)):
+                     stack.append(v)
+ 
+diff --git a/cbb_platform/source_fetch.py b/cbb_platform/source_fetch.py
+index 673b6e8..4501baa 100644
+--- a/cbb_platform/source_fetch.py
++++ b/cbb_platform/source_fetch.py
+@@ -54,7 +54,7 @@ def get_with_meta(provider: str, endpoint: str, url: str, params: dict, headers:
+     if not 200 <= getattr(resp, "status_code", 200) < 300:
+         raise SourceHTTPError(provider, endpoint, resp.status_code, _retry_after(meta.get("Retry-After")))
+     body = json.loads(resp.content)
+-    lockbox.check_response(provider, body)
++    lockbox.check_response(provider, body, endpoint)
+     return resp.content, body, meta
+ 
+ 

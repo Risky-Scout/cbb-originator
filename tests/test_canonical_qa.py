@@ -55,8 +55,9 @@ def test_no_negative_counts_on_unflagged_player_rows(db):
               minutes) < 0""") == 0
 
 
-def test_counting_columns_are_whole_numbers_in_source(db):
+def test_counting_columns_are_whole_numbers_in_source(starter_db):
     """as_int() would silently round a fractional count; prove none exist in the player/team game sources."""
+    db = starter_db
     for view, cols in {
         "staging.sp_player_game_stats": ["points", "minutes", "fieldGoals_made", "fieldGoals_attempted", "rebounds_total",
                                          "assists", "turnovers", "fouls", "freeThrows_made", "threePointFieldGoals_made"],

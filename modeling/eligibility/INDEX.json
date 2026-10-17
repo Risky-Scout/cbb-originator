@@ -1,0 +1,30 @@
+{
+ "gate_1_linkage": "recorded in data/manifests/LOCKBOX_READINESS_v2.json model_artifact.eligibility_manifests (the frozen artifact itself cannot carry the hash without changing its sha256)",
+ "gate_3_enforcement": "equality test: rule SQL rows == frozen loader rows (tests/test_eligibility_manifests.py)",
+ "not_required_for_v1": {
+  "ELIG_EVENT_HEADS": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+  "ELIG_GAME_ENVIRONMENT": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+  "ELIG_LINEUP_INTERACTIONS": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+  "ELIG_LOCATION": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)",
+  "ELIG_SHOT_OPPORTUNITY": "NOT_REQUIRED: v1 fits, calibrates and evaluates no such subsystem (policy \u00a71)"
+ },
+ "policy": "docs/MODEL_ELIGIBILITY_POLICY.md",
+ "required_for_v1": {
+  "ELIG_BOX_COUNTS": {
+   "count": 1272227,
+   "eligible_player_games_sha256": "5dcfaf101c39ea3497d41b2331193dad355ead41045a52a137cbd0c4aa7b17cd",
+   "path": "modeling/eligibility/ELIG_BOX_COUNTS.json"
+  },
+  "ELIG_MINUTES": {
+   "count": 1272278,
+   "eligible_player_games_sha256": "5d966e301c94919bd68df591322231cd660312e9c1fac10175d3fc640c2f2873",
+   "path": "modeling/eligibility/ELIG_MINUTES.json"
+  },
+  "ELIG_PARTICIPATION": {
+   "count": 493151,
+   "eligible_player_games_sha256": "26fb96b50102a041451c6680ca21d9ca5a030a0bffe4c8f27bb27b1422478772",
+   "path": "modeling/eligibility/ELIG_PARTICIPATION.json"
+  }
+ },
+ "version": "1.0.0"
+}

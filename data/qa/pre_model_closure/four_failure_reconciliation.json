@@ -1,0 +1,112 @@
+{
+ "RAW_SOURCE_ROWS_BEFORE_stage1_inventory": 2460230,
+ "RAW_SOURCE_ROWS_AFTER_now": 2460230,
+ "raw_files_row_count_mismatch": [],
+ "raw_rows_vs_v2.4_build_source_manifest_mismatch": [],
+ "SOURCE_BOX_RECORDS_distinct": 2368206,
+ "source_records_with_conflicting_duplicate_lines": 0,
+ "canonical_after_v2.4": 2368052,
+ "quarantined_mirror_rows": 154,
+ "canonical_before_v2.3_reconstructed": 2368206,
+ "overlap_after_and_quarantine": 0,
+ "source_records_without_canonical_home": 0,
+ "canonical_rows_without_source_record": 0,
+ "source_records_with_more_than_one_home": 0,
+ "v2.4_fact_rows_box_differs_from_raw": 0,
+ "raw_mirror_fact_keys_all_games": 154,
+ "repaired_games": 14,
+ "unrepaired_mirror_games": [
+  [
+   "G-068f83d05e504f44",
+   "QUARANTINED_EVENTS",
+   790,
+   "event feed names team(s) ['T-88ea30a4a7c64ac0'] that did not play this game (790 rows in ['LINEUP', 'PBP', 'SHOT', 'SUBSTITUTION']); events not re-guessed"
+  ]
+ ],
+ "rows_154": 154,
+ "class_counts": {
+  "MIRRORED_DUPLICATE": 154
+ },
+ "status_counts": {
+  "RECONCILED": 154
+ },
+ "rows_154_all_raw_mirror_keys": 154,
+ "distinct_games_154": 14,
+ "distinct_survivors_154": 154,
+ "fact_keys_total": 2367991,
+ "fact_keys_with_removal": 154,
+ "fact_keys_with_removal_not_left_exactly_once": 0,
+ "fact_keys_without_removal_count_changed": 0,
+ "fact_keys_lost_entirely": 0,
+ "SOURCE_BOX_ROWS": 2460230,
+ "LEGITIMATE_REAL_APPEARANCES_BEFORE": 2368052,
+ "LEGITIMATE_REAL_APPEARANCES_AFTER": 2368052,
+ "MIRRORED_OR_BAD_CANONICAL_ROWS_REMOVED": 154,
+ "VALID_FACTS_LOST": 0,
+ "team_games_in_repaired_games": 28,
+ "team_games_reconcile_before_PTS_FGM_3PM_FTM_AST_STL_BLK": 10,
+ "team_games_reconcile_after_PTS_FGM_3PM_FTM_AST_STL_BLK": 28,
+ "team_games_not_reconciling_after": [],
+ "canonical_team_games_reconciling_after": 28,
+ "survivor_players": 154,
+ "survivor_box_points_equal_season_file_points": 154,
+ "survivor_box_games_equal_season_file_games": 154,
+ "survivor_with_box_rows_on_other_team_same_season": 0,
+ "survivor_season_mismatches": [],
+ "participation_v2.4_by_source": {
+  "BOX_SCORE_ROW": 2368052,
+  "SEASON_STATS_MEMBERSHIP": 815690
+ },
+ "box_participation_eq_player_games": true,
+ "box_participation_without_fact_row": 0,
+ "fact_rows_without_box_participation": 0,
+ "participation_rows_for_quarantined_mirrors": 0,
+ "box_participation_duplicate_source_records": 0,
+ "collision_box_rows": 116,
+ "collision_box_rows_pid_recovered_uniquely": 116,
+ "participation_sequence": [
+  {
+   "step": "v2.3_reconstructed",
+   "box": 2368206,
+   "membership": 821256,
+   "total": 3189462
+  },
+  {
+   "step": "after_DEMIRROR_RECONCILED_GAMES",
+   "box": 2368052,
+   "membership": 820948,
+   "total": 3189000,
+   "membership_rows_removed": 308,
+   "membership_rows_added": 0
+  },
+  {
+   "step": "after_SPURIOUS_SEASON_MEMBERSHIP",
+   "box": 2368052,
+   "membership": 815802,
+   "total": 3183854,
+   "membership_rows_removed": 5146,
+   "membership_rows_added": 0
+  },
+  {
+   "step": "after_SOURCE_ID_COLLISION_QUARANTINE_v2.4",
+   "box": 2368052,
+   "membership": 815690,
+   "total": 3183742,
+   "membership_rows_removed": 112,
+   "membership_rows_added": 0
+  }
+ ],
+ "v2.4_membership_recomputed_equals_actual_set": true,
+ "v2.3_manifest_participation_rows": 3189462,
+ "demirror_membership_removed_breakdown": {
+  "OPPONENT_ECHO_ROW_IN_MIRRORED_GAME": 154,
+  "TRUE_TEAM_UNKNOWN_ROW_SUPERSEDED_BY_RESTORED_BOX_ROW": 154
+ },
+ "demirror_membership_removed_not_a_survivor_player_in_its_game": 0,
+ "spurious_membership_removed_not_on_a_quarantined_spurious_team_season": 0,
+ "collision_membership_removed_by_rule": {
+  "QUARANTINE_ERA_CBBD_ATHLETE_68710": 26,
+  "QUARANTINE_ERA_CBBD_ATHLETE_19841": 81,
+  "QUARANTINE_ERA_CBBD_ATHLETE_62580": 5
+ }
+}

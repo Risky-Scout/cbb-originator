@@ -342,7 +342,7 @@
    "unresolved_id_rate": null,
    "shooting_plays": 796224,
    "shotinfo_rate": 1.0,
-   "shooter_resolution": 0.9996659231573025,
+   "shooter_resolution": 0.9994750221043325,
    "assister_coverage": 0.9976692874234749,
    "xy_coverage": 0.0,
    "games_with_substitutions": 0,
@@ -358,7 +358,7 @@
    "box_player_roster_join_rate": 1.0,
    "failed_requests": 0,
    "empty_responses": 38,
-   "source_defect_records": 1660
+   "source_defect_records": 1812
   },
   {
    "season": 2015,
@@ -378,7 +378,7 @@
    "unresolved_id_rate": null,
    "shooting_plays": 810112,
    "shotinfo_rate": 1.0,
-   "shooter_resolution": 0.9987199300837415,
+   "shooter_resolution": 0.9986754917838521,
    "assister_coverage": 0.9952917698362836,
    "xy_coverage": 0.0,
    "games_with_substitutions": 0,
@@ -394,7 +394,7 @@
    "box_player_roster_join_rate": 1.0,
    "failed_requests": 0,
    "empty_responses": 37,
-   "source_defect_records": 2862
+   "source_defect_records": 2898
   },
   {
    "season": 2016,
@@ -414,7 +414,7 @@
    "unresolved_id_rate": null,
    "shooting_plays": 864741,
    "shotinfo_rate": 1.0,
-   "shooter_resolution": 0.9993685970712618,
+   "shooter_resolution": 0.9991419396096635,
    "assister_coverage": 0.9967134953389509,
    "xy_coverage": 0.0,
    "games_with_substitutions": 0,
@@ -430,7 +430,7 @@
    "box_player_roster_join_rate": 1.0,
    "failed_requests": 0,
    "empty_responses": 40,
-   "source_defect_records": 2236
+   "source_defect_records": 2432
   },
   {
    "season": 2017,
@@ -450,7 +450,7 @@
    "unresolved_id_rate": null,
    "shooting_plays": 867243,
    "shotinfo_rate": 1.0,
-   "shooter_resolution": 0.9994003987348413,
+   "shooter_resolution": 0.998914952325934,
    "assister_coverage": 0.9968198979660879,
    "xy_coverage": 0.0,
    "games_with_substitutions": 0,
@@ -466,7 +466,7 @@
    "box_player_roster_join_rate": 0.9997410332772239,
    "failed_requests": 0,
    "empty_responses": 38,
-   "source_defect_records": 2160
+   "source_defect_records": 2581
   },
   {
    "season": 2018,
@@ -486,7 +486,7 @@
    "unresolved_id_rate": null,
    "shooting_plays": 858658,
    "shotinfo_rate": 1.0,
-   "shooter_resolution": 0.9986176102709111,
+   "shooter_resolution": 0.9981587547079279,
    "assister_coverage": 0.9954960430002971,
    "xy_coverage": 0.0,
    "games_with_substitutions": 0,
@@ -502,7 +502,7 @@
    "box_player_roster_join_rate": 0.999370915318212,
    "failed_requests": 0,
    "empty_responses": 39,
-   "source_defect_records": 3189
+   "source_defect_records": 3583
   },
   {
    "season": 2019,
@@ -713,7 +713,7 @@
    "valid_lineup_units": 191001,
    "invalid_lineup_units": 0,
    "lineup_seconds_coverage": 1.1216099999018785,
-   "lineup_possessions_ratio": 1.0315472470934328,
+   "lineup_possessions_ratio": 1.0315472470934317,
    "team_seasons_with_roster": 811,
    "box_player_roster_join_rate": 1.0,
    "failed_requests": 0,
@@ -749,9 +749,9 @@
    "valid_lineup_units": 179400,
    "invalid_lineup_units": 0,
    "lineup_seconds_coverage": 1.0087723881572277,
-   "lineup_possessions_ratio": 0.9300851332375307,
+   "lineup_possessions_ratio": 0.9300851332375314,
    "team_seasons_with_roster": 702,
-   "box_player_roster_join_rate": 0.9998340193865356,
+   "box_player_roster_join_rate": 0.9999170096932678,
    "failed_requests": 0,
    "empty_responses": 375,
    "source_defect_records": 83551
@@ -1814,9 +1814,9 @@
     "shotinfo_rate": 1.0,
     "shots": 796224,
     "shooter_coverage": 0.9996659231573025,
-    "shooter_resolution": 0.9996659231573025,
+    "shooter_resolution": 0.9994750221043325,
     "assister_coverage_given_assisted": 0.9976692874234749,
-    "assister_resolution_given_assisted": 0.9976692874234749,
+    "assister_resolution_given_assisted": 0.9975527517946486,
     "range_coverage": 1.0,
     "xy_coverage_field_goals": 0.0,
     "invalid_coordinates": 0,
@@ -1832,9 +1832,9 @@
     "shotinfo_rate": 1.0,
     "shots": 810112,
     "shooter_coverage": 0.9987223988781798,
-    "shooter_resolution": 0.9987199300837415,
+    "shooter_resolution": 0.9986754917838521,
     "assister_coverage_given_assisted": 0.9952917698362836,
-    "assister_resolution_given_assisted": 0.9952843785801397,
+    "assister_resolution_given_assisted": 0.9952104660186999,
     "range_coverage": 1.0,
     "xy_coverage_field_goals": 0.0,
     "invalid_coordinates": 0,
@@ -1850,9 +1850,9 @@
     "shotinfo_rate": 1.0,
     "shots": 864741,
     "shooter_coverage": 0.9993685970712618,
-    "shooter_resolution": 0.9993685970712618,
+    "shooter_resolution": 0.9991419396096635,
     "assister_coverage_given_assisted": 0.9967134953389509,
-    "assister_resolution_given_assisted": 0.9967134953389509,
+    "assister_resolution_given_assisted": 0.9966101461357733,
     "range_coverage": 1.0,
     "xy_coverage_field_goals": 0.0,
     "invalid_coordinates": 0,
@@ -1868,9 +1868,9 @@
     "shotinfo_rate": 1.0,
     "shots": 867243,
     "shooter_coverage": 0.9994003987348413,
-    "shooter_resolution": 0.9994003987348413,
+    "shooter_resolution": 0.998914952325934,
     "assister_coverage_given_assisted": 0.9968198979660879,
-    "assister_resolution_given_assisted": 0.9968198979660879,
+    "assister_resolution_given_assisted": 0.9965154201117772,
     "range_coverage": 1.0,
     "xy_coverage_field_goals": 0.0,
     "invalid_coordinates": 0,
@@ -1886,9 +1886,9 @@
     "shotinfo_rate": 1.0,
     "shots": 858658,
     "shooter_coverage": 0.9986176102709111,
-    "shooter_resolution": 0.9986176102709111,
+    "shooter_resolution": 0.9981587547079279,
     "assister_coverage_given_assisted": 0.9954960430002971,
-    "assister_resolution_given_assisted": 0.9954960430002971,
+    "assister_resolution_given_assisted": 0.9950368689733409,
     "range_coverage": 1.0,
     "xy_coverage_field_goals": 0.0,
     "invalid_coordinates": 0,
@@ -2518,7 +2518,7 @@
     "team_games_with_box": 11667,
     "mean_seconds_coverage": 1.1216099999018785,
     "seconds_complete_rate": 0.732407645495843,
-    "mean_possessions_ratio_vs_box": 1.0315472470934328
+    "mean_possessions_ratio_vs_box": 1.0315472470934317
    },
    {
     "season": 2025,
@@ -2529,7 +2529,7 @@
     "team_games_with_box": 11362,
     "mean_seconds_coverage": 1.0087723881572277,
     "seconds_complete_rate": 0.8848794226368597,
-    "mean_possessions_ratio_vs_box": 0.9300851332375307
+    "mean_possessions_ratio_vs_box": 0.9300851332375314
    }
   ],
   "rosters": [
@@ -2697,7 +2697,7 @@
     "d1_team_seasons": 350,
     "d1_with_roster": 350,
     "box_player_roster_join_rate": 0.9997410332772239,
-    "pbp_participant_roster_join_rate": 0.9995697118653045,
+    "pbp_participant_roster_join_rate": 0.9990460490211764,
     "onfloor_player_roster_join_rate": null,
     "substitution_player_roster_join_rate": null,
     "lineup_player_roster_join_rate": null
@@ -2710,7 +2710,7 @@
     "d1_team_seasons": 351,
     "d1_with_roster": 351,
     "box_player_roster_join_rate": 0.999370915318212,
-    "pbp_participant_roster_join_rate": 0.9991286918308108,
+    "pbp_participant_roster_join_rate": 0.9986117487171489,
     "onfloor_player_roster_join_rate": null,
     "substitution_player_roster_join_rate": null,
     "lineup_player_roster_join_rate": null
@@ -2736,7 +2736,7 @@
     "d1_team_seasons": 353,
     "d1_with_roster": 353,
     "box_player_roster_join_rate": 0.999717241001879,
-    "pbp_participant_roster_join_rate": 0.9999930915967911,
+    "pbp_participant_roster_join_rate": 0.9995371369850001,
     "onfloor_player_roster_join_rate": null,
     "substitution_player_roster_join_rate": null,
     "lineup_player_roster_join_rate": null
@@ -2800,7 +2800,7 @@
     "roster_athletes": 15210,
     "d1_team_seasons": 364,
     "d1_with_roster": 364,
-    "box_player_roster_join_rate": 0.9998340193865356,
+    "box_player_roster_join_rate": 0.9999170096932678,
     "pbp_participant_roster_join_rate": 0.9999815605916653,
     "onfloor_player_roster_join_rate": 0.9998032094033221,
     "substitution_player_roster_join_rate": 0.9999478507715819,
@@ -3166,8 +3166,8 @@
    "reason_code": "SHOOTER_UNRESOLVED",
    "severity": "WARN",
    "excluded_from_trusted": true,
-   "records": 6031,
-   "games": 362
+   "records": 7230,
+   "games": 490
   },
   {
    "family": "SHOT",
@@ -3280,7 +3280,7 @@
   {
    "season": 2014,
    "family": "SHOT",
-   "records": 566
+   "records": 718
   },
   {
    "season": 2015,
@@ -3290,7 +3290,7 @@
   {
    "season": 2015,
    "family": "SHOT",
-   "records": 1674
+   "records": 1710
   },
   {
    "season": 2016,
@@ -3300,7 +3300,7 @@
   {
    "season": 2016,
    "family": "SHOT",
-   "records": 1023
+   "records": 1219
   },
   {
    "season": 2017,
@@ -3310,7 +3310,7 @@
   {
    "season": 2017,
    "family": "SHOT",
-   "records": 990
+   "records": 1411
   },
   {
    "season": 2018,
@@ -3320,7 +3320,7 @@
   {
    "season": 2018,
    "family": "SHOT",
-   "records": 1854
+   "records": 2248
   },
   {
    "season": 2019,
@@ -3411,10 +3411,10 @@
  "identity": {
   "pbp_participants": {
    "rows": 28574421,
-   "rows_resolved": 28561618,
-   "mapping_rate": 0.999552,
+   "rows_resolved": 28558823,
+   "mapping_rate": 0.999454,
    "distinct_athlete_ids": 69647,
-   "distinct_unresolved_athlete_ids": 468
+   "distinct_unresolved_athlete_ids": 469
   },
   "onfloor": {
    "rows": 41450717,
@@ -3425,10 +3425,10 @@
   },
   "shot_shooters": {
    "rows": 13605736,
-   "rows_resolved": 13599705,
-   "mapping_rate": 0.999557,
+   "rows_resolved": 13598506,
+   "mapping_rate": 0.999469,
    "distinct_athlete_ids": 67117,
-   "distinct_unresolved_athlete_ids": 458
+   "distinct_unresolved_athlete_ids": 459
   },
   "substitutions": {
    "rows": 858399,

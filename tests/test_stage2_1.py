@@ -134,10 +134,79 @@ def test_trusted_games_contain_no_duplicate_contest(db):
                                          ("fact.team_games", "flagship.team_game_outcomes"),
                                          ("fact.participation", "flagship.participation")])
 def test_box_facts_are_not_lost(db, raw, trusted):
+    """Stage 2.1 invariant "the canonical player-game count never changes" held through v2.3. It is SUPERSEDED for
+    fact.player_games / fact.participation by the v2.4 team-attribution remediation (docs/ARCHITECTURE_PRECEDENCE.md,
+    docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md §4): v2.0-v2.3 carried 154 canonical rows that were opponent-side COPIES of
+    real box lines (mirrored Starter Pack games), and v2.4 moves exactly those copies to qa.identity_remediation_quarantine.
+    The replacement asserts that no source record and no real appearance is lost; every removal is a proven mirror copy
+    (tests/test_stage2_1.py::test_every_removed_player_game_is_an_audited_mirror_copy)."""
     before = json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"][raw]
-    assert scalar(db, f"SELECT count(*) FROM {raw}") == before               # raw facts untouched
+    mirror_copies = scalar(db, """SELECT count(*) FROM qa.identity_remediation_quarantine
+                                  WHERE table_name = 'fact.player_games' AND rule_id = 'DEMIRROR_RECONCILED_GAMES'""")
+    removed_other = scalar(db, """SELECT count(*) FROM qa.identity_remediation_quarantine
+                                  WHERE table_name = 'fact.player_games' AND rule_id <> 'DEMIRROR_RECONCILED_GAMES'""")
+    assert removed_other == 0                                                  # no other rule may remove a box fact
+    if raw == "fact.player_games":
+        # every v2.0 source box record lives in exactly one place: the fact table or the mirror-copy quarantine
+        assert scalar(db, """SELECT count(*) FROM (SELECT source_file, source_record_key FROM fact.player_games UNION ALL
+                             SELECT json_extract_string(row_json, '$.source_file'), json_extract_string(row_json, '$.source_record_key')
+                             FROM qa.identity_remediation_quarantine WHERE table_name = 'fact.player_games')""") == before
+        assert scalar(db, """SELECT count(*) FROM fact.player_games p JOIN qa.identity_remediation_quarantine q
+                             ON q.table_name = 'fact.player_games' AND p.source_record_key = json_extract_string(q.row_json, '$.source_record_key')
+                             AND p.source_file = json_extract_string(q.row_json, '$.source_file')""") == 0
+        before = before - mirror_copies
+    if raw == "fact.participation":
+        # SEASON_STATS_MEMBERSHIP candidates legitimately move with identity repairs; the BOX-derived participation
+        # rows are exactly one per canonical player-game (none for a quarantined mirror copy, none missing)
+        n_box = scalar(db, "SELECT count(*) FROM fact.participation WHERE candidate_source = 'BOX_SCORE_ROW'")
+        assert n_box == scalar(db, "SELECT count(*) FROM fact.player_games") == \
+            json.loads((C.QA / "game_identity_before_counts_v2.0.json").read_text())["counts"]["fact.player_games"] - mirror_copies
+        assert scalar(db, """SELECT count(*) FROM fact.player_games x WHERE NOT EXISTS (SELECT 1 FROM fact.participation p
+                             WHERE p.candidate_source = 'BOX_SCORE_ROW' AND p.source_file = x.source_file
+                             AND p.source_record_key = x.source_record_key)""") == 0
+        assert scalar(db, """SELECT count(*) FROM (SELECT source_file, source_record_key FROM fact.participation
+                             WHERE candidate_source = 'BOX_SCORE_ROW' GROUP BY ALL HAVING count(*) > 1)""") == 0
+        before = scalar(db, f"SELECT count(*) FROM {raw}")
+    assert scalar(db, f"SELECT count(*) FROM {raw}") == before               # canonical facts = source facts - proven copies
     assert scalar(db, f"SELECT count(*) FROM {trusted}") == before            # every one reaches a trusted game
     assert scalar(db, f"SELECT count(*) FROM {trusted} WHERE canonical_game_id NOT IN (SELECT canonical_game_id FROM flagship.games)") == 0
+
+
+def test_every_removed_player_game_is_an_audited_mirror_copy(db):
+    """Each removed canonical player-game is a mirror copy: its raw source record has a twin in the same source game, same
+    player name and identical 18-stat box vector, filed under the other team; that twin survives exactly once as a
+    RESOLVED canonical row with a player id, both decisions are in the audit table, and both teams of every repaired game
+    reconcile. Raw source rows are unchanged (Stage 1 inventory = build-time source manifest = file contents now)."""
+    box = ("minutes", "points", "fgm", "fga", "two_pm", "two_pa", "three_pm", "three_pa", "ftm", "fta", "orb", "drb", "reb",
+           "ast", "stl", "blk", "tov", "pf")
+    same_box = " AND ".join(f"(json_extract_string(q.row_json, '$.{c}'))::INT IS NOT DISTINCT FROM s.{c}" for c in box)
+    copies = scalar(db, "SELECT count(*) FROM qa.identity_remediation_quarantine WHERE table_name = 'fact.player_games'")
+    assert copies > 0
+    # the surviving twin: same game, same source name, identical box line, the OTHER team, resolved, exactly one
+    assert scalar(db, f"""SELECT count(*) FROM qa.identity_remediation_quarantine q WHERE q.table_name = 'fact.player_games' AND
+        (SELECT count(*) FROM fact.player_games s WHERE s.canonical_game_id = q.canonical_game_id
+           AND s.source_player_name = json_extract_string(q.row_json, '$.source_player_name')
+           AND s.canonical_team_id <> q.canonical_team_id AND s.identity_status = 'RESOLVED' AND s.canonical_player_id IS NOT NULL
+           AND {same_box}) = 1""") == copies
+    # audit: a QUARANTINE decision per copy, a KEEP per survivor, all in games logged REMEDIATED_RECONCILED
+    assert scalar(db, """SELECT count(*) FROM qa.identity_remediation_quarantine q JOIN metadata.player_game_team_attribution a
+                         ON a.player_game_key = q.record_key AND a.decision = 'QUARANTINE'
+                         WHERE q.table_name = 'fact.player_games'""") == copies
+    assert scalar(db, "SELECT count(*) FROM metadata.player_game_team_attribution WHERE decision = 'KEEP'") == copies
+    assert scalar(db, """SELECT count(*) FROM qa.identity_remediation_quarantine q WHERE q.table_name = 'fact.player_games'
+                         AND q.canonical_game_id NOT IN (SELECT canonical_game_id FROM metadata.team_attribution_resolution
+                                                         WHERE decision = 'REMEDIATED_RECONCILED' AND reconciles)""") == 0
+    # no copy reaches a trusted view
+    assert scalar(db, """SELECT count(*) FROM flagship.player_game_outcomes o JOIN qa.identity_remediation_quarantine q
+                         ON q.table_name = 'fact.player_games' AND o.player_game_key = q.record_key""") == 0
+    # raw source rows unchanged: Stage 1 inventory == build-time source manifest == the files now
+    inv = {r["relative_path"]: int(r["row_count"]) for r in csv.DictReader((C.QA / "starter_pack_inventory.csv").open())
+           if r["family"] == "player_game_stats"}
+    built = dict(db.execute("""SELECT source_path, row_count FROM metadata.source_manifest
+                               WHERE source_path LIKE 'data/player_game_stats/%'""").fetchall())
+    now = dict(db.execute(f"""SELECT 'data/player_game_stats/' || split_part(filename, '/', -1), count(*) FROM read_csv(
+        '{C.STARTER_PACK_DATA}/player_game_stats/*.csv', all_varchar=true, union_by_name=true, filename=true) GROUP BY 1""").fetchall())
+    assert inv == built == now and len(now) == 21
 
 
 @pytest.mark.parametrize("raw,trusted,key", [

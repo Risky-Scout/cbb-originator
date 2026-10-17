@@ -1,0 +1,60 @@
+{
+ "policy": "docs/REPRODUCIBLE_ENVIRONMENT_POLICY.md \u00a72.2",
+ "environment": {
+  "python": {
+   "version": "3.12.13",
+   "implementation": "CPython",
+   "build": [
+    "main",
+    "Jun 23 2026 15:44:24"
+   ],
+   "compiler": "Clang 22.1.3 ",
+   "executable_relative": ".venv/bin/python"
+  },
+  "platform": {
+   "platform": "macOS-26.3.1-arm64-arm-64bit",
+   "system": "Darwin",
+   "release": "25.3.0",
+   "machine": "arm64",
+   "cpu_count": 10
+  },
+  "duckdb": {
+   "version": "1.5.6",
+   "threads": "2",
+   "memory_limit": "25.5 GiB"
+  },
+  "thread_policy": {
+   "duckdb_threads_config": 2,
+   "OMP/OPENBLAS/MKL_NUM_THREADS": 2
+  },
+  "installed_distributions": [
+   "certifi==2026.7.22",
+   "charset-normalizer==3.5.2",
+   "duckdb==1.5.6",
+   "idna==3.20",
+   "iniconfig==2.3.0",
+   "numpy==2.5.3",
+   "packaging==26.3",
+   "pandas==3.0.6",
+   "pluggy==1.6.0",
+   "pyarrow==25.0.1",
+   "pygments==2.21.0",
+   "pytest==9.1.1",
+   "python-dateutil==2.9.0.post0",
+   "pytz==2026.5",
+   "requests==2.34.2",
+   "six==1.17.0",
+   "urllib3==2.8.0"
+  ],
+  "lock_files_sha256": {
+   "pyproject.toml": "28e96fb6b25c9b10d610f18183b570153e310fbfdaba4cb02e99867ccea0d381",
+   "uv.lock": "cab2bcfbaac16e8777f5a3798f23536944642887a952b516a4061b3c6108e36b",
+   "requirements.lock.txt": "c2ed9ca92ffe70976d7db621d08b81d4da7162bbfb98ea2ce23ae78c89355c8c"
+  }
+ },
+ "environment_fingerprint": "6e7270e899fb8d8a90f6ba075d7783841fd22a52dcdd2284a1041ccf30122def",
+ "environment_lock_sha256": "cab2bcfbaac16e8777f5a3798f23536944642887a952b516a4061b3c6108e36b",
+ "recorded_for_candidate_commit": "425211071413735be8e1497105ae51830c971c12",
+ "recorded_at_git_head": "425211071413735be8e1497105ae51830c971c12",
+ "tracked_tree_dirty": true
+}

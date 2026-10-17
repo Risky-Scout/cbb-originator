@@ -1,6 +1,7 @@
 """Shared test fixtures.
 
 `db`         read-only connection to the BUILT canonical database (run the build first).
+`starter_db` the same database (READ_ONLY), Starter Pack staging views bound to the verified current Starter Pack.
 `empty_db`   in-memory database with the canonical schema + ID macros, for adapter tests that
              use the clearly labeled SYNTHETIC fixtures in tests/fixtures/ (never production data).
 `raw_root`   temporary raw store; patches config.RAW so adapters never touch data/raw in tests.
@@ -25,6 +26,18 @@ def db():
     con = duckdb.connect(str(C.DUCKDB_PATH), read_only=True)
     con.execute("SET TimeZone = 'UTC'")
     con.execute(f"SET threads = {C.DUCKDB_THREADS}")
+    yield con
+    con.close()
+
+
+@pytest.fixture(scope="session")
+def starter_db():
+    """`db` for checks that read the Starter Pack staging views: the frozen database attached READ_ONLY, its staging
+    views bound to the current Starter Pack only after its registered content identity is proven (relocation.py)."""
+    from cbb_platform import relocation
+    if not C.DUCKDB_PATH.exists():
+        pytest.fail(f"{C.DUCKDB_PATH} missing — run `.venv/bin/python -m cbb_platform.build_canonical` first")
+    con = relocation.connect_canonical_relocated()
     yield con
     con.close()
 

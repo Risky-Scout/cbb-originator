@@ -1,0 +1,38 @@
+{
+ "version": "props-v0-challenger-1.0.0",
+ "upstream_dataset": "cbb_data_v2.4+5f19d31e524a",
+ "status": "CHALLENGER_V0_RESEARCH (not production; no market data; 2025-26 never read)",
+ "evaluations": [
+  {"name": "A", "train_through": 2023, "validate": 2024, "label": "train 2013-14..2022-23, validate 2023-24"},
+  {"name": "B", "train_through": 2024, "validate": 2025, "label": "train 2013-14..2023-24, validate 2024-25"}
+ ],
+ "recency": {
+  "half_life_seasons": 1.0,
+  "prior_seasons_used": 3,
+  "rule": "weight = 0.5 ** (season_age / half_life): current season 1, previous 0.5, two back 0.25, three back 0.125; older seasons dropped (< 0.07). Applied to the player's rate history AND to training-row weights (age measured from the last training season). Fixed, not tuned."
+ },
+ "scoring_population": "participation_status = 'PLAYED' AND box_row_present AND minutes_label_available (MIN) / counting_labels_available (counts). Predictions are conditional on the player appearing.",
+ "count_targets": {"PTS": "pts", "REB": "reb", "AST": "ast", "FG3M": "three_pm", "STL": "stl", "BLK": "blk", "TOV": "tov"},
+ "history_sums": {
+  "pts": ["pts"], "reb": ["orb", "drb"], "ast": ["ast"], "three_pm": ["tpm"], "stl": ["stl"], "blk": ["blk"], "tov": ["tov"]
+ },
+ "minutes_features": [
+  "pr_ewm_min_per_app", "pr_l3_min_per_app", "pr_l5_min_per_app", "pr_l10_min_per_app", "pstd_min_per_app",
+  "pr_last_box_minutes", "pps_min_per_app", "pr_ewm_start_rate", "pr_last_box_started", "pr_l5_starts",
+  "pp_participation_rate", "pp_games_since_played", "role_l5_minutes_rank", "role_team_rotation_depth_l5",
+  "role_teammates_l5_minutes", "ret_team_returning_min_share", "pstd_appearances", "pps_appearances",
+  "pps_same_team", "prof_portal_transfer_in", "pr_ewm_usage", "pstd_usage"
+ ],
+ "log1p_features": ["pstd_appearances", "pps_appearances", "pp_games_since_played"],
+ "ridge_alpha": 0.0001,
+ "minutes_clip": [1.0, 45.0],
+ "mean_floor": 0.01,
+ "baseline_pseudo_games": 5.0,
+ "rate_prior_min_minutes": 100,
+ "negbin_overdispersion_ratio_threshold": 1.10,
+ "pmf_support_max": 120,
+ "minutes_support_max": 60,
+ "minutes_sigma_buckets": [0, 10, 20, 30, 1000],
+ "count_mean_buckets": [0, 0.5, 1, 2, 4, 8, 15, 1000],
+ "interval_levels": [0.5, 0.8, 0.95]
+}

@@ -1,0 +1,169 @@
+{
+ "candidate": {
+  "artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "tag_original": "cbb-props-v1-prelockbox-2024-25"
+ },
+ "code_sha": "6eab9ddc667942b271bdbc50cccc3c6a9d02843c",
+ "created_at": "2026-10-13",
+ "dataset_linkage": {
+  "canonical_build_id": "20261007T055951Z",
+  "canonical_content_digest": "12fd1841e611c046468c165b34163231bb2131454f28489111c74474bcb17c34"
+ },
+ "dataset_status": "RESEARCH_CANDIDATE (not MODEL_READY; see docs/PRE_MODEL_INTEGRITY_CLOSURE_v1_0.md)",
+ "dataset_version": "cbb_data_v2.4+5f19d31e524a",
+ "eligible_games": {
+  "count": 11484,
+  "rule": "distinct canonical_game_id of the eligible player-games",
+  "sha256": "7a744299ee14440b32392543195597b8f7bee47576d7aff8a51f67e325caeb86"
+ },
+ "eligible_player_games": {
+  "count": 493151,
+  "rule": "pregame player-game examples of 2023-24 and 2024-25 labelled PLAYED (y = 1) or DNP_CONFIRMED (y = 0); UNKNOWN_PARTICIPATION and NOT_ON_ROSTER are excluded, never converted",
+  "sha256": "26fb96b50102a041451c6680ca21d9ca5a030a0bffe4c8f27bb27b1422478772"
+ },
+ "exclusions_report": {
+  "2014": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 144650
+  },
+  "2015": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 226293
+  },
+  "2016": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 290029
+  },
+  "2017": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 290989
+  },
+  "2018": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 268758
+  },
+  "2019": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 262648
+  },
+  "2020": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 244919
+  },
+  "2021": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 185033
+  },
+  "2022": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 268829
+  },
+  "2023": {
+   "EXCLUDED_SEASON_BEFORE_CONFIRMED_DNP_LABELS (2013-14..2022-23)": 273032
+  },
+  "2024": {
+   "NOT_ON_ROSTER": 2085,
+   "UNKNOWN_PARTICIPATION": 16359
+  },
+  "2025": {
+   "NOT_ON_ROSTER": 313,
+   "UNKNOWN_PARTICIPATION": 2987
+  }
+ },
+ "feature_version": {
+  "features_db_sha_of_fingerprints": "745bff8354a3d07dfef4efd45ccc6411c2a78470c1e1415e00eb24d28212b605",
+  "labels_db_sha_of_fingerprints": "0f8e5616d44dc1716148faaf4741bf7417795d630c184bac48459c3c20d615d9",
+  "stage3_version": "stage3-features-1.0.0",
+  "upstream_dataset": "cbb_data_v2.4+5f19d31e524a"
+ },
+ "generator": "cbb_platform/eligibility_manifests.py",
+ "identity_requirements": "target player-game has a canonical player id (RESOLVED); cross-season history never crosses a quarantined identity link; identity-conflict player-seasons masked",
+ "lockbox_season_present": false,
+ "manifest_id": "ELIG_PARTICIPATION",
+ "manifest_sha256_of_content": "218027d6b95122b565b4c4367899fc26178738eb7e72e6bc6052cbe54582ceae",
+ "missingness_mechanism": {
+  "pregame inputs (15 numeric + 8 flags)": {
+   "assumption": "MAR given X",
+   "code": "NO_PRIOR_HISTORY / UNKNOWN_PARTICIPATION",
+   "handling": "numeric: 0 after standardization plus a missing indicator; flags: missing = 0"
+  },
+  "target label UNKNOWN_PARTICIPATION / NOT_ON_ROSTER": {
+   "assumption": "informative; never converted to DNP",
+   "code": "UNKNOWN_PARTICIPATION",
+   "handling": "row excluded (counted)"
+  }
+ },
+ "pbp_quarantine_overlap": {
+  "eligible_games_inside": 192,
+  "quarantined_games_total": 4138
+ },
+ "pit_fidelity_requirement": {
+  "checkpoint": "single pregame cutoff = scheduled tip - 1 h (spec.CUTOFF_RULE), i.e. the T-1h checkpoint",
+  "inputs": {
+   "earlier-game box rows, participation and substitution feeds": "DATE_KNOWN (HR-1: tip + 4 h, or 06:00 ET next day)",
+   "prior-season finals, previous-season roster returners, recruiting class s-1, portal year s-1": "PRESEASON_ASSUMED"
+  },
+  "note": "no SOURCE_RECEIPT_UNKNOWN or UNUSABLE_FOR_HISTORICAL_PIT input enters these subsystems (end-of-season roster snapshots are used only for the NOT_ON_ROSTER LABEL, which is excluded). The PRESEASON_ASSUMED class is carried by the Stage 3 1900-01-01 preseason sentinel, not by an explicit fidelity column: the bitemporal rebuild (Phase A2 item 1) is outstanding (ARCHITECTURE_PRECEDENCE.md \u00a74.4)",
+  "prohibited_classes_admitted": []
+ },
+ "quarantine_rules": {
+  "event_team_attribution": "not applicable (no event rows are read)",
+  "identity": "target rows exist only for resolved canonical players in the pregame universe; unresolved box rows are counted in lab.target_box_rows_unresolved (EXCLUDED_BOX_ROW_IDENTITY_UNRESOLVED); identity_conflicts rows are masked in the src views (stage3/sources.py); history never crosses metadata.identity_link_quarantine (spec.link_guard)",
+  "pbp_score_mismatch": "4,138 PBP FINAL_SCORE_MISMATCH games are excluded from flagship.plays; these subsystems read box rows and the substitution feed, not plays, so the rule does not select their rows. The eligible rows inside those games are COUNTED below (pbp_quarantine_overlap)",
+  "reconstruction_class": "not applicable (no possessions or stints are read)",
+  "team_attribution": "v2.4 DEMIRROR_RECONCILED_GAMES copies are in qa.identity_remediation_quarantine and never reach fact.player_games / the trusted views"
+ },
+ "required_sources": {
+  "feat.player_features": "Stage 3 approved pregame features (prediction cutoff = tip - 1 h)",
+  "lab.player_game_labels": "Stage 3 label store (participation_status, box_row_present, minutes_label_available, counting_labels_available)",
+  "upstream": "flagship.played_games / fact.player_games (trusted), flagship.substitutions, core.rosters, core.recruits, core.transfers"
+ },
+ "rule": "pregame player-game examples of 2023-24 and 2024-25 labelled PLAYED (y = 1) or DNP_CONFIRMED (y = 0); UNKNOWN_PARTICIPATION and NOT_ON_ROSTER are excluded, never converted",
+ "rule_sql": "SELECT l.player_game_example_id AS id, l.canonical_game_id AS game, l.season FROM lb.lab.player_game_labels l JOIN feat.player_features f USING (player_game_example_id) JOIN ex.player_game_examples x USING (player_game_example_id) WHERE l.season IN (2024, 2025) AND l.participation_status IN ('PLAYED', 'DNP_CONFIRMED')",
+ "sample_counts": {
+  "by_season": {
+   "2024": 235323,
+   "2025": 257828
+  },
+  "core_walk_forward_reference": [
+   "FOLD_1",
+   "FOLD_2",
+   "FOLD_3",
+   "FOLD_4",
+   "FOLD_5",
+   "FOLD_6",
+   "FOLD_7",
+   "LINEUP_ROTATION_DEV"
+  ],
+  "folds": {
+   "EVALUATION": {
+    "train": {
+     "player_games": 235323,
+     "seasons": [
+      2024
+     ],
+     "sha256": "12d528b87eddd2a0349da50d7eafba8ebc1c039d98e8fa6dec612ab90dcbbd48"
+    },
+    "validation": {
+     "player_games": 257828,
+     "seasons": [
+      2025
+     ],
+     "sha256": "84088f718d31ff89abcacbef7de77bdbfacaa1fdc3782f198e2e8e4625f6f35e"
+    }
+   },
+   "FINAL": {
+    "train": {
+     "player_games": 493151,
+     "seasons": [
+      2024,
+      2025
+     ],
+     "sha256": "26fb96b50102a041451c6680ca21d9ca5a030a0bffe4c8f27bb27b1422478772"
+    },
+    "validation": {
+     "player_games": 0,
+     "seasons": [],
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+   }
+  }
+ },
+ "seasons": [
+  2024,
+  2025
+ ],
+ "selection_bias_reference": "docs/PBP_QUARANTINE_SELECTION_BIAS_PLAN.md (box-row absence is informative; the participation exclusion of UNKNOWN labels is non-random)",
+ "version": "1.0.0"
+}

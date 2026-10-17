@@ -1,0 +1,51 @@
+diff --git a/cbb_platform/props_v0.py b/cbb_platform/props_v0.py
+index a7455b9..76aac93 100644
+--- a/cbb_platform/props_v0.py
++++ b/cbb_platform/props_v0.py
+@@ -98,7 +98,8 @@ def load_frames(cfg: dict, seasons=None, population: str = "scored") -> tuple[pd
+         for s, n in con.execute(f"SELECT season, count(*) FROM lb.lab.{table} WHERE season BETWEEN {lo} AND {hi} GROUP BY 1").fetchall():
+             excl.setdefault(int(s), {})[reason] = int(n)
+     con.close()
+-    if frame["season"].max() >= lockbox.LOCKBOX_SEASON or finals["season"].max() >= lockbox.LOCKBOX_SEASON:
++    top = max(frame["season"].max(), finals["season"].max())
++    if top > lockbox.LOCKBOX_SEASON or (top == lockbox.LOCKBOX_SEASON and not lockbox.opening_authorized()):
+         raise lockbox.LockboxViolation("2025-26 row reached the challenger")
+     for t in targets:                                  # count labels unavailable -> NaN, never 0
+         frame.loc[~frame["counts_ok"].astype(bool), f"y_{t}"] = np.nan
+diff --git a/cbb_platform/props_v0_participation.py b/cbb_platform/props_v0_participation.py
+index 9e7d5f8..5e23534 100644
+--- a/cbb_platform/props_v0_participation.py
++++ b/cbb_platform/props_v0_participation.py
+@@ -67,7 +67,8 @@ def load(seasons=TRAIN_SEASONS + (VALIDATE_SEASON,)) -> tuple[pd.DataFrame, dict
+         JOIN lb.lab.player_game_labels l USING (player_game_example_id)
+         WHERE f.season IN ({sl}) ORDER BY f.player_game_example_id""").df()
+     con.close()
+-    if df["season"].max() >= lockbox.LOCKBOX_SEASON:
++    top = df["season"].max()
++    if top > lockbox.LOCKBOX_SEASON or (top == lockbox.LOCKBOX_SEASON and not lockbox.opening_authorized()):
+         raise lockbox.LockboxViolation("2025-26 row reached the participation model")
+     for c in FLAGS:
+         df[c] = df[c].fillna(0.0)
+diff --git a/cbb_platform/stage3/spec.py b/cbb_platform/stage3/spec.py
+index 700a6b4..521fdeb 100644
+--- a/cbb_platform/stage3/spec.py
++++ b/cbb_platform/stage3/spec.py
+@@ -6,13 +6,16 @@ from __future__ import annotations
+ 
+ from pathlib import Path
+ 
+-from cbb_platform import config as C
++from cbb_platform import config as C, lockbox as _lockbox
+ 
+ STAGE3_VERSION = "stage3-features-1.0.0"
+ UPSTREAM_DATASET = "cbb_data_v2.4+5f19d31e524a"
+ 
+ # ------------------------------------------------------------------ scope (architect data-scope freeze)
+-MODEL_SEASONS = tuple(range(2014, 2026))     # end-year: 2013-14 .. 2024-25
++# 2025-26 joins ONLY as an evaluation season, and only under the reviewed, authorized one-time opening (guard v3,
++# docs/LOCKBOX_OPENING_PROTOCOL.md §2); folds, subsystem windows and every training range below are unchanged
++EVALUATION_SEASONS = (_lockbox.LOCKBOX_SEASON,) if _lockbox.opening_authorized() else ()
++MODEL_SEASONS = tuple(range(2014, 2026)) + EVALUATION_SEASONS     # end-year: 2013-14 .. 2024-25 (+ 2025-26 if opened)
+ LOCKBOX_SEASON = 2026                        # 2025-26: never read
+ SOURCE_SEASONS = MODEL_SEASONS               # history may come ONLY from these seasons (no silent pre-2013-14 priors)
+ 

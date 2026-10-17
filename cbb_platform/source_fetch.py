@@ -54,7 +54,7 @@ def get_with_meta(provider: str, endpoint: str, url: str, params: dict, headers:
     if not 200 <= getattr(resp, "status_code", 200) < 300:
         raise SourceHTTPError(provider, endpoint, resp.status_code, _retry_after(meta.get("Retry-After")))
     body = json.loads(resp.content)
-    lockbox.check_response(provider, body)
+    lockbox.check_response(provider, body, endpoint)
     return resp.content, body, meta
 
 
