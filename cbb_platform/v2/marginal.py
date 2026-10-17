@@ -164,10 +164,10 @@ def load_participation(seasons, features_db: Path = FEATURES_DB, labels_db: Path
 
 
 def games_of(features_db: Path = FEATURES_DB, seasons=None) -> pd.DataFrame:
-    """player_game_example_id -> canonical_game_id + the pregame role field used for diagnostics."""
+    """player_game_example_id -> canonical_game_id (role_l5_minutes_rank is already a model input of the frame)."""
     seasons = check_seasons(seasons)
     con = duckdb.connect(str(features_db), read_only=True, config={"threads": C.DUCKDB_THREADS})
-    out = con.execute(f"""SELECT player_game_example_id, canonical_game_id, role_l5_minutes_rank::DOUBLE AS role_l5_minutes_rank
+    out = con.execute(f"""SELECT player_game_example_id, canonical_game_id
         FROM feat.player_features WHERE season IN ({", ".join(map(str, seasons))})""").df()
     con.close()
     return out
@@ -523,6 +523,36 @@ def select_policy(folds: list[dict]) -> dict:
             "decided_at_step": steps[-1]["step"] if not tie_break else "TIE_BREAK"}
 
 
+def selection_notes(folds: list[dict], comparisons: dict, sel: dict) -> dict:
+    """Facts from the development folds only, recorded with the selection (before 2025-26): grid-boundary status,
+    the non-selectable V1REF reference vs the selected policy, and per-target / minutes agreement with step 1."""
+    pol = sel["SELECTED_WEIGHTING_POLICY"]
+    order = ["W0", "W4", "W2"]                                          # decreasing half-life
+    agg = {p: _pooled(folds, lambda c: (c["targets"]["AGGREGATE_7"]["log_score"], c["targets"]["AGGREGATE_7"]["n_cells"]))[p]
+           for p in POLICIES}
+    monotone = all(agg[a] > agg[b] for a, b in zip(order, order[1:]))
+    ref = comparisons["pooled_policy_vs_V1REF_annual"][pol]
+    per_target = {}
+    for f in folds:
+        F = f["forecast_season"]
+        for t in TARGETS:
+            vals = {p: f["candidates"][f"F{F}_ANNUAL_REFIT_{p}"]["targets"][t]["log_score"] for p in POLICIES}
+            per_target.setdefault(t, {})[str(F)] = min(vals, key=vals.get)
+    return {
+        "selected_is_grid_boundary": pol == order[-1] or pol == order[0],
+        "aggregate_log_score_monotone_in_shorter_half_life": monotone,
+        "V1REF_h1_reference_vs_selected": {
+            "selected_minus_V1REF_pooled_log_score": ref["pooled"]["agg_log_score"],
+            "selected_minus_V1REF_pooled_crps": ref["pooled"]["agg_crps"],
+            "per_fold_log_score": {F: v["agg_log_score"]["mean_difference"] for F, v in ref["per_fold"].items()},
+            "V1REF_clearly_better_than_selected": ref["pooled"]["agg_log_score"]["ci95"][0] > 0 and ref["pooled"]["agg_crps"]["ci95"][0] > 0},
+        "best_policy_by_target_log_score": per_target,
+        "interpretation": ("The three directive candidates give a clear, stable step-1 decision, so no further half-life "
+                           "is tested (protocol). V1REF (h = 1, the v1 weighting, not selectable) is better than every "
+                           "candidate on both development folds; whether to evaluate h <= 2 beyond this grid is an "
+                           "architect decision. This note is computed from development folds only.")}
+
+
 # ============================================================================ git evidence
 def _git(*a) -> str:
     return subprocess.run(["git", *a], cwd=C.PROJECT_ROOT, capture_output=True, text=True, check=True).stdout.strip()
@@ -558,6 +588,7 @@ def stage_dev() -> dict:
     comparisons["pooled_policy_vs_V1REF_annual"] = {p: compare(folds, f"ANNUAL_REFIT_{p}", "ANNUAL_REFIT_V1REF") for p in POLICIES}
     comparisons["pooled_annual_minus_stale"] = {p: compare(folds, f"ANNUAL_REFIT_{p}", f"ONE_SEASON_STALE_{p}")["pooled"] for p in pols}
     sel = select_policy(folds)
+    sel["notes_from_development_folds"] = selection_notes(folds, comparisons, sel)
     out = {"version": VERSION, "stage": "DEV", "protocol_sha256": _sha(PROTOCOL_PATH), "seasons_loaded": [FIRST_SEASON, max(DEV_FOLDS)],
            "season_2025_26_loaded": False, "folds": [_strip_fold(f) for f in folds], "comparisons": comparisons,
            "fit_calls": FIT_CALLS, "selection": sel}
@@ -643,8 +674,6 @@ def stage_oos() -> dict:
         prow = load_participation((F,))
         cand = cand.merge(prow[["player_game_example_id"] + [c for c in Q.NUMERIC + Q.FLAGS if c not in cand.columns]],
                           on="player_game_example_id", how="left", validate="one_to_one")
-        gm = games_of(seasons=(F,))[["player_game_example_id", "role_l5_minutes_rank"]]
-        cand = cand.merge(gm, on="player_game_example_id", how="left", validate="one_to_one")
         mu = P.predict(cand, cfg, st)["challenger"]
         sig = P._band_sigma(mu["min"], cfg["minutes_sigma_buckets"], st["minutes_sigma"])
         out = pd.DataFrame({

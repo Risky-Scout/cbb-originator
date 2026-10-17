@@ -1,0 +1,96 @@
+{
+ "record": "V2 Phase 1 weighting-policy selection (development folds only; recorded before any 2025-26 evaluation)",
+ "POLICY_SELECTED_BEFORE_2025_26": true,
+ "SELECTED_WEIGHTING_POLICY": "W2",
+ "SELECTED_HALF_LIFE": 2.0,
+ "steps": [
+  {
+   "step": "1_aggregate_log_score",
+   "pooled_values": {
+    "W0": 1.4515506923169421,
+    "W4": 1.4512780722893277,
+    "W2": 1.4510695667131277
+   },
+   "best": "W2",
+   "clearly_worse_than_best": {
+    "W0": true,
+    "W4": true
+   },
+   "remaining": [
+    "W2"
+   ]
+  }
+ ],
+ "tie_break": null,
+ "selection_folds": [
+  2024,
+  2025
+ ],
+ "selection_arm": "ANNUAL_REFIT",
+ "decided_at_step": "1_aggregate_log_score",
+ "dev_folds_sha256": "b760aab31b05584a1e89aa704cc09dfadb9d42475e7b33925c443194c59ca2a2",
+ "protocol_sha256": "00e23ead23d2051ad6da85bd4eed1c3efce36485067a733f36078bedb363cdfa",
+ "season_2025_26_loaded": false,
+ "notes_from_development_folds": {
+  "selected_is_grid_boundary": true,
+  "aggregate_log_score_monotone_in_shorter_half_life": true,
+  "V1REF_h1_reference_vs_selected": {
+   "selected_minus_V1REF_pooled_log_score": {
+    "mean_difference": 0.00023253755800514342,
+    "se": 8.24037178194183e-06,
+    "ci95": [
+     0.00021638642931253742,
+     0.0002486886866977494
+    ],
+    "clusters": 11484,
+    "n": 1573880
+   },
+   "selected_minus_V1REF_pooled_crps": {
+    "mean_difference": 0.00017383952845256585,
+    "se": 7.096067496024784e-06,
+    "ci95": [
+     0.00015993123616035726,
+     0.00018774782074477443
+    ],
+    "clusters": 11484,
+    "n": 1573880
+   },
+   "per_fold_log_score": {
+    "2024": 0.0002054861174904013,
+    "2025": 0.0002593627950701644
+   },
+   "V1REF_clearly_better_than_selected": true
+  },
+  "best_policy_by_target_log_score": {
+   "PTS": {
+    "2024": "W2",
+    "2025": "W2"
+   },
+   "REB": {
+    "2024": "W0",
+    "2025": "W0"
+   },
+   "AST": {
+    "2024": "W2",
+    "2025": "W2"
+   },
+   "FG3M": {
+    "2024": "W0",
+    "2025": "W0"
+   },
+   "STL": {
+    "2024": "W0",
+    "2025": "W0"
+   },
+   "BLK": {
+    "2024": "W2",
+    "2025": "W2"
+   },
+   "TOV": {
+    "2024": "W2",
+    "2025": "W2"
+   }
+  },
+  "interpretation": "The three directive candidates give a clear, stable step-1 decision, so no further half-life is tested (protocol). V1REF (h = 1, the v1 weighting, not selectable) is better than every candidate on both development folds; whether to evaluate h <= 2 beyond this grid is an architect decision. This note is computed from development folds only."
+ }
+}

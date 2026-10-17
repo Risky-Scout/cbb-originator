@@ -1,0 +1,307 @@
+{
+ "v0_state": {
+  "train_through": 2022,
+  "n_train_rows": 936480,
+  "train_max_cutoff": "2022-04-04 20:20:00-04:00",
+  "transform": {
+   "mean": {
+    "pr_ewm_min_per_app": 20.304215066638,
+    "pr_l3_min_per_app": 20.47374492259336,
+    "pr_l5_min_per_app": 20.432071725612637,
+    "pr_l10_min_per_app": 20.33171500926387,
+    "pstd_min_per_app": 20.10015146928993,
+    "pr_last_box_minutes": 20.48697044483782,
+    "pps_min_per_app": 19.537866073936435,
+    "pr_ewm_start_rate": 0.502946724333757,
+    "pr_last_box_started": 0.5079487435928183,
+    "pr_l5_starts": 2.3648796108393975,
+    "pp_participation_rate": 0.8974748433576786,
+    "pp_games_since_played": 0.09614388487658126,
+    "role_l5_minutes_rank": 6.575551150461503,
+    "role_team_rotation_depth_l5": 8.825514602333733,
+    "role_teammates_l5_minutes": 1022.5718250911948,
+    "ret_team_returning_min_share": 0.8954362446973384,
+    "pstd_appearances": 2.42944392082732,
+    "pps_appearances": 3.166743480275074,
+    "pps_same_team": 0.879208077436316,
+    "prof_portal_transfer_in": 0.022066203249596326,
+    "pr_ewm_usage": 0.18946671846308044,
+    "pstd_usage": 0.19004592762312056
+   },
+   "sd": {
+    "pr_ewm_min_per_app": 9.317609266357877,
+    "pr_l3_min_per_app": 10.058835053185337,
+    "pr_l5_min_per_app": 9.754491381427234,
+    "pr_l10_min_per_app": 9.399215038354702,
+    "pstd_min_per_app": 8.998254756130637,
+    "pr_last_box_minutes": 11.085454315561432,
+    "pps_min_per_app": 9.390878050866268,
+    "pr_ewm_start_rate": 0.43927380896190127,
+    "pr_last_box_started": 0.49993681348275965,
+    "pr_l5_starts": 2.2365667699344156,
+    "pp_participation_rate": 0.19975586775900384,
+    "pp_games_since_played": 0.3591491074617489,
+    "role_l5_minutes_rank": 3.9819647601931303,
+    "role_team_rotation_depth_l5": 3.04981953721088,
+    "role_teammates_l5_minutes": 306.0031414415416,
+    "ret_team_returning_min_share": 0.13813351960859355,
+    "pstd_appearances": 0.8279357167487458,
+    "pps_appearances": 0.5413925148366825,
+    "pps_same_team": 0.32588530805645877,
+    "prof_portal_transfer_in": 0.1468988969452931,
+    "pr_ewm_usage": 0.06147116465074111,
+    "pstd_usage": 0.06015084081944312
+   },
+   "ind": [
+    "pr_ewm_min_per_app",
+    "pr_l3_min_per_app",
+    "pr_l5_min_per_app",
+    "pr_l10_min_per_app",
+    "pstd_min_per_app",
+    "pr_last_box_minutes",
+    "pps_min_per_app",
+    "pr_ewm_start_rate",
+    "pr_last_box_started",
+    "pr_l5_starts",
+    "pp_participation_rate",
+    "pp_games_since_played",
+    "ret_team_returning_min_share",
+    "pps_appearances",
+    "pps_same_team",
+    "pr_ewm_usage",
+    "pstd_usage"
+   ]
+  },
+  "coef": {
+   "intercept": 20.89900193502485,
+   "pr_ewm_min_per_app": 4.320970171697217,
+   "pr_ewm_min_per_app__missing": -1.7804061949135688,
+   "pr_l3_min_per_app": 1.148071880052273,
+   "pr_l3_min_per_app__missing": -1.242071030689829,
+   "pr_l5_min_per_app": 0.3062656400772109,
+   "pr_l5_min_per_app__missing": -1.7804061949134646,
+   "pr_l10_min_per_app": 0.5610184399792184,
+   "pr_l10_min_per_app__missing": -1.7804061949129941,
+   "pstd_min_per_app": -0.2986376804438676,
+   "pstd_min_per_app__missing": -1.7804061949130154,
+   "pr_last_box_minutes": 1.4350675693107415,
+   "pr_last_box_minutes__missing": 0.8759828351520462,
+   "pps_min_per_app": 0.815698974374814,
+   "pps_min_per_app__missing": -0.28907948750740803,
+   "pr_ewm_start_rate": -0.029695845975526495,
+   "pr_ewm_start_rate__missing": 0.8759828351513137,
+   "pr_last_box_started": 1.141675199263145,
+   "pr_last_box_started__missing": 0.875982835151586,
+   "pr_l5_starts": -0.11336371878315454,
+   "pr_l5_starts__missing": 0.8759828351514831,
+   "pp_participation_rate": 0.2127999294986098,
+   "pp_participation_rate__missing": 1.0375889474503894,
+   "pp_games_since_played": -0.6052637602140309,
+   "pp_games_since_played__missing": 1.0375889474503845,
+   "role_l5_minutes_rank": -0.4787520992424682,
+   "role_team_rotation_depth_l5": 0.04837488778084862,
+   "role_teammates_l5_minutes": 0.20087627991063778,
+   "ret_team_returning_min_share": -0.03764210545188069,
+   "ret_team_returning_min_share__missing": 0.3287821848044187,
+   "pstd_appearances": 0.05465381281216235,
+   "pps_appearances": 0.07648656183998714,
+   "pps_appearances__missing": -0.15888020336750752,
+   "pps_same_team": 0.0820034389697715,
+   "pps_same_team__missing": -0.1588802033674908,
+   "prof_portal_transfer_in": 0.02767726481114532,
+   "pr_ewm_usage": 1.1434677467870795,
+   "pr_ewm_usage__missing": 1.461245440895479,
+   "pstd_usage": -0.7556153824940037,
+   "pstd_usage__missing": 1.4612454408952147,
+   "pos_F": -0.44868049014674716,
+   "pos_C": -0.77684905475988,
+   "pos_U": 0.31022389160526165,
+   "cold_COLD_EARLY_SEASON": 0.2205788683806553,
+   "cold_COLD_NO_HISTORY": -4.80982590557967,
+   "cold_COLD_TRANSFER_IN": 0.40701589175990965,
+   "is_home": -0.048242741719451046
+  },
+  "minutes_sigma": [
+   5.082347689847068,
+   6.928698243208799,
+   6.740960373638957,
+   5.5199611169971785
+  ],
+  "prior_rate": {
+   "pts": {
+    "G": 0.3529486652335003,
+    "F": 0.3487488026733917,
+    "C": 0.34953126753299224,
+    "U": 0.3697859613785968
+   },
+   "reb": {
+    "G": 0.12187370671773708,
+    "F": 0.2121314101110336,
+    "C": 0.2429674402835566,
+    "U": 0.17202676761591362
+   },
+   "ast": {
+    "G": 0.07851814776510418,
+    "F": 0.042842472621471166,
+    "C": 0.034720831637508186,
+    "U": 0.06679736848194391
+   },
+   "three_pm": {
+    "G": 0.045468620722365495,
+    "F": 0.022462891350987158,
+    "C": 0.006890458990790009,
+    "U": 0.03592359622133398
+   },
+   "stl": {
+    "G": 0.03425244668979512,
+    "F": 0.02600573066951192,
+    "C": 0.020662021875779268,
+    "U": 0.03379781522455188
+   },
+   "blk": {
+    "G": 0.0073934977406033145,
+    "F": 0.028053541657653988,
+    "C": 0.04870393896119236,
+    "U": 0.018783120560143064
+   },
+   "tov": {
+    "G": 0.062149872159723084,
+    "F": 0.059562500576726254,
+    "C": 0.06386024246134415,
+    "U": 0.06672393153354657
+   }
+  },
+  "prior_k_minutes": {
+   "pts": 29.902060106856464,
+   "reb": 72.04498203311994,
+   "ast": 61.138921025328656,
+   "three_pm": 69.16850426100481,
+   "stl": 249.51297518425588,
+   "blk": 74.06877751361576,
+   "tov": 182.1957617375243
+  },
+  "dispersion": {
+   "pts": {
+    "family": "NEGBIN",
+    "phi": 0.24247177439066372,
+    "overdispersion_ratio": 3.423605282494272
+   },
+   "reb": {
+    "family": "NEGBIN",
+    "phi": 0.11656910344124274,
+    "overdispersion_ratio": 1.5176026694280789
+   },
+   "ast": {
+    "family": "NEGBIN",
+    "phi": 0.1283374016430823,
+    "overdispersion_ratio": 1.2916054648140933
+   },
+   "three_pm": {
+    "family": "NEGBIN",
+    "phi": 0.19800832688221612,
+    "overdispersion_ratio": 1.273240821247179
+   },
+   "stl": {
+    "family": "NEGBIN",
+    "phi": 0.16,
+    "overdispersion_ratio": 1.102481372444631
+   },
+   "blk": {
+    "family": "NEGBIN",
+    "phi": 0.22200516688385163,
+    "overdispersion_ratio": 1.1821383903998346
+   },
+   "tov": {
+    "family": "POISSON",
+    "phi": 0.0,
+    "overdispersion_ratio": 1.0529033105103767
+   }
+  },
+  "baseline": {
+   "population_per_appearance": {
+    "min": 20.475402601576842,
+    "pts": 7.203115178237488,
+    "reb": 3.2410196082472096,
+    "ast": 1.3206602319597083,
+    "three_pm": 0.7350465212183376,
+    "stl": 0.6327246024232158,
+    "blk": 0.33505039936727593,
+    "tov": 1.2589592786129848
+   },
+   "dispersion": {
+    "pts": {
+     "family": "NEGBIN",
+     "phi": 0.3075460079086011,
+     "overdispersion_ratio": 3.7221839932756438
+    },
+    "reb": {
+     "family": "NEGBIN",
+     "phi": 0.17064018125275524,
+     "overdispersion_ratio": 1.6689766691966366
+    },
+    "ast": {
+     "family": "NEGBIN",
+     "phi": 0.20176222304876587,
+     "overdispersion_ratio": 1.3850808040236635
+    },
+    "three_pm": {
+     "family": "NEGBIN",
+     "phi": 0.28280213260910786,
+     "overdispersion_ratio": 1.3221160582377567
+    },
+    "stl": {
+     "family": "NEGBIN",
+     "phi": 0.15632775349010214,
+     "overdispersion_ratio": 1.13058713576357
+    },
+    "blk": {
+     "family": "NEGBIN",
+     "phi": 0.36003012586663224,
+     "overdispersion_ratio": 1.2316154665168895
+    },
+    "tov": {
+     "family": "NEGBIN",
+     "phi": 0.07629463707206842,
+     "overdispersion_ratio": 1.115363269800852
+    }
+   },
+   "minutes_sigma": [
+    6.402992650591502,
+    8.127038127874659,
+    7.43975857991182,
+    6.042598600996624
+   ]
+  },
+  "state_hash": "3a95d3362fa929ec9b9292085fd5c381b2d4132ee723451cdf85da284bfdfda7",
+  "v2": {
+   "weighting_policy": "W4",
+   "half_life": 4.0,
+   "n_eff": 782755.9790985248,
+   "n": 936480,
+   "sum_w": 936480.0,
+   "rows_by_season": {
+    "2014": 106962,
+    "2015": 108997,
+    "2016": 109364,
+    "2017": 109109,
+    "2018": 107155,
+    "2019": 108672,
+    "2020": 102789,
+    "2021": 76959,
+    "2022": 106473
+   },
+   "weight_by_season": {
+    "2014": 0.4629157262361553,
+    "2015": 0.5505026752866876,
+    "2016": 0.6546616982789616,
+    "2017": 0.7785283495131057,
+    "2018": 0.9258314524723106,
+    "2019": 1.1010053505733752,
+    "2020": 1.3093233965579232,
+    "2021": 1.5570566990262114,
+    "2022": 1.8516629049446212
+   }
+  }
+ },
+ "participation_state": null
+}
