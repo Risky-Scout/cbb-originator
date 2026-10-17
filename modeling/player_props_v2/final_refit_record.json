@@ -1,0 +1,16 @@
+{
+ "artifact": "modeling/player_props_v2/v2_marginal_challenger_through_2025_26.json",
+ "sha256": "8cb25370be093bcd518f5a0bcbaff902fb0e3340e1ef355dd532d5d291d381f2",
+ "artifact_fingerprint": "d088a78f0805de4467add60241dec5cf6d3d08f1207a536e8297b20c71b48f20",
+ "fit_calls": {
+  "FINAL": {
+   "v0_fit": 1,
+   "participation_fit": 1
+  }
+ },
+ "v0_n_eff": 610876.355109806,
+ "v0_n": 1384635,
+ "participation_n_eff": 691223.7364565053,
+ "participation_n": 743417,
+ "v1_artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f"
+}
