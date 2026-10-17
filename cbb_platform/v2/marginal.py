@@ -657,11 +657,10 @@ def stage_final() -> dict:
     return rec
 
 
-def stage_oos() -> dict:
-    """Pregame-candidate forecasts for every forecast season, from the SAVED annual-refit states of the selected policy
-    (trained only on earlier seasons). No model is fit here."""
-    sel = json.loads(SELECTION_PATH.read_text())
-    pol = sel["SELECTED_WEIGHTING_POLICY"]
+def stage_oos(pol: str | None = None, store_path: Path = OOS_PATH, manifest_path: Path = OOS_MANIFEST_PATH) -> dict:
+    """Pregame-candidate forecasts for every forecast season, from the SAVED annual-refit states of `pol` (default: the
+    protocol-selected policy), each trained only on earlier seasons. No model is fit here."""
+    pol = pol or json.loads(SELECTION_PATH.read_text())["SELECTED_WEIGHTING_POLICY"]
     cfg = P.load_config()
     names = {"MIN": "min", **cfg["count_targets"]}
     parts = []
@@ -705,8 +704,8 @@ def stage_oos() -> dict:
         parts.append(out)
     df = pd.concat(parts, ignore_index=True)
     OOS_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(OOS_PATH, index=False)
-    man = {"store": str(OOS_PATH.relative_to(C.PROJECT_ROOT)), "sha256": _sha(OOS_PATH), "rows": int(len(df)),
+    df.to_parquet(store_path, index=False)
+    man = {"store": str(store_path.relative_to(C.PROJECT_ROOT)), "sha256": _sha(store_path), "rows": int(len(df)),
            "games": int(df["game_id"].nunique()), "rows_by_fold": df.groupby("fold_id").size().to_dict(),
            "games_by_fold": df.groupby("fold_id")["game_id"].nunique().to_dict(),
            "played_rows_by_fold": df[df["participation_status"] == "PLAYED"].groupby("fold_id").size().to_dict(),
@@ -717,7 +716,7 @@ def stage_oos() -> dict:
            "outcomes": "y_* = target-game labels (NaN when unavailable); attached after forecasting, never used to forecast",
            "in_sample_residuals_used": False, "columns": list(df.columns),
            "state_files_sha256": {f"F{F}": _sha(STATE_DIR / f"F{F}_ANNUAL_REFIT_{pol}.json") for F in DEV_FOLDS + (CONFIRM_SEASON,)}}
-    OOS_MANIFEST_PATH.write_text(json.dumps(man, indent=1, default=str) + "\n")
+    manifest_path.write_text(json.dumps(man, indent=1, default=str) + "\n")
     return man
 
 

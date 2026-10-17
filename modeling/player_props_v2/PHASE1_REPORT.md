@@ -149,3 +149,15 @@ and wrote no output; it was fixed and the whole stage was rerun. Reproduction ch
 2. Annual refit helps the count/minutes model (small, consistent). It did not help participation in the one testable season.
 3. The OOS store is ready for Phase 2. If Phase 2 needs more seasons of played-row history, annual states for earlier
    forecast seasons are cheap to add, but P(play) cannot exist before 2024-25.
+
+## Erratum (2026-10-17, recorded during Phase 1B)
+
+§6 lists the W2 challenger's stat training rows as "n 1,272,278, n_eff 595,713". Those are the F2026 annual-refit fit's
+numbers (through 2024-25). The final W2 fit through 2025-26 (`final_refit_record.json`, unchanged) has **n 1,384,635,
+n_eff 610,876**; participation n 743,417, n_eff 691,224. No result, artifact or decision is affected.
+
+## Architect ruling (Phase 1B)
+
+W2 stays the **protocol-selected** policy among W0 / W4 / W2 (`weighting_selection.json`, unchanged). The architect
+selected **V1REF (half-life 1) + annual refit** as the final V2 marginal foundation. The reason: V1REF independently beat W2
+on both development seasons before 2025-26 was examined. See `architect_ruling_phase1b.json` and `phase1b_verification.json`.

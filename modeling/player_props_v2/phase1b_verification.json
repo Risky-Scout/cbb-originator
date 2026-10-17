@@ -1,0 +1,364 @@
+{
+ "version": "cbb-v2-phase1b-1.0.0",
+ "OOS_WEIGHTING_POLICY": "V1REF",
+ "OOS_HALF_LIFE": 1.0,
+ "artifact": {
+  "path": "modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json",
+  "sha256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "artifact_fingerprint": "6e0b7174aafb193dcca1d28e7db785d9955421979b643322afce7cae3508dd8f",
+  "v0_n": 1384635,
+  "v0_n_eff": 331869.84147140046,
+  "participation_n": 743417
+ },
+ "v1_artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+ "V1_ARTIFACT_UNCHANGED": true,
+ "v2_vs_v1": {
+  "structurally_identical": {
+   "config": true,
+   "spec_fingerprint": true,
+   "final_spec_stl": true,
+   "coef_order": true,
+   "state_structure": true,
+   "transform_feature_lists": true,
+   "weighting_rule": "both: props_v0 training-row weight 0.5 ** (age / 1.0); participation unweighted",
+   "dispersion_families_identical": true
+  },
+  "dispersion_families": {
+   "pts": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "reb": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "ast": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "three_pm": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "stl": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "blk": [
+    "NEGBIN",
+    "NEGBIN"
+   ],
+   "tov": [
+    "POISSON",
+    "POISSON"
+   ]
+  },
+  "control_refit_through_2024_25_vs_v1": {
+   "v0_state_max_abs_leaf_diff": 5.708211681110242e-12,
+   "participation_state_max_abs_leaf_diff": 2.3037127760972e-15,
+   "tolerance": 1e-09,
+   "explanation": "common store = dev store up to float summation noise (max rel 9.4e-16)"
+  },
+  "differences": {
+   "training_through": [
+    2025,
+    2026
+   ],
+   "stat_training_seasons": [
+    [
+     2014,
+     2025
+    ],
+    [
+     2014,
+     2026
+    ]
+   ],
+   "participation_training_seasons": [
+    [
+     2024,
+     2025
+    ],
+    [
+     2024,
+     2025,
+     2026
+    ]
+   ],
+   "n_train_rows": [
+    1272278,
+    1384635
+   ],
+   "max_abs_minutes_coef_change": 0.19165916950190254
+  },
+  "DIFFERS_ONLY_BY_TRAINING_EXTENSION_AND_REESTIMATION": true
+ },
+ "oos_store": {
+  "path": "modeling/v2_oos/oos_forecasts_phase1b_v1ref.parquet",
+  "sha256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "rows": 774511,
+  "games": 17242,
+  "rows_by_fold": {
+   "F2024": 253767,
+   "F2025": 261128,
+   "F2026": 259616
+  },
+  "games_by_fold": {
+   "F2024": 5726,
+   "F2025": 5764,
+   "F2026": 5752
+  },
+  "same_population_and_order_as_phase1_store": true,
+  "states": {
+   "F2024": "states/F2024_ANNUAL_REFIT_V1REF.json",
+   "F2025": "states/F2025_ANNUAL_REFIT_V1REF.json",
+   "F2026": "states/F2026_ANNUAL_REFIT_V1REF.json"
+  },
+  "final_model_used": false
+ },
+ "reproduction": {
+  "by_fold": {
+   "F2024": {
+    "MIN": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "PTS": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "REB": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "AST": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "FG3M": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "STL": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "BLK": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "TOV": {
+     "n_store": 111948,
+     "n_recorded": 111948,
+     "max_abs_diff": 0.0
+    },
+    "PARTICIPATION": {
+     "status": "NOT_ESTIMABLE_NO_PRIOR_PARTICIPATION_LABELS",
+     "store_p_play_all_nan": true
+    }
+   },
+   "F2025": {
+    "MIN": {
+     "n_store": 112896,
+     "n_recorded": 112896,
+     "max_abs_diff": 0.0
+    },
+    "PTS": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "REB": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "AST": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "FG3M": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "STL": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "BLK": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "TOV": {
+     "n_store": 112892,
+     "n_recorded": 112892,
+     "max_abs_diff": 0.0
+    },
+    "PARTICIPATION": {
+     "n_store": 257828,
+     "n_recorded": 257828,
+     "max_abs_diff": 0.0
+    }
+   },
+   "F2026": {
+    "MIN": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "PTS": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "REB": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "AST": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "FG3M": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "STL": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "BLK": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "TOV": {
+     "n_store": 112357,
+     "n_recorded": 112357,
+     "max_abs_diff": 0.0
+    },
+    "PARTICIPATION": {
+     "n_store": 250266,
+     "n_recorded": 250266,
+     "max_abs_diff": 0.0
+    }
+   }
+  },
+  "max_abs_diff": 0.0,
+  "tolerance": 1e-12,
+  "OOS_METRIC_REPRODUCTION": "PASS"
+ },
+ "tip_rule": {
+  "rule": {
+   "initial": "share_tips_23_to_04_et < 0.02",
+   "revised": "modal ET hour in 18-20 and share < 0.10",
+   "reason": "dev 2014-2025 share 0.0204 from legitimate West Coast 8 pm PT tips; BDL 804/804 exact"
+  },
+  "where_used": "cbb_platform/v2/provenance.py canonical_checks -> pass['no_shifted_tips'] -> DATA_PROVENANCE only",
+  "provenance_importers_and_attributes": {
+   "cbb_platform/v2/phase1b.py": [
+    "DEV_FEATURES",
+    "DEV_LABELS",
+    "TIP_RULE_REVISION",
+    "V1_ARTIFACT"
+   ],
+   "cbb_platform/v2/marginal.py": [
+    "LB_FEATURES",
+    "LB_LABELS",
+    "V1_ARTIFACT"
+   ]
+  },
+  "allowed_attributes_for_model_code": [
+   "LB_FEATURES",
+   "LB_LABELS",
+   "V1_ARTIFACT"
+  ],
+  "files_changed_since_production_baseline": [
+   ".gitignore",
+   "cbb_platform/v2/__init__.py",
+   "cbb_platform/v2/marginal.py",
+   "cbb_platform/v2/provenance.py",
+   "modeling/player_props_v2/PHASE1_REPORT.md",
+   "modeling/player_props_v2/data_provenance.json",
+   "modeling/player_props_v2/dev_folds.json",
+   "modeling/player_props_v2/final_refit_record.json",
+   "modeling/player_props_v2/oos_forecast_store_manifest.json",
+   "modeling/player_props_v2/phase1_protocol.json",
+   "modeling/player_props_v2/retrospective_2025_26.json",
+   "modeling/player_props_v2/states/F2024_ANNUAL_REFIT_V1REF.json",
+   "modeling/player_props_v2/states/F2024_ANNUAL_REFIT_W0.json",
+   "modeling/player_props_v2/states/F2024_ANNUAL_REFIT_W2.json",
+   "modeling/player_props_v2/states/F2024_ANNUAL_REFIT_W4.json",
+   "modeling/player_props_v2/states/F2024_ONE_SEASON_STALE_V1REF.json",
+   "modeling/player_props_v2/states/F2024_ONE_SEASON_STALE_W0.json",
+   "modeling/player_props_v2/states/F2024_ONE_SEASON_STALE_W2.json",
+   "modeling/player_props_v2/states/F2024_ONE_SEASON_STALE_W4.json",
+   "modeling/player_props_v2/states/F2025_ANNUAL_REFIT_V1REF.json",
+   "modeling/player_props_v2/states/F2025_ANNUAL_REFIT_W0.json",
+   "modeling/player_props_v2/states/F2025_ANNUAL_REFIT_W2.json",
+   "modeling/player_props_v2/states/F2025_ANNUAL_REFIT_W4.json",
+   "modeling/player_props_v2/states/F2025_ONE_SEASON_STALE_V1REF.json",
+   "modeling/player_props_v2/states/F2025_ONE_SEASON_STALE_W0.json",
+   "modeling/player_props_v2/states/F2025_ONE_SEASON_STALE_W2.json",
+   "modeling/player_props_v2/states/F2025_ONE_SEASON_STALE_W4.json",
+   "modeling/player_props_v2/states/F2026_ANNUAL_REFIT_V1REF.json",
+   "modeling/player_props_v2/states/F2026_ANNUAL_REFIT_W2.json",
+   "modeling/player_props_v2/states/F2026_ONE_SEASON_STALE_V1REF.json",
+   "modeling/player_props_v2/states/F2026_ONE_SEASON_STALE_W2.json",
+   "modeling/player_props_v2/v2_marginal_challenger_through_2025_26.json",
+   "modeling/player_props_v2/weighting_selection.json",
+   "tests/test_v2_phase1.py"
+  ],
+  "model_data_fold_eligibility_paths_changed": [],
+  "stores": {
+   "data/lockbox_2025_26/stage3/features.duckdb": {
+    "bytes": 2436116480,
+    "mtime_utc": "2026-10-16T20:19:59.540195227+00:00"
+   },
+   "data/lockbox_2025_26/stage3/labels.duckdb": {
+    "bytes": 236990464,
+    "mtime_utc": "2026-10-16T20:20:05.288255215+00:00"
+   },
+   "modeling/store/features.duckdb": {
+    "bytes": 2272538624,
+    "mtime_utc": "2026-10-07T06:13:45.512942790+00:00"
+   },
+   "modeling/store/labels.duckdb": {
+    "bytes": 218116096,
+    "mtime_utc": "2026-10-07T06:13:51.121592999+00:00"
+   }
+  },
+  "folds_defined_by": "fixed season constants (marginal.DEV_FOLDS, CONFIRM_SEASON; phase1_protocol.json); no tip-hour quantity enters fold assignment",
+  "eligibility_defined_by": "lab.player_game_labels flags in the unchanged Stage 3 store (scored = PLAYED, box row, minutes / counting label available); modeling/eligibility unchanged",
+  "under_initial_threshold": "the dev canonical late-tip share 0.0204 would have failed the initial < 0.02 test, giving DATA_PROVENANCE = UNKNOWN (a STOP) - a gate classification, not a data or model change; the BDL external-truth test (804/804 equal, 0 shifted) passes under both",
+  "TIP_RULE_CHANGE_AFFECTS_MODEL_OUTPUT": false,
+  "TIP_RULE_CHANGE_AFFECTS_FOLD_SELECTION": false,
+  "TIP_RULE_CHANGE_AFFECTS_ELIGIBILITY": false
+ },
+ "fit_calls": {
+  "FINAL_1B": {
+   "v0_fit": 1,
+   "participation_fit": 1
+  },
+  "CONTROL_1B": {
+   "v0_fit": 1,
+   "participation_fit": 1
+  }
+ },
+ "fit_calls_note": "FINAL_1B = the final artifact; CONTROL_1B = verification refit through 2024-25 (not an artifact); OOS store: 0"
+}

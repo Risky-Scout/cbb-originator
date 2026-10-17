@@ -1,0 +1,30 @@
+{
+ "record": "Architect ruling, V2 Phase 1B: final marginal foundation",
+ "ANNUAL_REFIT": true,
+ "WEIGHTING_POLICY": "V1REF",
+ "HALF_LIFE": 1.0,
+ "protocol_selected_policy": {
+  "policy": "W2",
+  "half_life": 2.0,
+  "meaning": "W2 = protocol-selected among W0 / W4 / W2 (weighting_selection.json, unchanged)"
+ },
+ "architect_selected_policy": {
+  "policy": "V1REF",
+  "half_life": 1.0,
+  "meaning": "V1REF = architect-selected final marginal policy because it independently outperformed W2 on both development seasons before 2025-26 was examined (weighting_selection.json notes_from_development_folds), and again retrospectively on 2025-26"
+ },
+ "constraints": [
+  "no additional half-lives tested",
+  "2025-26 not used for further weighting selection",
+  "no dependence layer"
+ ],
+ "phase1_evidence_preserved_sha256": {
+  "phase1_protocol.json": "00e23ead23d2051ad6da85bd4eed1c3efce36485067a733f36078bedb363cdfa",
+  "dev_folds.json": "b760aab31b05584a1e89aa704cc09dfadb9d42475e7b33925c443194c59ca2a2",
+  "weighting_selection.json": "62aee036d26304e6ddbe40ed7b956f85dbd845bd64f2e4c56c244133b585108b",
+  "retrospective_2025_26.json": "a768fb38e5071c9aed587c25b9388e206f3c3abe82bbd2bc1af161b398388984",
+  "v2_marginal_challenger_through_2025_26.json": "8cb25370be093bcd518f5a0bcbaff902fb0e3340e1ef355dd532d5d291d381f2",
+  "final_refit_record.json": "cd5d3c4f9d3cfb9ec9f7d3d2fbdcba29b6f597fa1a688dec74265104e132f6fe",
+  "oos_forecast_store_manifest.json": "38cae980c0af5a1097e2bf8f8cccb0ae3f347162c69ba3105867b2474bb77950"
+ }
+}

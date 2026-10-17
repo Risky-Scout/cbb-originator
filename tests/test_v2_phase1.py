@@ -133,3 +133,41 @@ def test_oos_store_out_of_sample():
     assert not df["training_through_season"].eq(2026).any()            # never the final through-2025-26 model
     assert df.loc[df["forecast_season"] == 2024, "p_play"].isna().all()
     assert df.loc[df["forecast_season"] > 2024, "p_play"].between(0, 1).all()
+
+
+# ============================================================================ Phase 1B (architect ruling: V1REF, h = 1)
+def test_phase1b_ruling_and_final_artifact():
+    from cbb_platform.v2 import phase1b as B
+    if not B.VERIFY_PATH.exists():
+        pytest.skip("phase 1B not run")
+    rul = json.loads(B.RULING_PATH.read_text())
+    assert rul["WEIGHTING_POLICY"] == "V1REF" and rul["HALF_LIFE"] == 1.0 and rul["ANNUAL_REFIT"] is True
+    assert rul["protocol_selected_policy"]["policy"] == "W2"                      # Phase 1 record kept
+    for name, sha in rul["phase1_evidence_preserved_sha256"].items():
+        assert hashlib.sha256((M.OUT_DIR / name).read_bytes()).hexdigest() == sha
+    a = json.loads(B.ARTIFACT_PATH.read_text())
+    assert R.fingerprint(a) == a["artifact_fingerprint"] and a["weighting_policy"] == "V1REF" and a["half_life"] == 1.0
+    assert (a["SUPERVISED_TRAINING_THROUGH"], a["HISTORICAL_STATE_THROUGH"], a["PRODUCTION_SEASON"]) == (2026, 2026, 2027)
+    assert a["v0_state"]["v2"]["weighting_policy"] == "V1REF" and a["v0_state"]["dispersion"]["stl"]["phi"] == 0.16
+    assert a["participation_state"]["train_seasons"] == [2024, 2025, 2026]
+    v = json.loads(B.VERIFY_PATH.read_text())
+    assert v["artifact"]["sha256"] == hashlib.sha256(B.ARTIFACT_PATH.read_bytes()).hexdigest()
+    assert v["V1_ARTIFACT_UNCHANGED"] and v["v2_vs_v1"]["DIFFERS_ONLY_BY_TRAINING_EXTENSION_AND_REESTIMATION"]
+    assert v["reproduction"]["OOS_METRIC_REPRODUCTION"] == "PASS"
+    assert not any(v["tip_rule"][k] for k in ("TIP_RULE_CHANGE_AFFECTS_MODEL_OUTPUT", "TIP_RULE_CHANGE_AFFECTS_FOLD_SELECTION",
+                                              "TIP_RULE_CHANGE_AFFECTS_ELIGIBILITY"))
+
+
+def test_phase1b_oos_store_v1ref_out_of_sample():
+    from cbb_platform.v2 import phase1b as B
+    if not B.OOS_MANIFEST_PATH.exists():
+        pytest.skip("phase 1B OOS store not built")
+    man = json.loads(B.OOS_MANIFEST_PATH.read_text())
+    df = pd.read_parquet(B.OOS_PATH)
+    assert hashlib.sha256(B.OOS_PATH.read_bytes()).hexdigest() == man["sha256"] and len(df) == man["rows"]
+    assert set(df["weighting_policy"]) == {"V1REF"} and (df["training_through_season"] < df["forecast_season"]).all()
+    assert set(df["state_name"]) == {f"F{F}_ANNUAL_REFIT_V1REF" for F in (2024, 2025, 2026)}
+    assert not df["training_through_season"].eq(2026).any()
+    w2 = pd.read_parquet(M.OOS_PATH, columns=["player_game_example_id"])
+    assert df["player_game_example_id"].equals(w2["player_game_example_id"])     # same population and order
+    assert list(df.columns) == list(pd.read_parquet(M.OOS_PATH).columns)          # same schema
