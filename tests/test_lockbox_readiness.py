@@ -1,16 +1,38 @@
 """Lockbox readiness for the CBB pre-lockbox candidate (cbb_platform/lockbox_readiness.py, record content 3.0.0): the
 r2 candidate is the original model plus tracked STL evidence only, the lockbox is still closed, the guard patches are
 prepared but unapplied, the environment lock reproduces, G1-G6 are verbatim, approval is withheld and the records are
-deterministic. Nothing here reads 2025-26."""
+deterministic. Nothing here reads 2025-26.
+
+State-aware (cbb_platform/lockbox_state.py): these tests certify the PRE_LOCKBOX_READINESS state. In that state they read
+the live tree. After the lockbox (POST_LOCKBOX_CLOSED_GO) the same assertions are verified at readiness commit d65aac9
+(its git objects, or an archived copy of its code run in a fresh interpreter), so they keep proving that the lockbox was
+unopened at readiness; the current state is certified by tests/test_production_baseline.py."""
 from __future__ import annotations
 
 import hashlib
 import json
 import subprocess
+import tempfile
+from pathlib import Path
 
 import pytest
 
-from cbb_platform import config as C, lockbox, props_v0 as P, lockbox_readiness as L
+from cbb_platform import config as C, lockbox, props_v0 as P, lockbox_readiness as L, lockbox_state as S
+
+STATE = S.current()
+PRE = STATE == S.PRE_LOCKBOX_READINESS
+LEDGER = str(L.LEDGER_PATH.relative_to(C.PROJECT_ROOT))
+
+
+def _ledger_at_readiness() -> dict:
+    return json.loads(L.LEDGER_PATH.read_text() if PRE else S.blob(S.READINESS_COMMIT, LEDGER))
+
+
+def _readiness_behaviour() -> dict:
+    """The guard behaviour of readiness commit d65aac9's own code (archived copy), with and without the opening flag."""
+    with tempfile.TemporaryDirectory() as d:
+        code = S.archive(S.READINESS_COMMIT, Path(d))
+        return {mode: S.probe(code, mode == "flag_set") for mode in ("flag_unset", "flag_set")}
 
 FROZEN = ["cbb_platform/props_v0.py", "cbb_platform/props_v0_eval.py", "cbb_platform/props_v0_participation.py",
           "cbb_platform/props_v1_pricing.py", "cbb_platform/props_v1_refit.py", "cbb_platform/lockbox.py",
@@ -27,8 +49,9 @@ G1_G6_2_0_0 = {   # scorecard content 2.0.0 (sha256 8b2371a9...9013, preserved i
 
 
 def test_r2_candidate_is_the_original_plus_evidence_only():
+    at = [] if PRE else [S.READINESS_COMMIT]          # post-lockbox: the readiness tree, not the worktree
     for tag in (L.MODEL_TAG, L.ORIGINAL_TAG):
-        assert subprocess.run(["git", "diff", "--quiet", tag, "--", *FROZEN], cwd=C.PROJECT_ROOT).returncode == 0
+        assert subprocess.run(["git", "diff", "--quiet", tag, *at, "--", *FROZEN], cwd=C.PROJECT_ROOT).returncode == 0
     ident = L.identity()
     assert ident["pass"] and ident["tag_commit"] == L.MODEL_COMMIT and ident["original_tag_preserved"]
     assert ident["files_changed_original_to_r2"] == sorted(L.STL_EVIDENCE)
@@ -37,15 +60,21 @@ def test_r2_candidate_is_the_original_plus_evidence_only():
 
 
 def test_2025_26_still_inaccessible_and_approval_withheld():
-    with pytest.raises(lockbox.LockboxViolation):
-        lockbox.check_season(lockbox.LOCKBOX_SEASON)
-    with pytest.raises(lockbox.LockboxViolation):
-        lockbox.check_request("cbbd", "games", {"season": lockbox.LOCKBOX_SEASON})
-    with pytest.raises(lockbox.LockboxViolation):
-        P.load_frames(P.load_config(), seasons=[lockbox.LOCKBOX_SEASON])
-    assert not hasattr(lockbox, "opening_authorized")                  # no guard patch is applied
-    assert not (C.MANIFESTS / "LOCKBOX_OPEN_DECISION_2025_26.json").exists()
-    rec = json.loads(L.LEDGER_PATH.read_text())
+    if PRE:
+        with pytest.raises(lockbox.LockboxViolation):
+            lockbox.check_season(lockbox.LOCKBOX_SEASON)
+        with pytest.raises(lockbox.LockboxViolation):
+            lockbox.check_request("cbbd", "games", {"season": lockbox.LOCKBOX_SEASON})
+        with pytest.raises(lockbox.LockboxViolation):
+            P.load_frames(P.load_config(), seasons=[lockbox.LOCKBOX_SEASON])
+        assert not hasattr(lockbox, "opening_authorized")                  # no guard patch is applied
+        assert not (C.MANIFESTS / "LOCKBOX_OPEN_DECISION_2025_26.json").exists()
+    else:                                                                  # the same facts at readiness commit d65aac9
+        for b in _readiness_behaviour().values():
+            assert b["season_2026"] and b["cbbd_2026"] and b["stage3_2026"]
+            assert not b["opening_authorized_attr"]                        # no guard patch is applied
+        assert S.blob(S.READINESS_COMMIT, S.DECISION) is None
+    rec = _ledger_at_readiness()
     assert rec["lockbox_open"] is False and rec["lockbox_touched"] is False and rec["touched_2025_26"] is False
     assert rec["approval_record"]["lockbox_open"] is False and rec["approval_record"]["approved_by"] == []
     assert rec["approval_record"]["status"] == "NOT_GRANTED" and rec["LOCKBOX_OPEN_APPROVAL"] == "WITHHELD"
@@ -56,7 +85,11 @@ def test_2025_26_still_inaccessible_and_approval_withheld():
 
 def test_guard_patches_prepared_not_applied():
     for patch in (L.GUARD_PATCH, L.GUARD_PATCH_V3):
-        assert subprocess.run(["git", "apply", "--check", patch], cwd=C.PROJECT_ROOT).returncode == 0
+        if PRE:
+            assert subprocess.run(["git", "apply", "--check", patch], cwd=C.PROJECT_ROOT).returncode == 0
+        else:                                    # prepared, not applied, at readiness; the reviewed bytes are unchanged since
+            assert S.apply_check(S.READINESS_COMMIT, [patch])
+            assert S.blob(S.READINESS_COMMIT, patch) == (C.PROJECT_ROOT / patch).read_bytes()
         text = (C.PROJECT_ROOT / patch).read_text()
         assert "OPEN_DECISION_SHA256: str | None = None" in text                  # closed by default even once applied
         assert "s > LOCKBOX_SEASON" in text and "after {LOCKBOX_LABEL}" in text   # later seasons stay refused
@@ -104,8 +137,25 @@ def test_route_closure_recorded_with_measured_e8_and_its_classification():
     assert rec["touched_2025_26"] is False and rec["used_2026_27_preseason_data"] is False
 
 
+def _guard_at_readiness() -> dict:
+    """lockbox_readiness.guard()'s fields that depend on the tree, evaluated at readiness commit d65aac9."""
+    v3_text = S.blob(S.READINESS_COMMIT, L.GUARD_PATCH_V3).decode()
+    sc_text = S.blob(S.READINESS_COMMIT, L.SCORING_PATCH).decode()
+    beh = _readiness_behaviour()
+    return {"design_approved": all(S.sha(S.blob(S.READINESS_COMMIT, p)) == h for p, h in L.APPROVED_DESIGN_SHA256.items()),
+            "applied": not (S.apply_check(S.READINESS_COMMIT, [L.GUARD_PATCH_V3])
+                            and not S.apply_check(S.READINESS_COMMIT, [L.GUARD_PATCH_V3], reverse=True)),
+            "live_guard_closed": all(b["season_2026"] and not b["opening_authorized_attr"] for b in beh.values()),
+            "decision_record_absent": S.blob(S.READINESS_COMMIT, S.DECISION) is None,
+            "v3": {"opens_stats_team_season": '"stats/team/season"' in v3_text,
+                   "closed_by_default": "OPEN_DECISION_SHA256: str | None = None" in v3_text,
+                   "later_seasons_refused": "s > LOCKBOX_SEASON" in v3_text and "after {LOCKBOX_LABEL}" in v3_text},
+            "scoring_enable": {"applies_after_v3": S.apply_check(S.READINESS_COMMIT, (L.GUARD_PATCH_V3, L.SCORING_PATCH)),
+                               "enables_only_when_authorized": "not lockbox.opening_authorized()" in sc_text}}
+
+
 def test_guard_design_approved_by_exact_bytes_and_not_applied():
-    g = L.guard()
+    g = L.guard() if PRE else _guard_at_readiness()
     assert g["design_approved"] and g["applied"] is False and g["live_guard_closed"] and g["decision_record_absent"]
     assert g["v3"]["opens_stats_team_season"] and g["v3"]["closed_by_default"] and g["v3"]["later_seasons_refused"]
     assert g["scoring_enable"]["applies_after_v3"] and g["scoring_enable"]["enables_only_when_authorized"]
@@ -123,7 +173,18 @@ def test_environment_lock_reproducible():
 def test_readiness_records_deterministic():
     env = L.environment()
     assert json.dumps(L.scorecard(), indent=1) + "\n" == L.SCORECARD_PATH.read_text()
-    assert json.dumps(L.readiness(env), indent=1) + "\n" == L.LEDGER_PATH.read_text()      # regenerated byte-identically
+    if PRE:
+        assert json.dumps(L.readiness(env), indent=1) + "\n" == L.LEDGER_PATH.read_text()  # regenerated byte-identically
+    else:
+        # readiness() reads the live tree (guard, route modules), so it is regenerated only in its own state. Post-lockbox:
+        # the record is byte-identical to the one committed at d65aac9, whose authoritative full suite (this test included)
+        # passed with 0 failures, and the PIT audit module it binds is d65aac9's.
+        assert L.LEDGER_PATH.read_bytes() == S.blob(S.READINESS_COMMIT, LEDGER)
+        assert L.SCORECARD_PATH.read_bytes() == S.blob(S.READINESS_COMMIT, str(L.SCORECARD_PATH.relative_to(C.PROJECT_ROOT)))
+        suite = json.loads(S.blob(S.READINESS_COMMIT, L.SUITE_PATH))
+        assert suite["failed"] == 0 and suite["errors"] == 0 and suite["passed"] > 0
+        bound = json.loads(L.LEDGER_PATH.read_text())["gates"]["ANTI_LEAKAGE_CONTRACT"]["evidence"]["audit_module_sha256"]
+        assert bound == S.sha(S.blob(S.READINESS_COMMIT, S.PIT_MODULE))
     rec = json.loads(L.LEDGER_PATH.read_text())
     assert rec["model_artifact"]["artifact_sha256"] == L.ARTIFACT_SHA256 and rec["model_artifact"]["code_sha"] == L.MODEL_COMMIT
     assert rec["candidate"]["authoritative_tag"] == L.MODEL_TAG and rec["candidate"]["original_commit"] == L.ORIGINAL_COMMIT

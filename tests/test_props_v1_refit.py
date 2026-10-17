@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 
 from cbb_platform import config as C, lockbox, props_v0 as P, props_v0_participation as Q, props_v1_pricing as V
-from cbb_platform import props_v1_refit as R
+from cbb_platform import lockbox_state as S, props_v1_refit as R
 
 FROZEN_TAG = "cbb-props-production-candidate-v1"
 FROZEN_FILES = ["cbb_platform/props_v0.py", "cbb_platform/props_v0_participation.py", "cbb_platform/props_v1_pricing.py",
@@ -46,8 +46,12 @@ def test_2025_26_cannot_be_accessed(art, tmp_path):
 
 
 def test_frozen_specification_is_unchanged(art):
-    diff = subprocess.run(["git", "diff", "--quiet", FROZEN_TAG, "--", *FROZEN_FILES], cwd=C.PROJECT_ROOT)
-    assert diff.returncode == 0, "frozen v1 model / pricing / config files differ from the tag"
+    if S.current() == S.PRE_LOCKBOX_READINESS:
+        diff = subprocess.run(["git", "diff", "--quiet", FROZEN_TAG, "--", *FROZEN_FILES], cwd=C.PROJECT_ROOT)
+        assert diff.returncode == 0, "frozen v1 model / pricing / config files differ from the tag"
+    else:   # post-lockbox: equal to the tag at readiness d65aac9; since then only the reviewed scoring-enable window gating
+        assert S.unchanged_since_readiness_except_reviewed_patches(FROZEN_TAG, FROZEN_FILES), \
+            "frozen v1 model / pricing / config files differ from the tag beyond the reviewed lockbox patches"
     frozen_cfg = json.loads(subprocess.run(["git", "show", f"{FROZEN_TAG}:modeling/player_props_v0/config.json"],
                                            cwd=C.PROJECT_ROOT, capture_output=True, check=True).stdout)
     assert art["config"] == frozen_cfg and art["spec_fingerprint"] == R.spec_fingerprint(frozen_cfg)

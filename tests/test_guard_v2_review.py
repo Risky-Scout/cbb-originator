@@ -2,7 +2,11 @@
 applied only inside a throwaway `git archive` copy; the live guard stays closed. Proves: the reviewed bytes are
 unchanged; the patched guard is closed without a decision record; with a synthetic decision it opens only CBBD /
 canonical 2025-26 for planned endpoints; 2026-27 and later, BDL, Torvik and unregistered providers stay refused;
-reverting restores the byte-identical closed guard."""
+reverting restores the byte-identical closed guard.
+
+State-aware (cbb_platform/lockbox_state.py): the review is of the PRE_LOCKBOX_READINESS tree. In that state the patches
+are applied to a copy of HEAD; after the lockbox (POST_LOCKBOX_CLOSED_GO, where v3 + scoring-enable are applied live) the
+copy and the "not applied" checks use readiness commit d65aac9, the tree the patches were reviewed against."""
 from __future__ import annotations
 
 import hashlib
@@ -14,15 +18,17 @@ import io
 
 import pytest
 
-from cbb_platform import config as C, lockbox
+from cbb_platform import config as C, lockbox, lockbox_state as S
 
 PATCH = C.PROJECT_ROOT / "docs" / "lockbox" / "lockbox_open_2025_26_guard_v2.patch"
 REVIEWED_V2_SHA256 = "c1ffec876bfb278585bd01d12a67c0bdd07d3736fee2ab8b7321bd2600c6076e"   # LOCKBOX_READINESS_v2 record
 CHECKS = ("guard_v2_synthetic_check.py", "guard_v2_extended_check.py")
+PRE = S.current() == S.PRE_LOCKBOX_READINESS
+BASE = "HEAD" if PRE else S.READINESS_COMMIT          # the reviewed (unopened) tree
 
 
 def _copy(tmp_path):
-    tar = subprocess.run(["git", "archive", "--format=tar", "HEAD", "cbb_platform"], cwd=C.PROJECT_ROOT,
+    tar = subprocess.run(["git", "archive", "--format=tar", BASE, "cbb_platform"], cwd=C.PROJECT_ROOT,
                          capture_output=True, check=True).stdout
     with tarfile.open(fileobj=io.BytesIO(tar)) as t:
         t.extractall(tmp_path, filter="data")
@@ -48,12 +54,21 @@ def test_patch_bytes_are_the_reviewed_v2():
     assert rec["guard"]["patch_sha256"] == REVIEWED_V2_SHA256 or rec["guard"]["v2_patch_sha256"] == REVIEWED_V2_SHA256
 
 
-def test_live_guard_is_closed():
-    assert not hasattr(lockbox, "opening_authorized") and not hasattr(lockbox, "OPEN_DECISION_SHA256")
-    with pytest.raises(lockbox.LockboxViolation):
-        lockbox.check_season(lockbox.LOCKBOX_SEASON)
-    assert not (C.MANIFESTS / "LOCKBOX_OPEN_DECISION_2025_26.json").exists()
-    assert _git_apply(C.PROJECT_ROOT, "--check", "-R").returncode != 0      # the patch is NOT applied to the live tree
+def test_live_guard_is_closed(tmp_path):
+    if PRE:
+        assert not hasattr(lockbox, "opening_authorized") and not hasattr(lockbox, "OPEN_DECISION_SHA256")
+        with pytest.raises(lockbox.LockboxViolation):
+            lockbox.check_season(lockbox.LOCKBOX_SEASON)
+        assert not (C.MANIFESTS / "LOCKBOX_OPEN_DECISION_2025_26.json").exists()
+        assert _git_apply(C.PROJECT_ROOT, "--check", "-R").returncode != 0      # the patch is NOT applied to the live tree
+        return
+    # post-lockbox: the same facts for the reviewed tree, readiness commit d65aac9 (its own code, fresh interpreter)
+    code = S.archive(S.READINESS_COMMIT, tmp_path)
+    for flag in (False, True):
+        b = S.probe(code, flag)
+        assert not b["opening_authorized_attr"] and b["binding"] is None and b["season_2026"]
+    assert S.blob(S.READINESS_COMMIT, "data/manifests/LOCKBOX_OPEN_DECISION_2025_26.json") is None
+    assert not S.apply_check(S.READINESS_COMMIT, [str(PATCH)], reverse=True)   # the patch is NOT applied to that tree
 
 
 @pytest.fixture(scope="module")
@@ -167,4 +182,7 @@ def test_scoring_enable_patch_is_closed_unless_opened(tmp_path):
     assert closed["subsystem"] == opened["subsystem"]
     text = SCORING.read_text()
     assert text.count("top > lockbox.LOCKBOX_SEASON or (top == lockbox.LOCKBOX_SEASON and not lockbox.opening_authorized())") == 2
-    assert subprocess.run(["git", "apply", "--check", str(SCORING)], cwd=C.PROJECT_ROOT).returncode == 0   # not applied live
+    if PRE:
+        assert subprocess.run(["git", "apply", "--check", str(SCORING)], cwd=C.PROJECT_ROOT).returncode == 0   # not applied live
+    else:                                                     # not applied at readiness (applied live since the opening)
+        assert S.apply_check(S.READINESS_COMMIT, [str(SCORING)])

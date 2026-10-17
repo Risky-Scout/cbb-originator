@@ -266,9 +266,24 @@ BIG_PLAY_PAYLOAD = 5_000_000      # bytes; larger PBP payloads are scanned colum
 
 
 def test_no_lockbox_payload_was_ever_stored():
+    """Pre-opening: no stored payload names or contains 2025-26. Post-lockbox (cbb_platform/lockbox_state.py): the only
+    exception is the exact authorized fetch (closure-commit request-log lines, matched by path and sha256, each stored
+    once, nothing after 2025-26 inside); any other 2025-26 payload, and any 2026-27+ content, still fails."""
+    from cbb_platform import lockbox_state as S
+    authorized = {} if S.current() == S.PRE_LOCKBOX_READINESS else S.authorized_lockbox_payloads()
+    seen_authorized = []
     big = []
     for provider, lockbox_season in (("cbbd", 2026), ("bdl", 2025)):   # BDL seasons are start-year
         for path, meta in raw_store.records(provider):
+            rel = str(path.relative_to(C.RAW))
+            if provider == "cbbd" and rel in authorized:
+                assert meta["sha256"] == authorized[rel], path
+                seen_authorized.append(rel)
+                seen = {"dates": set(), "seasons": set()}
+                _walk_dates_and_seasons(json.loads(raw_store.read_payload(path)), seen)
+                assert str(meta["params"].get("season")) in ("2026", "None") and max(seen["seasons"], default=0) <= 2026, path
+                assert not [d for d in seen["dates"] if d > "2026-07-31"], path          # nothing from 2026-27 on
+                continue
             assert str(meta["params"].get("season")) != str(lockbox_season), path
             if provider == "cbbd" and meta["endpoint"].startswith("plays/") and meta["size_bytes"] > BIG_PLAY_PAYLOAD:
                 big.append(str(path))
@@ -285,6 +300,7 @@ def test_no_lockbox_payload_was_ever_stored():
                 WHERE season = 2026 OR substr(gameStartDate, 1, 10) BETWEEN '2025-08-01' AND '2026-07-31'
                    OR substr(wallclock, 1, 10) BETWEEN '2025-08-01' AND '2026-07-31'""").fetchone()[0]
         assert n_bad == 0
+    assert sorted(seen_authorized) == sorted(authorized)                  # each authorized payload stored exactly once
 
 
 def test_lockbox_policy_document_exists():

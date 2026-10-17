@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from cbb_platform import config as C, lockbox, props_v0 as P, props_v0_participation as Q, props_v1_pricing as V
-from cbb_platform import props_v1_refit as R
+from cbb_platform import lockbox_state as S, props_v1_refit as R
 
 BASE_COMMIT = "c123a3bf0ac615c6d7f864768f5e77dc18405a8d"
 V0_FILES = ["cbb_platform/props_v0.py", "cbb_platform/props_v0_eval.py", "cbb_platform/props_v0_participation.py",
@@ -85,7 +85,10 @@ def test_rejected_challengers_not_imported_by_runtime():
 
 
 def test_props_v0_historical_baseline_unchanged():
-    assert subprocess.run(["git", "diff", "--quiet", BASE_COMMIT, "--", *V0_FILES], cwd=C.PROJECT_ROOT).returncode == 0
+    if S.current() == S.PRE_LOCKBOX_READINESS:
+        assert subprocess.run(["git", "diff", "--quiet", BASE_COMMIT, "--", *V0_FILES], cwd=C.PROJECT_ROOT).returncode == 0
+    else:   # unchanged through readiness d65aac9; since then only the reviewed scoring-enable window gating, byte for byte
+        assert S.unchanged_since_readiness_except_reviewed_patches(BASE_COMMIT, V0_FILES)
     assert R.ARTIFACT_PATH.exists() and hashlib.sha256(R.ARTIFACT_PATH.read_bytes()).hexdigest() == \
         R.load_final_spec()["base_artifact_sha256"]
 

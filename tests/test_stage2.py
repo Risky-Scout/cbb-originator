@@ -69,16 +69,33 @@ def test_no_lockbox_rows_in_canonical_event_tables(db):
 
 
 def test_request_log_never_targets_the_lockbox():
+    """Pre-opening: no request names 2025-26. Post-lockbox (cbb_platform/lockbox_state.py): the only exception is the
+    exact authorized fetch, the 987 lines the closure commit added, each present exactly once, CBBD, frozen-plan
+    endpoints (or the guard-exempt season-less reference lists), nothing after 2025-26; any other 2025-26 request, and any 2026-27+ request, still fails."""
+    from collections import Counter
+    from cbb_platform import lockbox, lockbox_state as S
     if not cbbd_client.REQUEST_LOG.exists():
         pytest.skip("no Stage 2 requests")
+    authorized = set() if S.current() == S.PRE_LOCKBOX_READINESS else set(S.authorized_lockbox_requests())
+    seen_authorized = Counter()
     for line in cbbd_client.REQUEST_LOG.read_text().splitlines():
         e = json.loads(line)
         p = e["params"]
+        if line in authorized:
+            seen_authorized[line] += 1
+            assert e["provider"] == "cbbd" and (e["endpoint"] in lockbox.OPEN_PLAN_ENDPOINTS or (     # or a season-less
+                e["endpoint"] in lockbox.PROVIDERS["cbbd"]["reference"] and not p and e.get("season") is None)), e["request_key"]
+            assert e.get("season") in (None, 2026) and str(p.get("season")) in ("2026", "None"), e["request_key"]
+            assert p.get("year") is None or int(p["year"]) <= 2026, e["request_key"]
+            if "date" in p:
+                assert p["date"] <= "2026-07-31", e["request_key"]
+            continue
         assert str(p.get("season")) not in ("2026", "2025-26"), e["request_key"]
         assert p.get("year") is None or int(p["year"]) <= 2024, e["request_key"]
         if "date" in p:
             assert not ("2025-08-01" <= p["date"] <= "2026-07-31"), e["request_key"]
         assert e.get("season") is None or e["season"] <= 2025, e["request_key"]
+    assert set(seen_authorized) == authorized and set(seen_authorized.values()) <= {1}   # each exactly once
 
 
 # =========================================================================== 3. raw payloads are immutable
