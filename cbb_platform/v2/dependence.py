@@ -110,13 +110,16 @@ def residuals(pop: pd.DataFrame, kind: str = "MID", seed: int = FIT_SEED) -> dic
     n = len(pop)
     zc, vz, kap = np.empty((n, NS)), np.empty((n, NS)), np.empty((n, NS))
     for j, s in enumerate(STATS):
-        phi = pop[f"{s}_phi"].unique()
-        if len(phi) != 1:
-            raise V2Phase2DataViolation(f"{s}: more than one dispersion in a population")
-        v = L.pit_uniform(seed, pop["game_id"].to_numpy(), pop["player_id"].to_numpy(), s) if kind == "RAND" else None
-        r = L.latent_residuals(pop[f"{s}_mu"].to_numpy(dtype=float), float(phi[0]), pop[f"y_{s}"].to_numpy().astype(np.int64),
-                               kind, v)
-        zc[:, j], vz[:, j], kap[:, j] = r["z"] - r["ez"], r["vz"], r["kappa"]
+        # each row uses its own forecast's dispersion (the store has one per OOS forecast season)
+        phis = pop[f"{s}_phi"].to_numpy(dtype=float)
+        if not np.isfinite(phis).all():
+            raise V2Phase2DataViolation(f"{s}: non-finite dispersion")
+        v_all = L.pit_uniform(seed, pop["game_id"].to_numpy(), pop["player_id"].to_numpy(), s) if kind == "RAND" else None
+        mu, y = pop[f"{s}_mu"].to_numpy(dtype=float), pop[f"y_{s}"].to_numpy().astype(np.int64)
+        for phi in np.unique(phis):
+            m = phis == phi
+            r = L.latent_residuals(mu[m], float(phi), y[m], kind, None if v_all is None else v_all[m])
+            zc[m, j], vz[m, j], kap[m, j] = r["z"] - r["ez"], r["vz"], r["kappa"]
     return {"kind": kind, "zc": zc, "vz": vz, "kappa": kap}
 
 

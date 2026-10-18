@@ -212,6 +212,17 @@ def test_fit_reads_only_its_population(pop, fitted):
     assert D.fit(other, "MID", boot=60)["within_player"]["global"]["raw"] != fitted["within_player"]["global"]["raw"]
 
 
+def test_multi_season_residuals_use_each_rows_own_dispersion(pop):
+    p2, _ = D.load_population(Z.STORE, [2025])
+    b = p2[p2["game_id"].isin(sorted(p2["game_id"].unique())[:100])].reset_index(drop=True)
+    both = pd.concat([pop, b], ignore_index=True)
+    assert both["FG3M_phi"].nunique() == 2                                   # store dispersion differs by forecast season
+    for kind in ("MID", "RAND"):
+        ra, rb, rr = D.residuals(pop, kind), D.residuals(b, kind), D.residuals(both, kind)
+        for k in ("zc", "vz", "kappa"):
+            assert np.array_equal(rr[k], np.vstack([ra[k], rb[k]]))
+
+
 def test_recorded_stage_order_and_seasons():
     if not Z.SELECTION_PATH.exists():
         pytest.skip("selection stage not run")
