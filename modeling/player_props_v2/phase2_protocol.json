@@ -1,0 +1,482 @@
+{
+ "version": "cbb-v2-phase2-dependence-1.0.0",
+ "phase": "V2 PHASE 2: MARGINAL-PRESERVING JOINT PLAYER/STAT DEPENDENCE",
+ "frozen_before_any_candidate_evaluation": true,
+ "inputs": {
+  "oos_store": "modeling/v2_oos/oos_forecasts_phase1b_v1ref.parquet",
+  "oos_store_sha256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "marginal_artifact": "modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json",
+  "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "v1_artifact_sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "rule": "dependence is estimated only from true-OOS forecast/outcome pairs of the Phase 1B store (training_through_season < forecast_season); never from the final marginal's residuals; no 2026-27 data; no API calls; marginals are never changed"
+ },
+ "population": {
+  "rows": "participation_status == PLAYED with all 7 count labels; DNP / not on roster / unknown participation are not playing observations and are excluded (never zeros); P(play) is not used and never imputed",
+  "games": "both teams must have eligible rows",
+  "stats": [
+   "PTS",
+   "REB",
+   "AST",
+   "FG3M",
+   "STL",
+   "BLK",
+   "TOV"
+  ]
+ },
+ "latent_residual": {
+  "primary": "MID: z = Phi^-1(F(y-1) + p(y)/2)",
+  "sensitivity": "RAND: randomized PIT, keyed BLAKE2b v per (game, player, stat), seed 20262",
+  "centering": "z - E_model[z], then training mean per (role, stat)",
+  "scaling": "training ratio sqrt(E[(z - Ez - delta)^2] / E[Var_model z]) per (role, stat)",
+  "attenuation": "pooled moments divided by sum kappa_i kappa_j (first-order Hermite; kappa = E[z Z] from the marginal PMF)"
+ },
+ "structure": {
+  "J0": "independence (identity latent correlation)",
+  "J1": "within-player 7x7 latent correlation; hierarchy global -> role (L5 minutes rank band) -> role x position (G/F/C; U uses the role matrix); every level's deviation soft-thresholded at 1.96 game-clustered bootstrap SEs (200 draws); conditioning: a child keeps min eig >= 0.5 x its parent's (deviation scaled back, recorded)",
+  "J2": "J1 + same-team S and opposite-team X stat x stat latent correlations (distinct players), soft-thresholded the same way; A = (M + X)/2, B = (M - X)/2, Q = M - S with M the dominating additive Gram (NBA); Q admitted only by the pivotal-bootstrap competition gate (level 0.975); per-player shrink c_ab (A + B) then c_q (Q) keeps every residual block PSD",
+  "no_named_player_or_pair_parameters": true,
+  "tuning_grid": "none (all constants declared here)"
+ },
+ "psd": {
+  "rule": "every game matrix is PSD by construction; validity floor min eig >= -1e-10; residual blocks >= 1e-09; Cholesky jitter only for rounding (recorded), rows renormalized to unit norm",
+  "INVALID_CORRELATION_MATRICES_required": 0
+ },
+ "simulation": {
+  "draws_per_game": 20000,
+  "seed_base": 20263,
+  "seed": "BLAKE2b(seed_base | game_id)",
+  "common_random_numbers": "one standard-normal bank per game shared by every candidate",
+  "inverse_cdf": "X = #{k : Phi^-1(F(k)) < z} (== F^-1(Phi(z)))",
+  "combos": {
+   "PRA": [
+    "PTS",
+    "REB",
+    "AST"
+   ],
+   "PR": [
+    "PTS",
+    "REB"
+   ],
+   "PA": [
+    "PTS",
+    "AST"
+   ],
+   "RA": [
+    "REB",
+    "AST"
+   ],
+   "STOCKS": [
+    "STL",
+    "BLK"
+   ]
+  },
+  "mc_error": "ES on draw halves, VS on two disjoint 2,000-draw replicates (reported VS = their mean); if, in the selection stage, any ES / VS_BAL interval bound used by the rule (J1-J0, J2-J0, J2-J1) lies within 3 MC SE of zero, the selection evaluation is rerun with 50000 draws and that rerun decides"
+ },
+ "chronology": {
+  "selection": {
+   "fit": [
+    2024
+   ],
+   "evaluate": 2025
+  },
+  "retrospective_confirmation": {
+   "fit": [
+    2024,
+    2025
+   ],
+   "evaluate": 2026,
+   "runs": "exactly once; selection unchanged by it"
+  },
+  "final_artifact_fit": [
+   2024,
+   2025,
+   2026
+  ]
+ },
+ "candidates": [
+  "J0",
+  "J1",
+  "J2"
+ ],
+ "sensitivity_arms_not_selectable": {
+  "J1_RAND": "J1",
+  "J2_RAND": "J2"
+ },
+ "metrics": {
+  "scale": "each stat divided by its SD over the fit population's eligible rows (training only)",
+  "ES": "energy score of the scaled full game vector (all eligible players x 7), mean over games [major]",
+  "VS_BAL": "variogram score p = 0.5 on the scaled game vector, mean of the per-pair means of the three pair types (within player / same team / opposite team), mean over games [major]",
+  "COMBO_LOG": "log score of PRA, PR, PA, RA, STOCKS from the same draws (MC PMF floored at 0.5/draws), mean over player x combo [major]",
+  "EVENT_BRIER": "Brier score of the predefined joint threshold events, mean over events [major]",
+  "secondary": [
+   "ES_PLAYER",
+   "VS components / uniform",
+   "combo CRPS + Brier at J0-convolution quantile lines 0.25/0.5/0.75",
+   "event log loss + per-family calibration",
+   "joint tails",
+   "count-space pair correlation calibration (diagnostic; centered by evaluation-season means)",
+   "single-stat MC log score / CRPS"
+  ],
+  "events": {
+   "SP_PTS_FG3M": [
+    [
+     "T1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "T1",
+     "FG3M",
+     "OVER50"
+    ]
+   ],
+   "SP_PTS_AST": [
+    [
+     "T1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "T1",
+     "AST",
+     "OVER50"
+    ]
+   ],
+   "SP_PTS_REB": [
+    [
+     "R1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "R1",
+     "REB",
+     "OVER50"
+    ]
+   ],
+   "SP_REB_BLK": [
+    [
+     "R1",
+     "REB",
+     "OVER50"
+    ],
+    [
+     "R1",
+     "BLK",
+     "OVER50"
+    ]
+   ],
+   "SP_AST_TOV": [
+    [
+     "A1",
+     "AST",
+     "OVER50"
+    ],
+    [
+     "A1",
+     "TOV",
+     "OVER50"
+    ]
+   ],
+   "TM_SCORER_SCORER": [
+    [
+     "T1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "T2",
+     "PTS",
+     "OVER50"
+    ]
+   ],
+   "TM_CREATOR_SCORER": [
+    [
+     "A1",
+     "AST",
+     "OVER50"
+    ],
+    [
+     "SCORER_NOT_A1",
+     "PTS",
+     "OVER50"
+    ]
+   ],
+   "TM_CREATOR_SHOOTER": [
+    [
+     "A1",
+     "AST",
+     "OVER50"
+    ],
+    [
+     "SHOOTER_NOT_A1",
+     "FG3M",
+     "OVER50"
+    ]
+   ],
+   "TM_REB_REB": [
+    [
+     "R1",
+     "REB",
+     "OVER50"
+    ],
+    [
+     "R2",
+     "REB",
+     "OVER50"
+    ]
+   ],
+   "TM3_SCORERS_CREATOR": [
+    [
+     "T1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "T2",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "A1",
+     "AST",
+     "OVER50"
+    ]
+   ],
+   "OP_SCORER_SCORER": [
+    [
+     "T1",
+     "PTS",
+     "OVER50"
+    ],
+    [
+     "o:T1",
+     "PTS",
+     "OVER50"
+    ]
+   ],
+   "OP_REB_REB": [
+    [
+     "R1",
+     "REB",
+     "OVER50"
+    ],
+    [
+     "o:R1",
+     "REB",
+     "OVER50"
+    ]
+   ],
+   "OP_TOV_STL": [
+    [
+     "TOV1",
+     "TOV",
+     "OVER50"
+    ],
+    [
+     "o:S1",
+     "STL",
+     "OVER50"
+    ]
+   ],
+   "TAIL_SP_PTS_FG3M_HIGH": [
+    [
+     "T1",
+     "PTS",
+     "OVER80"
+    ],
+    [
+     "T1",
+     "FG3M",
+     "OVER80"
+    ]
+   ],
+   "TAIL_SP_PTS_HIGH_FG3M_LOW": [
+    [
+     "T1",
+     "PTS",
+     "OVER80"
+    ],
+    [
+     "T1",
+     "FG3M",
+     "LOW20"
+    ]
+   ],
+   "TAIL_TM_SCORERS_HIGH": [
+    [
+     "T1",
+     "PTS",
+     "OVER80"
+    ],
+    [
+     "T2",
+     "PTS",
+     "OVER80"
+    ]
+   ],
+   "TAIL_TM_SCORER_HIGH_OTHER_LOW": [
+    [
+     "T1",
+     "PTS",
+     "OVER80"
+    ],
+    [
+     "T2",
+     "PTS",
+     "LOW20"
+    ]
+   ],
+   "TAIL_OP_SCORERS_HIGH": [
+    [
+     "T1",
+     "PTS",
+     "OVER80"
+    ],
+    [
+     "o:T1",
+     "PTS",
+     "OVER80"
+    ]
+   ],
+   "TAIL_OP_TOV_STL_HIGH": [
+    [
+     "TOV1",
+     "TOV",
+     "OVER80"
+    ],
+    [
+     "o:S1",
+     "STL",
+     "OVER80"
+    ]
+   ]
+  },
+  "pair_diagnostics": {
+   "WP_T1_PTS_FG3M": [
+    "T1",
+    "PTS",
+    "T1",
+    "FG3M"
+   ],
+   "WP_T1_PTS_AST": [
+    "T1",
+    "PTS",
+    "T1",
+    "AST"
+   ],
+   "WP_R1_REB_BLK": [
+    "R1",
+    "REB",
+    "R1",
+    "BLK"
+   ],
+   "WP_R1_REB_AST": [
+    "R1",
+    "REB",
+    "R1",
+    "AST"
+   ],
+   "WP_A1_AST_TOV": [
+    "A1",
+    "AST",
+    "A1",
+    "TOV"
+   ],
+   "WP_S1_STL_TOV": [
+    "S1",
+    "STL",
+    "S1",
+    "TOV"
+   ],
+   "TM_SCORER_SCORER": [
+    "T1",
+    "PTS",
+    "T2",
+    "PTS"
+   ],
+   "TM_CREATOR_SCORER": [
+    "A1",
+    "AST",
+    "SCORER_NOT_A1",
+    "PTS"
+   ],
+   "TM_CREATOR_SHOOTER": [
+    "A1",
+    "AST",
+    "SHOOTER_NOT_A1",
+    "FG3M"
+   ],
+   "TM_REB_REB": [
+    "R1",
+    "REB",
+    "R2",
+    "REB"
+   ],
+   "OP_SCORER_SCORER": [
+    "T1",
+    "PTS",
+    "o:T1",
+    "PTS"
+   ],
+   "OP_REB_REB": [
+    "R1",
+    "REB",
+    "o:R1",
+    "REB"
+   ],
+   "OP_TOV_STL": [
+    "TOV1",
+    "TOV",
+    "o:S1",
+    "STL"
+   ],
+   "OP_SCORER_REB": [
+    "T1",
+    "PTS",
+    "o:R1",
+    "REB"
+   ]
+  },
+  "uncertainty": "game-level bootstrap, 2000 draws, seed 20264; 95% percentile intervals of paired differences"
+ },
+ "marginal_preservation": {
+  "probes": "per (player, stat): z of simulated mean, variance, P(X > q) at the analytic 0.25/0.5/0.75 quantiles, P(X = mode); KS distance; single-stat MC log score vs J0",
+  "PASS_if": {
+   "per candidate x stat x probe": "share |z| > 3.29 <= 0.005 and max |z| <= 6.5 (probes with >= 20 expected MC events)",
+   "KS": "share of dims with KS > DKW(0.001) <= 0.005",
+   "single_stat_log_score": "|J_k - J0| <= 0.002 nats or 99% CI contains 0",
+   "construction": "unit latent diagonal (|diag - 1| <= 1e-12) and 0 invalid matrices"
+  }
+ },
+ "acceptance_rule": {
+  "passes_vs_J0": [
+   "MARGINAL_PRESERVATION PASS",
+   "0 invalid matrices",
+   "ES or VS_BAL improves with the 95% CI upper bound < 0",
+   ">= 3 of the 4 major metrics improve (point) and none is significantly worse",
+   "no combo materially degraded (log +0.002 nats or CRPS +0.5% with the CI excluding 0)",
+   "stability: added component's raw cells (F2024 fit vs a diagnostic F2025-only fit) correlate >= 0.7 and agree in sign on >= 90% of the cells nonzero in both"
+  ],
+  "J2_adds_value_vs_J1": [
+   "ES or VS_BAL improves vs J1 with CI upper < 0",
+   ">= 2 of ES, VS_BAL, EVENT_BRIER improve vs J1 (point)",
+   "no major metric significantly worse than J1"
+  ],
+  "selection": "J2 if it passes vs J0 and adds value vs J1; else J1 if it passes vs J0; else J0 (reported honestly)"
+ },
+ "code_sha256_at_freeze": {
+  "cbb_platform/v2/latent.py": "3ed32892014b1ad73070ae6f62aa088f51f6c4655083b48a73bdc472c7b11294",
+  "cbb_platform/v2/dependence.py": "c1c5ac017fb4e9c0013985cca55046abc80ca6d72fd4b6c6a42231810dc92d44",
+  "cbb_platform/v2/joint.py": "c10d7a4cf38d0912679980732fc0dcc8df179bfeb93bde880f5d4c6b435cef04",
+  "cbb_platform/v2/phase2.py": "def2b59c3fb97a061aaf4b70525b0387def197d11c3ea474131004b68243bbe1"
+ },
+ "guards_at_freeze": {
+  "V1_ARTIFACT_SHA256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "OOS_STORE_SHA256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "V1_ARTIFACT_UNCHANGED": true,
+  "V2_MARGINAL_ARTIFACT_UNCHANGED": true,
+  "OOS_STORE_UNCHANGED": true
+ }
+}
