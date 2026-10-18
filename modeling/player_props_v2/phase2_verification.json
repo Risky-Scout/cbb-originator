@@ -1,0 +1,34 @@
+{
+ "version": "cbb-v2-phase2-dependence-1.0.0",
+ "artifact": "modeling/player_props_v2/dependence_J2.json",
+ "artifact_sha256": "b41564a988f37a4c01a0dec9f8a9cb67aea69717294809b3eaa49acf4babb1ff",
+ "guards": {
+  "V1_ARTIFACT_SHA256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "OOS_STORE_SHA256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "V1_ARTIFACT_UNCHANGED": true,
+  "V2_MARGINAL_ARTIFACT_UNCHANGED": true,
+  "OOS_STORE_UNCHANGED": true
+ },
+ "V1_ARTIFACT_UNCHANGED": true,
+ "V2_MARGINAL_ARTIFACT_UNCHANGED": true,
+ "final_structure_check_last_200_games_2025_26": {
+  "games": 200,
+  "invalid": 0,
+  "min_eig": 0.0436711855634638,
+  "max_diag_err": 2.220446049250313e-16
+ },
+ "code": {
+  "code_sha256": {
+   "cbb_platform/v2/latent.py": "3ed32892014b1ad73070ae6f62aa088f51f6c4655083b48a73bdc472c7b11294",
+   "cbb_platform/v2/dependence.py": "50807e6c878db6ebf09ed4a896ce6314928460943a517d8449ec341c3a0575bd",
+   "cbb_platform/v2/joint.py": "c10d7a4cf38d0912679980732fc0dcc8df179bfeb93bde880f5d4c6b435cef04",
+   "cbb_platform/v2/phase2.py": "def2b59c3fb97a061aaf4b70525b0387def197d11c3ea474131004b68243bbe1"
+  },
+  "changed_since_protocol": [
+   "cbb_platform/v2/dependence.py"
+  ]
+ },
+ "HISTORICAL_API_CALLS": 0,
+ "2026_27_OUTCOME_DATA_TOUCHED": false
+}
