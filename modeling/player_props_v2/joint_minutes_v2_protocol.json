@@ -1,0 +1,243 @@
+{
+ "version": "cbb-v2-joint-minutes-v2-1.0.0",
+ "experiment": "cbb-v2-joint-minutes-v2",
+ "phase": "V2 JOINTMINUTESV2: joint team minutes anchored on Phase 1B + unmodeled-rotation reservoir + role-tier factor + reliability-weighted bounded reconciliation",
+ "frozen_before_full_development_evaluation": true,
+ "pre_freeze_disclosure": "2024-25 is DEVELOPMENT data: it was evaluated in Phase 3 (selection + rebuild) and in the read-only S2 audit, whose findings (incomplete early-season candidate universe, budget infeasibility, the old activation repair, role-tier minutes correlations of 2024-25 OOS residuals, rotation under-dispersion of the logit-normal) motivated this design. Before this freeze the implementation was debugged only mechanically on 2023-24 inputs with a synthetic P(play) (no predictive metric of any arm was inspected) and on unit tests. Reservoir, reliability weights and tier factor are FITTED on training seasons only (labels <= 2023-24). 2025-26 was not read.",
+ "current_champion": "S0 = Phase 1B marginals + Phase 2 J2 (phase2_selection_fit_2023_24.json for this chronology)",
+ "inputs": {
+  "phase1b_oos_store": "modeling/v2_oos/oos_forecasts_phase1b_v1ref.parquet",
+  "phase1b_oos_store_sha256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "phase1b_F2023_extension_sha256": "aeb1d11594cd0775f9c38e7d1cb89a7965e9d461774b499a388bc424d9df84cc",
+  "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "PHASE2_DEPENDENCE_ARTIFACT_SHA256": "b41564a988f37a4c01a0dec9f8a9cb67aea69717294809b3eaa49acf4babb1ff",
+  "phase3_frozen_records": {
+   "phase3_protocol.json": "713e0ca4299ed85e8400e9fdd703eec8575f717b05264e3e002e4f5eb0d049ef",
+   "phase3_selection_rebuild.json": "beace932a5be857d7a62370943dda9e07ddb232d86641d202ce1be45e38852e4",
+   "phase3_selection_rebuild_addendum.json": "aa609597419330cc54b570bca8369a0db149869747bd0e4ac1933dcab6278839"
+  },
+  "HISTORICAL_API_CALLS": 0
+ },
+ "arms": {
+  "S0": "JM0 = champion: Phase 1B marginals + Phase 2 J2",
+  "JM1": "diagnostic: random Phase 1B conditional minutes (independent, no tier factor, no reconciliation, no reservoir) through the JM2 GLM / refit dispersion / residual J2, alpha = 1.0",
+  "JM2_A05": "JointMinutesV2, structural means anchored alpha = 0.5 toward Phase 1B",
+  "JM2_A10": "JointMinutesV2, alpha = 1.0",
+  "alpha_rule": "alpha* = argmin aggregate MARG_LOG over JM2_A05 / JM2_A10 (tie -> 1.0); gates apply to alpha*"
+ },
+ "chronology": {
+  "development": {
+   "parameters_through": 2024,
+   "evaluate": 2025,
+   "residual_basis_true_OOS_seasons": [
+    2024
+   ],
+   "runs": "exactly once (a genuine, result-independent implementation bug is the only reason for a documented rerun)"
+  },
+  "confirmation_2025_26": "NOT in this protocol: one locked retrospective confirmation, only after architect approval, parameters through 2024-25",
+  "2025_26_read": false
+ },
+ "candidate_universe": {
+  "definition": "ex.player_game_examples = feat.player_features = Phase 1B candidate rows: every player with legal pregame evidence (prior appearance, prior-season returner / roster, preseason transfer / recruit)",
+  "completion_check": "ex.team_membership_evidence available_from <= cutoff adds 0 players; ex.roster_snapshot_research is SEASON_ROSTER_ONLY_NOT_PIT_CONFIRMED (not used); every lab.player_pool_misses row has legal_evidence = false",
+  "never_used_for_membership": [
+   "target-game participants / box rows / minutes / DNP status"
+  ]
+ },
+ "reservoir": {
+  "what": "aggregate stochastic unmodeled-rotation minutes R per team-game draw: absorbs team minutes of players outside the candidate universe; never priced, never a player, no stats, no combos",
+  "features_pregame": [
+   "intercept",
+   "tg0",
+   "tg1",
+   "tg2",
+   "tg3_4",
+   "tg5_9",
+   "warm_share",
+   "nohist_share",
+   "transfer_share",
+   "log_n_cand",
+   "ret_share",
+   "ret_missing"
+  ],
+  "feature_source": "feat.player_features aggregated per team-game (n candidates, cold-start class shares, team games so far = max pp_team_games, returning-minutes share)",
+  "model": "P(R > 0) logistic; E[R | R > 0] log-linear (Poisson pseudo-likelihood); positive part Gamma with pooled CV (moments); fitted on team-games 2013-14..T; label = realized minutes of players outside the universe (lab.player_pool_misses, TRAINING label only)",
+  "draw": "R_raw = 1[u < pi] mu_pos Gamma(1/cv2, cv2), capped at 5 D",
+  "reliability": "w_R = max(Var(R), 1)"
+ },
+ "minutes": {
+  "participation": "independent Bernoulli(Phase 1B P(play)) per candidate; NO activation repair; fewer than five known players active is absorbed by the reservoir",
+  "raw": "z_i = f_(team, tier(i)) + sqrt(1 - Cf_tt) eps_i; raw_i = clip(min_mu + min_sigma z_i, 0, 60) x D / E[D] (the Phase 1B discretized-normal conditional marginal sampled directly; no role-specific scale correction)",
+  "tier_factor": "3 tiers (TOP5_MINUTES, ROTATION_6_8, BENCH_9PLUS; NO_ROLE_HISTORY -> bench); target = pooled OOS normal-score correlations of PLAYED teammates in regulation games, Phase 1B OOS 2022-23..T, shrunk with 2000 pseudo-pairs; latent Cf = PSD projection, diagonal in [0, 0.95]; 3 constraint-compensation fixed-point steps on 400 training team-games of season T (realized participants, 2000 draws); independent across the two teams; no named-player or pair parameters",
+  "reconciliation": "m* = argmin (m - raw)' W^-1 (m - raw) + (R - R_raw)^2 / w_R s.t. sum m + R = 5 D, 0 <= m_i <= D, m_i = 0 nonparticipants, R >= 0; exact (bisection + linear solve on the active set; closure <= 1e-09 absorbed by R, else the freest player)",
+  "W": "diagonal: pooled OOS Var(y_min - min_mu) of PLAYED rows by role x {WARM, COLD}, shrunk to the global variance with 500 pseudo-rows; Phase 1B OOS 2022-23..T",
+  "duration": "one draw per game shared by both teams from the Phase 3 overtime law (D = 40 + 5K); pace never changes the clock",
+  "scored_player_world": "single-player quantities in the player's forced-active world (same draw, same uniforms / normals, re-solved with him active)"
+ },
+ "stat_means": {
+  "terms": [
+   "intercept",
+   "log_minutes_ratio",
+   "pace_dev",
+   "own_eff_dev",
+   "opp_eff_dev"
+  ],
+  "exposure": "log(max(M, 1) / min_mu) with ONE reconciled M per player per draw for all 7 stats",
+  "environment": "accepted S1 shared game environment",
+  "no_opportunity_redistribution": true,
+  "glm": "Poisson pseudo-likelihood with offset log mu_1B on Phase 1B OOS rows 2022-23..T given the realized state (phase3.fit_structure with these terms)"
+ },
+ "dispersion_refit": "one phi per stat by method of moments on the true-OOS structural residual basis given realized minutes + environment (families kept); never Phase 1B phi + minutes variance",
+ "residual_dependence": "J2 architecture (dependence.fit, MID) refit on the conditional PMFs of the true-OOS structural residual basis (season F with parameters through F-1)",
+ "metrics": {
+  "draws_per_game": 20000,
+  "uncertainty": "game-clustered bootstrap, 2000 draws, seed 20366",
+  "minutes": [
+   "MAE (median, mean)",
+   "RMSE",
+   "CRPS",
+   "bias",
+   "PIT deciles",
+   "80% / 90% coverage"
+  ],
+  "marginal": [
+   "log score",
+   "CRPS (scaled)",
+   "threshold Brier",
+   "PIT coverage",
+   "bias"
+  ],
+  "joint": [
+   "ES",
+   "VS_BAL (+ components)",
+   "pairwise correlation calibration",
+   "joint-event Brier (incl. tail events)",
+   "PRA / PR / PA / RA / STOCKS log / CRPS / Brier"
+  ],
+  "strata": [
+   "stat",
+   "role",
+   "position",
+   "stat x role",
+   "stat x position",
+   "WARM / COLD_EARLY_SEASON / COLD_TRANSFER_IN / COLD_NO_HISTORY",
+   "EARLY_SEASON (pregame team games <= 2)",
+   "MONTH:NOV",
+   "RESERVOIR_HEAVY (pregame E[R] >= 10)",
+   "NEAR_BUDGET",
+   "REALIZED_INCOMPLETE_DIAGNOSTIC (outcome-defined, diagnostic only)"
+  ],
+  "diagnostics_not_gates": [
+   "PTS latent spread ratio by role",
+   "reconciliation displacement",
+   "reservoir usage",
+   "minutes covariance calibration",
+   "old J2 vs residual J2"
+  ]
+ },
+ "development_gates_vs_S0": {
+  "rule": "strict: a gate passes only if the 95% bootstrap interval bound clears its margin; inconclusive = fail",
+  "G1": "MIN_CRPS(JM2) - MIN_CRPS(S0) upper bound <= +0.01 (all scored player-games)",
+  "G2": "same for TOP5_MINUTES, ROTATION_6_8, BENCH_9PLUS: upper bound <= +0.02",
+  "G3": "EARLY_SEASON and MONTH:NOV upper bound <= +0.02; RESERVOIR_HEAVY upper bound <= +0.05",
+  "G4": "aggregate MARG_LOG delta upper bound <= +0.001",
+  "G5": "every stat MARG_LOG upper bound <= +0.002 and every stat x tier upper bound <= +0.005",
+  "G6": "ES upper bound <= +0.003 and VS_BAL upper bound <= +0.0001; each bound at least 3 MC SE from its margin (else inconclusive)",
+  "G7": "BOTH_TOP_SCORERS_OVER (TM_SCORER_SCORER): Brier below S0 and |observed - mean predicted| smaller (the Phase 3 A6 rule, unchanged)",
+  "G8": "0 accounting violations (team minutes incl. reservoir = 5 D within 1e-09, bounds, inactive = 0, reservoir >= 0), 0 combo identity violations, 0 invalid matrices",
+  "G9": "0 point-in-time violations of the reservoir features; universe is the legal pregame universe",
+  "G10": "0 genuine PIT violations of the team environment features",
+  "G11": "bit-identical re-simulation",
+  "G12": "2025-26 untouched",
+  "decision": "ADVANCE_TO_CONFIRMATION iff every gate passes for alpha*; otherwise REJECT. A design failure is not tuned and rerun."
+ },
+ "seeds": {
+  "structural_streams": "BLAKE2b(20271|stream|game): duration, environment, participation, minutes, tier_factor, reservoir",
+  "count_latents": "BLAKE2b(20263|game) (Phase 2 bank, common across arms)"
+ },
+ "code_sha256_at_freeze": {
+  "cbb_platform/v2/joint_minutes_v2.py": "4317d4b924d350ec6527dccb0860fe255b831c09a910a42b6cbea3881398f69d",
+  "cbb_platform/v2/structural.py": "1c01467a2582bae021713572b41b16e92f0a9630e3b3dc62afe5f82e61835d50",
+  "cbb_platform/v2/phase3.py": "b2837ac781f09503a8508f6c3ac593c0347528579a080fb755f78585a071f17c"
+ },
+ "guards_at_freeze": {
+  "V1_ARTIFACT_SHA256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f",
+  "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "PHASE2_DEPENDENCE_ARTIFACT_SHA256": "b41564a988f37a4c01a0dec9f8a9cb67aea69717294809b3eaa49acf4babb1ff",
+  "OOS_STORE_SHA256": "d0859e48763ed0ce68a0be72c82ec7f7f5d0989c88e90a4b0c214c6d7fa8e425",
+  "F2023_STORE_SHA256": "aeb1d11594cd0775f9c38e7d1cb89a7965e9d461774b499a388bc424d9df84cc",
+  "V1_ARTIFACT_UNCHANGED": true,
+  "V2_PHASE1B_ARTIFACT_UNCHANGED": true,
+  "PHASE2_J2_ARTIFACT_UNCHANGED": true,
+  "OOS_STORE_UNCHANGED": true,
+  "F2023_STORE_UNCHANGED": true,
+  "phase3_protocol.json_sha256": "713e0ca4299ed85e8400e9fdd703eec8575f717b05264e3e002e4f5eb0d049ef",
+  "phase3_protocol.json_UNCHANGED": true,
+  "phase3_selection_rebuild.json_sha256": "beace932a5be857d7a62370943dda9e07ddb232d86641d202ce1be45e38852e4",
+  "phase3_selection_rebuild.json_UNCHANGED": true,
+  "phase3_selection_rebuild_addendum.json_sha256": "aa609597419330cc54b570bca8369a0db149869747bd0e4ac1933dcab6278839",
+  "phase3_selection_rebuild_addendum.json_UNCHANGED": true,
+  "USER_QA_FILE_sha256": "5ca9001c7c4e700b6ca0dd0e27c20290982d0051748ff96fa28317fa002f15b2",
+  "USER_QA_FILE_UNCHANGED": true
+ },
+ "candidate_universe_audit_training_and_development": {
+  "universe": "ex.player_game_examples (= feat.player_features rows = Phase 1B candidate rows)",
+  "pool_evidence_counts": {
+   "PRIOR_APPEARANCE_CONFIRMED": 456221,
+   "PRIOR_SEASON_RETURNER": 254266,
+   "PRIOR_SEASON_ROSTER_RETURNER": 64605,
+   "RECRUIT_PRESEASON_EVIDENCE": 5406,
+   "TRANSFER_PRESEASON_EVIDENCE": 7429
+  },
+  "LEGAL_PIT_MEMBERSHIP_EVIDENCE_NOT_IN_UNIVERSE": 0,
+  "roster_snapshot_research": {
+   "SEASON_ROSTER_ONLY_NOT_PIT_CONFIRMED": 256265
+  },
+  "roster_snapshot_note": "SEASON_ROSTER_ONLY_NOT_PIT_CONFIRMED: not point-in-time; not used",
+  "realized_players_outside_universe_DIAGNOSTIC": [
+   {
+    "season": 2023,
+    "miss_class": "HISTORICALLY_UNOBSERVABLE",
+    "legal_evidence": false,
+    "rows": 825,
+    "minutes": 9423
+   },
+   {
+    "season": 2023,
+    "miss_class": "VALID_COLD_START_MISS",
+    "legal_evidence": false,
+    "rows": 314,
+    "minutes": 6126
+   },
+   {
+    "season": 2024,
+    "miss_class": "HISTORICALLY_UNOBSERVABLE",
+    "legal_evidence": false,
+    "rows": 811,
+    "minutes": 9324
+   },
+   {
+    "season": 2024,
+    "miss_class": "VALID_COLD_START_MISS",
+    "legal_evidence": false,
+    "rows": 422,
+    "minutes": 8084
+   },
+   {
+    "season": 2025,
+    "miss_class": "HISTORICALLY_UNOBSERVABLE",
+    "legal_evidence": false,
+    "rows": 799,
+    "minutes": 9314
+   },
+   {
+    "season": 2025,
+    "miss_class": "VALID_COLD_START_MISS",
+    "legal_evidence": false,
+    "rows": 420,
+    "minutes": 7973
+   }
+  ],
+  "conclusion": "the universe already holds every player with legal pregame evidence; the remaining realized minutes outside it (no legal pregame evidence) are carried by the reservoir"
+ }
+}
