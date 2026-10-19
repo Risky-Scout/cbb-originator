@@ -222,3 +222,14 @@ Within-player dependence drops because the shared reconciled minutes now carry i
 - The development result fixes S2's infeasible-budget catastrophe and improves every stat marginal and joint score. However, it fails the frozen RESERVOIR_HEAVY minutes gate, and its rotation-tier minutes and same-team correlation calibration are worse.
 - Under the governance rules no tuning or rerun was done. Any successor needs a new protocol that discloses this 2024-25 development use.
 - Awaiting architect review. **2025-26 was not run.**
+
+## Correction (2026-10-19, read-only postmortem; see `JM2_POSTMORTEM.md` / `jm2_postmortem.json`)
+
+Section 3 above attributes the RESERVOIR_HEAVY loss to reservoir variance being subtracted from the known players. **That
+attribution is corrected:** the reservoir-heavy failure was primarily a **downward mean shift created by hard reconciliation
+interacting with Phase 1B participation-count error**, not excessive reservoir variance. On heavy rows the reconciliation
+displacement is small (mean 1.48 min) and the JM2/S0 minutes variance ratio is 1.005, while the mean moves -0.75 min (bias
+-0.31 -> -1.05): Phase 1B P(play) expects 8.48 known participants on those teams but 7.65 played, and the 5 x D budget spreads
+the known-player share over too many expected participants. The same mechanism shifts every stratum down (about -0.23 min).
+
+The result itself is unchanged: **JM2_DECISION = REJECT, JM2_REJECTION_TYPE = CORE_MODEL_FAILURE, BUG_FOUND = FALSE.**
