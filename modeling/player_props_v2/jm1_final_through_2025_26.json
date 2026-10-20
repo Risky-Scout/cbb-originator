@@ -1,0 +1,347 @@
+{
+ "version": "cbb-v2-jm1-final-production-1.0.0",
+ "role": "V2_JM1_FINAL_STRUCTURAL (production candidate; not deployed)",
+ "architecture": "JM1_FINAL",
+ "jm1_final_version": "cbb-v2-jm1-final-1.0.0",
+ "MARGINAL_ARTIFACT": "modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json",
+ "MARGINAL_ARTIFACT_SHA256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+ "structure": {
+  "T": 2026,
+  "env": {
+   "seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+   ],
+   "priors": {
+    "pace40": 67.50288298677609,
+    "eff": 1.0512953243958243
+   },
+   "pace_coef": {
+    "intercept": -2.638207269795884,
+    "own_pace": 0.8123799805371158,
+    "opp_pace": 0.8051165499274597,
+    "own_off": 0.004318315349933993,
+    "opp_def": 0.04848150695536338,
+    "home": 0.00028092577605608903,
+    "away": 0.0006449852752332746
+   },
+   "eff_coef": {
+    "intercept": -0.7027054041202778,
+    "own_pace": 0.012079049342329793,
+    "opp_pace": 0.14985527023277706,
+    "own_off": 0.7984036280460872,
+    "opp_def": 0.6931701867887349,
+    "home": 0.04494800262998255,
+    "away": -0.02103499705093009
+   },
+   "sd_pace": 0.0723141173146535,
+   "sd_eff": 0.14068884262215728,
+   "rho_eff": 0.17849206301212597,
+   "pace_r2": 0.2791406399072417,
+   "eff_r2": 0.20883808814286076,
+   "n_team_games_pace": 134044,
+   "n_team_games_eff": 134044,
+   "n_games": 70800,
+   "overtime": {
+    "games": 70770,
+    "p": [
+     0.9389289246856013,
+     0.05069944891903349,
+     0.008336865903631483,
+     0.0017238943054966793,
+     0.0003108661862371061
+    ],
+    "rule": "K = round((game_minutes - 40) / 5) over training games; duration D = 40 + 5K"
+   }
+  },
+  "glm": {
+   "terms": [
+    "intercept",
+    "log_minutes_ratio",
+    "pace_dev",
+    "own_eff_dev",
+    "opp_eff_dev"
+   ],
+   "n_rows": 442013,
+   "seasons": [
+    2023,
+    2024,
+    2025,
+    2026
+   ],
+   "stats": {
+    "PTS": {
+     "coef": {
+      "intercept": -0.008051657590499264,
+      "log_minutes_ratio": 1.3008622870736128,
+      "pace_dev": 0.9812635225619147,
+      "own_eff_dev": 0.9701543014020226,
+      "opp_eff_dev": -0.017919964132525536,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0008999682479974105,
+      "log_minutes_ratio": 0.002791544830375321,
+      "pace_dev": 0.01202414717561904,
+      "own_eff_dev": 0.0059938489820179535,
+      "opp_eff_dev": 0.005804809340032269
+     },
+     "family": "SCORING"
+    },
+    "REB": {
+     "coef": {
+      "intercept": -0.02744163036990994,
+      "log_minutes_ratio": 1.0836730607031468,
+      "pace_dev": 0.6102087610956198,
+      "own_eff_dev": 0.17236920379667223,
+      "opp_eff_dev": -0.5155715515394441,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0009507049425458112,
+      "log_minutes_ratio": 0.0026621404444169823,
+      "pace_dev": 0.012960171885232043,
+      "own_eff_dev": 0.006205987978243024,
+      "opp_eff_dev": 0.006012381167476119
+     },
+     "family": "REBOUNDING"
+    },
+    "AST": {
+     "coef": {
+      "intercept": -0.009922163473206874,
+      "log_minutes_ratio": 1.0660223331210015,
+      "pace_dev": 0.8916606487264116,
+      "own_eff_dev": 1.2683599991160168,
+      "opp_eff_dev": -0.2330886917946891,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0014521501566513385,
+      "log_minutes_ratio": 0.004225605276042279,
+      "pace_dev": 0.019531197582355875,
+      "own_eff_dev": 0.00996770153287957,
+      "opp_eff_dev": 0.00939183460871971
+     },
+     "family": "PLAYMAKING"
+    },
+    "FG3M": {
+     "coef": {
+      "intercept": -0.02423983390934124,
+      "log_minutes_ratio": 1.3739057191707649,
+      "pace_dev": 0.6020287938423365,
+      "own_eff_dev": 1.3707080625938148,
+      "opp_eff_dev": -0.06465850009857642,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0019334629277088964,
+      "log_minutes_ratio": 0.005619965283200944,
+      "pace_dev": 0.0253214894942448,
+      "own_eff_dev": 0.013023682342429293,
+      "opp_eff_dev": 0.012358157044759182
+     },
+     "family": "SCORING"
+    },
+    "STL": {
+     "coef": {
+      "intercept": -0.016267481102383345,
+      "log_minutes_ratio": 1.1020743114526768,
+      "pace_dev": 1.5733493563476664,
+      "own_eff_dev": 0.09087003712410452,
+      "opp_eff_dev": -0.7054222243543957,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0020056083543623956,
+      "log_minutes_ratio": 0.005857091303305826,
+      "pace_dev": 0.02758040051079386,
+      "own_eff_dev": 0.013273682142946913,
+      "opp_eff_dev": 0.012762647847577621
+     },
+     "family": "DEFENSIVE"
+    },
+    "BLK": {
+     "coef": {
+      "intercept": -0.0436728155760855,
+      "log_minutes_ratio": 1.1350339405008172,
+      "pace_dev": 0.5861224060182567,
+      "own_eff_dev": 0.2682428281332344,
+      "opp_eff_dev": -0.678530409443503,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0029627213746991374,
+      "log_minutes_ratio": 0.008041471413430163,
+      "pace_dev": 0.039659339624696886,
+      "own_eff_dev": 0.01914591187516115,
+      "opp_eff_dev": 0.018049891571479643
+     },
+     "family": "REBOUNDING"
+    },
+    "TOV": {
+     "coef": {
+      "intercept": -0.007817730629146317,
+      "log_minutes_ratio": 0.6299844439750826,
+      "pace_dev": 1.3607838345055066,
+      "own_eff_dev": -0.6930619252252616,
+      "opp_eff_dev": -0.022558852800383448,
+      "opportunity_deficit": 0.0
+     },
+     "se_robust": {
+      "intercept": 0.0014705010886464271,
+      "log_minutes_ratio": 0.0041158836374444495,
+      "pace_dev": 0.020630904290675045,
+      "own_eff_dev": 0.009418048767616897,
+      "opp_eff_dev": 0.009703427926773193
+     },
+     "family": "PLAYMAKING"
+    }
+   }
+  },
+  "glm_population": {
+   "candidate_rows": 1047543,
+   "played_label_missing": 179,
+   "realized_environment_missing": 6079,
+   "one_team_only": 59,
+   "rows": 442013,
+   "games": 22629
+  },
+  "pit_audit": {
+   "res_state_available_at": 0,
+   "box_state_available_at": 0,
+   "rows": 141600,
+   "violations": 0
+  },
+  "terms": [
+   "intercept",
+   "log_minutes_ratio",
+   "pace_dev",
+   "own_eff_dev",
+   "opp_eff_dev"
+  ]
+ },
+ "terms": [
+  "intercept",
+  "log_minutes_ratio",
+  "pace_dev",
+  "own_eff_dev",
+  "opp_eff_dev"
+ ],
+ "alpha": 1.0,
+ "e_dur": 40.368941641938676,
+ "conditional_dispersion": {
+  "PTS": {
+   "family": "NEGBIN",
+   "phi": 0.11417705905724262,
+   "moment_phi": 0.11417705905724262,
+   "overdispersion_ratio": 2.276611209507794,
+   "nonpositive_moment": false
+  },
+  "REB": {
+   "family": "NEGBIN",
+   "phi": 0.021765348780394277,
+   "moment_phi": 0.021765348780394277,
+   "overdispersion_ratio": 1.1019978076293553,
+   "nonpositive_moment": false
+  },
+  "AST": {
+   "family": "NEGBIN",
+   "phi": 0.04731695541590245,
+   "moment_phi": 0.04731695541590245,
+   "overdispersion_ratio": 1.1142654781717112,
+   "nonpositive_moment": false
+  },
+  "FG3M": {
+   "family": "NEGBIN",
+   "phi": 0.05337604739863595,
+   "moment_phi": 0.05337604739863595,
+   "overdispersion_ratio": 1.0824215396584116,
+   "nonpositive_moment": false
+  },
+  "STL": {
+   "family": "NEGBIN",
+   "phi": 0.03636801785779439,
+   "moment_phi": 0.03636801785779439,
+   "overdispersion_ratio": 1.0362105828067292,
+   "nonpositive_moment": false
+  },
+  "BLK": {
+   "family": "NEGBIN",
+   "phi": 0.12916570415963732,
+   "moment_phi": 0.12916570415963732,
+   "overdispersion_ratio": 1.108124108111083,
+   "nonpositive_moment": false
+  },
+  "TOV": {
+   "family": "POISSON",
+   "phi": 0.0,
+   "moment_phi": -0.006256032631920453,
+   "overdispersion_ratio": 0.9902758851604573,
+   "nonpositive_moment": false
+  }
+ },
+ "families": {
+  "SCORING": [
+   "PTS",
+   "FG3M"
+  ],
+  "PLAYMAKING": [
+   "AST",
+   "TOV"
+  ],
+  "REBOUNDING": [
+   "REB",
+   "BLK"
+  ],
+  "DEFENSIVE": [
+   "STL"
+  ]
+ },
+ "descriptive_scale": {
+  "PTS": 6.865366754386164,
+  "REB": 2.881250526220392,
+  "AST": 1.7529825211380572,
+  "FG3M": 1.207459316907056,
+  "STL": 0.9546744086405884,
+  "BLK": 0.7339145584153309,
+  "TOV": 1.2741054292012106
+ },
+ "kmax_minutes": 60,
+ "kmax_counts": 120,
+ "exposure": "M_ib = clip(min_mu_i + min_sigma_i eps_ib, 0, 60) x D_b / E[D]; eps iid N(0,1) from the 'minutes' stream over every candidate of the game; no team budget / reservoir / reconciliation",
+ "seeds": {
+  "structural_streams": "structural.stream_seed(20271, game_id, stream): duration, environment, minutes",
+  "count_latents": "dependence.game_seed(20263, game_id)"
+ },
+ "fit": {
+  "structure_through": 2026,
+  "glm_seasons": [
+   2023,
+   2024,
+   2025,
+   2026
+  ],
+  "residual_basis_seasons": [
+   2024,
+   2025,
+   2026
+  ],
+  "residual_basis_rows": 332743
+ },
+ "PRODUCTION_SEASON": 2027,
+ "SUPERVISED_TRAINING_THROUGH": 2026,
+ "HISTORICAL_STATE_THROUGH": 2026,
+ "RESIDUAL_DEPENDENCE_ARTIFACT": "modeling/player_props_v2/jm1_final_residual_dependence_through_2025_26.json",
+ "RESIDUAL_DEPENDENCE_ARTIFACT_SHA256": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+}
