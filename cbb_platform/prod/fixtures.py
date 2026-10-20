@@ -29,6 +29,18 @@ UPCOMING_TIP = pd.Timestamp("2026-11-11T00:30:00Z")     # Tue 2026-11-10 19:30 E
 SEED = 20270
 
 
+TEAM_BASE = 9000
+
+
+def cid(prefix: str, entity: str, provider_id) -> str:
+    import hashlib
+    return f"{prefix}-" + hashlib.sha256(f"CBBD|{entity}|{provider_id}".encode()).hexdigest()[:16]
+
+
+def athlete_id(team_index: int, j: int) -> int:
+    return 100000 + 100 * (team_index + 1) + j
+
+
 def _gid(tag: str) -> str:
     import hashlib
     return "G-" + hashlib.sha256(f"FIXTURE|game|{tag}".encode()).hexdigest()[:16]
@@ -103,12 +115,16 @@ def synthetic_history(path: Path, n_teams: int = 8, n_players: int = 12) -> Path
     if path.exists():
         path.unlink()
     rng = np.random.default_rng(SEED)
-    teams = [f"T-{i:016x}" for i in range(1, n_teams + 1)]
+    # CBBD-anchored ids (cid of a provider id), exactly like the frozen canonical history: provider team 9001.., athlete
+    # 100000 + 100 * team + j, so production-format CBBD payload fixtures resolve to the same canonical identities
+    teams = [cid("T", "team", TEAM_BASE + i) for i in range(1, n_teams + 1)]
     names = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"]
     pl = []
     for t_i, t in enumerate(teams):
         for j in range(n_players):
-            pl.append({"player_id": _pid(f"hist|{t}|{j}"), "team": t, "j": j, "pos": "GFC"[j % 3],
+            aid = athlete_id(t_i, j)
+            pl.append({"player_id": cid("P", "athlete", aid), "athlete_id": aid, "team": t, "j": j, "pos": "GFC"[j % 3],
+                       "first": names[t_i % len(names)], "last": f"Player{j:02d}",
                        "name": f"{names[t_i % len(names)]} Player{j:02d}", "w": max(0.2, 1.0 - 0.07 * j), "r": 1.0 - 0.04 * j})
     pl = pd.DataFrame(pl)
     games, tb, pb = [], [], []
@@ -140,8 +156,10 @@ def synthetic_history(path: Path, n_teams: int = 8, n_players: int = 12) -> Path
     con.register("pb", pd.DataFrame(pb))
     con.execute("CREATE TABLE flagship.player_game_outcomes AS SELECT * FROM pb")
     ros = pd.concat([pd.DataFrame({"canonical_player_id": pl["player_id"], "canonical_team_id": pl["team"], "season": s,
-                                   "start_season": 2025, "position": pl["pos"], "height_inches": 78.0,
-                                   "weight_lbs": 200.0, "player_name": pl["name"]}) for s in (2025, 2026)])
+                                   "source_athlete_id": pl["athlete_id"].astype(str), "start_season": 2025,
+                                   "position": pl["pos"], "height_inches": 78.0, "weight_lbs": 200.0,
+                                   "player_name": pl["name"], "first_name": pl["first"], "last_name": pl["last"]})
+                     for s in (2025, 2026)])
     con.register("ros", ros)
     con.execute("CREATE TABLE flagship.rosters AS SELECT * FROM ros")
     con.execute("""CREATE TABLE flagship.substitutions (canonical_game_id VARCHAR, canonical_team_id VARCHAR,
@@ -154,17 +172,23 @@ def synthetic_history(path: Path, n_teams: int = 8, n_players: int = 12) -> Path
     con.execute("CREATE TABLE flagship.on_floor_trusted (canonical_game_id VARCHAR, canonical_player_id VARCHAR)")
     T = pd.DataFrame({"canonical_team_id": teams, "school": [f"Fixture {n}" for n in names[:n_teams]],
                       "mascot": ["Owls"] * n_teams, "display_name": [f"Fixture {n} Owls" for n in names[:n_teams]]})
-    con.register("t", T)
-    con.execute("CREATE TABLE core.teams AS SELECT * FROM t")
     con.register("p", pl.rename(columns={"player_id": "canonical_player_id", "name": "display_name"})[["canonical_player_id", "display_name"]])
     con.execute("CREATE TABLE core.players AS SELECT * FROM p")
+    con.register("pm", pd.DataFrame({"provider": "CBBD", "provider_player_key": pl["athlete_id"].astype(str),
+                                     "canonical_player_id": pl["player_id"], "match_method": "ANCHOR", "match_confidence": 1.0,
+                                     "needs_manual_review": False, "source_context": "fixture", "created_by_version": "fixture"}))
+    con.execute("CREATE TABLE metadata.player_id_map AS SELECT * FROM pm")
+    T["source_team_id"] = [str(TEAM_BASE + i) for i in range(1, n_teams + 1)]
     con.register("ts", pd.DataFrame([{"canonical_team_id": t, "season": s, "is_division_one": True} for t in teams for s in (2025, 2026)]))
     con.execute("CREATE TABLE core.team_seasons AS SELECT * FROM ts")
-    con.execute("""CREATE TABLE core.transfers (source_transfer_id VARCHAR, transfer_year INTEGER, canonical_player_id VARCHAR,
-        candidate_canonical_player_id VARCHAR, identity_method VARCHAR, origin_team_id VARCHAR, destination_team_id VARCHAR,
-        stars INTEGER, rating DOUBLE)""")
-    con.execute("""CREATE TABLE core.recruits (recruit_year INTEGER, canonical_player_id VARCHAR, committed_team_id VARCHAR,
-        stars INTEGER, rating DOUBLE, ranking INTEGER, height_inches DOUBLE, weight_lbs DOUBLE)""")
+    con.register("t", T)
+    con.execute("CREATE TABLE core.teams AS SELECT * FROM t")
+    con.execute("""CREATE TABLE core.transfers (source_transfer_id VARCHAR, transfer_year INTEGER, first_name VARCHAR,
+        last_name VARCHAR, canonical_player_id VARCHAR, candidate_canonical_player_id VARCHAR, identity_method VARCHAR,
+        origin_team_id VARCHAR, destination_team_id VARCHAR, stars INTEGER, rating DOUBLE)""")
+    con.execute("""CREATE TABLE core.recruits (source_recruit_id VARCHAR, recruit_year INTEGER, name VARCHAR,
+        canonical_player_id VARCHAR, committed_team_id VARCHAR, stars INTEGER, rating DOUBLE, ranking INTEGER,
+        height_inches DOUBLE, weight_lbs DOUBLE)""")
     con.execute("""CREATE TABLE metadata.identity_link_quarantine (canonical_player_id VARCHAR, from_season INTEGER,
         to_season INTEGER, reason VARCHAR)""")
     con.close()
@@ -233,7 +257,8 @@ def increment_rows(history_db: Path) -> tuple[dict, dict]:
         "flagship.player_game_outcomes": pd.DataFrame(pb), "flagship.substitutions": pd.DataFrame(subs),
         "core.team_seasons": pd.DataFrame([{"canonical_team_id": x, "season": 2027, "is_division_one": True} for x in t]),
         "core.players": pd.DataFrame([{"canonical_player_id": recruit, "display_name": "Fixture Freshman"}]),
-        "core.recruits": pd.DataFrame([{"recruit_year": 2026, "canonical_player_id": recruit, "committed_team_id": t[1],
+        "core.recruits": pd.DataFrame([{"source_recruit_id": "FIXTURE-R1", "recruit_year": 2026,
+                                        "canonical_player_id": recruit, "committed_team_id": t[1],
                                         "stars": 4, "rating": 0.95, "ranking": 40, "height_inches": 79.0, "weight_lbs": 200.0}]),
     }
     if pk["transfer"] is not None:

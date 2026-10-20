@@ -464,6 +464,13 @@ def test_monitoring_is_read_only(smoke_run):
 
 
 def test_no_network_or_deploy_code_in_production_layer():
-    pat = re.compile(r"^\s*(import|from)\s+(requests|urllib|http\.client|socket|paramiko|ftplib|smtplib|subprocess)\b", re.M)
+    """No deploy / shell / raw-socket code anywhere; HTTP only in the ONE production acquisition module (CBBD GETs)."""
+    never = re.compile(r"^\s*(import|from)\s+(urllib|http\.client|socket|paramiko|ftplib|smtplib|subprocess)\b", re.M)
+    http = re.compile(r"^\s*(import|from)\s+requests\b", re.M)
     for f in PROD_SRC.glob("*.py"):
-        assert not pat.search(f.read_text()), f.name
+        text = f.read_text()
+        assert not never.search(text), f.name
+        assert not http.search(text) or f.name == "cbbd_acquire.py", f.name
+    acq = (PROD_SRC / "cbbd_acquire.py").read_text()
+    assert ".post(" not in acq and ".put(" not in acq and ".delete(" not in acq
+    assert 'BASE = CBBD_ADAPTER.BASE' in acq

@@ -48,12 +48,16 @@ REQUIRED = {
                          "height_inches", "weight_lbs"),
     "core.transfers": ("source_transfer_id", "transfer_year", "canonical_player_id", "candidate_canonical_player_id",
                        "identity_method", "origin_team_id", "destination_team_id", "stars", "rating"),
-    "core.recruits": ("recruit_year", "canonical_player_id", "committed_team_id", "stars", "rating", "ranking",
-                      "height_inches", "weight_lbs"),
+    "core.recruits": ("source_recruit_id", "recruit_year", "canonical_player_id", "committed_team_id", "stars", "rating",
+                      "ranking", "height_inches", "weight_lbs"),
     "core.team_seasons": ("canonical_team_id", "season", "is_division_one"),
     "core.teams": ("canonical_team_id", "school", "display_name"),
     "core.players": ("canonical_player_id", "display_name"),
     "metadata.identity_link_quarantine": ("canonical_player_id", "from_season", "to_season", "reason"),
+    # production-only (never read by Stage 3): the provider schedule snapshot with status / source timestamps
+    "metadata.prod_schedule": ("canonical_game_id", "provider_game_id", "season", "status", "start_time",
+                               "tip_time_quality", "home_team_id", "away_team_id", "source_received_at",
+                               "listed_in_latest_schedule", "schedule_as_of"),
 }
 KEYS = {"flagship.games": ("canonical_game_id",),
         "flagship.team_game_outcomes": ("canonical_game_id", "canonical_team_id"),
@@ -61,14 +65,18 @@ KEYS = {"flagship.games": ("canonical_game_id",),
         "flagship.substitutions": ("canonical_game_id", "canonical_team_id", "canonical_player_id", "sub_in_period",
                                    "sub_in_seconds_remaining"),
         "flagship.rosters": ("canonical_player_id", "canonical_team_id", "season"),
-        "core.transfers": ("source_transfer_id",), "core.recruits": ("canonical_player_id", "recruit_year"),
+        "core.transfers": ("source_transfer_id",), "core.recruits": ("source_recruit_id",),
         "core.team_seasons": ("canonical_team_id", "season"), "core.teams": ("canonical_team_id",),
         "core.players": ("canonical_player_id",),
-        "metadata.identity_link_quarantine": ("canonical_player_id", "from_season", "to_season")}
+        "metadata.identity_link_quarantine": ("canonical_player_id", "from_season", "to_season"),
+        "metadata.prod_schedule": ("canonical_game_id",)}
 SEASONAL = ("flagship.games", "flagship.team_game_outcomes", "flagship.player_game_outcomes", "flagship.substitutions",
-            "flagship.rosters", "core.team_seasons")
-TIP_QUALITY = ("EXACT", "DATE_ONLY", "TBD")
-UNIVERSES = ("DI_VS_DI", "DI_VS_NON_DI", "NON_DI")
+            "flagship.rosters", "core.team_seasons", "metadata.prod_schedule")
+TIP_QUALITY = ("EXACT", "DATE_ONLY", "TBD", "TBD_FLAG")            # TBD_FLAG / DATE_ONLY: the canonical inexact values
+UNIVERSES = ("DI_VS_DI", "DI_VS_NON_DI", "NON_DI", "NON_DI_ONLY", "UNKNOWN")
+# snapshot relations: a newer provider snapshot REPLACES the whole relation (a player dropped from a roster, a portal
+# record withdrawn or a game removed from the listing must not survive from an older snapshot)
+SNAPSHOT_RELATIONS = ("flagship.rosters", "core.transfers", "core.recruits", "core.team_seasons", "metadata.prod_schedule")
 
 
 class StateUpdateFailed(RuntimeError):
@@ -85,7 +93,12 @@ def _utc(x) -> pd.Timestamp:
 
 
 def _sha_df(df: pd.DataFrame) -> str:
-    return hashlib.sha256(pd.util.hash_pandas_object(df.sort_index(axis=1), index=False).values.tobytes()).hexdigest()
+    """Content hash of a relation; list / array cells (e.g. period scores) are hashed by their JSON text."""
+    d = df.sort_index(axis=1).copy()
+    for c in d.columns:
+        if d[c].dtype == object and d[c].map(lambda v: isinstance(v, (list, tuple, dict)) or hasattr(v, "tolist")).any():
+            d[c] = d[c].map(lambda v: json.dumps(v.tolist() if hasattr(v, "tolist") else v, default=str))
+    return hashlib.sha256(pd.util.hash_pandas_object(d, index=False).values.tobytes()).hexdigest()
 
 
 def current_pointer(root: Path = PC.STATE_ROOT) -> dict | None:
@@ -103,7 +116,7 @@ def current(root: Path = PC.STATE_ROOT) -> dict | None:
     db = d / "increment.duckdb"
     if hashlib.sha256(db.read_bytes()).hexdigest() != man["increment_sha256"]:
         raise StateUpdateFailed(f"state {ptr['state_version']}: increment.duckdb changed after promotion")
-    return {"manifest": man, "increment_db": db, "dir": d}
+    return {"manifest": man, "increment_db": db, "dir": d, "pointer": ptr}
 
 
 def _empty_tables(con) -> None:
@@ -111,8 +124,13 @@ def _empty_tables(con) -> None:
         con.execute(f"CREATE SCHEMA IF NOT EXISTS {s}")
 
 
-def _upsert(con, rel: str, df: pd.DataFrame) -> None:
+def _upsert(con, rel: str, df: pd.DataFrame, replace: bool = False) -> None:
     exists = con.execute(f"SELECT count(*) FROM duckdb_tables() WHERE schema_name || '.' || table_name = '{rel}'").fetchone()[0]
+    if exists and replace:
+        con.execute(f"DROP TABLE {rel}")
+        exists = 0
+    if not len(df):
+        return
     con.register("new_rows", df)
     if not exists:
         con.execute(f"CREATE TABLE {rel} AS SELECT * FROM new_rows")
@@ -156,6 +174,9 @@ def validate(db: Path, source_cutoff) -> dict:
         errs.append("core.transfers: only portal year 2026 (feeds 2026-27) may enter the increment")
     if "core.recruits" in have and q(f"SELECT count(*) FROM core.recruits WHERE recruit_year <> {PC.PRODUCTION_SEASON - 1}"):
         errs.append("core.recruits: only recruiting class 2026 (feeds 2026-27) may enter the increment")
+    if "core.recruits" in have and q("""SELECT count(*) FROM (SELECT canonical_player_id FROM core.recruits
+                                        WHERE canonical_player_id IS NOT NULL GROUP BY 1 HAVING count(*) > 1)"""):
+        errs.append("IDENTITY_CONFLICT: one canonical player resolved from two recruiting records")
     g = "flagship.games"
     if q(f"SELECT count(*) FROM {g} WHERE canonical_game_id NOT LIKE 'G-%' OR home_team_id NOT LIKE 'T-%' OR away_team_id NOT LIKE 'T-%'"):
         errs.append("games: non-canonical ids")
@@ -208,21 +229,29 @@ def validate(db: Path, source_cutoff) -> dict:
     return cov
 
 
+def _write_pointer(root: Path, body: dict) -> None:
+    tmp = root / f".CURRENT.{uuid.uuid4().hex}.json"
+    tmp.write_text(json.dumps(body, default=str) + "\n")
+    os.replace(tmp, root / "CURRENT.json")                          # the atomic last-known-good swap
+
+
 def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: dict, root: Path = PC.STATE_ROOT,
-           created_at=None) -> dict:
-    """Upsert new increment rows into a NEW state version; promote it only when the whole increment validates.
-    preseason_evidence: {"portal_2026_complete": bool, "recruits_2026_complete": bool, "source": str} -- declared by
-    the feed that produced the rows; the universe is incomplete (MISSING_PLAYER_STATE) until both are complete."""
+           created_at=None, replace=(), manifest_extra: dict | None = None) -> dict:
+    """last-known-good increment + new legally available rows = candidate; validate the WHOLE candidate; only then
+    promote it atomically. `replace`: snapshot relations whose previous contents are dropped first.
+    preseason_evidence: {"portal_2026_complete": bool, "recruits_2026_complete": bool, "source": str, ...} declared by
+    the feed. Idempotent: a candidate whose relations hash exactly like the current state's creates NO new version;
+    the pointer only records the newer successful sync (last_successful_sync / last_sync_source_cutoff)."""
     root = Path(root)
     created_at = _utc(created_at) if created_at is not None else _now()
     cut = _utc(source_cutoff)
     if cut > created_at:
         raise StateUpdateFailed("source_cutoff is after the state creation time")
-    unknown = sorted(set(new_rows) - set(REQUIRED))
+    unknown = sorted((set(new_rows) | set(replace)) - set(REQUIRED))
     if unknown:
         raise StateUpdateFailed(f"unknown relations {unknown}")
     prev = current(root)
-    if prev is not None and cut < _utc(prev["manifest"]["source_cutoff"]):
+    if prev is not None and cut < _utc(prev["pointer"].get("last_sync_source_cutoff") or prev["manifest"]["source_cutoff"]):
         raise StateUpdateFailed("source_cutoff moves backwards")
     (root / "versions").mkdir(parents=True, exist_ok=True)
     building = root / "versions" / f".building-{uuid.uuid4().hex}"
@@ -234,12 +263,17 @@ def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: di
         con = duckdb.connect(str(db))
         con.execute("SET TimeZone = 'UTC'")
         _empty_tables(con)
-        for rel in sorted(new_rows):
-            df = new_rows[rel]
-            if len(df):
-                _upsert(con, rel, df)
+        for rel in sorted(set(new_rows) | set(replace)):
+            _upsert(con, rel, new_rows.get(rel, pd.DataFrame()), replace=rel in replace)
         con.close()
         cov = validate(db, cut)
+        if prev is not None and cov["relation_sha256"] == prev["manifest"]["coverage"]["relation_sha256"] \
+                and preseason_evidence == prev["manifest"].get("preseason_evidence"):
+            shutil.rmtree(building, ignore_errors=True)
+            ptr = {**prev["pointer"], "last_successful_sync": created_at.isoformat(), "last_sync_source_cutoff": cut.isoformat(),
+                   "last_sync_extra": manifest_extra or {}}
+            _write_pointer(root, ptr)
+            return {**prev["manifest"], "idempotent_no_change": True, "pointer": ptr}
         inc_sha = hashlib.sha256(db.read_bytes()).hexdigest()
         version = "S" + created_at.strftime("%Y%m%dT%H%M%SZ") + "-" + inc_sha[:12]
         man = {"state_version": version, "created_at": created_at.isoformat(), "source_cutoff": cut.isoformat(),
@@ -248,18 +282,21 @@ def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: di
                "provider": provider, "preseason_evidence": preseason_evidence,
                "history_canonical": {"path": "data/lockbox_2025_26/canonical/cbb.duckdb", "role": "frozen, read-only, seasons <= 2025-26"},
                "coverage": cov, "last_completed_game": cov["last_completed_game"],
+               "last_completed_game_included": cov["last_completed_game"],
                "input_hashes": {"new_rows": {k: _sha_df(v) for k, v in sorted(new_rows.items()) if len(v)},
                                 "increment_relations": cov["relation_sha256"]},
-               "increment_sha256": inc_sha, "model_refit": False, "historical_rebuild": False}
+               "replaced_relations": sorted(replace),
+               "increment_sha256": inc_sha, "model_refit": False, "historical_rebuild": False,
+               **(manifest_extra or {})}
         (building / "state_manifest.json").write_text(json.dumps(man, indent=1, sort_keys=True, default=str) + "\n")
         final = root / "versions" / version
         if final.exists():
             raise StateUpdateFailed(f"state version {version} exists")
         os.replace(building, final)
-        ptr_tmp = root / f".CURRENT.{uuid.uuid4().hex}.json"
-        ptr_tmp.write_text(json.dumps({"state_version": version, "promoted_at": _now().isoformat()}) + "\n")
-        os.replace(ptr_tmp, root / "CURRENT.json")                      # the atomic last-known-good swap
-        return man
+        ptr = {"state_version": version, "promoted_at": _now().isoformat(), "last_successful_sync": created_at.isoformat(),
+               "last_sync_source_cutoff": cut.isoformat()}
+        _write_pointer(root, ptr)
+        return {**man, "idempotent_no_change": False, "pointer": ptr}
     except Exception as e:
         shutil.rmtree(building, ignore_errors=True)
         log = root / "update_failures.jsonl"
@@ -270,6 +307,12 @@ def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: di
         raise StateUpdateFailed(f"{type(e).__name__}: {e}") from e
 
 
-def staleness(manifest: dict, prediction_as_of) -> dict:
-    age_h = (_utc(prediction_as_of) - _utc(manifest["source_cutoff"])).total_seconds() / 3600.0
-    return {"state_age_hours": age_h, "stale": bool(age_h > PC.STATE_MAX_AGE_HOURS or age_h < 0)}
+def staleness(manifest: dict, prediction_as_of, pointer: dict | None = None) -> dict:
+    """Age of the newest successfully synced source cutoff (an idempotent re-sync refreshes it without a new version).
+    A state whose cutoff is AFTER prediction_as_of carries data not knowable at prediction time: POST_CUTOFF_DATA."""
+    ref = (pointer or {}).get("last_sync_source_cutoff") or manifest["source_cutoff"]
+    if (pointer or {}).get("last_sync_source_cutoff") and _utc(ref) > _utc(prediction_as_of):
+        ref = manifest["source_cutoff"]
+    age_h = (_utc(prediction_as_of) - _utc(ref)).total_seconds() / 3600.0
+    return {"state_age_hours": age_h, "stale": bool(age_h > PC.STATE_MAX_AGE_HOURS),
+            "post_cutoff_data": bool(_utc(manifest["source_cutoff"]) > _utc(prediction_as_of))}

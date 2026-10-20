@@ -35,7 +35,18 @@ def build(increment_db, prediction_as_of, schedule_as_of, horizon_hours: float =
     con = duckdb.connect(str(increment_db), read_only=True)
     con.execute("SET TimeZone = 'UTC'")
     g = con.execute("SELECT * FROM flagship.games ORDER BY scheduled_tip_utc, canonical_game_id").df()
+    has_sched = con.execute("""SELECT count(*) FROM duckdb_tables() WHERE schema_name = 'metadata'
+                               AND table_name = 'prod_schedule'""").fetchone()[0]
+    sched = con.execute("SELECT * FROM metadata.prod_schedule").df() if has_sched else None
     con.close()
+    # provider listing (live feed only): a game no longer listed, or listed as cancelled / postponed, is not scheduled
+    listed = subs = None
+    if sched is not None:
+        st = sched["status"].astype(str).str.strip().str.lower()
+        listed = dict(zip(sched["canonical_game_id"], sched["listed_in_latest_schedule"].astype(bool)
+                          & ~st.isin(["canceled", "cancelled", "postponed"])))
+        if "substitutions_acquired" in sched:
+            subs = dict(zip(sched["canonical_game_id"], sched["substitutions_acquired"].astype(bool)))
     g["scheduled_tip_utc"] = pd.to_datetime(g["scheduled_tip_utc"], utc=True)
     up = g[g["home_points"].isna() & (g["season"] == PC.PRODUCTION_SEASON)
            & (g["scheduled_tip_utc"] > aso) & (g["scheduled_tip_utc"] <= aso + pd.Timedelta(hours=horizon_hours))].copy()
@@ -45,9 +56,13 @@ def build(increment_db, prediction_as_of, schedule_as_of, horizon_hours: float =
         if r.season != PC.PRODUCTION_SEASON:
             reasons.append("WRONG_PRODUCTION_SEASON")
         if pd.isna(r.home_team_id) or pd.isna(r.away_team_id):
-            reasons.append("UNMATCHED_GAME")
-        if r.game_universe != "DI_VS_DI":
+            reasons += ["UNMATCHED_GAME", "UNKNOWN_TEAM"]
+        if r.game_universe == "UNKNOWN":
+            reasons.append("MISSING_ROSTER")                     # D-I status of a team not established pregame
+        elif r.game_universe != "DI_VS_DI":
             reasons.append("NON_DI_GAME")
+        if listed is not None and not listed.get(r.canonical_game_id, False):
+            reasons.append("MISSING_SCHEDULE")
         cut, rule = feature_cutoff(r.scheduled_tip_utc, r.tip_time_quality, r.game_date_et)
         if aso > cut:
             reasons.append("PREDICTION_AFTER_CUTOFF")
@@ -62,7 +77,16 @@ def build(increment_db, prediction_as_of, schedule_as_of, horizon_hours: float =
             prior = g[((g["home_team_id"] == team) | (g["away_team_id"] == team))
                       & (g["scheduled_tip_utc"] < r.scheduled_tip_utc) & (g["canonical_game_id"] != r.canonical_game_id)]
             known = prior["scheduled_tip_utc"] + pd.Timedelta(hours=4) <= cut
-            if (prior.loc[known, "home_points"].isna()).any():
+            if listed is not None:                               # cancelled / unlisted games never produce a result
+                known &= prior["canonical_game_id"].map(lambda x: listed.get(x, False)).astype(bool)
+            kp = prior.loc[known]
+            # every knowable earlier game must be fully ingested: result, both team boxes, player box (and, on the live
+            # feed, its substitution request) -- otherwise the features would not equal the validated definition
+            incomplete = kp["home_points"].isna() | ~kp["has_team_box_score"].fillna(False).astype(bool) \
+                | ~kp["has_player_box_score"].fillna(False).astype(bool)
+            if subs is not None:
+                incomplete |= ~kp["canonical_game_id"].map(lambda x: subs.get(x, False)).astype(bool)
+            if incomplete.any():
                 reasons.append("STALE_STATE")
                 break
         rows.append({"canonical_game_id": r.canonical_game_id, "provider_game_id": r.source_record_key,
@@ -72,6 +96,7 @@ def build(increment_db, prediction_as_of, schedule_as_of, horizon_hours: float =
                      "canonical_venue_id": r.canonical_venue_id, "game_universe": r.game_universe,
                      "prediction_as_of": aso, "feature_cutoff": cut, "cutoff_rule": rule,
                      "schedule_as_of": _utc(schedule_as_of),
-                     "slate_status": "EXCLUDED" if {"NON_DI_GAME", "UNMATCHED_GAME", "AMBIGUOUS_GAME", "WRONG_PRODUCTION_SEASON"} & set(reasons)
+                     "slate_status": "EXCLUDED" if {"NON_DI_GAME", "UNMATCHED_GAME", "AMBIGUOUS_GAME", "WRONG_PRODUCTION_SEASON",
+                                                   "MISSING_SCHEDULE", "UNKNOWN_TEAM", "MISSING_ROSTER"} & set(reasons)
                      else "SCORE", "suppression_reasons": sorted(set(reasons))})
     return pd.DataFrame(rows, columns=SLATE_COLS)

@@ -65,6 +65,13 @@ def stage3_window(last_season: int):
         spec.MODEL_SEASONS = old
 
 
+def _has(con, db: str, rel: str) -> bool:
+    return bool(con.execute(f"SELECT count(*) FROM duckdb_tables() WHERE database_name = '{db}' "
+                            f"AND schema_name || '.' || table_name = '{rel}'").fetchone()[0] or
+                con.execute(f"SELECT count(*) FROM duckdb_views() WHERE database_name = '{db}' "
+                            f"AND schema_name || '.' || view_name = '{rel}'").fetchone()[0])
+
+
 def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int,
                       history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None) -> dict:
     """Write the as_of-masked canonical input DB. Returns counts + provenance."""
@@ -116,24 +123,18 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     for rel in ("team_game_outcomes", "player_game_outcomes"):
         body = " UNION ALL BY NAME ".join(f"SELECT * FROM {d}.flagship.{rel}" + (
             f" WHERE season BETWEEN {PC.HISTORY_FIRST_SEASON} AND {hi}" if d == "hist" else f" WHERE season = {PC.PRODUCTION_SEASON}")
-            for d in srcs)
+            for d in srcs if d == "hist" or _has(con, d, f"flagship.{rel}"))
         con.execute(f"""CREATE TABLE flagship.{rel} AS SELECT r.* FROM ({body}) r
             WHERE r.historical_knowable_at <= TIMESTAMPTZ '{aso}'
               AND r.canonical_game_id IN (SELECT canonical_game_id FROM flagship.games)
               AND r.canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)""")
     for rel in UNION_RELATIONS:
-        parts = []
-        for d in srcs:
-            ok = con.execute(f"SELECT count(*) FROM duckdb_tables() WHERE database_name = '{d}' "
-                             f"AND schema_name || '.' || table_name = '{rel}'").fetchone()[0] or \
-                con.execute(f"SELECT count(*) FROM duckdb_views() WHERE database_name = '{d}' "
-                            f"AND schema_name || '.' || view_name = '{rel}'").fetchone()[0]
-            if ok:
-                parts.append(f"SELECT * FROM {d}.{rel}")
+        parts = [f"SELECT * FROM {d}.{rel}" for d in srcs if _has(con, d, rel)]
         con.execute(f"CREATE TABLE {rel} AS {' UNION ALL BY NAME '.join(parts)}")
     # substitutions: participation history (PLAYED via stint, DNP_CONFIRMED via a complete feed) of the TARGET season
     # only -- participation state is partitioned by (player, team, season), so no other season reaches a target row
-    body = " UNION ALL BY NAME ".join(f"SELECT * FROM {d}.flagship.substitutions WHERE season = {int(target_season)}" for d in srcs)
+    body = " UNION ALL BY NAME ".join(f"SELECT * FROM {d}.flagship.substitutions WHERE season = {int(target_season)}"
+                                      for d in srcs if d == "hist" or _has(con, d, "flagship.substitutions"))
     con.execute(f"""CREATE TABLE flagship.substitutions AS SELECT s.* FROM ({body}) s
         WHERE s.historical_knowable_at <= TIMESTAMPTZ '{aso}'
           AND s.canonical_game_id IN (SELECT canonical_game_id FROM flagship.games)

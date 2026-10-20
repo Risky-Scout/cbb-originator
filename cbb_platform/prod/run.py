@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
                                loader as LD, matching as MT, quotes as QT, readiness as RD, simulate as SM, slate as SL,
-                               state as ST)
+                               state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -50,10 +50,46 @@ def _last_failure_after(state_root: Path, promoted_at) -> bool:
     return _utc(last["at"]) > _utc(promoted_at)
 
 
+def _last_sync_failed(sync_log: Path, aso) -> dict | None:
+    """The most recent production sync attempt finished by prediction time, when it FAILED (the log is append-only: a
+    later success would be a later line) -> PROVIDER_FAILURE; the run continues on the last-known-good state."""
+    p = Path(sync_log)
+    if not p.exists():
+        return None
+    lines = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    lines = [l for l in lines if _utc(l["finished_at"]) <= _utc(aso)]
+    return lines[-1] if lines and lines[-1].get("status") == "FAILED" else None
+
+
+def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path) -> tuple[list, list]:
+    """Run-level blockers of a LIVE (provider) state: roster freshness / presence, the last sync outcome, and quote
+    provider coverage (The Odds API NCAAB player props: not yet verified -> every live row stays BLOCKED)."""
+    reasons, notes = [], []
+    pre = man.get("preseason_evidence", {})
+    ras = [man.get("roster_as_of"), (pointer.get("last_sync_extra") or {}).get("roster_as_of")]
+    ras = [_utc(x) for x in ras if x and _utc(x) <= aso]
+    if not pre.get("roster_2027_acquired") or not ras:
+        reasons.append("MISSING_ROSTER")
+    elif (aso - max(ras)).total_seconds() / 3600.0 > PC.ROSTER_MAX_AGE_HOURS:
+        reasons.append("STALE_ROSTER")
+    if man.get("schedule_as_of") and (aso - _utc(pointer.get("last_sync_source_cutoff") or man["schedule_as_of"])
+                                      ).total_seconds() / 3600.0 > PC.SCHEDULE_MAX_AGE_HOURS:
+        reasons.append("STALE_STATE")
+    f = _last_sync_failed(sync_log, aso)
+    if f is not None:
+        reasons.append("PROVIDER_FAILURE")
+        notes.append(f"last production sync FAILED ({f.get('reason')}): running on last-known-good state")
+    if not PC.ODDS_PROVIDER_COVERAGE_VERIFIED:
+        reasons.append("QUOTE_COVERAGE_UNVERIFIED")
+        notes.append("The Odds API NCAAB player-prop coverage not yet verified (no discovery call made)")
+    return reasons, notes
+
+
 def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, state_root: Path = PC.STATE_ROOT,
           history_db: Path = PC.HISTORY_CANONICAL, ledger_path: Path = PC.LEDGER_PATH, run_root: Path = PC.RUNS_ROOT,
           bundle_dir: Path | None = None, team_map: pd.DataFrame | None = None, player_map: pd.DataFrame | None = None,
-          horizon_hours: float = 36.0, sims: int = PC.SIMS, artifact_paths: dict | None = None) -> dict:
+          horizon_hours: float = 36.0, sims: int = PC.SIMS, artifact_paths: dict | None = None,
+          game_ids=None, sync_log: Path = PC.SYNC_LOG) -> dict:
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -76,18 +112,28 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         (run_dir / "run_summary.json").write_text(json.dumps(out, indent=1, default=str))
         return out
     man = st["manifest"]
-    if ST.staleness(man, aso)["stale"]:
+    stl = ST.staleness(man, aso, st.get("pointer"))
+    if stl["stale"]:
         run_reasons.append("STALE_STATE")
+    if stl["post_cutoff_data"]:
+        run_reasons.append("POST_CUTOFF_DATA")
     if _last_failure_after(state_root, json.loads((Path(state_root) / "CURRENT.json").read_text())["promoted_at"]):
         run_reasons.append("STATE_UPDATE_FAILED")
     fixture = str(man.get("provider", {}).get("kind", "")).upper() == "FIXTURE"
     data_label = FIXTURE_LABEL if fixture else "LIVE"
     if fixture and Path(ledger_path).resolve() == PC.LEDGER_PATH.resolve():
         raise RuntimeError("fixture data may never be written to the production shadow ledger")
+    live = not fixture
+    if live:
+        lr, ln = live_run_reasons(man, st.get("pointer", {}), aso, sync_log)
+        run_reasons += [r for r in lr if r not in run_reasons]
+        notes += ln
     pre = man.get("preseason_evidence", {})
     universe_complete = bool(pre.get("portal_2026_complete")) and bool(pre.get("recruits_2026_complete"))
     # ---------------------------------------------------------------- slate
-    slate = SL.build(st["increment_db"], aso, man["source_cutoff"], horizon_hours)
+    slate = SL.build(st["increment_db"], aso, man.get("schedule_as_of") or man["source_cutoff"], horizon_hours)
+    if game_ids is not None:                                     # explicit validation subset (never widens the slate)
+        slate = slate[slate["canonical_game_id"].isin(set(game_ids))].reset_index(drop=True)
     game_reasons = {r.canonical_game_id: list(r.suppression_reasons) for r in slate.itertuples(index=False)}
     if not universe_complete:
         for g in game_reasons:
@@ -95,6 +141,9 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         notes.append("preseason membership evidence (portal 2026 / recruits 2026) incomplete: pregame universe incomplete")
     score_ids = slate.loc[slate["slate_status"] == "SCORE", "canonical_game_id"].tolist()
     summary = {"run_id": run_id, "prediction_as_of": aso, "state_version": man["state_version"], "data_label": data_label,
+               "state_as_of": (st.get("pointer") or {}).get("last_sync_source_cutoff") or man["source_cutoff"],
+               "schedule_as_of": man.get("schedule_as_of"), "roster_as_of": man.get("roster_as_of"),
+               "validated_prediction_cutoff": PC.VALIDATED_PREDICTION_CUTOFF,
                "slate_games": int(len(slate)), "scored_games": 0, "model_identity": ident, "notes": notes}
     banks, dists, diag, cand_names = {}, [], [], []
     teams = players = pd.DataFrame()
@@ -103,6 +152,11 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                       st["increment_db"])
         summary["feature_provenance"] = fr["provenance"]
         teams, players = _names(run_dir / "features" / "canonical_asof.duckdb")
+        universe = UV.build(fr["features_db"], run_dir / "features" / "canonical_asof.duckdb", man.get("roster_as_of"),
+                            "FIXTURE" if fixture else "CBBD_API_PRODUCTION")
+        universe.to_csv(run_dir / "player_universe.csv", index=False)
+        roster_sup = UV.suppression_map(universe)
+        summary["player_universe"] = UV.summary(universe)
         cand = fr["cand"]
         if len(cand) and (cand["season"] != PC.PRODUCTION_SEASON).any():
             raise RuntimeError("WRONG_PRODUCTION_SEASON reached the model frame")
@@ -146,6 +200,9 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             md["player_label"] = md["player_id"].map(lambda p: pname.get(p, p))
             md["bank_sha256"] = bank["bank_sha256"]
             md["player_suppression"] = ""
+            rs = md["player_id"].map(lambda p: roster_sup.get((gid, p), ""))
+            md.loc[rs != "", "method"] = "NOT_PRICED"            # simulated (frozen pool), never priced
+            md["player_suppression"] = rs
             dists.append(md)
             sup = gp[gp["player_suppression"] != ""]
             for r in sup.itertuples(index=False):             # suppressed players: recorded, not priced
@@ -183,6 +240,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     sl = slate.set_index("canonical_game_id")
     recs = [{"record_type": "RUN", "body": {"run_id": run_id, "prediction_as_of": aso, "model_identity": ident,
                                             "state_version": man["state_version"], "state_source_cutoff": man["source_cutoff"],
+                                            "state_as_of": (st.get("pointer") or {}).get("last_sync_source_cutoff") or man["source_cutoff"],
+                                            "schedule_as_of": man.get("schedule_as_of"), "roster_as_of": man.get("roster_as_of"),
                                             "readiness_state": run_state["readiness_state"], "run_reasons": run_reasons,
                                             "data_label": data_label, "banks": banks,
                                             "validated_prediction_cutoff": PC.VALIDATED_PREDICTION_CUTOFF,

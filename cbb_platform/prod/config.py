@@ -58,6 +58,23 @@ BUNDLE_ROOT = PROD_ROOT / "bundle"
 HISTORY_CANONICAL = C.PROJECT_ROOT / "data" / "lockbox_2025_26" / "canonical" / "cbb.duckdb"   # frozen, read-only
 PROPOSED_PUBLIC_PATH = "/tools/odds-scanner/predictions/basketball/ncaab/player-props/"         # NOT approved
 
+# ------------------------------------------------------------------ 2026-27 production data feed (CBBD; production-only path)
+# Separate from the research lockbox guard (cbb_platform/lockbox.py stays unchanged and keeps refusing 2026-27). These
+# values are constants, not switches: the production path admits exactly this season and nothing else.
+PRODUCTION_SEASON_START = "2026-08-01"   # first US/Eastern date of 2026-27 (lockbox.season_of_date boundary: Aug 1)
+PRODUCTION_SEASON_END = "2027-07-31"
+PRESEASON_CLASS_YEAR = PRODUCTION_SEASON - 1   # CBBD recruiting / portal `year` 2026 feeds season 2026-27
+FEED_VERSION = "cbb-prod-cbbd-feed-1.0.0"
+PROD_CACHE_ROOT = PROD_ROOT / "cache"                        # never data/raw: the research canonical build reads data/raw
+CBBD_CACHE_RAW = PROD_CACHE_ROOT / "raw"                     # raw_store layout: raw/cbbd/<endpoint_slug>/<file>
+CBBD_REQUEST_LEDGER = PROD_CACHE_ROOT / "cbbd_production_requests.jsonl"
+SYNC_LOG = PROD_ROOT / "sync" / "sync_log.jsonl"
+MAX_LIVE_REQUESTS_PER_STAGE = 20         # architect limit for this phase: a stage that needs more STOPs first
+CBBD_QUOTA_RESERVE = 1_000               # never start a call when fewer than this remain on the account
+SCHEDULE_MAX_AGE_HOURS = 36              # schedule snapshot older than this at prediction time: STALE_STATE
+ROSTER_MAX_AGE_HOURS = 7 * 24            # roster snapshot older than this at prediction time: STALE_ROSTER
+ODDS_PROVIDER_COVERAGE_VERIFIED = False  # NCAAB player-prop coverage of The Odds API not yet checked (no call made)
+
 BASE_STATS = ("PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV")
 COMBOS = {"PRA": ("PTS", "REB", "AST"), "PR": ("PTS", "REB"), "PA": ("PTS", "AST"), "RA": ("REB", "AST"),
           "STOCKS": ("STL", "BLK")}
