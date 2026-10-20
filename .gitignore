@@ -33,3 +33,6 @@ data/lockbox_2025_26/*/parquet/
 
 # V2 out-of-sample forecast store (large; sha256 + counts tracked in modeling/player_props_v2/oos_forecast_store_manifest.json)
 modeling/v2_oos/
+
+# Production shadow layer: local state, ledger, runs, bundles, dry-run sandbox (never committed)
+data/prod/

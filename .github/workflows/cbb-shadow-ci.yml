@@ -1,0 +1,53 @@
+# CBB V2 JM1_FINAL shadow production layer: verification only.
+# GitHub-hosted Ubuntu (never a self-hosted runner). No secrets, no deployment, no SSH, no publication, no wagering.
+name: CBB shadow CI
+
+on:
+  push:
+    branches: ["release/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cbb-shadow-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shadow-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the locked environment
+        run: python -m pip install --require-hashes -r requirements.lock.txt
+      - name: Verify the frozen JM1_FINAL artifacts (sha256)
+        run: |
+          sha256sum -c - <<'EOF'
+          bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f  modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json
+          b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9  modeling/player_props_v2/jm1_final_through_2025_26.json
+          e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1  modeling/player_props_v2/jm1_final_residual_dependence_through_2025_26.json
+          7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab  modeling/player_props_v2/jm1_final_production_manifest_2026_27.json
+          EOF
+          python -m cbb_platform.prod.run verify-artifacts > /dev/null
+      - name: Focused production tests (replay equivalence skips without the local frozen stores)
+        run: python -m pytest tests/test_prod_shadow.py tests/test_prod_replay.py -q
+      - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
+        run: |
+          python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke
+          python -m cbb_platform.prod.run verify-bundle data/prod/ci_smoke/bundle_A
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shadow-fixture-bundle-${{ github.run_id }}
+          path: data/prod/ci_smoke/bundle_A
+          retention-days: 7
