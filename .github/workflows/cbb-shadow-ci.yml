@@ -44,6 +44,8 @@ jobs:
         run: python -m pytest tests/test_prod_shadow.py tests/test_prod_replay.py -q
       - name: Focused 2026-27 data-feed tests (labeled CBBD-format fixtures, fake HTTP; no network, no credential)
         run: python -m pytest tests/test_prod_live_feed.py -q
+      - name: Focused 2026-27 quote-feed tests (labeled The Odds API v4-format fixtures, fake HTTP; no network, no credential)
+        run: python -m pytest tests/test_prod_odds_feed.py -q
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke

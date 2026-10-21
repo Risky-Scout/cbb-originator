@@ -73,7 +73,25 @@ MAX_LIVE_REQUESTS_PER_STAGE = 20         # architect limit for this phase: a sta
 CBBD_QUOTA_RESERVE = 1_000               # never start a call when fewer than this remain on the account
 SCHEDULE_MAX_AGE_HOURS = 36              # schedule snapshot older than this at prediction time: STALE_STATE
 ROSTER_MAX_AGE_HOURS = 7 * 24            # roster snapshot older than this at prediction time: STALE_ROSTER
-ODDS_PROVIDER_COVERAGE_VERIFIED = False  # NCAAB player-prop coverage of The Odds API not yet checked (no call made)
+
+# ------------------------------------------------------------------ 2026-27 sportsbook quotes (The Odds API v4; production-only path)
+# NCAAB player-prop SUPPORT is documented by the provider (sport basketball_ncaab, one event at a time via
+# /v4/sports/basketball_ncaab/events/{eventId}/odds); it is not something this layer discovers with paid calls. What
+# remains is operational: is the event listed, are its prop markets posted, do identities resolve, are quotes fresh,
+# and has the built integration been validated once against a real 2026-27 event (ODDS_VALIDATION_RECORD).
+ODDS_FEED_VERSION = "cbb-prod-odds-feed-1.0.0"
+ODDS_CACHE_RAW = PROD_CACHE_ROOT / "raw"                     # raw_store layout: raw/the-odds-api/<endpoint_slug>/<file>
+ODDS_REQUEST_LEDGER = PROD_CACHE_ROOT / "odds_production_requests.jsonl"
+ODDS_ROOT = PROD_ROOT / "odds"
+ODDS_COLLECTIONS = ODDS_ROOT / "collections"                 # load_collected()-format files, one per event fetch
+ODDS_VALIDATION_RECORD = ODDS_ROOT / "integration_validation.json"
+ODDS_REGIONS = "us"                                          # exactly one region: cost = markets returned x 1
+ODDS_MAX_LIVE_REQUESTS_PER_STAGE = 20    # same architect ceiling as CBBD: a stage that needs more STOPs first
+ODDS_MAX_CREDITS_PER_STAGE = 60          # worst case 5 events x 12 documented markets x 1 region
+ODDS_QUOTA_RESERVE = 500                 # never start a paid call that could leave fewer credits than this
+ODDS_PROP_WINDOW_HOURS = 36              # event odds are requested only within 36 h of the listed commence time
+ODDS_EVENTS_MAX_AGE_HOURS = 6            # an events listing older than this is refreshed (the listing costs 0 credits)
+ODDS_EVENT_ODDS_MAX_AGE_MINUTES = 10     # a cached event-odds payload younger than this is reused (no new call)
 
 BASE_STATS = ("PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV")
 COMBOS = {"PRA": ("PTS", "REB", "AST"), "PR": ("PTS", "REB"), "PA": ("PTS", "AST"), "RA": ("REB", "AST"),

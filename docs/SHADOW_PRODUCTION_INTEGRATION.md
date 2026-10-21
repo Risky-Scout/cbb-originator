@@ -1,6 +1,7 @@
 # CBB V2 JM1_FINAL: shadow production integration (2026-27)
 
-Status: **SHADOW ONLY**. Nothing is deployed, published or wagered, and no odds call was made.
+Status: **SHADOW ONLY**. Nothing is deployed, published or wagered. The only Odds API calls made are two free (0-credit)
+events listings; no paid player-prop request has been made.
 The integration branch is `release/cbb-v2-shadow-ready`, cut from the frozen commit
 `e1353e5` (tag `cbb-v2-jm1-final-2026-27`). The 2026-27 CBBD production data feed (section
 "2026-27 production data feed") is on `release/cbb-v2-live-data-feed`, cut from the shadow commit `780673f`.
@@ -24,7 +25,7 @@ one `.gitignore` entry (`data/prod/`).
 | Pricing | `props_v1_pricing.price` (exact over/under/push) | Wrapped (`prod/pricing.py`) |
 | Historical data | Frozen canonical DB `data/lockbox_2025_26/canonical/cbb.duckdb`, seasons up to 2025-26 | Read-only history; never rebuilt |
 | 2026-27 data | **None.** `lockbox.check_request` refuses every 2026-27 fetch until separate production rules exist | Increment contract only (see Gaps) |
-| Odds | **None** in this repo: no Odds API code and no cached odds. BDL NCAAB has game odds only | Odds API v4 normalizer, no calls made |
+| Odds | **None** at audit time. BDL NCAAB has game odds only | The Odds API v4 production quote feed (`prod/odds_acquire.py`, `prod/odds_feed.py`; section below) |
 | Ledger, bundle, CI, deploy | Ledger is a design doc only (`docs/PREDICTION_LEDGER_SCHEMA.md`); no bundle, CI or deploy code existed | Built new. The deploy pattern was copied, read-only, from the NCAAF repo's SSH atomic swap |
 
 ## Daily graph (cheap, bounded)
@@ -413,7 +414,7 @@ These clear automatically as CBBD updates its rosters and the daily sync replace
 | `UNKNOWN_TEAM` | game | a schedule record without a team id |
 | `POST_CUTOFF_DATA` | run | the state was cut after `prediction_as_of` |
 | `AMBIGUOUS_PLAYER` / `IDENTITY_CONFLICT` / `NOT_ON_CURRENT_ROSTER` / `DUPLICATE_PROVIDER_IDENTITY` / `TRANSFERRED_OUT` / `NO_FROZEN_MEMBERSHIP_EVIDENCE` / `RECRUIT_IDENTITY_UNAVAILABLE` | row | universe (above) |
-| `QUOTE_COVERAGE_UNVERIFIED` | run (live) | The Odds API NCAAB player-prop coverage is not verified; no discovery call was made |
+| quote states | run / game / row | see "2026-27 sportsbook quotes" below (`QUOTE_COVERAGE_UNVERIFIED` is retired) |
 
 ### State locations and daily invocation
 
@@ -442,17 +443,116 @@ recruits). 11 live CBBD production requests in total, all season 2027 / class ye
 2. **Resolved where data exist: missing preseason evidence.** The 2026 portal and the 2026 class are ingested.
    * Freshmen depend on production adaptation P-2, for which architect confirmation is requested.
    * Recruits CBBD has not yet placed on a roster stay suppressed until CBBD updates.
-3. **Quote provider coverage is unresolved** and is the remaining live blocker (`QUOTE_COVERAGE_UNVERIFIED`). The provider
-   is The Odds API v4, and the normalizer is implemented. NCAAB player-prop coverage has not been established. One
-   discovery request needs approval:
-   * **Request:** `GET https://api.the-odds-api.com/v4/sports/basketball_ncaab/events/{eventId}/odds`
-   * **Parameters:** `regions=us`, `oddsFormat=american`, `markets=` the 12 player markets in `prod/quotes.py`
-     `MARKET_MAP`
-   * **Quota cost:** markets × regions per event. For one event that is ≤ 12 credits (the provider charges only the
-     markets it returns).
-   * **Event id:** must come first from `GET .../basketball_ncaab/events`.
-   * **Timing:** meaningful only once 2026-27 games are listed (early November 2026).
+3. **Quote integration not yet validated on a real event** (`QUOTE_INTEGRATION_UNVALIDATED`). NCAAB player-prop
+   support is documented by the provider; the integration is built and fixture-tested. On 2026-10-21 the Odds API
+   listed **0** NCAAB events for the next 14 days, so every opening-night game carries `ODDS_EVENT_NOT_YET_LISTED`.
+   Validation runs once a real event is listed and inside the 36 h prop window (`odds_feed validate --event <id>`).
 4. **Cutoff fidelity.** Prospective cutoff fidelity is unvalidated, because live schedule versions were never part of
    training.
 5. **In-season request budget.** Per-game substitution requests exceed 20 per stage on most game days, so a budget
    decision is needed before the first completed games (2026-11-01).
+
+## 2026-27 sportsbook quotes (The Odds API v4; `release/cbb-v2-odds-quotes`)
+
+NCAAB player-prop **support is documented** by the provider (sport `basketball_ncaab`; player props one event at a
+time through `GET /v4/sports/basketball_ncaab/events/{eventId}/odds`). No paid request is ever made to discover it.
+
+### Documented market keys (`prod/quotes.py` `MARKET_KEYS`)
+
+Source: <https://the-odds-api.com/sports-odds-data/betting-markets.html>, read 2026-10-21. The base keys are in the
+section headed "NBA, NCAAB, WNBA Player Props API". The `*_alternate` keys are in a section headed "Alternate NBA
+Player Props API" (NBA only), so for NCAAB they are not documented: they are **never requested**, but a real
+alternate quote the provider does return is kept (it is an actual sportsbook price, not a fabrication).
+
+| MODEL_STAT | ODDS_API_MARKET_KEY | DOCUMENTED_SUPPORTED (NCAAB) | ALTERNATE_KEY (NBA-documented) |
+|---|---|---|---|
+| PTS | `player_points` | TRUE | `player_points_alternate` |
+| REB | `player_rebounds` | TRUE | `player_rebounds_alternate` |
+| AST | `player_assists` | TRUE | `player_assists_alternate` |
+| FG3M | `player_threes` | TRUE | `player_threes_alternate` |
+| STL | `player_steals` | TRUE | `player_steals_alternate` |
+| BLK | `player_blocks` | TRUE | `player_blocks_alternate` |
+| TOV | `player_turnovers` | TRUE | `player_turnovers_alternate` |
+| PRA | `player_points_rebounds_assists` | TRUE | `player_points_rebounds_assists_alternate` |
+| PR | `player_points_rebounds` | TRUE | `player_points_rebounds_alternate` |
+| PA | `player_points_assists` | TRUE | `player_points_assists_alternate` |
+| RA | `player_rebounds_assists` | TRUE | `player_rebounds_assists_alternate` |
+| STOCKS | `player_blocks_steals` | TRUE | none documented |
+
+Every other key, including an undocumented alternate such as `player_blocks_steals_alternate`, is
+`UNSUPPORTED_MARKET`. The model prices all 12 markets internally. A market enters the Best Executable Wager board only
+at a line an actual sportsbook quoted for that player. A market an event does not offer is
+`MARKET_NOT_OFFERED_FOR_EVENT`, which is never a conclusion about the provider in general.
+
+### Production-only acquisition (`prod/odds_acquire.py`)
+
+* **Endpoints.** Only two: `events` (0 credits, documented) and `event_odds`. There are no featured `/odds` calls, no
+  historical endpoint and no other sport.
+* **Parameters.** `regions=us` (one region), `oddsFormat=american`, `dateFormat=iso`, `includeLinks=true` and
+  `includeSids=true`. `markets` must be documented NCAAB base keys.
+* **Events.** The `eventId` must come from an events listing already acquired inside 2026-27. The call must fall
+  within `ODDS_PROP_WINDOW_HOURS` (36) before the listed commence time, never after it.
+* **Cost control.** Each paid call is costed before it is made, with an upper bound of markets requested × 1 region
+  (12 credits). It is checked against a per-stage budget (60 credits, 20 requests) and a 500-credit quota reserve.
+  The account quota must already be known, from the free listing, before any paid call.
+* **Usage headers.** `x-requests-remaining`, `x-requests-used` and `x-requests-last` are logged for every call.
+* **Storage.** Payloads are cached under `data/prod/cache/raw/the-odds-api/`, and the request ledger is
+  `data/prod/cache/odds_production_requests.jsonl`.
+* **Credential.** `ODDS_API_KEY` travels only in the request query. It is never in the ledger, cache, metadata or
+  exceptions; network errors are reduced to their type name.
+* **Collections.** `odds_feed.collect` writes one `load_collected`-format file per event under
+  `data/prod/odds/collections/`, carrying the payload's own `received_at`. A daily live run loads the latest
+  collection per event received by `prediction_as_of`.
+
+### Canonical quote schema (`prod/quotes.py` `COLUMNS`)
+
+* **Identity and source:** event id, bookmaker key (lowercased) and title, player description, market key and stat.
+* **Quote:** side (OVER/UNDER), line, American price and decimal price.
+* **Timestamps:** market `last_update` (the documented timestamp), bookmaker `last_update` (kept if present),
+  `quote_available_at`, and `collector_received_at`.
+* **Deep link:** taken from the outcome, else the market, else the bookmaker.
+* **Validity:** a quote is invalid if it has no player, a non-OVER/UNDER side, a line that is not a non-negative
+  multiple of 0.5, a non-positive price, or a market update later than receipt.
+* **Matching:** strict, unchanged (`prod/matching.py`); nothing is fuzzy.
+* **Best price:** the highest decimal price among VALID, matched, fresh quotes, with ties broken by sportsbook key.
+
+### Quote readiness states (replace `QUOTE_COVERAGE_UNVERIFIED`)
+
+| Code | Level | When |
+|---|---|---|
+| `QUOTE_INTEGRATION_UNVALIDATED` | run (live) | no PASS record of the first real-event validation at prediction time |
+| `ODDS_API_FAILURE` | run (live) | the latest Odds API acquisition by prediction time failed |
+| `ODDS_EVENT_NOT_YET_LISTED` | game | no listed event resolves to the game, or no listing covers its tip |
+| `QUOTE_IDENTITY_UNRESOLVED` | game / row | a listed event near the tip shares a team but does not resolve strictly; or the market is posted, the player has no quote, and quotes in that market did not resolve to a canonical player |
+| `PLAYER_PROP_MARKET_NOT_YET_POSTED` | game | the event is listed but no documented player-prop market is posted |
+| `QUOTE_STALE` | game | every identity-resolved prop quote is older than 20 min (row level: `STALE_QUOTE`) |
+| `MARKET_NOT_OFFERED_FOR_EVENT` | row | the event has props, but not this market |
+
+The retired code `QUOTE_COVERAGE_UNVERIFIED` is unknown to the evaluator, so if it ever appears it still blocks.
+
+### First real-event validation (implementation validation, not capability discovery)
+
+```
+.venv/bin/python -m cbb_platform.prod.odds_feed mapping                    # the table above
+.venv/bin/python -m cbb_platform.prod.odds_feed events [--hours 336]       # free listing + strict event matching
+.venv/bin/python -m cbb_platform.prod.odds_feed validate --event <eventId> # ONE paid request (<= 12 credits)
+```
+
+`validate` runs only for a listed event that resolves strictly to a 2026-27 slate game and is inside the prop window.
+It makes one event-odds request and runs the full shadow pipeline for that game into a scratch ledger. It then checks:
+
+* expected markets were returned (each documented key is recorded as RETURNED or `MARKET_NOT_OFFERED_FOR_EVENT`);
+* bookmaker keys and titles normalize;
+* player identities resolve, with unmatched names listed;
+* lines, sides and prices parse;
+* timestamps are usable;
+* best-price selection is correct;
+* no priced line or price lacks a sportsbook quote, and no unsupported key was returned.
+
+Only a full PASS writes `data/prod/odds/integration_validation.json`. That record is what removes
+`QUOTE_INTEGRATION_UNVALIDATED`.
+
+Live status on 2026-10-21:
+* Two free events listings returned 0 NCAAB events (cost 0; quota remaining 4,937,648).
+* A live-format run of Florida–Miami, Purdue–Gonzaga and BYU–Ohio State (scratch ledger) scored all 3 games. It is
+  BLOCKED only by `QUOTE_INTEGRATION_UNVALIDATED` (run) and `ODDS_EVENT_NOT_YET_LISTED` (each game).

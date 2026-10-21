@@ -48,8 +48,9 @@ def build(dists: pd.DataFrame, quotes: pd.DataFrame, meta: dict) -> tuple[pd.Dat
         if d.method == "NOT_PRICED":                     # suppressed player: recorded with its reason, never priced
             priced.append({**base, "line": None, "side": None, "row_reasons": [d.player_suppression]})
             continue
-        if not lines:
-            priced.append({**base, "line": None, "side": None, "row_reasons": ["NO_VALID_QUOTE"]})
+        if not lines:                                    # why there is no quote: odds_feed.coverage (default generic)
+            why = meta.get("no_quote_reason", lambda g, p, m: "NO_VALID_QUOTE")(d.game_id, d.player_id, d.market)
+            priced.append({**base, "line": None, "side": None, "row_reasons": [why]})
             continue
         for line in lines:
             try:

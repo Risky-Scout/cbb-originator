@@ -464,13 +464,17 @@ def test_monitoring_is_read_only(smoke_run):
 
 
 def test_no_network_or_deploy_code_in_production_layer():
-    """No deploy / shell / raw-socket code anywhere; HTTP only in the ONE production acquisition module (CBBD GETs)."""
+    """No deploy / shell / raw-socket code anywhere; HTTP only in the two production acquisition modules (CBBD GETs,
+    The Odds API GETs)."""
     never = re.compile(r"^\s*(import|from)\s+(urllib|http\.client|socket|paramiko|ftplib|smtplib|subprocess)\b", re.M)
     http = re.compile(r"^\s*(import|from)\s+requests\b", re.M)
     for f in PROD_SRC.glob("*.py"):
         text = f.read_text()
         assert not never.search(text), f.name
-        assert not http.search(text) or f.name == "cbbd_acquire.py", f.name
+        assert not http.search(text) or f.name in ("cbbd_acquire.py", "odds_acquire.py"), f.name
+    for name in ("cbbd_acquire.py", "odds_acquire.py"):
+        acq = (PROD_SRC / name).read_text()
+        assert ".post(" not in acq and ".put(" not in acq and ".delete(" not in acq
+    assert 'BASE = "https://api.the-odds-api.com"' in (PROD_SRC / "odds_acquire.py").read_text()
     acq = (PROD_SRC / "cbbd_acquire.py").read_text()
-    assert ".post(" not in acq and ".put(" not in acq and ".delete(" not in acq
     assert 'BASE = CBBD_ADAPTER.BASE' in acq

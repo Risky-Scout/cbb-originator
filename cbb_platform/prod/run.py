@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
-                               loader as LD, matching as MT, quotes as QT, readiness as RD, simulate as SM, slate as SL,
-                               state as ST, universe as UV)
+                               loader as LD, matching as MT, odds_feed as OF, quotes as QT, readiness as RD,
+                               simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -61,9 +61,11 @@ def _last_sync_failed(sync_log: Path, aso) -> dict | None:
     return lines[-1] if lines and lines[-1].get("status") == "FAILED" else None
 
 
-def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path) -> tuple[list, list]:
-    """Run-level blockers of a LIVE (provider) state: roster freshness / presence, the last sync outcome, and quote
-    provider coverage (The Odds API NCAAB player props: not yet verified -> every live row stays BLOCKED)."""
+def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
+                     odds_record: Path = PC.ODDS_VALIDATION_RECORD) -> tuple[list, list]:
+    """Run-level blockers of a LIVE (provider) state: roster freshness / presence, the last sync outcome, the last Odds
+    API acquisition outcome, and whether the quote integration has passed its first real-event validation. (NCAAB
+    player-prop SUPPORT is documented by the provider; per-game / per-row quote states come from odds_feed.coverage.)"""
     reasons, notes = [], []
     pre = man.get("preseason_evidence", {})
     ras = [man.get("roster_as_of"), (pointer.get("last_sync_extra") or {}).get("roster_as_of")]
@@ -79,9 +81,13 @@ def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path) -> tuple[lis
     if f is not None:
         reasons.append("PROVIDER_FAILURE")
         notes.append(f"last production sync FAILED ({f.get('reason')}): running on last-known-good state")
-    if not PC.ODDS_PROVIDER_COVERAGE_VERIFIED:
-        reasons.append("QUOTE_COVERAGE_UNVERIFIED")
-        notes.append("The Odds API NCAAB player-prop coverage not yet verified (no discovery call made)")
+    of = OF.last_odds_failure(odds_ledger, aso)
+    if of is not None:
+        reasons.append("ODDS_API_FAILURE")
+        notes.append(f"last Odds API acquisition FAILED ({of.get('endpoint')}: {of.get('error')})")
+    if OF.integration_validated(odds_record, aso) is None:
+        reasons.append("QUOTE_INTEGRATION_UNVALIDATED")
+        notes.append("Odds API quote integration not yet validated on a real 2026-27 event (odds_feed validate)")
     return reasons, notes
 
 
@@ -89,7 +95,9 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
           history_db: Path = PC.HISTORY_CANONICAL, ledger_path: Path = PC.LEDGER_PATH, run_root: Path = PC.RUNS_ROOT,
           bundle_dir: Path | None = None, team_map: pd.DataFrame | None = None, player_map: pd.DataFrame | None = None,
           horizon_hours: float = 36.0, sims: int = PC.SIMS, artifact_paths: dict | None = None,
-          game_ids=None, sync_log: Path = PC.SYNC_LOG) -> dict:
+          game_ids=None, sync_log: Path = PC.SYNC_LOG, odds_cache_root: Path = PC.ODDS_CACHE_RAW,
+          odds_collections: Path | None = PC.ODDS_COLLECTIONS, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
+          odds_record: Path = PC.ODDS_VALIDATION_RECORD) -> dict:
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -125,7 +133,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         raise RuntimeError("fixture data may never be written to the production shadow ledger")
     live = not fixture
     if live:
-        lr, ln = live_run_reasons(man, st.get("pointer", {}), aso, sync_log)
+        lr, ln = live_run_reasons(man, st.get("pointer", {}), aso, sync_log, odds_ledger, odds_record)
         run_reasons += [r for r in lr if r not in run_reasons]
         notes += ln
     pre = man.get("preseason_evidence", {})
@@ -219,16 +227,28 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                  "player_label", "bank_sha256", "player_suppression"])
     dist["game_reasons"] = dist["game_id"].map(lambda g: sorted(set(game_reasons.get(g, []))))
     # ---------------------------------------------------------------- quotes -> strict matching -> freshness
+    quotes_paths = list(quotes_paths)
+    if live and not quotes_paths and odds_collections is not None:
+        quotes_paths = OF.collections(aso, odds_collections)      # latest live collection per event, received <= as_of
     qs = [QT.load_collected(p) for p in quotes_paths]
-    quotes = pd.concat(qs, ignore_index=True) if qs else pd.DataFrame(columns=QT.COLUMNS)
+    quotes = QT.typed(pd.concat(qs, ignore_index=True) if qs else pd.DataFrame(columns=QT.COLUMNS))
+    tidx = MT.team_index(teams, team_map) if len(teams) else {"explicit": {}, "exact": {}}
     if len(quotes):
-        tidx = MT.team_index(teams, team_map) if len(teams) else {"explicit": {}, "exact": {}}
         quotes = MT.match_games(quotes, slate, tidx)
         cands = pd.concat(cand_names, ignore_index=True) if cand_names else pd.DataFrame(
             columns=["game_id", "team_id", "player_id", "display_name"])
         quotes = MT.match_players(quotes, cands, player_map)
         quotes = BO.quote_freshness(quotes, aso, slate.set_index("canonical_game_id")["start_time"].to_dict())
         quotes.to_csv(run_dir / "quotes_normalized.csv", index=False)
+    no_quote_reason = None
+    if live and score_ids:                                       # precise operational quote states (odds_feed.coverage)
+        cov = OF.coverage(slate[slate["canonical_game_id"].isin(score_ids)], quotes, OF.listing(aso, odds_cache_root), tidx)
+        for g, rs in cov["game_reasons"].items():
+            game_reasons[g] += rs
+        no_quote_reason = cov["row_reason"]
+        summary["quote_coverage"] = {"listing": cov["listing"], "games": cov["diagnostics"]}
+        if len(dist):
+            dist["game_reasons"] = dist["game_id"].map(lambda g: sorted(set(game_reasons.get(g, []))))
     summary["quotes"] = {"total": int(len(quotes)),
                          "by_status": quotes.groupby(["quote_status", "suppression_reason"]).size().rename("n").reset_index()
                          .to_dict(orient="records") if len(quotes) else []}
@@ -236,6 +256,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     run_state = RD.evaluate(run_reasons)
     meta = {"run_id": run_id, "prediction_as_of": aso, "model_version": ident["model_version"], "sims": sims,
             "run_reasons": run_reasons}
+    if no_quote_reason is not None:
+        meta["no_quote_reason"] = no_quote_reason
     board, priced = BO.build(dist, quotes, meta) if len(dist) else (pd.DataFrame(columns=BO.BOARD_COLS), [])
     sl = slate.set_index("canonical_game_id")
     recs = [{"record_type": "RUN", "body": {"run_id": run_id, "prediction_as_of": aso, "model_identity": ident,

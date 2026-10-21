@@ -23,6 +23,9 @@ FROZEN_GUARD_SHA256 = {
     "cbb_platform/cbbd_client.py": "2cc4b14740ace42de1ed522067bf1b7c4238e945194a8930c337fd05bf4adb43",
     "cbb_platform/adapters/cbbd.py": "470a537c2ad056c66f77183bf1d560b11cbf89b4555a6dba4cee04e303da5dd8",
 }
+# odds paths that never exist: a live-format daily run in these tests never reads the real data/prod odds cache
+NO_ODDS = dict(odds_cache_root=ROOT / "tests" / "_no_odds_cache", odds_collections=ROOT / "tests" / "_no_odds_collections",
+               odds_ledger=ROOT / "tests" / "_no_odds_ledger.jsonl", odds_record=ROOT / "tests" / "_no_odds_record.json")
 T_SYNC1, T_EARLY, T_SYNC2, T_SYNC3, T_RUN = ("2026-11-01T12:00Z", "2026-11-05T03:00Z", "2026-11-05T06:00Z",
                                             "2026-11-10T15:00Z", "2026-11-10T16:00Z")
 
@@ -49,7 +52,7 @@ def world(tmp_path_factory):
     out["v2"] = ST.current(w / "state")["manifest"]["state_version"]
     out["calls_before_s3"] = len(after.calls)
     out["s3"] = Y.run(clock=FF.clock_at(T_SYNC3), http_get=after, **kw)
-    out["daily"] = RN.daily(T_RUN, state_root=w / "state", history_db=hist, ledger_path=w / "shadow.jsonl",
+    out["daily"] = RN.daily(T_RUN, **NO_ODDS, state_root=w / "state", history_db=hist, ledger_path=w / "shadow.jsonl",
                             run_root=w / "runs", sims=2000, sync_log=w / "sync.jsonl")
     out["universe"] = pd.read_csv(Path(out["daily"]["run_dir"]) / "player_universe.csv")
     return out
@@ -217,7 +220,7 @@ def test_provider_failure_keeps_last_good_and_blocks(world, tmp_path):
         acq.BACKOFF = old
     assert r["status"] == "FAILED" and r["reason"] == "PROVIDER_FAILURE"
     assert (w / "state" / "CURRENT.json").read_text() == before
-    s = RN.daily("2026-11-01T21:00Z", state_root=w / "state", history_db=world["hist"], ledger_path=w / "l.jsonl",
+    s = RN.daily("2026-11-01T21:00Z", **NO_ODDS, state_root=w / "state", history_db=world["hist"], ledger_path=w / "l.jsonl",
                  run_root=w / "runs", sims=500, sync_log=w / "sync.jsonl", horizon_hours=1)
     assert "PROVIDER_FAILURE" in s["run_reasons"] and s["readiness_state"] == "BLOCKED"
 
@@ -384,7 +387,7 @@ def test_roster_cutoff_chronology(world, tmp_path):
         F.snapshot([("teams/roster", {"season": 2027})], "2026-11-01T11:59Z", tmp_path / "s", world["w"] / "cache")
     prov = F.snapshot([("teams/roster", {"season": 2027})], T_RUN, tmp_path / "s2", world["w"] / "cache")
     assert all(pd.Timestamp(v["received_at"]) <= pd.Timestamp(T_RUN) for v in prov.values())
-    s = RN.daily("2026-11-01T11:00Z", state_root=world["w"] / "state", history_db=world["hist"],
+    s = RN.daily("2026-11-01T11:00Z", **NO_ODDS, state_root=world["w"] / "state", history_db=world["hist"],
                  ledger_path=tmp_path / "l.jsonl", run_root=tmp_path / "r", sims=500, sync_log=world["w"] / "sync.jsonl",
                  horizon_hours=1)
     assert "POST_CUTOFF_DATA" in s["run_reasons"] and s["readiness_state"] == "BLOCKED"
@@ -436,10 +439,11 @@ def test_stage3_schema_compatibility(world):
     assert "STALE_STATE" not in d["game_reasons"][a] and "MISSING_PLAYER_STATE" not in d["game_reasons"][a]
 
 
-def test_live_readiness_blocks_on_quote_coverage_not_on_data(world):
+def test_live_readiness_blocks_on_quote_states_not_on_data(world):
     d = world["daily"]
     assert d["readiness_state"] == "BLOCKED"
-    assert "QUOTE_COVERAGE_UNVERIFIED" in d["run_reasons"]
+    assert "QUOTE_INTEGRATION_UNVALIDATED" in d["run_reasons"] and "QUOTE_COVERAGE_UNVERIFIED" not in d["run_reasons"]
+    assert all("ODDS_EVENT_NOT_YET_LISTED" in d["game_reasons"][g] for g in d["banks"])   # no listing acquired
     assert not {"LIVE_DATA_FEED_UNAVAILABLE", "STATE_UPDATE_FAILED", "MISSING_ROSTER", "STALE_ROSTER", "STALE_STATE",
                 "PROVIDER_FAILURE"} & set(d["run_reasons"])
     for k in ("prediction_as_of", "state_as_of", "schedule_as_of", "roster_as_of"):
@@ -452,14 +456,81 @@ def test_live_readiness_blocks_on_quote_coverage_not_on_data(world):
 
 
 def test_stale_data_blocking(world, tmp_path):
-    s = RN.daily("2026-11-12T16:00Z", state_root=world["w"] / "state", history_db=world["hist"],
+    s = RN.daily("2026-11-12T16:00Z", **NO_ODDS, state_root=world["w"] / "state", history_db=world["hist"],
                  ledger_path=tmp_path / "l.jsonl", run_root=tmp_path / "r", sims=500, sync_log=world["w"] / "sync.jsonl",
                  horizon_hours=1)
     assert "STALE_STATE" in s["run_reasons"]
-    s = RN.daily("2026-11-20T16:00Z", state_root=world["w"] / "state", history_db=world["hist"],
+    s = RN.daily("2026-11-20T16:00Z", **NO_ODDS, state_root=world["w"] / "state", history_db=world["hist"],
                  ledger_path=tmp_path / "l2.jsonl", run_root=tmp_path / "r2", sims=500, sync_log=world["w"] / "sync.jsonl",
                  horizon_hours=1)
     assert {"STALE_STATE", "STALE_ROSTER"} <= set(s["run_reasons"])
-    s = RN.daily("2026-11-12T16:00Z", state_root=tmp_path / "nostate", history_db=world["hist"],
+    s = RN.daily("2026-11-12T16:00Z", **NO_ODDS, state_root=tmp_path / "nostate", history_db=world["hist"],
                  ledger_path=tmp_path / "l3.jsonl", run_root=tmp_path / "r3", sims=500)
     assert s["run_reasons"] == ["STATE_UPDATE_FAILED", "LIVE_DATA_FEED_UNAVAILABLE"]
+
+
+# ============================================================================ quotes: first real-event validation (fixture)
+def test_odds_validation_then_live_quote_states(world, tmp_path):
+    """Implementation validation on a listed event inside the prop window (ONE event-odds request), then a live-format
+    daily run: the generic quote blocker is gone; precise per-game / per-row states remain; best price is the maximum
+    decimal price; nothing is priced without a sportsbook quote."""
+    from cbb_platform.prod import matching as MT, odds_acquire as OA, odds_feed as OF, odds_fixtures as OX, slate as SL
+    st = ST.current(world["w"] / "state")
+    slate = SL.build(st["increment_db"], T_RUN, st["manifest"]["schedule_as_of"], 36).set_index("canonical_game_id")
+    teams, _ = RN._names(world["hist"])
+    tn = teams.set_index("canonical_team_id")["display_name"]
+    u = world["universe"]
+    a, b, c = FF.gid("A"), FF.gid("B"), FF.gid("C")
+    ok = u[(u["game_id"] == a) & u["in_frozen_pool"].astype(bool) & u["suppression_reason"].isna()]
+    p0, p1, p2 = ok.drop_duplicates("canonical_player_id").head(3).itertuples(index=False)
+    tip = "2026-11-11T00:30:00Z"
+    ev_a = OX.event("evt-A", tn[slate.loc[a, "home_team_id"]], tn[slate.loc[a, "away_team_id"]], tip)
+    ev_b = OX.event("evt-B", tn[slate.loc[b, "home_team_id"]], "Unknown Visitors", tip)       # one team unresolved
+    upd = "2026-11-10T15:50:00Z"
+    odds_a = OX.event_odds(ev_a, [
+        OX.book("draftkings", "DraftKings", [
+            OX.market("player_points", OX.ou(p0.name, 10.5, -110, -110, link=True) + OX.ou("Not On This Team", 8.5, -110, -110),
+                      upd, link=True),
+            OX.market("player_rebounds", OX.ou(p0.name, 3.5, -120, 100), upd)], link=True),
+        OX.book("fanduel", "FanDuel", [OX.market("player_points", OX.ou(p0.name, 10.5, 105, -135), upd)])])
+    fake = OX.FakeOdds([ev_a, ev_b], {"evt-A": odds_a})
+    clock = FF.clock_at(T_RUN)
+    sess = OA.Session("odds-validate", cache_root=tmp_path / "oc", ledger_path=tmp_path / "odds.jsonl", http_get=fake,
+                      credential=lambda: OX.DUMMY_ODDS_CREDENTIAL, clock=clock, sleep=lambda s: None)
+    rec = tmp_path / "integration_validation.json"
+    v = OF.validate("evt-A", now=T_RUN, session=sess, run_root=tmp_path / "vr", record=rec,
+                    state_root=world["w"] / "state", history_db=world["hist"], collections_dir=tmp_path / "coll",
+                    sims=2000, sync_log=world["w"] / "sync.jsonl")
+    assert v["status"] == "PASS", v["checks"]
+    assert v["canonical_game_id"] == a and rec.exists()
+    paid = [e for e in v["requests"] if e["endpoint"] == "event_odds"]
+    assert len(paid) == 1 and paid[0]["cost"] == 2 and paid[0]["quota_remaining"] is not None   # minimum: one request
+    pm = v["checks"]["expected_markets_returned"]["per_market"]
+    assert pm["player_points"] == "RETURNED" and pm["player_assists"] == "MARKET_NOT_OFFERED_FOR_EVENT"
+    assert v["checks"]["player_identity"]["unmatched_names"] == ["Not On This Team"]
+    s = RN.daily(T_RUN, state_root=world["w"] / "state", history_db=world["hist"], ledger_path=tmp_path / "l.jsonl",
+                 run_root=tmp_path / "r", sims=2000, sync_log=world["w"] / "sync.jsonl", odds_cache_root=tmp_path / "oc",
+                 odds_collections=tmp_path / "coll", odds_ledger=tmp_path / "odds.jsonl", odds_record=rec)
+    assert "QUOTE_INTEGRATION_UNVALIDATED" not in s["run_reasons"] and "ODDS_API_FAILURE" not in s["run_reasons"]
+    gr = s["game_reasons"]
+    assert not {"ODDS_EVENT_NOT_YET_LISTED", "PLAYER_PROP_MARKET_NOT_YET_POSTED", "QUOTE_IDENTITY_UNRESOLVED"} & set(gr[a])
+    assert "QUOTE_IDENTITY_UNRESOLVED" in gr[b] and "ODDS_EVENT_NOT_YET_LISTED" in gr[c]
+    preds = [json.loads(l)["body"] for l in (tmp_path / "l.jsonl").read_text().splitlines()
+             if json.loads(l)["record_type"] == "PREDICTION"]
+    row = {(p["player_id"], p["market"], p["side"]): p for p in preds if p["game_id"] == a}
+    over = row[(p0.canonical_player_id, "PTS", "OVER")]
+    assert over["sportsbook"] == "fanduel" and over["best_decimal_odds"] == pytest.approx(2.05) and over["line"] == 10.5
+    under = row[(p0.canonical_player_id, "PTS", "UNDER")]
+    assert under["sportsbook"] == "draftkings" and under["best_decimal_odds"] == pytest.approx(1 + 100 / 110)
+    assert "MARKET_NOT_OFFERED_FOR_EVENT" in row[(p0.canonical_player_id, "AST", None)]["suppression_reason"]
+    assert "QUOTE_IDENTITY_UNRESOLVED" in row[(p1.canonical_player_id, "PTS", None)]["suppression_reason"]
+    assert "NO_VALID_QUOTE" in row[(p1.canonical_player_id, "REB", None)]["suppression_reason"]
+    quoted = {(p0.canonical_player_id, "PTS", 10.5), (p0.canonical_player_id, "REB", 3.5)}
+    assert {(p["player_id"], p["market"], p["line"]) for p in preds if p["line"] is not None} == quoted   # nothing fabricated
+    assert all(p["readiness_state"] == "BLOCKED" or p["eligibility_state"] == "SHADOW_ONLY_NO_WAGERING" for p in preds)
+    later = RN.daily("2026-11-10T16:30Z", state_root=world["w"] / "state", history_db=world["hist"],
+                     ledger_path=tmp_path / "l2.jsonl", run_root=tmp_path / "r2", sims=500, sync_log=world["w"] / "sync.jsonl",
+                     odds_cache_root=tmp_path / "oc", odds_collections=tmp_path / "coll", odds_ledger=tmp_path / "odds.jsonl",
+                     odds_record=rec, game_ids=[a])
+    assert "QUOTE_STALE" in later["game_reasons"][a]                    # 40 min after the market update
+    assert not [x for x in OA.ledger(tmp_path / "odds.jsonl") if OX.DUMMY_ODDS_CREDENTIAL in json.dumps(x)]
