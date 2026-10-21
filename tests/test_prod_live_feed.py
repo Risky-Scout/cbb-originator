@@ -528,7 +528,17 @@ def test_odds_validation_then_live_quote_states(world, tmp_path):
     quoted = {(p0.canonical_player_id, "PTS", 10.5), (p0.canonical_player_id, "REB", 3.5)}
     assert {(p["player_id"], p["market"], p["line"]) for p in preds if p["line"] is not None} == quoted   # nothing fabricated
     assert all(p["readiness_state"] == "BLOCKED" or p["eligibility_state"] == "SHADOW_ONLY_NO_WAGERING" for p in preds)
-    later = RN.daily("2026-11-10T16:30Z", state_root=world["w"] / "state", history_db=world["hist"],
+    from cbb_platform.prod import side_monitor as SD                    # prospective side monitoring (diagnostic)
+    assert SD.verify(tmp_path / "side_monitor.jsonl")["CHAIN_VALID"] and s["side_monitor"]["appended"] == 6
+    sm = SD.load(tmp_path / "side_monitor.jsonl")
+    assert set(zip(sm["player_id"], sm["market"], sm["line"], sm["sportsbook"])) == {
+        (p0.canonical_player_id, "PTS", 10.5, "draftkings"), (p0.canonical_player_id, "PTS", 10.5, "fanduel"),
+        (p0.canonical_player_id, "REB", 3.5, "draftkings")}                # every matched quote, per book; nothing else
+    pts_over = sm[(sm["market"] == "PTS") & (sm["side"] == "OVER") & (sm["sportsbook"] == "fanduel")].iloc[0]
+    assert pts_over["projection"] == pytest.approx(over["projection"]) and pts_over["p_side"] == pytest.approx(over["probability"])
+    assert pts_over["model_edge"] == pytest.approx(over["edge"]) and pts_over["predicted_minutes"] > 0
+    assert pts_over["exposure_band"] != "MIN_UNKNOWN" and pts_over["team_games_pregame"] is not None
+    later =RN.daily("2026-11-10T16:30Z", state_root=world["w"] / "state", history_db=world["hist"],
                      ledger_path=tmp_path / "l2.jsonl", run_root=tmp_path / "r2", sims=500, sync_log=world["w"] / "sync.jsonl",
                      odds_cache_root=tmp_path / "oc", odds_collections=tmp_path / "coll", odds_ledger=tmp_path / "odds.jsonl",
                      odds_record=rec, game_ids=[a])

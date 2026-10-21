@@ -305,3 +305,103 @@ Combo q25/q50/q75 **directional** calibration is NOT_AVAILABLE. Per-row combo qu
 5. **Combos are directional only through PTS / AST.** PRA / PR / PA follow PTS: aggregate over-prediction of +2% (WATCH),
    with starter under- and bench over-prediction. Their known q75 Brier weakness cannot be tied to a direction from the
    stored evidence, because per-row combo quantiles were not saved.
+
+---
+
+## Addendum (architect ruling 2026-10-21): role definition, pregame-exposure audit, prospective monitoring
+
+Ruling: **do not modify JM1_FINAL; public launch HOLD; shadow operation AUTHORIZED; build diagnostic-only prospective
+Over/Under monitoring.**
+
+### 1. How the roles were assigned in the stored evidence
+
+`role_diagnostic = marginal.role_of(role_l5_minutes_rank)`:
+* TOP5_MINUTES when the rank is 5 or better, ROTATION_6_8 when it is 6–8, BENCH_9PLUS otherwise, and NO_ROLE_HISTORY
+  when the rank is missing.
+* `role_l5_minutes_rank` (stage3/player_state.py) is the player's rank within the team's pregame universe for that game,
+  ordered by `pr_l5_min_per_app × pr_l5_appearances`: total minutes over his last five box rows.
+* Those rows come from the PIT ASOF state (`available_at <= prediction_cutoff_utc`). The target game's own state
+  (available at tip + 4 h) is excluded.
+
+So the role is **A: pregame-known information** (recent realized minutes from earlier games, not a model prediction).
+TOP5 does **not** use realized target-game minutes, so it is production-observable.
+
+### 2. The role question repeated with pregame model exposure
+
+Run with `python -m cbb_platform.prod.directional_audit --exposure`. Results are in
+`jm1_final_pregame_exposure_audit.json`.
+
+**Setup**
+* Exposure is `min_mu`, the Phase 1B pregame conditional minutes mean that drives JM1_FINAL's minutes draws, and P(play).
+* Bands are the repository's `minutes_sigma_buckets` [0, 10, 20, 30, ∞).
+* HIGH exposure is `min_mu >= 30`; the secondary cut is `min_mu >= 20` (`ROTATION_SHOCK_MINUTES`). P(play) bands are
+  < 0.5, 0.5–0.9 and ≥ 0.9.
+* All bands were fixed before their results were examined. The GREEN / WATCH / RED thresholds are unchanged.
+* Combos have no stored PIT, so they are classified on the mean family only.
+
+**Signed error, forecast − actual, 2024-25 | 2025-26, with 95% game-clustered intervals**
+
+| Market | min_mu ≥ 30 (N ≈ 20.1k / 19.2k) | min_mu 20–30 | min_mu < 20 |
+|---|---|---|---|
+| PTS | **−0.369 [−0.457, −0.286] / −0.333 [−0.423, −0.240]**; −2.7% / −2.4%; mid-PIT 0.532 / 0.531; q75 asym +0.074 / +0.073 → **RED** | −0.103 / −0.065, WATCH | +0.571 / +0.620 (+16%), RED |
+| AST | −0.112 / −0.073; −4.1% / −2.6%; PIT 0.520 / 0.513 → WATCH | −0.048 / −0.030, WATCH | +14% / +16%, RED |
+| FG3M | −0.075 / −0.029; −4.9% / −1.9% → WATCH | −0.028 / −0.018, WATCH | +13% / +15%, RED |
+| TOV | −0.071 / −0.054; −3.7% / −2.9% → WATCH | GREEN | +4.7% / +5.3%, WATCH |
+| PRA | −0.436 / −0.322; −2.1% / −1.5% (CI excludes 0) → GREEN by the 3% mean threshold | −0.206 / −0.145 | +12% / +13%, RED |
+| PR | −0.325 / −0.249; −1.8% / −1.3% → GREEN | −0.159 / −0.115 | RED |
+| PA | −0.480 / −0.406; −3.0% / −2.4% → GREEN (borderline WATCH) | −0.151 / −0.096 | RED |
+| REB / STL / BLK | ≈ 0 to slightly over (GREEN / WATCH) | | |
+
+**Findings**
+* The under-prediction **remains, and strengthens**, among players the model itself expected to play large minutes.
+* The pattern is monotone in pregame expected minutes:
+  * over-prediction below 20 minutes (RED);
+  * near-calibrated at 20–30 minutes;
+  * under-prediction at 30+ minutes (PTS RED in both seasons).
+* This is consistent with forecasts compressed toward the middle of the exposure range.
+* Restricting to P(play) ≥ 0.9 does not change the 30+ result: PTS −0.372 / −0.340.
+* TOP5 players at 30+ minutes equal the 30+ band almost exactly: 19,982 of 20,109 rows in 2024-25.
+* TOP5 players below 30 minutes show only −0.11 / −0.09 PTS (WATCH).
+* This finding is historical evidence only. Under the ruling it triggers no repair. The prospective STOP condition is
+  under-projection together with poor Under-side market calibration, which needs real quotes.
+
+### 3. Prospective monitoring
+
+The monitor is `cbb_platform/prod/side_monitor.py`. It is diagnostic only, with `AUTOMATIC_MODEL_CORRECTION = False`.
+
+**What each run records**
+* Every live run appends one **QUOTE_SIDE** record per matched VALID quote, per sportsbook, to the hash-chained
+  append-only `side_monitor.jsonl` beside the shadow ledger.
+* Each record carries:
+  * pregame minutes, P(play), role, cold-start class and pregame team games;
+  * exposure band, high-exposure flag, opening-season (team games ≤ 2) flag and transfer flag;
+  * projection, P(over), P(under) and P(push);
+  * fair price, book odds, model edge, favored side and recommended side;
+  * book, plus prediction and quote timestamps.
+
+**Settlement**
+* `side_monitor settle` appends **SIDE_SETTLEMENT** records for final games: actual, signed error, WIN / LOSS / PUSH,
+  and side Brier and log loss.
+* CLV is recorded only from a real later price and is never fabricated.
+* A DNP settles as NO_ACTION, never as a settled zero.
+
+**Reporting**
+* `side_monitor report` aggregates by stat, combo, exposure band, pregame role, book, day and week, and reports the
+  dedicated high-exposure PTS Under check.
+* Explicit strata: opening season (PTS, AST, STL, TOV) and transfers (STL, STOCKS, TOV, REB).
+
+**Warnings**
+* The warnings are PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING, LOW_EXPOSURE_OVER_BIAS_WARNING,
+  EARLY_SEASON_DIRECTIONAL_WARNING, TRANSFER_DIRECTIONAL_WARNING, SIDE_CALIBRATION_WARNING and
+  OVER_UNDER_CONCENTRATION_WARNING.
+* Each fires only when the 95% game-clustered interval excludes the calibrated value in the stated direction. No
+  sample-size threshold is invented.
+* STOP_HIGH_EXPOSURE_UNDER_PROJECTION_WITH_POOR_UNDER_CALIBRATION sets `stop_for_architect_review`. It is a label
+  only; no output changes.
+
+**Launch policy:** PUBLIC_READY is never declared by code. It requires all of:
+1. first real-event validation;
+2. prospective shadowing of real quoted props;
+3. settled outcomes;
+4. review of high-exposure PTS;
+5. explicit architect clearance.

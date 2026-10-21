@@ -70,6 +70,18 @@ WATCH = {"rel_mean": 0.03, "pit": 0.010, "tail": 0.020}   # |SME| / mean actual;
 RED = {"rel_mean": 0.06, "pit": 0.025, "tail": 0.050}
 MIN_GROUP_N = 2000                                        # subgroups smaller than this are reported, never classified
 
+# PREGAME-EXPOSURE strata (architect ruling 2026-10-21, item 2), fixed BEFORE their bias results were examined.
+# min_mu = the Phase 1B pregame CONDITIONAL minutes mean that drives JM1_FINAL's minutes draws (jm1_final.py: M_ib =
+# clip(min_mu + min_sigma eps) x D / E[D]); p_play = the pregame Phase 1B P(play). Neither uses target-game outcomes.
+# Bands: the repository's own minutes_sigma_buckets [0, 10, 20, 30, inf) of the frozen marginal artifact; HIGH exposure
+# = the top band (min_mu >= 30); secondary cut = prod.inputs.ROTATION_SHOCK_MINUTES (min_mu >= 20). P(play) bands are
+# simple fixed cuts (< 0.5, 0.5-0.9, >= 0.9).
+MIN_BANDS = (0.0, 10.0, 20.0, 30.0)
+HIGH_EXPOSURE_MIN, ROTATION_MIN = 30.0, 20.0
+PPLAY_BANDS = (0.5, 0.9)
+EXPOSURE_FOCUS = ("PTS", "AST", "FG3M", "TOV", "PRA", "PR", "PA")
+OUT_EXPOSURE_JSON = C.PROJECT_ROOT / "modeling" / "player_props_v2" / "jm1_final_pregame_exposure_audit.json"
+
 
 # ============================================================================ loading
 def load(season: str, root: Path | None = None) -> pd.DataFrame:
@@ -77,7 +89,7 @@ def load(season: str, root: Path | None = None) -> pd.DataFrame:
     path = Path(root or C.PROJECT_ROOT) / src["path"]
     a = src["arm"]
     want = ["forecast_season", "game_id", "team_id", "player_id", "role_diagnostic", "cold_start_class",
-            "prediction_cutoff_utc", "team_games"] + [f"y_{s}" for s in STATS]
+            "prediction_cutoff_utc", "team_games", "min_mu", "p_play"] + [f"y_{s}" for s in STATS]
     want += [f"{a}|{s}|{k}" for s in STATS for k in ("mean", "pit_lo", "pit_hi", "pover0", "pover1", "pover2")]
     df = pq.read_table(path, columns=want).to_pandas()
     df = df.rename(columns={c: c.split("|", 1)[1] for c in df.columns if c.startswith(a + "|")})
@@ -237,6 +249,73 @@ def strata(df: pd.DataFrame) -> dict:
     return {k: v for k, v in s.items() if v.any()}
 
 
+def min_band(min_mu) -> np.ndarray:
+    m = np.asarray(min_mu, float)
+    lab = np.array(["MIN_LT10", "MIN_10_20", "MIN_20_30", "MIN_30PLUS"])
+    out = lab[np.clip(np.searchsorted(MIN_BANDS, m, side="right") - 1, 0, 3)].astype(object)
+    out[~np.isfinite(m)] = "MIN_UNKNOWN"
+    return out
+
+
+def pplay_band(p) -> np.ndarray:
+    p = np.asarray(p, float)
+    out = np.where(p < PPLAY_BANDS[0], "PPLAY_LT_0.5", np.where(p < PPLAY_BANDS[1], "PPLAY_0.5_0.9", "PPLAY_GE_0.9")).astype(object)
+    out[~np.isfinite(p)] = "PPLAY_UNKNOWN"
+    return out
+
+
+def exposure_strata(df: pd.DataFrame) -> dict:
+    """Pregame-exposure strata (pregame model quantities only)."""
+    mb, pb = min_band(df["min_mu"]), pplay_band(df["p_play"])
+    mu = df["min_mu"].to_numpy(float)
+    s = {f"MIN:{b}": mb == b for b in ("MIN_LT10", "MIN_10_20", "MIN_20_30", "MIN_30PLUS")}
+    s.update({f"PPLAY:{b}": pb == b for b in ("PPLAY_LT_0.5", "PPLAY_0.5_0.9", "PPLAY_GE_0.9")})
+    s["HIGH_EXPOSURE:min_mu>=30"] = mu >= HIGH_EXPOSURE_MIN
+    s["HIGH_EXPOSURE:min_mu>=30&p_play>=0.9"] = (mu >= HIGH_EXPOSURE_MIN) & (df["p_play"].to_numpy(float) >= PPLAY_BANDS[1])
+    s["ROTATION_CUT:min_mu>=20"] = mu >= ROTATION_MIN
+    s["LOW_EXPOSURE:min_mu<20"] = mu < ROTATION_MIN
+    for r in ROLES[:3]:                                    # pregame role x the high-exposure band (overlap diagnostic)
+        role = (df["role_diagnostic"] == r).to_numpy()
+        s[f"ROLE:{r}&min_mu>=30"] = role & (mu >= HIGH_EXPOSURE_MIN)
+        s[f"ROLE:{r}&min_mu<30"] = role & (mu < HIGH_EXPOSURE_MIN)
+    return {k: v for k, v in s.items() if v.any()}
+
+
+def exposure_run(root: Path | None = None, write: bool = True) -> dict:
+    """Item 2 of the 2026-10-21 ruling: the role question repeated with PREGAME exposure (stored OOS cells only)."""
+    res, sizes, cross = {}, {}, {}
+    for season in SOURCES:
+        df = load(season, root)
+        bt = Boot(df["game_id"].to_numpy())
+        sizes[season] = {"rows": int(len(df)), "games": int(bt.G),
+                         "min_mu_missing": int((~np.isfinite(df["min_mu"].to_numpy(float))).sum())}
+        cross[season] = pd.crosstab(df["role_diagnostic"], min_band(df["min_mu"])).to_dict()
+        for g, m in exposure_strata(df).items():
+            for name in STATS + tuple(COMBOS):
+                fn = stat_metrics if name in STATS else combo_metrics
+                r = fn(df, name, bt, m)
+                r["mean_min_mu"] = float(df["min_mu"].to_numpy(float)[m].mean())
+                res.setdefault(name, {}).setdefault(g, {})[season] = r
+        del df
+    levels = {n: {g: subgroup_level(v, "stat" if n in STATS else "combo") for g, v in gs.items()} for n, gs in res.items()}
+    out = {"audit": "JM1_FINAL pregame-exposure directional audit (diagnostic only; stored true-OOS cells; no model change)",
+           "sign_convention": "SIGNED_ERROR = forecast_mean - actual; > 0 OVER-PREDICTION, < 0 UNDER-PREDICTION",
+           "exposure_definition": {"min_mu": "Phase 1B pregame conditional minutes mean (JM1_FINAL minutes-draw input)",
+                                   "p_play": "Phase 1B pregame P(play)", "min_bands": "minutes_sigma_buckets [0,10,20,30,inf)",
+                                   "high_exposure": f"min_mu >= {HIGH_EXPOSURE_MIN}", "secondary_cut": f"min_mu >= {ROTATION_MIN}",
+                                   "pplay_bands": "< 0.5, 0.5-0.9, >= 0.9",
+                                   "fixed_before_results": True, "target_game_information_used": False},
+           "role_definition": "role_diagnostic = marginal.role_of(role_l5_minutes_rank): team rank of pregame L5 minutes "
+                              "(pr_l5_min_per_app x pr_l5_appearances, ASOF available_at <= prediction cutoff) <= 5 TOP5, "
+                              "<= 8 ROTATION_6_8, else BENCH_9PLUS; NaN NO_ROLE_HISTORY. Pregame-known.",
+           "sources": SOURCES, "sizes": sizes, "role_x_min_band_counts": cross,
+           "thresholds": {"WATCH": WATCH, "RED": RED, "min_group_n": MIN_GROUP_N},
+           "levels": levels, "results": res, "historical_resimulation": False, "api_calls": 0, "model_changed": False}
+    if write:
+        OUT_EXPOSURE_JSON.write_text(json.dumps(out, indent=1, default=float))
+    return out
+
+
 def run(root: Path | None = None, write: bool = True) -> dict:
     res = {"stats": {s: {} for s in STATS}, "combos": {c: {} for c in COMBOS}, "groups": {}, "combo_brier": {}}
     sizes = {}
@@ -289,7 +368,12 @@ def run(root: Path | None = None, write: bool = True) -> dict:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(prog="cbb_platform.prod.directional_audit")
     ap.add_argument("--no-write", action="store_true")
+    ap.add_argument("--exposure", action="store_true", help="pregame-exposure audit (ruling 2026-10-21 item 2)")
     a = ap.parse_args(argv)
+    if a.exposure:
+        out = exposure_run(write=not a.no_write)
+        print(json.dumps(out["levels"], indent=1))
+        return
     out = run(write=not a.no_write)
     print(json.dumps({k: {"level": v["level"], "evidence": v["aggregate"]["evidence"], "red_subgroups": v["red_subgroups"]}
                       for k, v in out["decision"].items()}, indent=1))

@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
                                loader as LD, matching as MT, odds_feed as OF, quotes as QT, readiness as RD,
-                               simulate as SM, slate as SL, state as ST, universe as UV)
+                               side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -97,7 +97,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
           horizon_hours: float = 36.0, sims: int = PC.SIMS, artifact_paths: dict | None = None,
           game_ids=None, sync_log: Path = PC.SYNC_LOG, odds_cache_root: Path = PC.ODDS_CACHE_RAW,
           odds_collections: Path | None = PC.ODDS_COLLECTIONS, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
-          odds_record: Path = PC.ODDS_VALIDATION_RECORD) -> dict:
+          odds_record: Path = PC.ODDS_VALIDATION_RECORD, side_monitor_path: Path | None = None) -> dict:
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -154,6 +154,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                "validated_prediction_cutoff": PC.VALIDATED_PREDICTION_CUTOFF,
                "slate_games": int(len(slate)), "scored_games": 0, "model_identity": ident, "notes": notes}
     banks, dists, diag, cand_names = {}, [], [], []
+    rows, tgames = pd.DataFrame(), None
     teams = players = pd.DataFrame()
     if score_ids:
         fr = PF.build(run_dir / "features", score_ids, PC.PRODUCTION_SEASON, aso, model.marginal_cfg, history_db,
@@ -166,6 +167,10 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         roster_sup = UV.suppression_map(universe)
         summary["player_universe"] = UV.summary(universe)
         cand = fr["cand"]
+        try:                                                     # monitoring stratum only (never a model input)
+            tgames = SD.pregame_team_games(fr["features_db"], score_ids)
+        except Exception as e:                                   # noqa: BLE001 -- diagnostics never block a run
+            notes.append(f"side monitor: pregame team games unavailable ({type(e).__name__})")
         if len(cand) and (cand["season"] != PC.PRODUCTION_SEASON).any():
             raise RuntimeError("WRONG_PRODUCTION_SEASON reached the model frame")
         cut = slate.set_index("canonical_game_id")["feature_cutoff"]
@@ -286,6 +291,16 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             "distribution_method": p["distribution_method"], "pmf_q75": p["pmf_q75"], "mcse": p.get("mcse"),
             "bank_sha256": p["bank_sha256"], "data_label": data_label}})
     lg = LG.append(recs, ledger_path)
+    # ---------------------------------------------------------------- prospective side monitoring (diagnostic only)
+    smp = Path(side_monitor_path) if side_monitor_path else Path(ledger_path).parent / "side_monitor.jsonl"
+    try:
+        expo = SD.exposure_frame(rows, tgames) if len(rows) else pd.DataFrame()
+        sides = SD.quote_side_records(dist, quotes, expo, {**meta, "data_label": data_label,
+                                                           "game_dates": sl["game_date_et"].astype(str).to_dict()})
+        summary["side_monitor"] = {**SD.append([{"record_type": "QUOTE_SIDE", "body": b} for b in sides], smp),
+                                   "path": str(smp)}
+    except Exception as e:                                       # noqa: BLE001 -- recorded, never alters the run
+        summary["side_monitor"] = {"error": type(e).__name__, "detail": str(e)[:200]}
     proj = dist[["game_id", "game_label", "player_id", "player_label", "market", "projection", "p_play", "method",
                  "player_suppression"]].copy() if len(dist) else pd.DataFrame()
     bmeta = {"run_id": run_id, "model_version": ident["model_version"], "architecture": ident["architecture"],
