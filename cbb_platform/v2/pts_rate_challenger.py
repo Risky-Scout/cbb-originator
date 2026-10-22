@@ -525,7 +525,11 @@ def gates(ev: dict) -> dict:
                                        "PASS": n["nonfinite"] == 0 and n["nonpositive"] == 0 and n["outside_convex_hull"] == 0
                                        and n["zero_evidence_mu_not_bit_identical"] == 0 and n["non_pts_phase1b_means_bit_identical"]
                                        and all(v <= G_GROUP for v in cs.values())}
-        gg["PRECONDITION_R0_REPRODUCED"] = rec["R0_REPRODUCED"]
+        # protocol section 5: the precondition is the PTS rows (log / crps / mean) only; the combo game sums are a
+        # diagnostic (per-stat count tables shift structural.counts' float row offsets: rare one-draw boundary flips)
+        rp = rec["R0_reproduction_max_relative"]
+        gg["PRECONDITION_R0_REPRODUCED"] = bool(max(rp[k] for k in ("log", "crps", "mean")) <= REPRO_RTOL)
+        gg["DIAGNOSTIC_R0_COMBO_REPRODUCTION_MAX_RELATIVE"] = max(v for k, v in rp.items() if k not in ("log", "crps", "mean"))
         g[season] = gg
     return g
 

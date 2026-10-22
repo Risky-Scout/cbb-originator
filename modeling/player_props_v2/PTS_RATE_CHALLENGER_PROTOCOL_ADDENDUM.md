@@ -41,3 +41,18 @@ The remaining increments are lags of the feature snapshot (box score not yet ava
 ## A3. Compute
 
 The stage A + B plumbing test (12 games, neutral tau = 1e9 so that R1 ≈ R0; no R1 result produced) measured about 0.15 s per game including the 20% combo subsample. That is about 14 minutes per season, single-threaded at nice 15, slightly above the protocol's ~12-minute estimate.
+
+## A4. Reproduction precondition is PTS-only (post-evaluation code alignment to protocol section 5; no threshold change)
+
+- Protocol section 5 defines the precondition as the R0 PTS rows (log / crps / mean) within relative 2e-6.
+- The first `decide` run also applied that tolerance to the stage B combo game sums. That is stricter than the protocol, and it returned R1_INCONCLUSIVE because of one 2025-26 game (G-ece8175160a46318, PR_LOG relative 1.35e-5).
+
+**Diagnosed cause:**
+- Stage B builds the count tables per stat. `structural.counts` maps each table row to an offset `4·THR_CAP·row` before one `searchsorted`, and the different row indices change the float rounding of those offsets.
+- In that game exactly 1 of 2,800,000 count cells (PTS, draw 3340) flips by one at a threshold boundary.
+- The frozen full-table path reproduces the stored value exactly (56.42882529963767).
+- Both arms use the same per-stat path, so R1 − R0 combo comparisons are unaffected beyond Monte Carlo noise. The PTS marginal (stage A) does not use counts.
+
+**Results:**
+- PTS reproduction: max 5.95e-08 (2024-25) and 5.95e-08 (2025-26). The precondition holds in both seasons.
+- `decide` now applies the precondition as written, and reports the combo reproduction as a diagnostic.

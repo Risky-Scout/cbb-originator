@@ -1,0 +1,374 @@
+{
+ "protocol_commit": "3e9e52c4e079f5c0c0f25023805c60a2d3f7b8b7",
+ "protocol_sha256": "b0b778454c655bb94de47072a40ca6b230e95a66606d348bacf185434dabfdbd",
+ "TAU": 74.23071849626274,
+ "TAU_IDENTIFICATION_SUSPECT": false,
+ "gates": {
+  "2024-25": {
+   "A_high_exposure_bias": {
+    "R0": -0.3685260717999407,
+    "R1": 0.18983311162211244,
+    "reduction_pct": 48.488553144981864,
+    "PASS": true
+   },
+   "B_compression": {
+    "R0": 1.0687282155039248,
+    "R1": 0.5486119611388168,
+    "reduction_pct": 48.66684034535981,
+    "PASS": true
+   },
+   "C_aggregate_log": {
+    "delta": {
+     "value": -0.00404372338298222,
+     "lo": -0.004785110108658123,
+     "hi": -0.0032746340116071243,
+     "n": 112871
+    },
+    "relative_pct": -0.14663465782941987,
+    "margin": 0.002,
+    "PASS": true
+   },
+   "D_aggregate_crps": {
+    "delta_scaled": {
+     "value": -0.002773748520039934,
+     "lo": -0.0031283023502796394,
+     "hi": -0.0024186761764824747,
+     "n": 112871
+    },
+    "relative_pct": -0.7105015714528915,
+    "margin": 0.002,
+    "PASS": true
+   },
+   "E_high_exposure_scores": {
+    "log": {
+     "value": -0.007229168966756267,
+     "lo": -0.00957010392768506,
+     "hi": -0.004890621349004908,
+     "n": 20109
+    },
+    "crps_scaled": {
+     "value": -0.005532648731301188,
+     "lo": -0.0068787112914591,
+     "hi": -0.004141563475983526,
+     "n": 20109
+    },
+    "PASS": true
+   },
+   "F_low_exposure": {
+    "abs_bias_change": 0.011032940806386615,
+    "log": {
+     "value": -0.0005263976837080387,
+     "lo": -0.0014393127474758038,
+     "hi": 0.00035199309883547387,
+     "n": 52656
+    },
+    "crps_scaled": {
+     "value": -0.000633176840464093,
+     "lo": -0.0009139171376749538,
+     "hi": -0.0003815391450601946,
+     "n": 52656
+    },
+    "PASS": true
+   },
+   "G_early_season": {
+    "EARLY_TEAM_GAMES_LE2": {
+     "abs_bias_change": -0.09747586931423435,
+     "mid_pit_worsening": 0.007139753057072318,
+     "cov80_worsening": -0.004611143458222333,
+     "log": {
+      "value": -0.00477014450455035,
+      "lo": -0.007912653158183663,
+      "hi": -0.00154944022462638,
+      "n": 8501
+     },
+     "crps_scaled": {
+      "value": -0.00259803850813985,
+      "lo": -0.00409255634198418,
+      "hi": -0.001033383156696719,
+      "n": 8501
+     },
+     "PASS": true
+    },
+    "EARLY_FIRST_30_DAYS": {
+     "abs_bias_change": 0.20417244925678515,
+     "mid_pit_worsening": 0.009277829165834084,
+     "cov80_worsening": -0.006562385160670869,
+     "log": {
+      "value": -0.005022186271090753,
+      "lo": -0.006875117962316643,
+      "hi": -0.003143207292048075,
+      "n": 26364
+     },
+     "crps_scaled": {
+      "value": -0.0030420802506589233,
+      "lo": -0.0039841429940074245,
+      "hi": -0.0021358754641393634,
+      "n": 26364
+     },
+     "PASS": false
+    },
+    "PASS": false
+   },
+   "H_tails": {
+    "worsening": {
+     "ALL": {
+      "mid_pit": 0.006952512426602553,
+      "P_pit_lt_0.25": 0.005047040125537028,
+      "P_pit_lt_0.5": 0.009456701999013939,
+      "P_pit_lt_0.75": 0.006103604972157339,
+      "lower_miss_0.1": 0.0022414534923882734,
+      "upper_miss_0.9": 0.007032440255122438,
+      "cov80": -0.00479098676273404,
+      "cov90": -0.002477867562443836
+     },
+     "MIN_30PLUS": {
+      "mid_pit": -0.02132267198987048,
+      "P_pit_lt_0.25": -0.01725200731629603,
+      "P_pit_lt_0.5": -0.0303258098508562,
+      "P_pit_lt_0.75": -0.03346455480531452,
+      "lower_miss_0.1": 0.00767594507095283,
+      "upper_miss_0.9": 0.01833311450805819,
+      "cov80": 0.010657169437105485,
+      "cov90": 0.004872422159462708
+     }
+    },
+    "PASS": false
+   },
+   "I_combos": {
+    "PRA": {
+     "log_hi": -0.0031536481384404347,
+     "crps_hi_rel": -0.005235756136747827,
+     "brier_hi": -0.0010743443335307539,
+     "abs_bias_change_all_rows": 0.16172904841236221,
+     "PASS": false
+    },
+    "PR": {
+     "log_hi": -0.0029819150778890653,
+     "crps_hi_rel": -0.005178943749675829,
+     "brier_hi": -0.0010693099250629616,
+     "abs_bias_change_all_rows": 0.16172904841236224,
+     "PASS": false
+    },
+    "PA": {
+     "log_hi": -0.0031068876077772296,
+     "crps_hi_rel": -0.0060251904764409645,
+     "brier_hi": -0.0010031513101984428,
+     "abs_bias_change_all_rows": 0.1617290484123622,
+     "PASS": false
+    },
+    "PASS": false
+   },
+   "J_numerics_cold_start": {
+    "numerics": {
+     "rows": 260813,
+     "nonfinite": 0,
+     "nonpositive": 0,
+     "outside_convex_hull": 0,
+     "zero_evidence_rows": 94489,
+     "zero_evidence_mu_not_bit_identical": 0,
+     "cur_min_zero_with_points_rows": 0,
+     "cur_min_zero_with_points_max_r_R1_minus_r_prior": 0.0,
+     "max_r_R1": 0.8253918327899127,
+     "min_r_R1": 0.07382676453567863,
+     "non_pts_phase1b_means_bit_identical": true
+    },
+    "cold_log_hi": {
+     "COLD_TRANSFER_IN": 0.002755508481842084,
+     "COLD_NO_HISTORY": 0.0
+    },
+    "PASS": true
+   },
+   "PRECONDITION_R0_REPRODUCED": true,
+   "DIAGNOSTIC_R0_COMBO_REPRODUCTION_MAX_RELATIVE": 2.445340040677943e-07
+  },
+  "2025-26": {
+   "A_high_exposure_bias": {
+    "R0": -0.33281072796863975,
+    "R1": 0.2892548279572855,
+    "reduction_pct": 13.0872884648894,
+    "PASS": false
+   },
+   "B_compression": {
+    "R0": 1.1075588395486982,
+    "R1": 0.5120743015115041,
+    "reduction_pct": 53.76549911152699,
+    "PASS": true
+   },
+   "C_aggregate_log": {
+    "delta": {
+     "value": -0.004799770835647228,
+     "lo": -0.005537967629962098,
+     "hi": -0.004075974850993272,
+     "n": 112334
+    },
+    "relative_pct": -0.1723357594746885,
+    "margin": 0.002,
+    "PASS": true
+   },
+   "D_aggregate_crps": {
+    "delta_scaled": {
+     "value": -0.003165079153924667,
+     "lo": -0.003541153685453213,
+     "hi": -0.002808282844982493,
+     "n": 112334
+    },
+    "relative_pct": -0.7922886795878507,
+    "margin": 0.002,
+    "PASS": true
+   },
+   "E_high_exposure_scores": {
+    "log": {
+     "value": -0.008843921212984211,
+     "lo": -0.011116025641996437,
+     "hi": -0.006543409378644196,
+     "n": 19243
+    },
+    "crps_scaled": {
+     "value": -0.00603182976130357,
+     "lo": -0.00741194362596998,
+     "hi": -0.004616880953842031,
+     "n": 19243
+    },
+    "PASS": true
+   },
+   "F_low_exposure": {
+    "abs_bias_change": 0.019470516499744073,
+    "log": {
+     "value": -0.001107139443610361,
+     "lo": -0.0020354644286891235,
+     "hi": -0.0002502512279761272,
+     "n": 52870
+    },
+    "crps_scaled": {
+     "value": -0.00097934406388854,
+     "lo": -0.001268065981916132,
+     "hi": -0.0007094045281635257,
+     "n": 52870
+    },
+    "PASS": true
+   },
+   "G_early_season": {
+    "EARLY_TEAM_GAMES_LE2": {
+     "abs_bias_change": -0.1421746244127925,
+     "mid_pit_worsening": 0.006743105268998961,
+     "cov80_worsening": -0.005554162216938496,
+     "log": {
+      "value": -0.008507693900599897,
+      "lo": -0.011763681763961845,
+      "hi": -0.005300283144849798,
+      "n": 8516
+     },
+     "crps_scaled": {
+      "value": -0.004218235143602481,
+      "lo": -0.005721124180936691,
+      "hi": -0.0026825117611057746,
+      "n": 8516
+     },
+     "PASS": true
+    },
+    "EARLY_FIRST_30_DAYS": {
+     "abs_bias_change": 0.23074113422971188,
+     "mid_pit_worsening": 0.010855299080598402,
+     "cov80_worsening": -0.008143393688798128,
+     "log": {
+      "value": -0.0077720035938997475,
+      "lo": -0.009725571633288509,
+      "hi": -0.005820462819168825,
+      "n": 26205
+     },
+     "crps_scaled": {
+      "value": -0.004474406456914037,
+      "lo": -0.005378059484335622,
+      "hi": -0.0035325188425522304,
+      "n": 26205
+     },
+     "PASS": false
+    },
+    "PASS": false
+   },
+   "H_tails": {
+    "worsening": {
+     "ALL": {
+      "mid_pit": 0.008632928936492812,
+      "P_pit_lt_0.25": 0.006299242526216442,
+      "P_pit_lt_0.5": 0.011869393396798933,
+      "P_pit_lt_0.75": 0.01383480479113297,
+      "lower_miss_0.1": 0.002583334543100224,
+      "upper_miss_0.9": 0.007854936091971784,
+      "cov80": -0.0052716015488715184,
+      "cov90": -0.0032390377320034025
+     },
+     "MIN_30PLUS": {
+      "mid_pit": -0.023749637740252627,
+      "P_pit_lt_0.25": -0.0190945078298789,
+      "P_pit_lt_0.5": -0.033376473954698616,
+      "P_pit_lt_0.75": -0.033866839834695184,
+      "lower_miss_0.1": 0.0057759141858458735,
+      "upper_miss_0.9": 0.01940336112440949,
+      "cov80": 0.011632062079448224,
+      "cov90": 0.0048147002038752
+     }
+    },
+    "PASS": false
+   },
+   "I_combos": {
+    "PRA": {
+     "log_hi": -0.0022407576826300075,
+     "crps_hi_rel": -0.004906566408441366,
+     "brier_hi": -0.001083548618652376,
+     "abs_bias_change_all_rows": 0.19745041411541697,
+     "PASS": false
+    },
+    "PR": {
+     "log_hi": -0.0017781684159162172,
+     "crps_hi_rel": -0.004353375626436856,
+     "brier_hi": -0.000982026784074192,
+     "abs_bias_change_all_rows": 0.19745041411541692,
+     "PASS": false
+    },
+    "PA": {
+     "log_hi": -0.002933253888045501,
+     "crps_hi_rel": -0.006340631378670565,
+     "brier_hi": -0.0012600385464802582,
+     "abs_bias_change_all_rows": 0.19745041411541697,
+     "PASS": false
+    },
+    "PASS": false
+   },
+   "J_numerics_cold_start": {
+    "numerics": {
+     "rows": 259487,
+     "nonfinite": 0,
+     "nonpositive": 0,
+     "outside_convex_hull": 0,
+     "zero_evidence_rows": 93761,
+     "zero_evidence_mu_not_bit_identical": 0,
+     "cur_min_zero_with_points_rows": 1,
+     "cur_min_zero_with_points_max_r_R1_minus_r_prior": 0.02694302359609646,
+     "max_r_R1": 0.8637007050861248,
+     "min_r_R1": 0.06941039924035675,
+     "non_pts_phase1b_means_bit_identical": true
+    },
+    "cold_log_hi": {
+     "COLD_TRANSFER_IN": -0.0051847753641705305,
+     "COLD_NO_HISTORY": 0.0
+    },
+    "PASS": true
+   },
+   "PRECONDITION_R0_REPRODUCED": true,
+   "DIAGNOSTIC_R0_COMBO_REPRODUCTION_MAX_RELATIVE": 1.3450808432609237e-05
+  }
+ },
+ "failed_gates": [
+  "2024-25:G_early_season",
+  "2024-25:H_tails",
+  "2024-25:I_combos",
+  "2025-26:A_high_exposure_bias",
+  "2025-26:G_early_season",
+  "2025-26:H_tails",
+  "2025-26:I_combos"
+ ],
+ "RATE_CHALLENGER_DECISION": "R1_REJECT",
+ "PRODUCTION_MODEL_CHANGED": false,
+ "PUBLIC_LAUNCH_STATUS": "HOLD"
+}
