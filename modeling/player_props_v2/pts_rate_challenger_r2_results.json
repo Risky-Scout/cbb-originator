@@ -1,0 +1,16 @@
+{
+ "protocol_commit": "0126280eb56cab7fafe22f22154c412779b77dc5",
+ "protocol_sha256": "d3d9cdbe6c788c7ba2eb020a5fea767247096e558ac79bb5b326c7f0a65b785a",
+ "TAU": 74.70239444613179,
+ "RHO": 1.0,
+ "BOUNDARY_SOLUTION": true,
+ "STAGE_A_PASS": false,
+ "exact_seasons_run": [],
+ "combos_run": false,
+ "failed_gates": [
+  "screen:SE_first_30_days_bias"
+ ],
+ "R2_DECISION": "R2_EARLY_REJECT",
+ "PRODUCTION_MODEL_CHANGED": false,
+ "PUBLIC_LAUNCH_STATUS": "HOLD"
+}
