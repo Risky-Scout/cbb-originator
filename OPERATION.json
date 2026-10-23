@@ -1,0 +1,18 @@
+{
+ "artifact_sha256": {
+  "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+  "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab",
+  "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+ },
+ "automatic_model_correction": false,
+ "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+ "frozen_tag": "cbb-v2-jm1-final-2026-27",
+ "historical_pts_repair_campaign": "CLOSED",
+ "max_readiness": "SHADOW_ONLY",
+ "operation": "CBB 2026-27 prospective shadow (JM1_FINAL, frozen e1353e5)",
+ "operation_started_at": "2026-10-23T01:05:58.905202+00:00",
+ "score_lead_minutes": 40,
+ "validated_prediction_cutoff": "TIP_MINUS_1H",
+ "wagering_enabled": false
+}
