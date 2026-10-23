@@ -5,9 +5,9 @@
 #      `python -m cbb_platform.prod.shadow_tick`, upload the new encrypted working set, push the evidence commit to the
 #      PRIVATE ops-state branch (never a source branch, never main).
 # Secrets: CBBD_API_KEY, ODDS_API_KEY, CBB_OPS_ENCRYPTION_KEY (AES-256 key of every uploaded asset). Never printed.
-# NOTE: GitHub runs `schedule` and `workflow_dispatch` only from the DEFAULT branch's copy of this file. Until the
-# architect approves placing this file on main (only this YAML; the code is always checked out from
-# release/cbb-v2-prospective-shadow), it is inert.
+# NOTE: GitHub runs `schedule` and `workflow_dispatch` only from the DEFAULT branch's copy of this file, so this YAML
+# sits on main (architect-approved 2026-10-23; the only shadow file on main); the code is always checked out from
+# release/cbb-v2-prospective-shadow.
 name: CBB shadow tick
 
 on:
@@ -21,16 +21,16 @@ on:
         description: "ARCHITECT ACTION: allow one more paid quote validation after a recorded FAIL"
         type: boolean
         default: false
-  # SCHEDULE DISABLED. Blockers (docs/SHADOW_AUTOMATION_READINESS.md): off-machine data licence UNCLEAR
-  # (docs/OFF_MACHINE_DATA_LICENSE.json; the tick's --restore/--persist refuse until PERMITTED), repository secrets not
-  # set, and this file must sit on the default branch. Selected cadence (UTC; ET = UTC-5 all season), matching
-  # SCORE_LEAD_MINUTES = 50: :12 and :42 put two attempts at -48 and -18 min before every :00 / :30 cutoff, 13:00-05:00 UTC
-  # (99.9% of exact cutoffs; >= 1 in-window execution 99.9%, >= 2 about 91% under the measured GitHub delay).
-  # schedule:
-  #   - cron: "12,42 12-23,0-4 * 11,12,1,2,3 *"   # in season: every cutoff hour (34 runs/day)
-  #   - cron: "12,42 12-23,0-4 1-8 4 *"           # Final Four / title game
-  #   - cron: "34 6,9 * 11,12,1,2,3 *"            # in season, no cutoffs: late results, settlement
-  #   - cron: "34 */6 * 4-10 *"                   # off season / preseason: 6-hourly routine refresh (4 runs/day)
+  # SCHEDULE ENABLED 2026-10-23 (architect-approved cadence; docs/SHADOW_AUTOMATION_READINESS.md). Off-machine data
+  # licence PERMITTED on the user/architect attestation (docs/OFF_MACHINE_DATA_LICENSE.json), secrets set, encrypted
+  # bootstrap + clean restore + off-Mac manual runs (repeat run idempotent) passed. Cadence (UTC; ET = UTC-5 all season),
+  # matching SCORE_LEAD_MINUTES = 50: :12 and :42 put two attempts at -48 and -18 min before every :00 / :30 cutoff,
+  # 12:00-04:59 UTC (36 runs/day in season). The scientific cutoff stays TIP_MINUS_1H.
+  schedule:
+    - cron: "12,42 12-23,0-4 * 11,12,1,2,3 *"   # in season: every cutoff hour (34 runs/day)
+    - cron: "12,42 12-23,0-4 1-8 4 *"           # Final Four / title game
+    - cron: "34 6,9 * 11,12,1,2,3 *"            # in season, no cutoffs: late results, settlement
+    - cron: "34 */6 * 4-10 *"                   # off season / preseason: 6-hourly routine refresh (4 runs/day)
 
 permissions:
   contents: write          # push the ops-state branch + release assets of this private repository only
