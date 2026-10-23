@@ -209,6 +209,20 @@ class Session:
         self.cache_hits = 0
         self.quota_remaining: int | None = None
         self.entries: list[dict] = []
+        self._verified: dict | None = None
+
+    def last_verified(self, key: str, payload_sha: str):
+        """Latest instant the provider confirmed this exact payload (FETCHED / FETCHED_UNCHANGED in the request ledger).
+        An unchanged re-fetch keeps the original payload file and its received_at; the TTL runs from this instant."""
+        if self._verified is None:
+            self._verified = {}
+            for e in ledger(self.ledger_path):
+                if e.get("status") in ("FETCHED", "FETCHED_UNCHANGED") and e.get("response_sha256"):
+                    k = (e.get("request_key"), e["response_sha256"])
+                    t = e.get("verified_at") or e.get("received_at")
+                    if t and (k not in self._verified or _utc(t) > self._verified[k]):
+                        self._verified[k] = _utc(t)
+        return self._verified.get((key, payload_sha))
 
     def _log(self, entry: dict) -> dict:
         entry = {"provider": PROVIDER, "stage": self.stage, **entry}
@@ -247,7 +261,9 @@ class Session:
         hit = cached(endpoint, params, self.cache_root, requested_at)
         if hit is not None:
             path, meta = hit
-            age_h = (requested_at - _utc(meta["received_at"])).total_seconds() / 3600.0
+            seen = max([_utc(meta["received_at"])] + [t for t in [self.last_verified(base["request_key"], meta["sha256"])]
+                                                     if t is not None and t <= requested_at])
+            age_h = (requested_at - seen).total_seconds() / 3600.0
             if max_age_hours is None or age_h <= max_age_hours:
                 body = read(path)
                 self.cache_hits += 1

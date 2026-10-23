@@ -101,3 +101,20 @@ MARKETS = BASE_STATS + tuple(COMBOS)
 
 def rel(p: Path) -> str:
     return str(Path(p).resolve().relative_to(C.PROJECT_ROOT))
+
+# ------------------------------------------------------------------ prospective shadow operation (prod/shadow_tick.py)
+# Operational cadence only: none of these values reaches a forecast. The cutoff stays TIP_MINUS_1H; a game is scored
+# once, at the first tick inside [cutoff - SCORE_LEAD_MINUTES, cutoff), never after its cutoff.
+OPS_ROOT = PROD_ROOT / "ops"                        # local checkout of the private ops-state branch (evidence tree)
+OPS_BRANCH = "ops/cbb-2026-27-shadow-state"
+OPS_RELEASE_TAG = "cbb-2026-27-shadow-ops"          # private release holding the encrypted working set + history extract
+OPS_KEY_ENV = "CBB_OPS_ENCRYPTION_KEY"              # AES-256 passphrase for every uploaded asset (never logged)
+SCORE_LEAD_MINUTES = 40                             # earliest scoring instant before the cutoff (scheduler jitter margin)
+SYNC_INTERVAL_HOURS = 6.0                           # routine state refresh (= the CBBD schedule TTL)
+SYNC_RETRY_MINUTES = 20                             # re-check of a knowable-but-not-yet-ingested game
+RESULT_LAG_RETRY_HOURS = 24                         # how long a knowable game's schedule window is re-checked early
+VOID_AFTER_HOURS = 48                               # a cancelled / unlisted game's predictions settle NO_ACTION after this
+DAILY_REPORT_HOUR_UTC = 12                          # the daily report of ET date D is written at/after D+1 12:00Z
+FIRST_DAYS_WINDOW = 30                              # "first 30 calendar days" of the 2026-27 D-I schedule
+EVIDENCE_BUCKETS = ((None, 0.0, "CUR_0"), (0.0, 100.0, "CUR_0_100"), (100.0, 300.0, "CUR_100_300"),
+                    (300.0, None, "CUR_300PLUS"))   # current-season minutes (calibration audit buckets; (lo, hi])

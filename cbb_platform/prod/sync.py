@@ -72,15 +72,42 @@ def plan_completed(games: pd.DataFrame, sched: pd.DataFrame) -> list[tuple[str, 
     reqs = []
     lo, hi = date.fromisoformat(PC.PRODUCTION_SEASON_START), date.fromisoformat(PC.PRODUCTION_SEASON_END)
     days = sorted({_utc(t).date() for t in games["scheduled_tip_utc"].dropna()})
+    if len(games):              # first: without the season player file no box row can be identity-resolved
+        reqs.append(("stats/player/season", {"season": PC.PRODUCTION_SEASON}))
     for d in days:
         a, b = max(d - timedelta(days=1), lo), min(d + timedelta(days=1), hi)
         for ep in ("games/teams", "games/players"):
             reqs.append((ep, {"season": PC.PRODUCTION_SEASON, "startDateRange": a.isoformat(), "endDateRange": b.isoformat()}))
     if len(games):
-        reqs.append(("stats/player/season", {"season": PC.PRODUCTION_SEASON}))
         pid = sched.set_index("canonical_game_id")["provider_game_id"]
         reqs += [("substitutions/game", {"gameId": int(pid[g])}) for g in sorted(games["canonical_game_id"])]
     return reqs
+
+
+def completed_reuse_age(endpoint: str, params: dict, games: pd.DataFrame, sched: pd.DataFrame, cache_root: Path,
+                        as_of) -> float | None:
+    """Cache reuse for a completed-stage request (max_age_hours for Session.get).
+
+    substitutions/game of a final game is immutable: any cached copy is reused. A date-window box payload
+    (games/teams, games/players) or the season player file is reused only when the cached copy already carries every
+    newly completed game it must carry; otherwise it is re-fetched. (A window cached when its first game finished
+    omits a later game of the same window; reusing that copy forever would never ingest the later game.)"""
+    if endpoint == "substitutions/game":
+        return None
+    hit = A.cached(endpoint, params, cache_root, as_of)
+    if hit is None:
+        return None
+    path, meta = hit
+    if endpoint == "stats/player/season":
+        need = max(knowable_at(t, q, d) for t, q, d in zip(games["scheduled_tip_utc"], games["tip_time_quality"],
+                                                            games["game_date_et"]))
+        return None if _utc(meta["received_at"]) >= need else 0.0
+    a, b = date.fromisoformat(params["startDateRange"]), date.fromisoformat(params["endDateRange"])
+    pid = sched.set_index("canonical_game_id")["provider_game_id"].astype(str)
+    want = {pid[g] for g, t in zip(games["canonical_game_id"], games["scheduled_tip_utc"])
+            if pd.notna(t) and a <= _utc(t).date() < b and g in pid.index}
+    have = {str(r.get("gameId")) for r in (A.read(path) or []) if isinstance(r, dict)}
+    return None if want <= have else 0.0
 
 
 def _log(entry: dict, path: Path) -> None:
@@ -112,9 +139,13 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
         state_root: Path = PC.STATE_ROOT, cache_root: Path | None = None, ledger_path: Path | None = None,
         sync_log: Path = PC.SYNC_LOG, work_root: Path | None = None, http_get=None, credential=None,
         max_live_requests: int = PC.MAX_LIVE_REQUESTS_PER_STAGE, completed_budget: int | None = None,
-        provider_kind: str = "LIVE", clock=None) -> dict:
+        provider_kind: str = "LIVE", clock=None, refresh_schedule_windows=()) -> dict:
     """One sync. Returns the sync record (status PROMOTED | UNCHANGED | FAILED). `clock` (tests) drives every request /
-    receipt timestamp; source_cutoff = as_of, else the clock AFTER acquisition (every payload used is <= it)."""
+    receipt timestamp; source_cutoff = as_of, else the clock AFTER acquisition (every payload used is <= it).
+    refresh_schedule_windows: startDateRange values of schedule windows re-fetched regardless of their TTL (a window
+    holding a game whose result has become knowable since the last sync); every other window keeps its TTL.
+    Completed stage: when its live-request budget is exhausted, the games whose requests all completed are ingested and
+    the rest wait for a later sync (`completed_budget_exhausted`); the per-stage budget itself is unchanged."""
     clock = clock or _now
     sync_id = "Y" + _utc(clock()).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     cut = _utc(as_of) if as_of is not None else None
@@ -136,8 +167,10 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
         if "schedule" in stages:
             s = A.Session(f"{sync_id}:schedule", max_live_requests=max_live_requests, **kw)
             sessions.append(s)
+            force = {str(x) for x in refresh_schedule_windows}
             for ep, p in plan_schedule():
-                e = s.get(ep, p, max_age_hours=TTL_HOURS["schedule"], purpose="2026-27 schedule")
+                e = s.get(ep, p, max_age_hours=0.0 if p["startDateRange"] in force else TTL_HOURS["schedule"],
+                          purpose="2026-27 schedule")
                 if (e.get("record_count") or 0) >= SCHEDULE_CAP:
                     raise F.FeedUnavailable("PROVIDER_FAILURE", f"schedule window {p} hit the {SCHEDULE_CAP}-record cap")
             rec["requests"]["schedule"] = s.summary()
@@ -182,15 +215,26 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
                           **kw)
             plan = plan_completed(newly, S)
             box = {"games": [g for g, _ in games], "games/teams": [], "games/players": [], "stats/player/season": []}
-            subs_req = []
-            for ep, p in plan:
-                e = s.get(ep, p, max_age_hours=TTL_HOURS["completed"], purpose="2026-27 completed games")
+            subs_req, got_stats = [], False
+            for n_done, (ep, p) in enumerate(plan):
+                try:
+                    e = s.get(ep, p, max_age_hours=completed_reuse_age(ep, p, newly, S, cache_root, clock()),
+                              purpose="2026-27 completed games")
+                except A.BudgetExceeded:            # STOP before the call; finished requests are kept (cached)
+                    rec["completed_budget_exhausted"] = True
+                    rec["completed_requests_deferred"] = len(plan) - n_done
+                    break
                 if ep == "substitutions/game":
                     subs_req.append((ep, p))
                 else:
                     box[ep] += e["body"]
+                    got_stats |= ep == "stats/player/season"
             subs_ok = {F.cid("G", "game", p["gameId"]) for _, p in subs_req}
             rec["requests"]["completed"] = s.summary()
+        if len(newly) and "completed" in stages and not got_stats:
+            rec["completed_note"] = "budget exhausted before the season player file: results withheld this sync"
+            rec["completed_games_ingested"] = 0
+        elif len(newly) and "completed" in stages:
             # the completed-game payloads were received after the schedule snapshot: the state's source_cutoff moves to
             # the latest receipt (results were admitted only if knowable at the EARLIER instant, which is stricter)
             cut = max([cut] + [_utc(e["received_at"]) for e in s.entries if e.get("received_at")])

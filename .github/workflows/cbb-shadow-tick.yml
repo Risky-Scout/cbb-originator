@@ -1,0 +1,109 @@
+# CBB 2026-27 PROSPECTIVE SHADOW TICK (frozen JM1_FINAL e1353e5). SHADOW ONLY: no deployment, no publication, no wagering.
+# GitHub-hosted Ubuntu only (never a self-hosted / Mac runner). One job:
+#   1. cheap gate: sparse checkouts + a standard-library script read DUE.json -> exit unless work is due (seconds)
+#   2. only when due: install the locked environment, restore the encrypted working set, run
+#      `python -m cbb_platform.prod.shadow_tick`, upload the new encrypted working set, push the evidence commit to the
+#      PRIVATE ops-state branch (never a source branch, never main).
+# Secrets: CBBD_API_KEY, ODDS_API_KEY, CBB_OPS_ENCRYPTION_KEY (AES-256 key of every uploaded asset). Never printed.
+# NOTE: GitHub runs `schedule` and `workflow_dispatch` only from the DEFAULT branch's copy of this file. Until the
+# architect approves placing this file on main (only this YAML; the code is always checked out from
+# release/cbb-v2-prospective-shadow), it is inert.
+name: CBB shadow tick
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run the full tick even if DUE.json says nothing is due (the tick itself still only does due work)"
+        type: boolean
+        default: false
+      allow_revalidation:
+        description: "ARCHITECT ACTION: allow one more paid quote validation after a recorded FAIL"
+        type: boolean
+        default: false
+  # SCHEDULE DISABLED until the architect approves the cadence report (docs/PROSPECTIVE_SHADOW_OPERATION.md).
+  # Proposed cadence (UTC): every 20 min 14:00-05:59 (covers every T-60 cutoff of 11:00-01:00 ET tips with >= 2
+  # attempts inside the 40-min scoring lead) + hourly 06:00-13:59 (late results, settlement, routine refresh).
+  # schedule:
+  #   - cron: "4,24,44 14-23,0-5 * * *"
+  #   - cron: "34 6-13 * * *"
+
+permissions:
+  contents: write          # push the ops-state branch + release assets of this private repository only
+
+concurrency:
+  group: cbb-shadow-ops-state          # exactly one writer of the operational state at a time
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPS_BRANCH: ops/cbb-2026-27-shadow-state
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - name: Checkout the due gate only (sparse; code always from the prospective-shadow release branch)
+        uses: actions/checkout@v4
+        with:
+          ref: release/cbb-v2-prospective-shadow
+          path: src
+          sparse-checkout: |
+            cbb_platform/prod/due_check.py
+          sparse-checkout-cone-mode: false
+      - name: Checkout the ops-state evidence tree (blobless, sparse; bulky ledgers stay on the server)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.OPS_BRANCH }}
+          path: ops
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/ticks/*/shadow_ledger.jsonl.gz
+            !/ticks/*/side_monitor.jsonl.gz
+            !/ticks/*/quotes_normalized.csv.gz
+          sparse-checkout-cone-mode: false
+      - name: Is work due? (standard library only)
+        id: due
+        run: |
+          python3 src/cbb_platform/prod/due_check.py ops | tee -a "$GITHUB_OUTPUT"
+          if [ "${{ inputs.force }}" = "true" ]; then echo "due=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Full source checkout
+        if: steps.due.outputs.due == 'true'
+        run: git -C src sparse-checkout disable
+      - uses: actions/setup-python@v5
+        if: steps.due.outputs.due == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: src/requirements.lock.txt
+      - name: Install the locked environment
+        if: steps.due.outputs.due == 'true'
+        run: python -m pip install --require-hashes -r src/requirements.lock.txt
+      - name: Verify the frozen JM1_FINAL artifacts (sha256; the tick verifies them again)
+        if: steps.due.outputs.due == 'true'
+        working-directory: src
+        run: |
+          sha256sum -c - <<'EOF'
+          bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f  modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json
+          b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9  modeling/player_props_v2/jm1_final_through_2025_26.json
+          e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1  modeling/player_props_v2/jm1_final_residual_dependence_through_2025_26.json
+          7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab  modeling/player_props_v2/jm1_final_production_manifest_2026_27.json
+          EOF
+      - name: Shadow tick
+        if: steps.due.outputs.due == 'true'
+        working-directory: src
+        env:
+          CBBD_API_KEY: ${{ secrets.CBBD_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          CBB_OPS_ENCRYPTION_KEY: ${{ secrets.CBB_OPS_ENCRYPTION_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -C ../ops config user.name "cbb-shadow-tick"
+          git -C ../ops config user.email "cbb-shadow-tick@users.noreply.github.com"
+          extra=""
+          if [ "${{ inputs.allow_revalidation }}" = "true" ]; then extra="--allow-revalidation"; fi
+          python -m cbb_platform.prod.shadow_tick --ops-root ../ops --restore --persist --commit --push $extra

@@ -139,8 +139,8 @@ def _sum(lines, k, sub=None):
     return sum((l[k][sub] if sub else l[k]) for l in lines)
 
 
-def box_payloads() -> dict:
-    gid_, h, a, start, _ = GAMES["D"]
+def box_payloads(tag: str = "D") -> dict:
+    gid_, h, a, start, _ = GAMES[tag]
     head = {"gameId": gid_, "season": 2027, "seasonLabel": "20262027", "seasonType": "regular", "tournament": None,
             "startDate": start, "startTimeTbd": False, "conferenceGame": False, "neutralSite": False, "gameType": "STD",
             "notes": None, "gameMinutes": 40, "gamePace": 70}
