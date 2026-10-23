@@ -1,13 +1,23 @@
 {
  "current": {
-  "asset": "ws-B5dc31c69.tar",
-  "created_at": "2026-10-23T06:53:46.017223+00:00",
-  "files": 31,
+  "asset": "ws-K20261023T072429Z-af9a75.tar",
+  "created_at": "2026-10-23T07:24:37.407741+00:00",
+  "files": 33,
   "state_version": "S20261023T010605Z-c4a32283e0b5",
-  "tar_bytes": 13629440,
-  "tar_sha256": "f3ead39abacca6874ee45ec4fc4d9e7e4caa631e335648b2a955157228e45c9d",
-  "tick_id": "B5dc31c69"
+  "tar_bytes": 13639680,
+  "tar_sha256": "09c93ee89501c4cd5abb31f0ccc48911134ec3f89977a644cf286b828ce31e16",
+  "tick_id": "K20261023T072429Z-af9a75"
  },
- "previous": [],
+ "previous": [
+  {
+   "asset": "ws-B5dc31c69.tar",
+   "created_at": "2026-10-23T06:53:46.017223+00:00",
+   "files": 31,
+   "state_version": "S20261023T010605Z-c4a32283e0b5",
+   "tar_bytes": 13629440,
+   "tar_sha256": "f3ead39abacca6874ee45ec4fc4d9e7e4caa631e335648b2a955157228e45c9d",
+   "tick_id": "B5dc31c69"
+  }
+ ],
  "storage": "AES-256-CBC (openssl, pbkdf2 200000); key CBB_OPS_ENCRYPTION_KEY"
 }
