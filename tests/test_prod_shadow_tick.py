@@ -624,8 +624,10 @@ def test_result_needed_for_imminent_scoring_triggers_sync(life, tmp_path):
 # ============================================================================ off-Mac automation readiness
 def test_license_gate_blocks_every_off_machine_store_and_bootstrap(tmp_path, monkeypatch):
     """Starter Pack-derived rows are in the extract and the working set: no remote store is opened, and the bootstrap
-    does nothing, unless the tracked licence record says PERMITTED (the shipped record is UNCLEAR)."""
-    assert json.loads(OP.LICENSE_RECORD.read_text())["status"] != "PERMITTED"
+    does nothing, unless the licence record says PERMITTED."""
+    unclear = tmp_path / "unclear.json"
+    unclear.write_text(json.dumps({"status": "UNCLEAR"}))
+    monkeypatch.setattr(OP, "LICENSE_RECORD", unclear)
     calls = []
     monkeypatch.setattr(OP, "_run", lambda cmd, **kw: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, "", ""))
     monkeypatch.setenv(PC.OPS_KEY_ENV, KEY)
@@ -775,3 +777,14 @@ def test_source_commit_is_the_checked_out_code_not_the_workflow_commit(monkeypat
         pytest.skip("no .git in this checkout")
     monkeypatch.setenv("GITHUB_SHA", "0" * 40)
     assert TK.source_commit() == head
+
+
+def test_shipped_license_record_is_a_user_architect_attestation():
+    """The tracked record clears the gate on the user/architect attestation (2026-10-23) and says plainly that the
+    bundled Starter Pack LICENSE text does not itself grant off-machine or commercial use."""
+    rec = OP.license_gate()
+    assert rec["status"] == "PERMITTED" and rec["basis"] == "USER_ARCHITECT_ATTESTATION"
+    assert rec["USER_ARCHITECT_ATTESTATION"] == "PERMITTED"
+    assert rec["authorization"]["authorized_by"].startswith("user / architect")
+    assert "does NOT itself explicitly grant" in rec["bundled_license_note"]
+    assert rec["superseded"]["status"] == "UNCLEAR"
