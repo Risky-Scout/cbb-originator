@@ -1,0 +1,24 @@
+{
+ "bootstrap_at": "2026-10-23T06:53:46Z",
+ "encryption": "AES-256-CBC openssl pbkdf2 200000, key = repository secret CBB_OPS_ENCRYPTION_KEY",
+ "history_extract": {
+  "asset": "history-extract-0338b32d52286978.duckdb.enc",
+  "encrypted_bytes": 126627872,
+  "encrypted_sha256": "d1b18826f4f3a9f1a64b8c40970994e0645826d0cf152ae5baf7892fc8ee4c23",
+  "restore_target_sha256": "0338b32d5228697862e599e7d545cd81718a5750fadfb51f010dbef4bbf0ca71",
+  "restore_verified": true,
+  "source_bytes": 126627840,
+  "source_sha256": "0338b32d5228697862e599e7d545cd81718a5750fadfb51f010dbef4bbf0ca71"
+ },
+ "license_basis": "USER_ARCHITECT_ATTESTATION = PERMITTED (docs/OFF_MACHINE_DATA_LICENSE.json)",
+ "release": "cbb-2026-27-shadow-ops (private repository, pre-release)",
+ "working_set": {
+  "asset": "ws-B5dc31c69.tar",
+  "created_at": "2026-10-23T06:53:46.017223+00:00",
+  "files": 31,
+  "state_version": "S20261023T010605Z-c4a32283e0b5",
+  "tar_bytes": 13629440,
+  "tar_sha256": "f3ead39abacca6874ee45ec4fc4d9e7e4caa631e335648b2a955157228e45c9d",
+  "tick_id": "B5dc31c69"
+ }
+}
