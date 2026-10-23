@@ -82,8 +82,8 @@ jobs:
         if: steps.due.outputs.due == 'true'
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: src/requirements.lock.txt
+          # no pip cache: a restore can hang ~10 min when the account's Actions cache egress is throttled (seen
+          # 2026-10-23: "Egress is over the account limit"); the locked install from PyPI takes ~11 s.
       - name: Install the locked environment
         if: steps.due.outputs.due == 'true'
         run: python -m pip install --require-hashes -r src/requirements.lock.txt
