@@ -71,6 +71,24 @@ def _tree_digest(root: Path) -> str:
     return h.hexdigest()
 
 
+def _report_vs_ledgers(w: Path) -> dict:
+    """The cumulative report's operational counters next to the counts of the working ledgers the tick just appended
+    to (prod root), as they stand when the tick returns."""
+    live = ("FETCHED", "FETCHED_UNCHANGED", "FAILED", "ATTEMPT_FAILED")
+    cbbd = OS.read_jsonl(w / "prod" / "cache" / "cbbd_production_requests.jsonl")
+    odds = OS.read_jsonl(w / "prod" / "cache" / "odds_production_requests.jsonl")
+    rep = json.loads((w / "ops" / "reports" / "cumulative.json").read_text())["operations"]
+    return {"report": {"cbbd_live": rep["cbbd"]["live_requests"], "cbbd_cache": rep["cbbd"]["cache_hits"],
+                       "odds_live": rep["odds_api"]["live_requests"], "odds_credits": rep["odds_api"]["credits_used"],
+                       "odds_quota": rep["odds_api"]["quota_remaining_last"]},
+            "ledgers": {"cbbd_live": sum(1 for e in cbbd if e.get("status") in live),
+                        "cbbd_cache": sum(1 for e in cbbd if e.get("status") == "CACHE_HIT"),
+                        "odds_live": sum(1 for e in odds if e.get("status") in live),
+                        "odds_credits": int(sum(int(e.get("cost") or 0) for e in odds)),
+                        "odds_quota": next((e.get("quota_remaining") for e in reversed(odds)
+                                            if e.get("quota_remaining") is not None), None)}}
+
+
 def _ctx(w: Path, hist: Path, clock, cbbd, odds, **kw) -> TK.Ctx:
     return TK.Ctx(ops_root=w / "ops", prod_root=w / "prod", history_db=hist, clock=clock, cbbd_http=cbbd, odds_http=odds,
                   cbbd_credential=lambda: FF.DUMMY_CREDENTIAL, odds_credential=lambda: OX.DUMMY_ODDS_CREDENTIAL,
@@ -112,7 +130,8 @@ def life(tmp_path_factory):
     out = {"w": w, "hist": hist, "ctx": ctx, "clock": clock, "cbbd": cbbd, "assets": assets}
     # ---------------------------------------------------------------- 11-01 bootstrap + idempotent re-tick
     out["t1"] = TK.tick(ctx)
-    out["digest1"] = (_tree_digest(w / "ops"), _tree_digest(w / "prod" / "state"), len(cbbd.calls), len(odds.calls))
+    out["report_t1"] = _report_vs_ledgers(w)
+    out["digest1"] =(_tree_digest(w / "ops"), _tree_digest(w / "prod" / "state"), len(cbbd.calls), len(odds.calls))
     out["t1b"] = TK.tick(ctx)
     out["digest1b"] = (_tree_digest(w / "ops"), _tree_digest(w / "prod" / "state"), len(cbbd.calls), len(odds.calls))
     out["git_after_idle"] = subprocess.run(["git", "-C", str(w / "ops"), "rev-list", "--count", "HEAD"],
@@ -143,6 +162,7 @@ def life(tmp_path_factory):
     out["odds"] = odds2
     clock.t = pd.Timestamp("2026-11-10T23:00Z")
     out["t3"] = TK.tick(ctx)
+    out["report_t3"] = _report_vs_ledgers(w)
     out["paid_after_t3"] = [c for c in odds2.calls if "/odds" in c[0]]
     out["t3b"] = (TK.tick(ctx), len(cbbd.calls), len(odds2.calls))
     out["calls_after_t3"] = (len(cbbd.calls), len(odds2.calls))
@@ -204,6 +224,18 @@ def test_bootstrap_then_idempotent_tick(life):
     assert DC.check(life["w"] / "ops", pd.Timestamp("2026-11-01T12:05Z").to_pydatetime())[0] is False
     due = json.loads((life["w"] / "ops" / "DUE.json").read_text())
     assert due["due_now"] is False and "generated_at" not in due
+
+
+def test_work_tick_report_includes_its_own_ledger_activity(life):
+    """A work tick's reports count that same tick's CBBD / Odds API requests (no one-tick lag): the ledgers reach the
+    evidence tree before the reports are written."""
+    for k in ("report_t1", "report_t3"):
+        r = life[k]
+        assert r["report"] == r["ledgers"], k
+    assert life["report_t1"]["ledgers"]["cbbd_live"] > 0 and life["report_t1"]["ledgers"]["odds_live"] > 0
+    assert life["report_t3"]["ledgers"]["odds_credits"] > life["report_t1"]["ledgers"]["odds_credits"]
+    # the idle re-tick after the bootstrap left the tree byte-identical (the earlier mirror adds no write)
+    assert life["digest1"] == life["digest1b"]
 
 
 def test_due_check_gate(tmp_path):

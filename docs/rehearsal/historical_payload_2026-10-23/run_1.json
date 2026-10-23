@@ -1,0 +1,639 @@
+{
+ "rehearsal_version": "cbb-rehearsal-historical-payload-1.0.0",
+ "canonical_game_id": "G-8feee9ee50320ff3",
+ "prediction_as_of": "2026-02-09T22:42:00+00:00",
+ "target_cutoff": "2026-02-09T23:00:00+00:00",
+ "scheduled_tip": "2026-02-10T00:00:00+00:00",
+ "fetch": {
+  "rank": 1,
+  "canonical_game_id": "G-8feee9ee50320ff3",
+  "as_of": "2026-02-09T22:42:00+00:00",
+  "events_snapshot_timestamp": "2026-02-09T22:40:38Z",
+  "events_listed": 27,
+  "events_credits": 1,
+  "event_match": [
+   {
+    "provider_event_id": "4b884b7909ec80756fc09db4223867b4",
+    "provider_home_team": "Chicago St Cougars",
+    "provider_away_team": "St. Francis (PA) Red Flash",
+    "provider_commence_time": "2026-02-09 21:06:58+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "c43b3359273f53a5789c055ef2709ba8",
+    "provider_home_team": "Bucknell Bison",
+    "provider_away_team": "Navy Midshipmen",
+    "provider_commence_time": "2026-02-09 23:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "eb23a44bdf173b22dfcdd6bfaedb960c",
+    "provider_home_team": "Arkansas-Pine Bluff Golden Lions",
+    "provider_away_team": "Jackson St Tigers",
+    "provider_commence_time": "2026-02-09 23:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "c495ba66d7c26d04ae2d33c198b70e7a",
+    "provider_home_team": "St. John's Red Storm",
+    "provider_away_team": "Xavier Musketeers",
+    "provider_commence_time": "2026-02-09 23:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "315aacd12d99ac1fccfdc3cb66c9a966",
+    "provider_home_team": "Bethune-Cookman Wildcats",
+    "provider_away_team": "Texas Southern Tigers",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "8589ec2198f46e55ff1b9b77c5e78918",
+    "provider_home_team": "North Alabama Lions",
+    "provider_away_team": "Central Arkansas Bears",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "f148ba7834596747b5dc84c7f5298d5d",
+    "provider_home_team": "Florida A&M Rattlers",
+    "provider_away_team": "Prairie View Panthers",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "bd865c79996e9695c5d8b33e2665e179",
+    "provider_home_team": "Howard Bison",
+    "provider_away_team": "Yale Bulldogs",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "5ced6df07a8d42d0c5f1cd7d2b67c7c7",
+    "provider_home_team": "SE Louisiana Lions",
+    "provider_away_team": "Incarnate Word Cardinals",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "4afdb0df12052859783d2c5a346162ea",
+    "provider_home_team": "Indiana St Sycamores",
+    "provider_away_team": "Southern Illinois Salukis",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "04459d9e0e0db9a14f824ad9d8f707b4",
+    "provider_home_team": "Lamar Cardinals",
+    "provider_away_team": "Northwestern St Demons",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "5e1aa928201fd5c2d87346ed74e4d0c4",
+    "provider_home_team": "Louisville Cardinals",
+    "provider_away_team": "NC State Wolfpack",
+    "provider_commence_time": "2026-02-10 00:00:00+00:00",
+    "canonical_game_id": "G-8feee9ee50320ff3",
+    "match_reason": ""
+   },
+   {
+    "provider_event_id": "6f8e0c0f66ffd89ca900da48ce897172",
+    "provider_home_team": "Grambling St Tigers",
+    "provider_away_team": "Alabama A&M Bulldogs",
+    "provider_commence_time": "2026-02-10 00:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "33cc21cd8951ab80e32e7269e2a1e7b7",
+    "provider_home_team": "Drake Bulldogs",
+    "provider_away_team": "Valparaiso Beacons",
+    "provider_commence_time": "2026-02-10 00:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "720b5f750b813d58610fe1904e537cca",
+    "provider_home_team": "Stephen F. Austin Lumberjacks",
+    "provider_away_team": "East Texas A&M Lions",
+    "provider_commence_time": "2026-02-10 00:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "3cd43d525d3ec74dd7e5340908b88891",
+    "provider_home_team": "McNeese Cowboys",
+    "provider_away_team": "Houston Christian Huskies",
+    "provider_commence_time": "2026-02-10 00:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "e5fd69a1f7038b43548ffcc63ad37a14",
+    "provider_home_team": "Nicholls St Colonels",
+    "provider_away_team": "UT Rio Grande Valley Vaqueros",
+    "provider_commence_time": "2026-02-10 00:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "c9bc6c74a39a82436636610d09754453",
+    "provider_home_team": "Miss Valley St Delta Devils",
+    "provider_away_team": "Alcorn St Braves",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "41ebe0bb482d21b76fc0b72fb9ba69cc",
+    "provider_home_team": "Bradley Braves",
+    "provider_away_team": "Belmont Bruins",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "cdda07a8325f953c25abce8eab6ab988",
+    "provider_home_team": "Charleston Cougars",
+    "provider_away_team": "UNC Wilmington Seahawks",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "d10035d9f46a6ebcfd33bc6f6b23fe5c",
+    "provider_home_team": "North Carolina Central Eagles",
+    "provider_away_team": "Delaware St Hornets",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "af81c651b77df25f8746eb68af96c7dd",
+    "provider_home_team": "Evansville Purple Aces",
+    "provider_away_team": "Illinois St Redbirds",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "7acc87605c27043da237397bd7ada3cb",
+    "provider_home_team": "New Orleans Privateers",
+    "provider_away_team": "Texas A&M-CC Islanders",
+    "provider_commence_time": "2026-02-10 01:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "5d17e60236b71d564241ca0944a82f0c",
+    "provider_home_team": "Indiana Hoosiers",
+    "provider_away_team": "Oregon Ducks",
+    "provider_commence_time": "2026-02-10 01:30:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "e751c80a9736a2a2145849f22bb708b1",
+    "provider_home_team": "Southern Jaguars",
+    "provider_away_team": "Alabama St Hornets",
+    "provider_commence_time": "2026-02-10 02:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "7030f28cdeb54fbd95dfc13725bb710f",
+    "provider_home_team": "Kansas Jayhawks",
+    "provider_away_team": "Arizona Wildcats",
+    "provider_commence_time": "2026-02-10 02:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   },
+   {
+    "provider_event_id": "6580bad1b1a5df95e9b57c63a1aec078",
+    "provider_home_team": "Murray St Racers",
+    "provider_away_team": "Northern Iowa Panthers",
+    "provider_commence_time": "2026-02-10 03:00:00+00:00",
+    "canonical_game_id": null,
+    "match_reason": "UNMATCHED_GAME"
+   }
+  ],
+  "status": "FETCHED",
+  "event_id": "5e1aa928201fd5c2d87346ed74e4d0c4",
+  "snapshot_timestamp": "2026-02-09T22:40:38Z",
+  "previous_timestamp": "2026-02-09T22:35:37Z",
+  "next_timestamp": "2026-02-09T22:45:37Z",
+  "bookmakers": [
+   "betonlineag",
+   "betmgm",
+   "williamhill_us",
+   "fanduel"
+  ],
+  "prop_markets_returned": [
+   "player_assists",
+   "player_points",
+   "player_rebounds",
+   "player_threes"
+  ],
+  "unsupported_keys_returned": [],
+  "event_odds_credits": 40,
+  "quota_remaining": 4932537,
+  "response_sha256": "2865bbaff79b32944fbbfe1bea7ca818321a7be02fea32a2ae4b83679b9224cb",
+  "collection": "collections/5e1aa928201fd5c2d87346ed74e4d0c4_20260209T224038Z.json"
+ },
+ "model_parameter_holdout": false,
+ "model_parameter_note": "JM1_FINAL was fit through 2025-26: this game is in-sample for the parameters; pipeline mechanics only, never performance evidence",
+ "frozen_model": {
+  "gate": "PASS",
+  "artifact_sha256": {
+   "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+   "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+   "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1",
+   "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab"
+  },
+  "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a"
+ },
+ "point_in_time": {
+  "pass": true,
+  "target_result_masked": true,
+  "target_player_box_absent": true,
+  "target_team_box_absent": true,
+  "target_substitutions_absent": true,
+  "no_player_outcome_after_as_of": true,
+  "no_team_outcome_after_as_of": true,
+  "no_result_tipped_after_as_of": true,
+  "feature_cutoff_is_tip_minus_1h": true,
+  "candidate_season_is_target": true
+ },
+ "joint_bank": {
+  "sims": 20000,
+  "banks_drawn": 1,
+  "bank_sha256": "4c23e2ead3b0bd0a24a00db7d58a1522ba68980e8c37a336751bad5195291211",
+  "same_draw_check": true,
+  "players_in_bank": 44,
+  "markets_from_bank": [
+   "AST",
+   "BLK",
+   "FG3M",
+   "PA",
+   "PR",
+   "PRA",
+   "PTS",
+   "RA",
+   "REB",
+   "STL",
+   "STOCKS",
+   "TOV"
+  ],
+  "distinct_bank_hashes_in_distributions": 1,
+  "projection_rows_bank_hashes": 1
+ },
+ "ledger_append": {
+  "appended": 584,
+  "head": "563012381a0f571eec61b88174b70961e08e4e175714e5882398b8fd5867dc38"
+ },
+ "ledger_verify": {
+  "rows": 584,
+  "predictions": 583,
+  "settlements": 0,
+  "head": "563012381a0f571eec61b88174b70961e08e4e175714e5882398b8fd5867dc38",
+  "CHAIN_VALID": true
+ },
+ "side_monitor_append": {
+  "appended": 170,
+  "head": "63c187766da628125fd67476fdebb60355b28f37d284c219694d86e1efff75fe"
+ },
+ "validation_checks": {
+  "status": "PASS",
+  "checks": {
+   "expected_markets_returned": {
+    "pass": true,
+    "per_market": {
+     "player_points": "RETURNED",
+     "player_rebounds": "RETURNED",
+     "player_assists": "RETURNED",
+     "player_threes": "RETURNED",
+     "player_steals": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_blocks": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_turnovers": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_points_rebounds_assists": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_points_rebounds": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_points_assists": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_rebounds_assists": "MARKET_NOT_OFFERED_FOR_EVENT",
+     "player_blocks_steals": "MARKET_NOT_OFFERED_FOR_EVENT"
+    }
+   },
+   "bookmaker_normalization": {
+    "pass": true,
+    "books": [
+     {
+      "sportsbook": "betonlineag",
+      "sportsbook_title": "BetOnline.ag"
+     },
+     {
+      "sportsbook": "betmgm",
+      "sportsbook_title": "BetMGM"
+     },
+     {
+      "sportsbook": "williamhill_us",
+      "sportsbook_title": "Caesars"
+     },
+     {
+      "sportsbook": "fanduel",
+      "sportsbook_title": "FanDuel"
+     }
+    ]
+   },
+   "lines_sides_prices_parse": {
+    "pass": true,
+    "prop_quotes": 170,
+    "invalid": 0
+   },
+   "timestamps_usable": {
+    "pass": true,
+    "missing_or_after_receipt": 0
+   },
+   "player_identity": {
+    "pass": true,
+    "prop_quotes": 170,
+    "matched": 170,
+    "ambiguous_suppressed": 0,
+    "unmatched_suppressed": 0,
+    "unmatched_names": []
+   },
+   "best_price_selection": {
+    "pass": true,
+    "priced_rows": 90,
+    "wrong_best": 0
+   },
+   "no_fabricated_market": {
+    "pass": true,
+    "fabricated_rows": 0,
+    "unsupported_keys_returned": []
+   }
+  }
+ },
+ "pricing_checks": {
+  "pass": true,
+  "rows_checked": 90,
+  "mismatches": []
+ },
+ "quotes": {
+  "rows": 170,
+  "prop_rows": 170,
+  "by_status": [
+   {
+    "quote_status": "VALID",
+    "suppression_reason": "",
+    "n": 170
+   }
+  ],
+  "books": [
+   "betmgm",
+   "betonlineag",
+   "fanduel",
+   "williamhill_us"
+  ],
+  "markets": [
+   "player_assists",
+   "player_points",
+   "player_rebounds",
+   "player_threes"
+  ],
+  "with_deep_link": 0,
+  "unmatched_players": [],
+  "ambiguous_players": [],
+  "game_match": [
+   "G-8feee9ee50320ff3"
+  ]
+ },
+ "evidence": {
+  "projections": 44,
+  "predictions_quoted": 90,
+  "quote_sides": 170
+ },
+ "pregame_hashes": {
+  "shadow_ledger.jsonl.gz": "ae2bd299d95ac37d64fab18cc4e8937ded34cddb57a96c5f296dc2d1b3ea3fb7",
+  "projections.parquet": "4da97d2cb7b2a45f35926f4008fec184a83c6881e0633cd7b4660dc210e860b6",
+  "predictions_quoted.parquet": "967d0010813378db2de66473a2064fa303325ce71aa44ea3dfcb537f15086699",
+  "quote_sides.parquet": "0012e980883cee3866cdee5513db7a9fd3371bfc567f2cc49a91f67eed45a6c7",
+  "side_monitor.jsonl.gz": "275bee4069f42475baa1b4ba3b431382d035a43985869390502fade3df12f276"
+ },
+ "outcome_chronology": {
+  "outcome_knowable_at": "2026-02-10T04:00:00+00:00",
+  "prediction_as_of": "2026-02-09T22:42:00+00:00",
+  "outcome_after_prediction": true,
+  "settled_at": "2026-02-10T04:30:00+00:00"
+ },
+ "settlement": {
+  "games": 1,
+  "quoted_predictions": 90,
+  "quote_sides": 170,
+  "players": 44,
+  "kinds": {
+   "FINAL": 1
+  }
+ },
+ "settlement_checks": {
+  "pass": true,
+  "settled_quoted_predictions": 90,
+  "outcomes": {
+   "OVER": 28,
+   "UNDER": 62
+  },
+  "mismatches": [],
+  "players_settled": 44,
+  "participation": {
+   "PLAYED": 24,
+   "DNP": 20
+  },
+  "dnp_players_with_numeric_actual": 0,
+  "dnp_quoted_rows_no_action": 0,
+  "side_settlements": 170,
+  "side_results": {
+   "WIN": 85,
+   "LOSS": 85
+  }
+ },
+ "pregame_immutable": {
+  "pass": true,
+  "ledger_chain_after_settlement": {
+   "rows": 584,
+   "predictions": 583,
+   "settlements": 0,
+   "head": "563012381a0f571eec61b88174b70961e08e4e175714e5882398b8fd5867dc38",
+   "CHAIN_VALID": true
+  },
+  "after": {
+   "shadow_ledger.jsonl.gz": "ae2bd299d95ac37d64fab18cc4e8937ded34cddb57a96c5f296dc2d1b3ea3fb7",
+   "projections.parquet": "4da97d2cb7b2a45f35926f4008fec184a83c6881e0633cd7b4660dc210e860b6",
+   "predictions_quoted.parquet": "967d0010813378db2de66473a2064fa303325ce71aa44ea3dfcb537f15086699",
+   "quote_sides.parquet": "0012e980883cee3866cdee5513db7a9fd3371bfc567f2cc49a91f67eed45a6c7",
+   "side_monitor.jsonl.gz": "275bee4069f42475baa1b4ba3b431382d035a43985869390502fade3df12f276"
+  }
+ },
+ "settlement_idempotence": {
+  "game_in_settled_registry": true,
+  "settlement_registry_rows": 1
+ },
+ "reports": {
+  "first": {
+   "cumulative": true,
+   "daily": [
+    "2026-02-09"
+   ],
+   "warnings": [
+    "OVER_UNDER_CONCENTRATION_WARNING"
+   ]
+  },
+  "second_identical": true,
+  "files": [
+   "2026-02-09.json",
+   "2026-02-09.md",
+   "cumulative.json",
+   "cumulative.md"
+  ],
+  "chain": {
+   "ticks": 2,
+   "head": "e62d6abac0abbc249774f7f809c410f22b6ced90cace8626549774167ceeaa85",
+   "files_not_checked_out": 0,
+   "CHAIN_VALID": true
+  }
+ },
+ "monitor_checks": {
+  "blocks_present": [
+   "by_market",
+   "center_pts",
+   "early_season",
+   "evidence",
+   "evidence_buckets_pts",
+   "high_exposure_pts",
+   "market_benchmark",
+   "operations",
+   "over_under_sides",
+   "transfer_cold_start"
+  ],
+  "market_benchmark": {
+   "pass": true,
+   "report": {
+    "lines": 45,
+    "model_brier": 0.2260136602796548,
+    "market_brier": 0.2412392264901351,
+    "model_log_loss": 0.6435370949958623,
+    "market_log_loss": 0.6751313360657838
+   },
+   "independent": {
+    "lines": 45,
+    "model_brier": 0.2260136602796548,
+    "market_brier": 0.2412392264901351,
+    "model_log_loss": 0.6435370949958623,
+    "market_log_loss": 0.6751313360657838
+   }
+  },
+  "monitors": {
+   "high_exposure_pts": {
+    "status": "PASS",
+    "played_n_report": 3,
+    "played_n_independent": 3,
+    "settled_lines": 6
+   },
+   "center_pts.C": {
+    "status": "PASS",
+    "played_n_report": 2,
+    "played_n_independent": 2,
+    "settled_lines": 0
+   },
+   "center_pts.non_C": {
+    "status": "PASS",
+    "played_n_report": 22,
+    "played_n_independent": 22,
+    "settled_lines": 14
+   },
+   "early_season.first_30_days.PTS": {
+    "status": "NOT_APPLICABLE",
+    "played_n_report": 0,
+    "played_n_independent": 0,
+    "settled_lines": 0
+   },
+   "early_season.team_games_le_2.PTS": {
+    "status": "NOT_APPLICABLE",
+    "played_n_report": 0,
+    "played_n_independent": 0,
+    "settled_lines": 0
+   },
+   "transfer_cold_start.COLD_TRANSFER_IN.PTS": {
+    "status": "NOT_APPLICABLE",
+    "played_n_report": 0,
+    "played_n_independent": 0,
+    "settled_lines": 0
+   },
+   "transfer_cold_start.COLD_NO_HISTORY.PTS": {
+    "status": "NOT_APPLICABLE",
+    "played_n_report": 0,
+    "played_n_independent": 0,
+    "settled_lines": 0
+   },
+   "evidence_buckets_pts.CUR_0": {
+    "status": "NOT_APPLICABLE",
+    "played_n_report": 0,
+    "played_n_independent": 0,
+    "settled_lines": 0
+   },
+   "evidence_buckets_pts.CUR_0_100": {
+    "status": "PASS",
+    "played_n_report": 4,
+    "played_n_independent": 4,
+    "settled_lines": 0
+   },
+   "evidence_buckets_pts.CUR_100_300": {
+    "status": "PASS",
+    "played_n_report": 4,
+    "played_n_independent": 4,
+    "settled_lines": 0
+   },
+   "evidence_buckets_pts.CUR_300PLUS": {
+    "status": "PASS",
+    "played_n_report": 16,
+    "played_n_independent": 16,
+    "settled_lines": 14
+   },
+   "over_under_sides": {
+    "status": "PASS",
+    "opportunities_report": 85,
+    "quote_sides": 170,
+    "side_settlements": 170
+   }
+  },
+  "pass": true
+ },
+ "board_sample": [
+  "Game",
+  "Player",
+  "Bet",
+  "Projection",
+  "Line",
+  "WinChance",
+  "PushProbability",
+  "FairPrice",
+  "BestOdds",
+  "Sportsbook",
+  "Edge",
+  "PredictionAsOf",
+  "QuoteAvailableAt",
+  "CollectorReceivedAt",
+  "ModelVersion",
+  "EligibilityState",
+  "SuppressionReason"
+ ]
+}

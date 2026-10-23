@@ -1,0 +1,3417 @@
+{
+ "by_market": {
+  "AST": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 1.2916666666666667,
+    "mean_model": 1.5920385689616419,
+    "n": 24,
+    "relative_error": 0.23254598887352915,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.3003719022949752
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.00804972228896014
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 11,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.016672777914493973
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.21688209329119157
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.6249174340395427
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.22493181558015166
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.6415902119540365
+     }
+    },
+    "mean_model_p_over": 0.5340935050435252,
+    "mean_model_p_under": 0.4659064949564749,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.22493181558015166
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6415902119540365
+    },
+    "model_over_lean_lines": 6,
+    "model_under_lean_lines": 5,
+    "quoted_lines": 11,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.2727272727272727
+    },
+    "settled_lines": 11
+   }
+  },
+  "BLK": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 0.20833333333333334,
+    "mean_model": 0.2929861551274342,
+    "n": 24,
+    "relative_error": 0.406333544611684,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.08465282179410084
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "FG3M": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 0.9166666666666666,
+    "mean_model": 0.9150691974698532,
+    "n": 24,
+    "relative_error": -0.0017426936692512224,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": -0.0015974691968136205
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": -0.055169644468752166
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 9,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": -0.11536540355270554
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": 0.2595885170773248
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": 0.7125830836342889
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": 0.2044188726085726
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 9,
+      "se": null,
+      "value": 0.5972176800815833
+     }
+    },
+    "mean_model_p_over": 0.4142243980338358,
+    "mean_model_p_under": 0.5857756019661641,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.2044188726085726
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.5972176800815833
+    },
+    "model_over_lean_lines": 1,
+    "model_under_lean_lines": 8,
+    "quoted_lines": 9,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.2222222222222222
+    },
+    "settled_lines": 9
+   }
+  },
+  "PA": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 9.416666666666666,
+    "mean_model": 9.445839583333333,
+    "n": 24,
+    "relative_error": 0.0030980088495575256,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.029172916666666698
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PR": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 11.041666666666666,
+    "mean_model": 11.028485416666664,
+    "n": 24,
+    "relative_error": -0.0011937735849056332,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": -0.0131812499999997
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PRA": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 12.333333333333334,
+    "mean_model": 12.622110416666667,
+    "n": 24,
+    "relative_error": 0.02341435810810811,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.28877708333333335
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PTS": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 8.125,
+    "mean_model": 7.860397088870077,
+    "n": 24,
+    "relative_error": -0.03256651213906744,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": -0.2646029111299229
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.023563010284539877
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 14,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.048833673839010654
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.24461689604620881
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6823557646544021
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.22105388576166898
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6335220908153912
+     }
+    },
+    "mean_model_p_over": 0.4238446106204425,
+    "mean_model_p_under": 0.5761553893795576,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.22105388576166898
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6335220908153912
+    },
+    "model_over_lean_lines": 2,
+    "model_under_lean_lines": 12,
+    "quoted_lines": 14,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.35714285714285715
+    },
+    "settled_lines": 14
+   }
+  },
+  "RA": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 4.208333333333333,
+    "mean_model": 4.769895833333334,
+    "n": 24,
+    "relative_error": 0.13344059405940595,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.5615625
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "REB": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 2.9166666666666665,
+    "mean_model": 3.1799972721659606,
+    "n": 24,
+    "relative_error": 0.09028477902832924,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.2633306054992936
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.0047919563229231075
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 11,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.010619878228599378
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.24628445159182955
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.6855081718777344
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.25107640791475266
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 11,
+      "se": null,
+      "value": 0.6961280501063339
+     }
+    },
+    "mean_model_p_over": 0.5385115432695673,
+    "mean_model_p_under": 0.46148845673043276,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.25107640791475266
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6961280501063339
+    },
+    "model_over_lean_lines": 6,
+    "model_under_lean_lines": 5,
+    "quoted_lines": 11,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.36363636363636365
+    },
+    "settled_lines": 11
+   }
+  },
+  "STL": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 0.5,
+    "mean_model": 0.681578213622914,
+    "n": 24,
+    "relative_error": 0.3631564272458279,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.18157821362291396
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "STOCKS": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 0.7083333333333334,
+    "mean_model": 0.9741375,
+    "n": 24,
+    "relative_error": 0.37525294117647057,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.2658041666666667
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "TOV": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 0.8333333333333334,
+    "mean_model": 1.0336356454314453,
+    "n": 24,
+    "relative_error": 0.24036277451773436,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 24,
+     "se": null,
+     "value": 0.20030231209811197
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  }
+ },
+ "center_pts": {
+  "C": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 2.0,
+    "mean_model": 3.202846877938926,
+    "n": 2,
+    "relative_error": 0.6014234389694629,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 2,
+     "se": null,
+     "value": 1.2028468779389259
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "non_C": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 8.681818181818182,
+    "mean_model": 8.283810744409273,
+    "n": 22,
+    "relative_error": -0.04584378860207333,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 22,
+     "se": null,
+     "value": -0.39800743740890937
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.023563010284539877
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 14,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.048833673839010654
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.24461689604620881
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6823557646544021
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.22105388576166898
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6335220908153912
+     }
+    },
+    "mean_model_p_over": 0.4238446106204425,
+    "mean_model_p_under": 0.5761553893795576,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.22105388576166898
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6335220908153912
+    },
+    "model_over_lean_lines": 2,
+    "model_under_lean_lines": 12,
+    "quoted_lines": 14,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.35714285714285715
+    },
+    "settled_lines": 14
+   },
+   "sides": {
+    "counters": {
+     "mean_over_edge": -0.19766106306003547,
+     "mean_p_over": 0.4272944301197288,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.572705569880271,
+     "mean_under_edge": 0.0742973812908294,
+     "no_recommendation": 5,
+     "opportunities": 31,
+     "over_favored": 4,
+     "over_recommended": 1,
+     "over_share": 0.12903225806451613,
+     "quote_side_records": 62,
+     "two_sided_opportunities": 31,
+     "under_favored": 27,
+     "under_recommended": 25,
+     "under_recommended_share": {
+      "hi": 0.9931780150064564,
+      "k": 25,
+      "lo": 0.8110722109696524,
+      "n": 26,
+      "share": 0.9615384615384616
+     },
+     "under_share": 0.8709677419354839
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.4272944301197288
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 19,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.3870967741935484
+     },
+     "settled": 31,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": -0.04019765592618043
+     },
+     "wins": 12
+    },
+    "over_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.2433495847726008
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.5066952414859545
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.6798455577305665
+     },
+     "losses": 0,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 1.0
+     },
+     "settled": 1,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.49330475851404554
+     },
+     "wins": 1
+    },
+    "over_share_of_favored": {
+     "hi": 0.28852406256306423,
+     "k": 4,
+     "lo": 0.051342843746291486,
+     "n": 31,
+     "share": 0.12903225806451613
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.572705569880271
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 12,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6129032258064516
+     },
+     "settled": 31,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.04019765592618043
+     },
+     "wins": 19
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.2090772154973167
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.5924755649262302
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.6085652856971548
+     },
+     "losses": 8,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.68
+     },
+     "settled": 25,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.0875244350737697
+     },
+     "wins": 17
+    }
+   }
+  }
+ },
+ "early_season": {
+  "first_30_days": {
+   "AST": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PR": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PRA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  },
+  "team_games_le_2": {
+   "AST": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PR": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PRA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  }
+ },
+ "evidence": {
+  "excluded_not_clean": 0,
+  "player_projections": 44,
+  "quote_side_records": 170,
+  "quoted_lines": 45,
+  "settled_players_played": 24,
+  "settled_quote_sides": 170
+ },
+ "evidence_buckets_pts": {
+  "CUR_0": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_0_100": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 1.25,
+    "mean_model": 2.0774269612688445,
+    "n": 4,
+    "relative_error": 0.6619415690150758,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 4,
+     "se": null,
+     "value": 0.8274269612688447
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_100_300": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 2.0,
+    "mean_model": 4.001923931267344,
+    "n": 4,
+    "relative_error": 1.0009619656336721,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 4,
+     "se": null,
+     "value": 2.0019239312673442
+    }
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_300PLUS": {
+   "projection": {
+    "games": 1,
+    "mean_actual": 11.375,
+    "mean_model": 10.270757910171069,
+    "n": 16,
+    "relative_error": -0.09707622767726874,
+    "signed_error": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 16,
+     "se": null,
+     "value": -1.104242089828932
+    }
+   },
+   "quoted_lines": {
+    "market_benchmark": {
+     "brier_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.023563010284539877
+     },
+     "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+     "games": 1,
+     "lines": 14,
+     "log_loss_model_minus_market": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": -0.048833673839010654
+     },
+     "market_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.24461689604620881
+     },
+     "market_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6823557646544021
+     },
+     "model_brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.22105388576166898
+     },
+     "model_log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 14,
+      "se": null,
+      "value": 0.6335220908153912
+     }
+    },
+    "mean_model_p_over": 0.4238446106204425,
+    "mean_model_p_under": 0.5761553893795576,
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.22105388576166898
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6335220908153912
+    },
+    "model_over_lean_lines": 2,
+    "model_under_lean_lines": 12,
+    "quoted_lines": 14,
+    "realized_over_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.35714285714285715
+    },
+    "settled_lines": 14
+   },
+   "sides": {
+    "counters": {
+     "mean_over_edge": -0.19766106306003547,
+     "mean_p_over": 0.4272944301197288,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.572705569880271,
+     "mean_under_edge": 0.0742973812908294,
+     "no_recommendation": 5,
+     "opportunities": 31,
+     "over_favored": 4,
+     "over_recommended": 1,
+     "over_share": 0.12903225806451613,
+     "quote_side_records": 62,
+     "two_sided_opportunities": 31,
+     "under_favored": 27,
+     "under_recommended": 25,
+     "under_recommended_share": {
+      "hi": 0.9931780150064564,
+      "k": 25,
+      "lo": 0.8110722109696524,
+      "n": 26,
+      "share": 0.9615384615384616
+     },
+     "under_share": 0.8709677419354839
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.4272944301197288
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 19,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.3870967741935484
+     },
+     "settled": 31,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": -0.04019765592618043
+     },
+     "wins": 12
+    },
+    "over_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.2433495847726008
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.5066952414859545
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.6798455577305665
+     },
+     "losses": 0,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 1.0
+     },
+     "settled": 1,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.49330475851404554
+     },
+     "wins": 1
+    },
+    "over_share_of_favored": {
+     "hi": 0.28852406256306423,
+     "k": 4,
+     "lo": 0.051342843746291486,
+     "n": 31,
+     "share": 0.12903225806451613
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.572705569880271
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 12,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6129032258064516
+     },
+     "settled": 31,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.04019765592618043
+     },
+     "wins": 19
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.2090772154973167
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.5924755649262302
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.6085652856971548
+     },
+     "losses": 8,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.68
+     },
+     "settled": 25,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.0875244350737697
+     },
+     "wins": 17
+    }
+   }
+  }
+ },
+ "evidence_chain_head": "e62d6abac0abbc249774f7f809c410f22b6ced90cace8626549774167ceeaa85",
+ "high_exposure_pts": {
+  "PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING": false,
+  "definition": "PTS, pregame min_mu >= 30.0",
+  "projection": {
+   "games": 1,
+   "mean_actual": 16.333333333333332,
+   "mean_model": 14.531138083247916,
+   "n": 3,
+   "relative_error": -0.11033848469910719,
+   "signed_error": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 3,
+    "se": null,
+    "value": -1.8021952500854173
+   }
+  },
+  "quoted_lines": {
+   "market_benchmark": {
+    "brier_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": -0.03336285145698046
+    },
+    "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+    "games": 1,
+    "lines": 6,
+    "log_loss_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": -0.06823764629411273
+    },
+    "market_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": 0.2479275776355062
+    },
+    "market_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": 0.6890033304066794
+    },
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": 0.21456472617852576
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 6,
+     "se": null,
+     "value": 0.6207656841125666
+    }
+   },
+   "mean_model_p_over": 0.407178641765327,
+   "mean_model_p_under": 0.592821358234673,
+   "model_brier": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 6,
+    "se": null,
+    "value": 0.21456472617852576
+   },
+   "model_log_loss": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 6,
+    "se": null,
+    "value": 0.6207656841125666
+   },
+   "model_over_lean_lines": 0,
+   "model_under_lean_lines": 6,
+   "quoted_lines": 6,
+   "realized_over_rate": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 6,
+    "se": null,
+    "value": 0.3333333333333333
+   },
+   "settled_lines": 6
+  },
+  "sides": {
+   "counters": {
+    "mean_over_edge": -0.21793858846580863,
+    "mean_p_over": 0.41512886968633905,
+    "mean_p_push": 0.0,
+    "mean_p_under": 0.5848711303136609,
+    "mean_under_edge": 0.09503997068586979,
+    "no_recommendation": 0,
+    "opportunities": 11,
+    "over_favored": 0,
+    "over_recommended": 0,
+    "over_share": 0.0,
+    "quote_side_records": 22,
+    "two_sided_opportunities": 11,
+    "under_favored": 11,
+    "under_recommended": 11,
+    "under_recommended_share": {
+     "hi": 1.0,
+     "k": 11,
+     "lo": 0.7411670330319684,
+     "n": 11,
+     "share": 1.0
+    },
+    "under_share": 1.0
+   },
+   "over": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.21716099289114155
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.41512886968633905
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6260522367547762
+    },
+    "losses": 7,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.36363636363636365
+    },
+    "settled": 11,
+    "side": "OVER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": -0.05149250604997537
+    },
+    "wins": 4
+   },
+   "over_recommended": {
+    "settled": 0,
+    "side": "OVER"
+   },
+   "over_share_of_favored": {
+    "hi": 0.2588329669680317,
+    "k": 0,
+    "lo": 0.0,
+    "n": 11,
+    "share": 0.0
+   },
+   "under": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.21716099289114155
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.5848711303136609
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6260522367547762
+    },
+    "losses": 4,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6363636363636364
+    },
+    "settled": 11,
+    "side": "UNDER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.05149250604997537
+    },
+    "wins": 7
+   },
+   "under_recommended": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.21716099289114155
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.5848711303136609
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6260522367547762
+    },
+    "losses": 4,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6363636363636364
+    },
+    "settled": 11,
+    "side": "UNDER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.05149250604997537
+    },
+    "wins": 7
+   }
+  }
+ },
+ "market_benchmark": {
+  "all": {
+   "brier_model_minus_market": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": -0.015225566210480265
+   },
+   "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+   "games": 1,
+   "lines": 45,
+   "log_loss_model_minus_market": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": -0.0315942410699216
+   },
+   "market_brier": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": 0.2412392264901351
+   },
+   "market_log_loss": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": 0.6751313360657838
+   },
+   "model_brier": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": 0.2260136602796548
+   },
+   "model_log_loss": {
+    "games": 1,
+    "hi": null,
+    "lo": null,
+    "n": 45,
+    "se": null,
+    "value": 0.6435370949958623
+   }
+  },
+  "by_market": {
+   "AST": {
+    "brier_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.00804972228896014
+    },
+    "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+    "games": 1,
+    "lines": 11,
+    "log_loss_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.016672777914493973
+    },
+    "market_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.21688209329119157
+    },
+    "market_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6249174340395427
+    },
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.22493181558015166
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6415902119540365
+    }
+   },
+   "FG3M": {
+    "brier_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": -0.055169644468752166
+    },
+    "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+    "games": 1,
+    "lines": 9,
+    "log_loss_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": -0.11536540355270554
+    },
+    "market_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.2595885170773248
+    },
+    "market_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.7125830836342889
+    },
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.2044188726085726
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 9,
+     "se": null,
+     "value": 0.5972176800815833
+    }
+   },
+   "PTS": {
+    "brier_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": -0.023563010284539877
+    },
+    "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+    "games": 1,
+    "lines": 14,
+    "log_loss_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": -0.048833673839010654
+    },
+    "market_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.24461689604620881
+    },
+    "market_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6823557646544021
+    },
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.22105388576166898
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6335220908153912
+    }
+   },
+   "REB": {
+    "brier_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.0047919563229231075
+    },
+    "convention": "per-book normalized reciprocal decimal odds (both sides, same book, same snapshot), averaged over books; same game / player / market / line / cutoff only",
+    "games": 1,
+    "lines": 11,
+    "log_loss_model_minus_market": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.010619878228599378
+    },
+    "market_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.24628445159182955
+    },
+    "market_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6855081718777344
+    },
+    "model_brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.25107640791475266
+    },
+    "model_log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 11,
+     "se": null,
+     "value": 0.6961280501063339
+    }
+   }
+  }
+ },
+ "operations": {
+  "cbbd": {
+   "cache_hits": 0,
+   "live_requests": 0,
+   "refused": 0
+  },
+  "games_by_status": {
+   "PREDICTED": 1
+  },
+  "games_predicted": 1,
+  "games_predicted_with_game_blockers": 0,
+  "games_registered": 1,
+  "games_settled": 1,
+  "odds_api": {
+   "credits_used": 0,
+   "live_requests": 0,
+   "quota_remaining_last": null
+  },
+  "quote_snapshots": 1,
+  "quote_snapshots_with_bookmakers": 1,
+  "timing_deviation_minutes": {
+   "max": 18.0,
+   "median": 18.0,
+   "min": 18.0,
+   "n": 1
+  }
+ },
+ "over_under_sides": {
+  "by_market": {
+   "AST": {
+    "counters": {
+     "mean_over_edge": 0.03576651671359082,
+     "mean_p_over": 0.5299623948642812,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.47003760513571885,
+     "mean_under_edge": -0.13567788932922886,
+     "no_recommendation": 3,
+     "opportunities": 13,
+     "over_favored": 9,
+     "over_recommended": 7,
+     "over_share": 0.6923076923076923,
+     "quote_side_records": 26,
+     "two_sided_opportunities": 13,
+     "under_favored": 4,
+     "under_recommended": 3,
+     "under_recommended_share": {
+      "hi": 0.6032218525388546,
+      "k": 3,
+      "lo": 0.10779126740630099,
+      "n": 10,
+      "share": 0.3
+     },
+     "under_share": 0.3076923076923077
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.2364062338679921
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.5299623948642812
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.6648076891103469
+     },
+     "losses": 9,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.3076923076923077
+     },
+     "settled": 13,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": -0.22227008717197344
+     },
+     "wins": 4
+    },
+    "over_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 7,
+      "se": null,
+      "value": 0.25516014715816493
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 7,
+      "se": null,
+      "value": 0.6093556770189253
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 7,
+      "se": null,
+      "value": 0.7053861235114823
+     },
+     "losses": 4,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 7,
+      "se": null,
+      "value": 0.42857142857142855
+     },
+     "settled": 7,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 7,
+      "se": null,
+      "value": -0.1807842484474968
+     },
+     "wins": 3
+    },
+    "over_share_of_favored": {
+     "hi": 0.8731929634428948,
+     "k": 9,
+     "lo": 0.42369343180549035,
+     "n": 13,
+     "share": 0.6923076923076923
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.2364062338679921
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.47003760513571885
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.6648076891103469
+     },
+     "losses": 4,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.6923076923076923
+     },
+     "settled": 13,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 13,
+      "se": null,
+      "value": 0.22227008717197344
+     },
+     "wins": 9
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 3,
+      "se": null,
+      "value": 0.1746352513174345
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 3,
+      "se": null,
+      "value": 0.598568595165287
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 3,
+      "se": null,
+      "value": 0.533394804473848
+     },
+     "losses": 0,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 3,
+      "se": null,
+      "value": 1.0
+     },
+     "settled": 3,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 3,
+      "se": null,
+      "value": 0.40143140483471296
+     },
+     "wins": 3
+    }
+   },
+   "FG3M": {
+    "counters": {
+     "mean_over_edge": -0.22427686639860053,
+     "mean_p_over": 0.4126305381501053,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.5873694618498948,
+     "mean_under_edge": 0.09226708456221312,
+     "no_recommendation": 4,
+     "opportunities": 23,
+     "over_favored": 0,
+     "over_recommended": 0,
+     "over_share": 0.0,
+     "quote_side_records": 46,
+     "two_sided_opportunities": 23,
+     "under_favored": 23,
+     "under_recommended": 19,
+     "under_recommended_share": {
+      "hi": 1.0,
+      "k": 19,
+      "lo": 0.8318207759473837,
+      "n": 19,
+      "share": 1.0
+     },
+     "under_share": 1.0
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.20787703818167272
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.4126305381501053
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.6040495295223198
+     },
+     "losses": 17,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.2608695652173913
+     },
+     "settled": 23,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": -0.151760972932714
+     },
+     "wins": 6
+    },
+    "over_recommended": {
+     "settled": 0,
+     "side": "OVER"
+    },
+    "over_share_of_favored": {
+     "hi": 0.14311661845042686,
+     "k": 0,
+     "lo": 0.0,
+     "n": 23,
+     "share": 0.0
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.20787703818167272
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.5873694618498948
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.6040495295223198
+     },
+     "losses": 6,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.7391304347826086
+     },
+     "settled": 23,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 23,
+      "se": null,
+      "value": 0.151760972932714
+     },
+     "wins": 17
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 19,
+      "se": null,
+      "value": 0.20875443684225745
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 19,
+      "se": null,
+      "value": 0.5992195268823453
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 19,
+      "se": null,
+      "value": 0.6048475161690657
+     },
+     "losses": 5,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 19,
+      "se": null,
+      "value": 0.7368421052631579
+     },
+     "settled": 19,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 19,
+      "se": null,
+      "value": 0.13762257838081263
+     },
+     "wins": 14
+    }
+   },
+   "PTS": {
+    "counters": {
+     "mean_over_edge": -0.19766106306003547,
+     "mean_p_over": 0.4272944301197288,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.572705569880271,
+     "mean_under_edge": 0.0742973812908294,
+     "no_recommendation": 5,
+     "opportunities": 31,
+     "over_favored": 4,
+     "over_recommended": 1,
+     "over_share": 0.12903225806451613,
+     "quote_side_records": 62,
+     "two_sided_opportunities": 31,
+     "under_favored": 27,
+     "under_recommended": 25,
+     "under_recommended_share": {
+      "hi": 0.9931780150064564,
+      "k": 25,
+      "lo": 0.8110722109696524,
+      "n": 26,
+      "share": 0.9615384615384616
+     },
+     "under_share": 0.8709677419354839
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.4272944301197288
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 19,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.3870967741935484
+     },
+     "settled": 31,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": -0.04019765592618043
+     },
+     "wins": 12
+    },
+    "over_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.2433495847726008
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.5066952414859545
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.6798455577305665
+     },
+     "losses": 0,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 1.0
+     },
+     "settled": 1,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 1,
+      "se": null,
+      "value": 0.49330475851404554
+     },
+     "wins": 1
+    },
+    "over_share_of_favored": {
+     "hi": 0.28852406256306423,
+     "k": 4,
+     "lo": 0.051342843746291486,
+     "n": 31,
+     "share": 0.12903225806451613
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.21716296920624098
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.572705569880271
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6252669734549071
+     },
+     "losses": 12,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.6129032258064516
+     },
+     "settled": 31,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 31,
+      "se": null,
+      "value": 0.04019765592618043
+     },
+     "wins": 19
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.2090772154973167
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.5924755649262302
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.6085652856971548
+     },
+     "losses": 8,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.68
+     },
+     "settled": 25,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 25,
+      "se": null,
+      "value": 0.0875244350737697
+     },
+     "wins": 17
+    }
+   },
+   "REB": {
+    "counters": {
+     "mean_over_edge": -0.06490880980920381,
+     "mean_p_over": 0.5427827088077589,
+     "mean_p_push": 0.0,
+     "mean_p_under": 0.4572172911922412,
+     "mean_under_edge": -0.06044915880336202,
+     "no_recommendation": 7,
+     "opportunities": 18,
+     "over_favored": 10,
+     "over_recommended": 6,
+     "over_share": 0.5555555555555556,
+     "quote_side_records": 36,
+     "two_sided_opportunities": 18,
+     "under_favored": 8,
+     "under_recommended": 5,
+     "under_recommended_share": {
+      "hi": 0.719908462590678,
+      "k": 5,
+      "lo": 0.21271271622459764,
+      "n": 11,
+      "share": 0.45454545454545453
+     },
+     "under_share": 0.4444444444444444
+    },
+    "over": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.25654682151766445
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.5427827088077589
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.7073227442607097
+     },
+     "losses": 11,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.3888888888888889
+     },
+     "settled": 18,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": -0.1538938199188699
+     },
+     "wins": 7
+    },
+    "over_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 6,
+      "se": null,
+      "value": 0.24736781867343136
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 6,
+      "se": null,
+      "value": 0.608794590121105
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 6,
+      "se": null,
+      "value": 0.6906901009583821
+     },
+     "losses": 3,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 6,
+      "se": null,
+      "value": 0.5
+     },
+     "settled": 6,
+     "side": "OVER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 6,
+      "se": null,
+      "value": -0.10879459012110515
+     },
+     "wins": 3
+    },
+    "over_share_of_favored": {
+     "hi": 0.7544048187299437,
+     "k": 10,
+     "lo": 0.33716415642042774,
+     "n": 18,
+     "share": 0.5555555555555556
+    },
+    "under": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.25654682151766445
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.4572172911922412
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.7073227442607097
+     },
+     "losses": 7,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.6111111111111112
+     },
+     "settled": 18,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 18,
+      "se": null,
+      "value": 0.15389381991886988
+     },
+     "wins": 11
+    },
+    "under_recommended": {
+     "brier": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 5,
+      "se": null,
+      "value": 0.2811380941855555
+     },
+     "clv": {
+      "mean": null,
+      "n": 0,
+      "note": "no valid later price"
+     },
+     "expected_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 5,
+      "se": null,
+      "value": 0.5397196844583357
+     },
+     "log_loss": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 5,
+      "se": null,
+      "value": 0.756158062585538
+     },
+     "losses": 2,
+     "pushes": 0,
+     "realized_win_rate": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 5,
+      "se": null,
+      "value": 0.6
+     },
+     "settled": 5,
+     "side": "UNDER",
+     "win_rate_gap_realized_minus_expected": {
+      "games": 1,
+      "hi": null,
+      "lo": null,
+      "n": 5,
+      "se": null,
+      "value": 0.060280315541664374
+     },
+     "wins": 3
+    }
+   }
+  },
+  "overall": {
+   "counters": {
+    "mean_over_edge": -0.14105005578021054,
+    "mean_p_over": 0.46348505415222746,
+    "mean_p_push": 0.0,
+    "mean_p_under": 0.5365149458477725,
+    "mean_under_edge": 0.018511345237719076,
+    "no_recommendation": 19,
+    "opportunities": 85,
+    "over_favored": 23,
+    "over_recommended": 14,
+    "over_share": 0.27058823529411763,
+    "quote_side_records": 170,
+    "two_sided_opportunities": 85,
+    "under_favored": 62,
+    "under_recommended": 52,
+    "under_recommended_share": {
+     "hi": 0.8692201489207618,
+     "k": 52,
+     "lo": 0.6748692879502294,
+     "n": 66,
+     "share": 0.7878787878787878
+    },
+    "under_share": 0.7294117647058823
+   },
+   "over": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.2259335029549858
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.46348505415222746
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.6429497024852089
+    },
+    "losses": 56,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.3411764705882353
+    },
+    "settled": 85,
+    "side": "OVER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": -0.12230858356399213
+    },
+    "wins": 29
+   },
+   "over_recommended": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.250976966208596
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6017823229532188
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.6972635020043738
+    },
+    "losses": 7,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": 0.5
+    },
+    "settled": 14,
+    "side": "OVER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 14,
+     "se": null,
+     "value": -0.10178232295321875
+    },
+    "wins": 7
+   },
+   "over_share_of_favored": {
+    "hi": 0.37341959653687073,
+    "k": 23,
+    "lo": 0.18759616662487055,
+    "n": 85,
+    "share": 0.27058823529411763
+   },
+   "under": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.2259335029549858
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.5365149458477725
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.6429497024852089
+    },
+    "losses": 29,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.6588235294117647
+    },
+    "settled": 85,
+    "side": "UNDER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 85,
+     "se": null,
+     "value": 0.12230858356399213
+    },
+    "wins": 56
+   },
+   "under_recommended": {
+    "brier": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 52,
+     "se": null,
+     "value": 0.21390117139069023
+    },
+    "clv": {
+     "mean": null,
+     "n": 0,
+     "note": "no valid later price"
+    },
+    "expected_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 52,
+     "se": null,
+     "value": 0.5902185450328433
+    },
+    "log_loss": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 52,
+     "se": null,
+     "value": 0.6170617245382761
+    },
+    "losses": 15,
+    "pushes": 0,
+    "realized_win_rate": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 52,
+     "se": null,
+     "value": 0.7115384615384616
+    },
+    "settled": 52,
+    "side": "UNDER",
+    "win_rate_gap_realized_minus_expected": {
+     "games": 1,
+     "hi": null,
+     "lo": null,
+     "n": 52,
+     "se": null,
+     "value": 0.12131991650561814
+    },
+    "wins": 37
+   }
+  },
+  "stop_for_architect_review": false,
+  "warnings": [
+   {
+    "action": "NONE (diagnostic; architect review)",
+    "code": "OVER_UNDER_CONCENTRATION_WARNING",
+    "evidence": {
+     "hi": 1.0,
+     "k": 19,
+     "lo": 0.8318207759473837,
+     "n": 19,
+     "note": "concentration alone is not evidence of bias",
+     "share": 1.0
+    },
+    "scope": "FG3M recommended sides"
+   },
+   {
+    "action": "NONE (diagnostic; architect review)",
+    "code": "OVER_UNDER_CONCENTRATION_WARNING",
+    "evidence": {
+     "hi": 0.9931780150064564,
+     "k": 25,
+     "lo": 0.8110722109696524,
+     "n": 26,
+     "note": "concentration alone is not evidence of bias",
+     "share": 0.9615384615384616
+    },
+    "scope": "PTS recommended sides"
+   }
+  ]
+ },
+ "policy": "diagnostic only; AUTOMATIC_MODEL_CORRECTION = False; no launch sample threshold; architect decides",
+ "scope": "SEASON_TO_DATE",
+ "sign_convention": "signed_error = forecast - actual (> 0 over-forecast)",
+ "transfer_cold_start": {
+  "COLD_NO_HISTORY": {
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "REB": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STOCKS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  },
+  "COLD_TRANSFER_IN": {
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "REB": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STOCKS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  }
+ },
+ "warning_action": "NONE: diagnostic labels for architect review; no automatic correction, no research reopened",
+ "warnings": [
+  "OVER_UNDER_CONCENTRATION_WARNING"
+ ]
+}

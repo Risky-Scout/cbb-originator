@@ -1,0 +1,27 @@
+{
+ "rehearsal_version": "cbb-rehearsal-historical-payload-1.0.0",
+ "selected_at": "2026-10-23T20:18:00.079558+00:00",
+ "rule": "Pre-registered rule (written before any odds request or model output): the EARLIEST 2025-26 regular-season, D-I vs D-I, non-neutral game with an EXACT tip on or after the validated replay window start, both teams in a high-major conference (the provider's player-prop coverage proxy), team + player box scores for both teams, a substitution feed and every box-score player canonically identified. Ordered by tip, then canonical id. The second row is the ONLY allowed fallback (used only if the first event's payload has no player-prop market).",
+ "rule_sql_sha256": "a7e8ab82e3a9aa44e28cc9a862cc58874c30d782de34e983dba5ef3aed0f2220",
+ "selection_basis": "DATA AVAILABILITY / INTEGRATION COVERAGE ONLY (no odds, no model output inspected)",
+ "candidates": [
+  {
+   "rank": 1,
+   "canonical_game_id": "G-8feee9ee50320ff3",
+   "tip_utc": "2026-02-10T00:00:00Z",
+   "game_date_et": "2026-02-09",
+   "game": "NC State Wolfpack @ Louisville Cardinals",
+   "player_box_rows": 24,
+   "substitution_rows": 82
+  },
+  {
+   "rank": 2,
+   "canonical_game_id": "G-f585cb92dc41969d",
+   "tip_utc": "2026-02-10T01:45:00Z",
+   "game_date_et": "2026-02-09",
+   "game": "Oregon Ducks @ Indiana Hoosiers",
+   "player_box_rows": 24,
+   "substitution_rows": 68
+  }
+ ]
+}

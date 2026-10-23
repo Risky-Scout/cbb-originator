@@ -900,6 +900,7 @@ def _tick(ctx: Ctx) -> dict:
         OS.write_json(tdir / "tick.json", {**t, "finished_at": ctx.now().isoformat()})
         OS.chain_append(ctx.ops_root, tid)
     if work or p["report_due"]:
+        OS.mirror_out(ctx.ops_root, ctx.prod_root)               # this tick's request ledgers first: no one-tick report lag
         t["reports"] = PM.write_reports(ctx.ops_root, ctx.now(), p["operation_started_at"])
     # ---------------------------------------------------------------- 6. what is due next
     p = plan(ctx, st, ctx.now())

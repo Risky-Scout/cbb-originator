@@ -1,0 +1,248 @@
+{
+ "rank": 1,
+ "canonical_game_id": "G-8feee9ee50320ff3",
+ "as_of": "2026-02-09T22:42:00+00:00",
+ "events_snapshot_timestamp": "2026-02-09T22:40:38Z",
+ "events_listed": 27,
+ "events_credits": 1,
+ "event_match": [
+  {
+   "provider_event_id": "4b884b7909ec80756fc09db4223867b4",
+   "provider_home_team": "Chicago St Cougars",
+   "provider_away_team": "St. Francis (PA) Red Flash",
+   "provider_commence_time": "2026-02-09 21:06:58+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "c43b3359273f53a5789c055ef2709ba8",
+   "provider_home_team": "Bucknell Bison",
+   "provider_away_team": "Navy Midshipmen",
+   "provider_commence_time": "2026-02-09 23:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "eb23a44bdf173b22dfcdd6bfaedb960c",
+   "provider_home_team": "Arkansas-Pine Bluff Golden Lions",
+   "provider_away_team": "Jackson St Tigers",
+   "provider_commence_time": "2026-02-09 23:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "c495ba66d7c26d04ae2d33c198b70e7a",
+   "provider_home_team": "St. John's Red Storm",
+   "provider_away_team": "Xavier Musketeers",
+   "provider_commence_time": "2026-02-09 23:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "315aacd12d99ac1fccfdc3cb66c9a966",
+   "provider_home_team": "Bethune-Cookman Wildcats",
+   "provider_away_team": "Texas Southern Tigers",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "8589ec2198f46e55ff1b9b77c5e78918",
+   "provider_home_team": "North Alabama Lions",
+   "provider_away_team": "Central Arkansas Bears",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "f148ba7834596747b5dc84c7f5298d5d",
+   "provider_home_team": "Florida A&M Rattlers",
+   "provider_away_team": "Prairie View Panthers",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "bd865c79996e9695c5d8b33e2665e179",
+   "provider_home_team": "Howard Bison",
+   "provider_away_team": "Yale Bulldogs",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "5ced6df07a8d42d0c5f1cd7d2b67c7c7",
+   "provider_home_team": "SE Louisiana Lions",
+   "provider_away_team": "Incarnate Word Cardinals",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "4afdb0df12052859783d2c5a346162ea",
+   "provider_home_team": "Indiana St Sycamores",
+   "provider_away_team": "Southern Illinois Salukis",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "04459d9e0e0db9a14f824ad9d8f707b4",
+   "provider_home_team": "Lamar Cardinals",
+   "provider_away_team": "Northwestern St Demons",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "5e1aa928201fd5c2d87346ed74e4d0c4",
+   "provider_home_team": "Louisville Cardinals",
+   "provider_away_team": "NC State Wolfpack",
+   "provider_commence_time": "2026-02-10 00:00:00+00:00",
+   "canonical_game_id": "G-8feee9ee50320ff3",
+   "match_reason": ""
+  },
+  {
+   "provider_event_id": "6f8e0c0f66ffd89ca900da48ce897172",
+   "provider_home_team": "Grambling St Tigers",
+   "provider_away_team": "Alabama A&M Bulldogs",
+   "provider_commence_time": "2026-02-10 00:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "33cc21cd8951ab80e32e7269e2a1e7b7",
+   "provider_home_team": "Drake Bulldogs",
+   "provider_away_team": "Valparaiso Beacons",
+   "provider_commence_time": "2026-02-10 00:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "720b5f750b813d58610fe1904e537cca",
+   "provider_home_team": "Stephen F. Austin Lumberjacks",
+   "provider_away_team": "East Texas A&M Lions",
+   "provider_commence_time": "2026-02-10 00:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "3cd43d525d3ec74dd7e5340908b88891",
+   "provider_home_team": "McNeese Cowboys",
+   "provider_away_team": "Houston Christian Huskies",
+   "provider_commence_time": "2026-02-10 00:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "e5fd69a1f7038b43548ffcc63ad37a14",
+   "provider_home_team": "Nicholls St Colonels",
+   "provider_away_team": "UT Rio Grande Valley Vaqueros",
+   "provider_commence_time": "2026-02-10 00:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "c9bc6c74a39a82436636610d09754453",
+   "provider_home_team": "Miss Valley St Delta Devils",
+   "provider_away_team": "Alcorn St Braves",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "41ebe0bb482d21b76fc0b72fb9ba69cc",
+   "provider_home_team": "Bradley Braves",
+   "provider_away_team": "Belmont Bruins",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "cdda07a8325f953c25abce8eab6ab988",
+   "provider_home_team": "Charleston Cougars",
+   "provider_away_team": "UNC Wilmington Seahawks",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "d10035d9f46a6ebcfd33bc6f6b23fe5c",
+   "provider_home_team": "North Carolina Central Eagles",
+   "provider_away_team": "Delaware St Hornets",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "af81c651b77df25f8746eb68af96c7dd",
+   "provider_home_team": "Evansville Purple Aces",
+   "provider_away_team": "Illinois St Redbirds",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "7acc87605c27043da237397bd7ada3cb",
+   "provider_home_team": "New Orleans Privateers",
+   "provider_away_team": "Texas A&M-CC Islanders",
+   "provider_commence_time": "2026-02-10 01:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "5d17e60236b71d564241ca0944a82f0c",
+   "provider_home_team": "Indiana Hoosiers",
+   "provider_away_team": "Oregon Ducks",
+   "provider_commence_time": "2026-02-10 01:30:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "e751c80a9736a2a2145849f22bb708b1",
+   "provider_home_team": "Southern Jaguars",
+   "provider_away_team": "Alabama St Hornets",
+   "provider_commence_time": "2026-02-10 02:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "7030f28cdeb54fbd95dfc13725bb710f",
+   "provider_home_team": "Kansas Jayhawks",
+   "provider_away_team": "Arizona Wildcats",
+   "provider_commence_time": "2026-02-10 02:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  },
+  {
+   "provider_event_id": "6580bad1b1a5df95e9b57c63a1aec078",
+   "provider_home_team": "Murray St Racers",
+   "provider_away_team": "Northern Iowa Panthers",
+   "provider_commence_time": "2026-02-10 03:00:00+00:00",
+   "canonical_game_id": null,
+   "match_reason": "UNMATCHED_GAME"
+  }
+ ],
+ "status": "FETCHED",
+ "event_id": "5e1aa928201fd5c2d87346ed74e4d0c4",
+ "snapshot_timestamp": "2026-02-09T22:40:38Z",
+ "previous_timestamp": "2026-02-09T22:35:37Z",
+ "next_timestamp": "2026-02-09T22:45:37Z",
+ "bookmakers": [
+  "betonlineag",
+  "betmgm",
+  "williamhill_us",
+  "fanduel"
+ ],
+ "prop_markets_returned": [
+  "player_assists",
+  "player_points",
+  "player_rebounds",
+  "player_threes"
+ ],
+ "unsupported_keys_returned": [],
+ "event_odds_credits": 40,
+ "quota_remaining": 4932537,
+ "response_sha256": "2865bbaff79b32944fbbfe1bea7ca818321a7be02fea32a2ae4b83679b9224cb",
+ "collection": "collections/5e1aa928201fd5c2d87346ed74e4d0c4_20260209T224038Z.json"
+}
