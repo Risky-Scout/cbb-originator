@@ -59,3 +59,33 @@ jobs:
           name: shadow-fixture-bundle-${{ github.run_id }}
           path: data/prod/ci_smoke/bundle_A
           retention-days: 7
+
+  # Measures the real no-op cost of the scheduled gate on a GitHub-hosted runner (the same two sparse checkouts and the
+  # standard-library due check as cbb-shadow-tick.yml); read-only, no secret, no install, no tick.
+  noop-gate-timing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "T0=$(date +%s.%N)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          path: src
+          sparse-checkout: |
+            cbb_platform/prod/due_check.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ops/cbb-2026-27-shadow-state
+          path: ops
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/ticks/*/shadow_ledger.jsonl.gz
+            !/ticks/*/side_monitor.jsonl.gz
+            !/ticks/*/quotes_normalized.csv.gz
+          sparse-checkout-cone-mode: false
+      - name: Due check (no-op gate) + elapsed
+        run: |
+          python3 src/cbb_platform/prod/due_check.py ops
+          python3 -c "import os,time;print(f'gate_elapsed_seconds={time.time()-float(os.environ[\"T0\"]):.1f}')"

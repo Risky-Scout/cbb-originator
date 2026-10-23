@@ -6,7 +6,7 @@ encryption key, temporary roots. No network, no real credential, no model change
 
     11-01 12:00  bootstrap tick (first sync, free events listing)      -> immediate re-tick: nothing at all happens
     11-05 06:00  game D final + knowable                               -> ingested; FIRST_LIVE_COMPLETED_GAME_INGESTION
-    11-10 23:00  A/B/C inside [cutoff - 40 min, cutoff)                 -> ONE paid validation (PASS), ONE quote snapshot,
+    11-10 23:00  A/B/C inside [cutoff - 50 min, cutoff)                 -> ONE paid validation (PASS), ONE quote snapshot,
                                                                           ONE bank per game, registry PREDICTED x3
     11-10 23:05  re-tick                                               -> nothing (no duplicate prediction / quote)
     (restore)    fresh prod root from the encrypted working set        -> same state, still nothing to do
@@ -619,3 +619,159 @@ def test_result_needed_for_imminent_scoring_triggers_sync(life, tmp_path):
     n = sch.set_index("canonical_game_id").loc[FF.gid("N")]
     assert n["game_universe"] != "DI_VS_DI" and not n["ingested"]
     assert "RESULT_NEEDED_FOR_SCORING" in p["sync_why"]
+
+
+# ============================================================================ off-Mac automation readiness
+def test_license_gate_blocks_every_off_machine_store_and_bootstrap(tmp_path, monkeypatch):
+    """Starter Pack-derived rows are in the extract and the working set: no remote store is opened, and the bootstrap
+    does nothing, unless the tracked licence record says PERMITTED (the shipped record is UNCLEAR)."""
+    assert json.loads(OP.LICENSE_RECORD.read_text())["status"] != "PERMITTED"
+    calls = []
+    monkeypatch.setattr(OP, "_run", lambda cmd, **kw: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, "", ""))
+    monkeypatch.setenv(PC.OPS_KEY_ENV, KEY)
+    for f in (lambda: OP.release_assets("Risky-Scout/cbb-originator"), lambda: OP.bootstrap("Risky-Scout/cbb-originator")):
+        with pytest.raises(OS.OpsStoreError, match="BLOCKED_LICENSE"):
+            f()
+    assert calls == []                                           # refused before any gh / openssl / git call
+    for status, ok in (("UNCLEAR", False), ("NOT_PERMITTED", False), ("PERMITTED", True)):
+        rec = tmp_path / f"{status}.json"
+        rec.write_text(json.dumps({"status": status}))
+        if ok:
+            assert OP.license_gate(rec)["status"] == "PERMITTED"
+        else:
+            with pytest.raises(OS.OpsStoreError, match="BLOCKED_LICENSE"):
+                OP.license_gate(rec)
+    with pytest.raises(OS.OpsStoreError, match="BLOCKED_LICENSE"):
+        OP.license_gate(tmp_path / "missing.json")
+
+
+def test_bootstrap_requires_the_encryption_key(tmp_path, monkeypatch):
+    rec = tmp_path / "ok.json"
+    rec.write_text(json.dumps({"status": "PERMITTED"}))
+    monkeypatch.setattr(OP, "LICENSE_RECORD", rec)
+    monkeypatch.delenv(PC.OPS_KEY_ENV, raising=False)
+    monkeypatch.setattr(OP, "_run", lambda cmd, **kw: pytest.fail(f"no call expected: {cmd[0]}"))
+    with pytest.raises(OS.OpsStoreError, match="BLOCKED_CREDENTIAL"):
+        OP.bootstrap("Risky-Scout/cbb-originator")
+
+
+def test_encryption_key_never_in_argv_or_error_text(tmp_path, monkeypatch):
+    """The key reaches openssl through the environment (`-pass env:NAME`), never argv; a failure message never
+    carries it; a wrong key fails closed and the restore target is not written."""
+    monkeypatch.setenv(PC.OPS_KEY_ENV, KEY)
+    seen = []
+    real = subprocess.run
+
+    def spy(cmd, **kw):
+        seen.append(list(cmd))
+        return real(cmd, **kw)
+    monkeypatch.setattr(subprocess, "run", spy)
+    src = tmp_path / "plain.bin"
+    src.write_bytes(os.urandom(4096))
+    OP.encrypt(src, tmp_path / "a.enc")
+    assert all(KEY not in " ".join(c) for c in seen) and any(f"env:{PC.OPS_KEY_ENV}" in c for c in seen)
+    monkeypatch.setenv(PC.OPS_KEY_ENV, "a-different-wrong-key")
+    out = tmp_path / "restored.bin"
+    with pytest.raises(OS.OpsStoreError) as e:
+        OP.decrypt(tmp_path / "a.enc", out)
+    assert KEY not in str(e.value) and "a-different-wrong-key" not in str(e.value)
+
+
+def test_history_extract_restore_checks_sha_and_keeps_last_good(tmp_path, monkeypatch):
+    monkeypatch.setenv(PC.OPS_KEY_ENV, KEY)
+    store = OP.encrypted_dir_assets(tmp_path / "assets")
+    good = tmp_path / "x.duckdb"
+    good.write_bytes(b"frozen-extract-v1" * 100)
+    man = {"extract_sha256": OS.sha256_file(good)}
+    OP.upload_history_extract(store, good, man)
+    dest = tmp_path / "runner" / "history_extract.duckdb"
+    assert OS.sha256_file(OP.fetch_history_extract(store, dest, man)) == man["extract_sha256"]
+    # a tampered remote copy is refused and the last-good local copy is untouched
+    bad = tmp_path / "bad.duckdb"
+    bad.write_bytes(b"tampered")
+    store.put(bad, OP.history_asset_name(man))
+    dest.write_bytes(b"last-good-but-stale")
+    before = dest.read_bytes()
+    with pytest.raises(OS.OpsStoreError, match="sha256"):
+        OP.fetch_history_extract(store, dest, man)
+    assert dest.read_bytes() == before
+    assert not [p for p in dest.parent.iterdir() if p.name.startswith(".")]          # no decrypted temp left behind
+
+
+def test_completed_requests_are_spent_on_the_most_urgent_teams_first():
+    """Ordering only (no request added or removed): substitutions of the game whose team plays again soonest come first."""
+    t = lambda s: pd.Timestamp(s, tz="UTC")
+    games = pd.DataFrame({"canonical_game_id": ["G-a", "G-b", "G-c"], "scheduled_tip_utc": [t("2026-11-05 00:00")] * 3,
+                          "home_team_id": ["T1", "T3", "T5"], "away_team_id": ["T2", "T4", "T6"]})
+    schedule = pd.concat([games.assign(home_points=[70, 71, 72]),
+                          pd.DataFrame({"canonical_game_id": ["G-n1", "G-n2"],
+                                        "scheduled_tip_utc": [t("2026-11-09 00:00"), t("2026-11-06 00:00")],
+                                        "home_team_id": ["T2", "T5"], "away_team_id": ["T9", "T8"],
+                                        "home_points": [pd.NA, pd.NA]})], ignore_index=True)
+    sched = pd.DataFrame({"canonical_game_id": ["G-a", "G-b", "G-c"], "provider_game_id": ["1", "2", "3"]})
+    subs = lambda plan: [p["gameId"] for ep, p in plan if ep == "substitutions/game"]
+    assert subs(Y.plan_completed(games, sched)) == [1, 2, 3]                    # legacy order (no schedule given)
+    ordered = Y.plan_completed(games, sched, schedule)
+    assert subs(ordered) == [3, 1, 2]                    # T5 plays 11-06, T2 plays 11-09, T3/T4 not scheduled
+    assert sorted(map(str, ordered)) == sorted(map(str, Y.plan_completed(games, sched)))   # same request multiset
+
+
+def test_quote_budget_exhaustion_records_every_remaining_event(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from cbb_platform.prod import odds_acquire as OA, odds_feed as OF
+    n = {"k": 0}
+
+    def collect(session, ids, out):
+        n["k"] += 1
+        raise OA.OddsBudgetExceeded("stage credit budget 60 reached")
+    monkeypatch.setattr(OF, "collect", collect)
+    ctx = SimpleNamespace(ops=lambda *a: tmp_path.joinpath(*a), collections=tmp_path / "col")
+    tick = {"tick_id": "K-test"}
+    TK.step_quotes(ctx, SimpleNamespace(entries=[]), [("G-1", "e1"), ("G-2", "e2"), ("G-3", "e3")], tick)
+    rows = OS.read_jsonl(tmp_path / "registry" / "quote_snapshots.jsonl")
+    assert n["k"] == 1 and [r["event_id"] for r in rows] == ["e1", "e2", "e3"]
+    assert {r["status"] for r in rows} == {"BUDGET_EXHAUSTED"} and tick["quote_snapshots"]["collected"] == 0
+
+
+def _cron_minutes(expr: str) -> list[int]:
+    mins, hours = expr.split()[:2]
+    def field(f, top):
+        out = []
+        for part in f.split(","):
+            if part.startswith("*/"):
+                out += list(range(0, top, int(part[2:])))
+            elif "-" in part:
+                a, b = map(int, part.split("-"))
+                out += list(range(a, b + 1))
+            else:
+                out.append(int(part))
+        return out
+    return sorted(h * 60 + m for h in field(hours, 24) for m in field(mins, 60))
+
+
+def test_selected_cadence_gives_two_attempts_per_cutoff_inside_the_lead():
+    """The in-season cron in cbb-shadow-tick.yml and SCORE_LEAD_MINUTES agree: every :00 / :30 cutoff from 13:00 to
+    05:00 UTC has >= 2 scheduled attempts inside [cutoff - lead, cutoff), the first >= 40 min ahead (jitter margin)."""
+    yml = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "cbb-shadow-tick.yml").read_text()
+    crons = [l.split('"')[1] for l in yml.splitlines() if "cron:" in l]
+    season = [c for c in crons if c.split()[3] == "11,12,1,2,3"]
+    slots = sorted({m for c in season for m in _cron_minutes(c)})
+    lead = PC.SCORE_LEAD_MINUTES
+    for h in list(range(13, 24)) + list(range(0, 6)):
+        for mm in (0, 30):
+            cut = h * 60 + mm
+            rel = sorted(((s - cut + 720) % 1440) - 720 for s in slots)
+            inside = [r for r in rel if -lead <= r < 0]
+            if (h, mm) == (5, 30):
+                continue                                          # edge: no 05:30 UTC cutoff (TBD games cut at 05:00)
+            assert len(inside) >= 2 and min(inside) <= -40, (h, mm, inside)
+
+
+def test_source_commit_is_the_checked_out_code_not_the_workflow_commit(monkeypatch):
+    """A scheduled run's GITHUB_SHA is the default-branch commit holding the YAML; the evidence must name the release code."""
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
+    head = TK.source_commit()
+    if head is None:
+        pytest.skip("no .git in this checkout")
+    monkeypatch.setenv("GITHUB_SHA", "0" * 40)
+    assert TK.source_commit() == head

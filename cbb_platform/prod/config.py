@@ -109,7 +109,8 @@ OPS_ROOT = PROD_ROOT / "ops"                        # local checkout of the priv
 OPS_BRANCH = "ops/cbb-2026-27-shadow-state"
 OPS_RELEASE_TAG = "cbb-2026-27-shadow-ops"          # private release holding the encrypted working set + history extract
 OPS_KEY_ENV = "CBB_OPS_ENCRYPTION_KEY"              # AES-256 passphrase for every uploaded asset (never logged)
-SCORE_LEAD_MINUTES = 40                             # earliest scoring instant before the cutoff (scheduler jitter margin)
+SCORE_LEAD_MINUTES = 50                             # earliest scoring instant before the cutoff (scheduler jitter margin;
+                                                    # = the :12/:42 cadence of docs/SHADOW_AUTOMATION_READINESS.md)
 SYNC_INTERVAL_HOURS = 6.0                           # routine state refresh (= the CBBD schedule TTL)
 SYNC_RETRY_MINUTES = 20                             # re-check of a knowable-but-not-yet-ingested game
 RESULT_LAG_RETRY_HOURS = 24                         # how long a knowable game's schedule window is re-checked early

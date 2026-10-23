@@ -59,10 +59,13 @@ def _f(x):
 
 
 def source_commit() -> str | None:
-    """The operational code's commit: GITHUB_SHA on a runner, else read from the repository's .git (no shell)."""
-    if os.environ.get("GITHUB_SHA"):
-        return os.environ["GITHUB_SHA"]
-    g = PC.C.PROJECT_ROOT / ".git"
+    """The operational code's commit, read from the checkout's own .git (no shell). GITHUB_SHA is only a fallback: in a
+    scheduled run it names the default-branch commit that holds the workflow, not the checked-out release code."""
+    sha = _git_head(PC.C.PROJECT_ROOT / ".git")
+    return sha or os.environ.get("GITHUB_SHA") or None
+
+
+def _git_head(g: Path) -> str | None:
     try:
         if g.is_file():
             g = Path(g.read_text().split("gitdir:", 1)[1].strip())
@@ -469,11 +472,13 @@ def step_quotes(ctx: Ctx, session: OA.Session, due_events: list[tuple], tick: di
     """ONE quote snapshot per due event at the decision time (documented NCAAB base keys; the existing per-stage credit
     and request budgets; a validation fetch of the same event within 10 min is reused, not re-bought)."""
     paths, snaps = [], []
-    for gid, eid in due_events:
+    for i, (gid, eid) in enumerate(due_events):
         try:
             got = OF.collect(session, [eid], ctx.collections)
         except OA.OddsBudgetExceeded as e:
-            snaps.append({"event_id": eid, "game_id": gid, "status": "BUDGET_EXHAUSTED", "error": str(e)[:200]})
+            # every remaining due event is recorded (no silent gap in the quote evidence); none is bought
+            snaps += [{"event_id": e2, "game_id": g2, "status": "BUDGET_EXHAUSTED", "error": str(e)[:200]}
+                      for g2, e2 in due_events[i:]]
             break
         except (OA.OddsProviderFailure, OA.OddsGuardViolation) as e:
             snaps.append({"event_id": eid, "game_id": gid, "status": "FAILED", "error": str(e)[:200]})

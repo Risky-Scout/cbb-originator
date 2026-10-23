@@ -1,0 +1,33 @@
+{
+ "record": "off-machine storage / hosted-runner use of the frozen-history extract and the operational working set",
+ "date": "2026-10-23",
+ "status": "UNCLEAR",
+ "allowed_statuses": ["UNCLEAR", "NOT_PERMITTED", "PERMITTED"],
+ "gate": "cbb_platform/ops_persistence.py refuses every remote (off-machine) asset store and the bootstrap unless status == PERMITTED",
+ "evidence": {
+  "starter_pack_license": {
+   "path": "../CBB Starter Pack/starter_pack/LICENSE",
+   "licensor": "Rad Sports Analytics LLC (CollegeBasketballData.com), Copyright 2026",
+   "grant": "PERSONAL, NON-COMMERCIAL USE ONLY by the original purchaser; MAY modify the code or data for private use",
+   "prohibitions": [
+    "repackage, resell, redistribute or publish, in part or in whole, without written permission",
+    "share access to the ZIP file, datasets or code examples with others",
+    "incorporate any portion into a commercial or paid product",
+    "upload or host the files on a public repository (e.g. GitHub, Google Drive, Kaggle)"
+   ],
+   "silent_on": [
+    "private, encrypted storage on third-party cloud infrastructure (a private GitHub release asset)",
+    "processing on third-party hosted compute (GitHub-hosted Actions runners)",
+    "whether this project's purpose (a WizardOfOdds pricing originator) is 'non-commercial'"
+   ]
+  },
+  "project_policy": [
+   "docs/COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY.md: Starter Pack = RESEARCH_ONLY; CBBD API = UNVERIFIED",
+   "docs/OFF_MACHINE_BACKUP_PLAN.md: Starter Pack 'private storage only' named as a backup item, but the bulk-data destination was never decided (section 3, still open)"
+  ],
+  "cbbd_api_terms": "no CBBD API terms of service are present locally",
+  "extract_provenance": "history extract sha256 0338b32d...0ca71: Starter Pack-derived rows dominate (flagship.team_game_outcomes 100%, flagship.played_games ~92%, core.teams / core.team_seasons 100% CBBD_STARTER_PACK; core.players 43% Starter Pack, 57% CBBD API)"
+ },
+ "missing_permission": "written confirmation from the licensor (admin@collegefootballdata.com) that the original purchaser may (1) store an AES-256 encrypted, derived subset of the Starter Pack in a private GitHub repository release and (2) process it on GitHub-hosted runners for a non-public shadow study, and (3) that this use is within 'personal, non-commercial'; or an organizational licence covering it",
+ "decided_by": null
+}

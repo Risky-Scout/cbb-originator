@@ -21,6 +21,20 @@ from pathlib import Path
 from cbb_platform.prod import config as PC, ops_store as OS
 
 ALLOWED_TOOLS = ("git", "gh", "openssl")
+LICENSE_RECORD = Path(__file__).resolve().parents[1] / "docs" / "OFF_MACHINE_DATA_LICENSE.json"
+
+
+def license_gate(record: Path | None = None) -> dict:
+    """The working set and the history extract carry Starter Pack-derived (research-only, personal-use licence) rows.
+    No off-machine asset store is opened, and nothing is uploaded or downloaded, unless the tracked licence record says
+    PERMITTED. Inference from repository privacy is not permission."""
+    import json
+    p = Path(record or LICENSE_RECORD)
+    rec = json.loads(p.read_text()) if p.exists() else {"status": "MISSING"}
+    if rec.get("status") != "PERMITTED":
+        raise OS.OpsStoreError(f"BLOCKED_LICENSE: off-machine data storage is {rec.get('status')} "
+                               f"({p.name}); see its missing_permission")
+    return rec
 
 
 def _run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
@@ -124,6 +138,7 @@ class GhRelease:
 
 
 def release_assets(repo: str, tag: str = PC.OPS_RELEASE_TAG, key_env: str = PC.OPS_KEY_ENV):
+    license_gate()
     rel = GhRelease(repo, tag)
     if not rel.exists():
         raise OS.OpsStoreError(f"private release {tag} missing on {repo}")
@@ -192,6 +207,9 @@ def bootstrap(repo: str, ops_root: Path = PC.OPS_ROOT, tag: str = PC.OPS_RELEASE
     and OPS_KEY_ENV set. Never run by a scheduled tick."""
     import json
     from cbb_platform.prod import history_extract as HX
+    license_gate()
+    if not os.environ.get(PC.OPS_KEY_ENV):
+        raise OS.OpsStoreError(f"BLOCKED_CREDENTIAL: {PC.OPS_KEY_ENV} is not set")
     rel = GhRelease(repo, tag)
     if not rel.exists():
         r = _run(["gh", "release", "create", tag, "-R", repo, "--target", PC.OPS_BRANCH, "--prerelease",

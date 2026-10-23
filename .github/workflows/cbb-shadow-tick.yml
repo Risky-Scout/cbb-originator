@@ -21,12 +21,16 @@ on:
         description: "ARCHITECT ACTION: allow one more paid quote validation after a recorded FAIL"
         type: boolean
         default: false
-  # SCHEDULE DISABLED until the architect approves the cadence report (docs/PROSPECTIVE_SHADOW_OPERATION.md).
-  # Proposed cadence (UTC): every 20 min 14:00-05:59 (covers every T-60 cutoff of 11:00-01:00 ET tips with >= 2
-  # attempts inside the 40-min scoring lead) + hourly 06:00-13:59 (late results, settlement, routine refresh).
+  # SCHEDULE DISABLED. Blockers (docs/SHADOW_AUTOMATION_READINESS.md): off-machine data licence UNCLEAR
+  # (docs/OFF_MACHINE_DATA_LICENSE.json; the tick's --restore/--persist refuse until PERMITTED), repository secrets not
+  # set, and this file must sit on the default branch. Selected cadence (UTC; ET = UTC-5 all season), matching
+  # SCORE_LEAD_MINUTES = 50: :12 and :42 put two attempts at -48 and -18 min before every :00 / :30 cutoff, 13:00-05:00 UTC
+  # (99.9% of exact cutoffs; >= 1 in-window execution 99.9%, >= 2 about 91% under the measured GitHub delay).
   # schedule:
-  #   - cron: "4,24,44 14-23,0-5 * * *"
-  #   - cron: "34 6-13 * * *"
+  #   - cron: "12,42 12-23,0-4 * 11,12,1,2,3 *"   # in season: every cutoff hour (34 runs/day)
+  #   - cron: "12,42 12-23,0-4 1-8 4 *"           # Final Four / title game
+  #   - cron: "34 6,9 * 11,12,1,2,3 *"            # in season, no cutoffs: late results, settlement
+  #   - cron: "34 */6 * 4-10 *"                   # off season / preseason: 6-hourly routine refresh (4 runs/day)
 
 permissions:
   contents: write          # push the ops-state branch + release assets of this private repository only

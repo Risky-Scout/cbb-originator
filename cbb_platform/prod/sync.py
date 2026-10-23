@@ -67,8 +67,27 @@ def knowable_at(tip, tip_quality: str, game_date_et) -> pd.Timestamp:
     return d.tz_localize("America/New_York").tz_convert("UTC")
 
 
-def plan_completed(games: pd.DataFrame, sched: pd.DataFrame) -> list[tuple[str, dict]]:
-    """Requests for newly completed games (games: flagship.games rows with a result to ingest)."""
+def completion_urgency(games: pd.DataFrame, schedule: pd.DataFrame | None) -> dict:
+    """game_id -> scheduled tip of either team's next game without a result (no next game sorts last).
+
+    Under the unchanged per-stage request cap a large final slate is ingested over several syncs. The per-game requests
+    are then spent first on the games whose teams play again soonest, so an imminent forecast does not carry
+    STALE_STATE while a team with no game for days waits. Ordering only: no request is added or removed."""
+    far = pd.Timestamp.max.tz_localize("UTC")
+    if schedule is None or not len(games):
+        return {g: far for g in games["canonical_game_id"]}
+    up = schedule[schedule["home_points"].isna() & schedule["scheduled_tip_utc"].notna()]
+    up_tip = pd.to_datetime(up["scheduled_tip_utc"], utc=True)
+    nxt = {}
+    for g, t, h, a in zip(games["canonical_game_id"], games["scheduled_tip_utc"], games["home_team_id"], games["away_team_id"]):
+        later = up_tip[(up_tip > _utc(t)) & (up["home_team_id"].isin([h, a]) | up["away_team_id"].isin([h, a]))]
+        nxt[g] = later.min() if len(later) else far
+    return nxt
+
+
+def plan_completed(games: pd.DataFrame, sched: pd.DataFrame, schedule: pd.DataFrame | None = None) -> list[tuple[str, dict]]:
+    """Requests for newly completed games (games: flagship.games rows with a result to ingest). With `schedule` (the
+    sync's 2026-27 schedule rows), the per-game requests are ordered by completion_urgency, then game id."""
     reqs = []
     lo, hi = date.fromisoformat(PC.PRODUCTION_SEASON_START), date.fromisoformat(PC.PRODUCTION_SEASON_END)
     days = sorted({_utc(t).date() for t in games["scheduled_tip_utc"].dropna()})
@@ -80,7 +99,9 @@ def plan_completed(games: pd.DataFrame, sched: pd.DataFrame) -> list[tuple[str, 
             reqs.append((ep, {"season": PC.PRODUCTION_SEASON, "startDateRange": a.isoformat(), "endDateRange": b.isoformat()}))
     if len(games):
         pid = sched.set_index("canonical_game_id")["provider_game_id"]
-        reqs += [("substitutions/game", {"gameId": int(pid[g])}) for g in sorted(games["canonical_game_id"])]
+        urg = completion_urgency(games, schedule)
+        reqs += [("substitutions/game", {"gameId": int(pid[g])})
+                 for g in sorted(games["canonical_game_id"], key=lambda g: (urg[g], g))]
     return reqs
 
 
@@ -213,7 +234,7 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
             s = A.Session(f"{sync_id}:completed", max_live_requests=completed_budget or max_live_requests,
                           game_season=lambda gid: PC.PRODUCTION_SEASON if str(gid) in set(S["provider_game_id"]) else None,
                           **kw)
-            plan = plan_completed(newly, S)
+            plan = plan_completed(newly, S, G)
             box = {"games": [g for g, _ in games], "games/teams": [], "games/players": [], "stats/player/season": []}
             subs_req, got_stats = [], False
             for n_done, (ep, p) in enumerate(plan):
