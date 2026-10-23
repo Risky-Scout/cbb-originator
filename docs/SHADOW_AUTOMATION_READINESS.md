@@ -10,21 +10,10 @@
 | Public launch | HOLD |
 | Wagering | disabled |
 
-> **Verdict: automation is NOT enabled.**
->
-> The blocker is the licence: `OFF_MACHINE_DATA_LICENSE = UNCLEAR`. Every off-Mac path (a GitHub runner or any other
-> host) needs the Starter Pack-derived history and working set off this machine. The local licence does not clearly
-> permit that.
->
-> Because of that, none of these steps ran:
-> * secrets setup;
-> * bootstrap;
-> * restore test;
-> * unattended runs;
-> * the merge to main.
->
-> Everything else is analysed, and the in-limit mitigations are implemented. Enabling is a short checklist once
-> permission exists (end of this document).
+> **Superseded 2026-10-23: automation is ACTIVE.** The licence gate is PERMITTED on the user/architect attestation,
+> and every step below that had not run (secrets, bootstrap, restore test, unattended runs, main) is now done. See
+> `docs/SHADOW_AUTOMATION_ACTIVATION.md`. The original verdict was "NOT enabled (licence UNCLEAR)"; the analysis below
+> is kept unchanged as the design record.
 
 ## 1. Licence / provenance (gate A)
 

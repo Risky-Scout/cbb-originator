@@ -143,7 +143,7 @@ Every figure carries its N. Means carry a game-clustered 95% CI, and no launch s
 Rows from games with data-integrity blockers (`STALE_STATE`, `MISSING_PLAYER_STATE`, `FUTURE_LEAKAGE`, …) are excluded
 from model scores and counted separately. Warnings never trigger a correction, a refit or reopened research.
 
-## Scheduler (NOT ENABLED)
+## Scheduler (ENABLED 2026-10-23; see `docs/SHADOW_AUTOMATION_ACTIVATION.md`, which also holds emergency manual recovery)
 
 > **Superseded (2026-10-23)** by `docs/SHADOW_AUTOMATION_READINESS.md`. That report selects the `:12/:42` cadence
 > (36 runs a day, 50-min lead, measured GitHub jitter) and records the blocker: the off-machine data licence is

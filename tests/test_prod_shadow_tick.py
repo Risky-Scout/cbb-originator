@@ -788,3 +788,23 @@ def test_shipped_license_record_is_a_user_architect_attestation():
     assert rec["authorization"]["authorized_by"].startswith("user / architect")
     assert "does NOT itself explicitly grant" in rec["bundled_license_note"]
     assert rec["superseded"]["status"] == "UNCLEAR"
+
+
+def test_scheduler_workflow_enabled_with_the_approved_cadence():
+    """The workflow (same file as on main) runs the approved :12/:42 cadence on GitHub-hosted ubuntu-24.04, keeps manual
+    dispatch, executes code from the prospective-shadow release branch, uses no pip cache and has no deploy step."""
+    import re
+    wf = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "cbb-shadow-tick.yml").read_text()
+    live = "\n".join(l for l in wf.splitlines() if not l.lstrip().startswith("#"))
+    crons = re.findall(r'^\s+- cron: "([^"]+)"', live, re.M)
+    assert crons == ["12,42 12-23,0-4 * 11,12,1,2,3 *", "12,42 12-23,0-4 1-8 4 *", "34 6,9 * 11,12,1,2,3 *",
+                     "34 */6 * 4-10 *"]
+    assert re.search(r"^  schedule:$", live, re.M) and re.search(r"^  workflow_dispatch:$", live, re.M)
+    assert sum(len(_cron_minutes(c)) for c in crons if c.split()[3] == "11,12,1,2,3") == 36    # runs/day in season
+    assert "runs-on: ubuntu-24.04" in live and "self-hosted" not in live
+    assert "ref: release/cbb-v2-prospective-shadow" in live
+    assert "cache: pip" not in live
+    assert "--restore --persist --commit --push" in live
+    assert PC.SCORE_LEAD_MINUTES == 50
+    for banned in ("ssh", "scp", "rsync", "deploy", "wizardofodds", "public_ready"):
+        assert banned not in live.lower(), banned
