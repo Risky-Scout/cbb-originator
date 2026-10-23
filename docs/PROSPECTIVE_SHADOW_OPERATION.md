@@ -45,7 +45,7 @@ and in tests.
      action (`--allow-revalidation`) permits another attempt.
    * A payload with no player-prop market at all is `INCONCLUSIVE_NO_PLAYER_PROPS_POSTED`: nothing was posted yet. It
      may retry at a later eligible event, at most 3 times per day.
-6. **T-60 scoring.** A game is scored at the first tick in `[cutoff − 40 min, cutoff)`.
+6. **T-60 scoring.** A game is scored at the first tick in `[cutoff − 50 min, cutoff)` (`SCORE_LEAD_MINUTES`).
    * First, ONE quote snapshot per matched event (only after PASS; base NCAAB markets only; existing per-stage budget
      of 60 credits / 20 requests).
    * Then ONE `run.daily` call, unchanged. It builds ONE 20,000-draw joint bank per game, and every stat, combo, line,
@@ -144,6 +144,10 @@ Rows from games with data-integrity blockers (`STALE_STATE`, `MISSING_PLAYER_STA
 from model scores and counted separately. Warnings never trigger a correction, a refit or reopened research.
 
 ## Scheduler (NOT ENABLED)
+
+> **Superseded (2026-10-23)** by `docs/SHADOW_AUTOMATION_READINESS.md`. That report selects the `:12/:42` cadence
+> (36 runs a day, 50-min lead, measured GitHub jitter) and records the blocker: the off-machine data licence is
+> UNCLEAR. The original proposal below is kept as history.
 
 **Where it can run.** Only GitHub-hosted Actions (`ubuntu-24.04`). No Mac self-hosted runner and no paid service.
 
