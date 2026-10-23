@@ -358,8 +358,8 @@
  },
  "operations": {
   "cbbd": {
-   "cache_hits": 23,
-   "live_requests": 21,
+   "cache_hits": 26,
+   "live_requests": 28,
    "refused": 0
   },
   "games_by_status": {},
@@ -369,8 +369,8 @@
   "games_settled": 0,
   "odds_api": {
    "credits_used": 0,
-   "live_requests": 3,
-   "quota_remaining_last": 4934558
+   "live_requests": 4,
+   "quota_remaining_last": 4934091
   },
   "quote_snapshots": 0,
   "quote_snapshots_with_bookmakers": 0,
