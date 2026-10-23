@@ -1,5 +1,8 @@
 # CBB V2 JM1_FINAL: shadow production integration (2026-27)
 
+> **Prospective operation (2026-10-22 onward):** see `docs/PROSPECTIVE_SHADOW_OPERATION.md` (one idempotent
+> `shadow_tick`, durable private evidence, monitors, scheduler report). Historical PTS research is closed.
+
 Status: **SHADOW ONLY**. Nothing is deployed, published or wagered. The only Odds API calls made are two free (0-credit)
 events listings; no paid player-prop request has been made.
 The integration branch is `release/cbb-v2-shadow-ready`, cut from the frozen commit

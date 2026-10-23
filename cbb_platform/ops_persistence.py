@@ -183,3 +183,39 @@ def git_commit_push(ops_root: Path, message: str, push: bool = True, branch: str
     if push:
         g("push", "-q", "origin", f"HEAD:refs/heads/{branch}")
     return {"committed": True, "sha": sha, "pushed": push, "branch": branch}
+
+
+# ============================================================================ one-time bootstrap (explicit, manual)
+def bootstrap(repo: str, ops_root: Path = PC.OPS_ROOT, tag: str = PC.OPS_RELEASE_TAG) -> dict:
+    """ONE-TIME, MANUAL: create the private pre-release (if missing), upload the AES-256 encrypted history extract and
+    the current working set, and record the pointer in the evidence tree. Requires the ops-state branch on the remote
+    and OPS_KEY_ENV set. Never run by a scheduled tick."""
+    import json
+    from cbb_platform.prod import history_extract as HX
+    rel = GhRelease(repo, tag)
+    if not rel.exists():
+        r = _run(["gh", "release", "create", tag, "-R", repo, "--target", PC.OPS_BRANCH, "--prerelease",
+                  "--title", "CBB 2026-27 shadow ops state (PRIVATE, encrypted)",
+                  "--notes", "Encrypted operational working set + frozen history extract for the prospective shadow "
+                             "tick. Not a software release. No public use."])
+        if r.returncode:
+            raise OS.OpsStoreError(f"release create failed: {r.stderr.strip()[:300]}")
+    assets = _Encrypted(rel)
+    man = json.loads(HX.MANIFEST.read_text())
+    out = {"release": tag, "history_asset": None}
+    if history_asset_name(man) not in assets.names():
+        out["history_asset"] = upload_history_extract(assets, HX.DEFAULT_OUT, man)
+    import uuid as _u
+    out["working_set"] = OS.persist_working_set(ops_root, assets, "B" + _u.uuid4().hex[:8])
+    return out
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+    ap = argparse.ArgumentParser(prog="cbb_platform.ops_persistence")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    b = sub.add_parser("bootstrap")
+    b.add_argument("--repo", default="Risky-Scout/cbb-originator")
+    a = ap.parse_args()
+    print(json.dumps(bootstrap(a.repo), indent=1, default=str))

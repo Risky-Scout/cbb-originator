@@ -1,0 +1,54 @@
+{
+ "PASS": true,
+ "check": "production path with the compact history extract vs the full frozen lockbox canonical DB",
+ "date": "2026-10-23",
+ "extract_sha256": "0338b32d5228697862e599e7d545cd81718a5750fadfb51f010dbef4bbf0ca71",
+ "scoring_path": {
+  "PASS": true,
+  "as_of": "2026-10-23 00:59:00+00:00",
+  "bank_sha256": {
+   "G-0aed32e6ce15bdee": "fcbd99336fc28610f05db2a61cbd0902ca60f9e90b23829c08502b363911ab47",
+   "G-dbb4627a0ec11f6e": "b03b015aed72360cbde616a934a198203528072ba1b92d005a26c1eaef7bd22d",
+   "G-ebb64de7fba5aa8a": "bea01fe2a32c21445ddc5a5ca9deead72a1340091f0942e04fe28a7124b4c130"
+  },
+  "equal": {
+   "banks": true,
+   "canonical_counts": true,
+   "feature_counts": true,
+   "model_inputs_sha256": true,
+   "predictions": true,
+   "projections_sha256": true
+  },
+  "games": [
+   "G-ebb64de7fba5aa8a",
+   "G-dbb4627a0ec11f6e",
+   "G-0aed32e6ce15bdee"
+  ],
+  "predictions": 1392,
+  "seconds": {
+   "extract": 17.7,
+   "full": 17.3
+  },
+  "sims_per_game": 20000
+ },
+ "state_version": "S20261020T235544Z-a518475bc494",
+ "sync_path": {
+  "preseason_identity_report_equal": true,
+  "relation_sha256": {
+   "core.players": "309072d94dfb6a217eba9004ba5ee94d4bf470e99275a4aad3c712cc7e643c83",
+   "core.recruits": "9bfd474155ebd700443270a35716cdee1859225d626400be394480a2b5dadec5",
+   "core.team_seasons": "e84fed11ef0b678c42575863a552f061f78f7b984044d590b53d7485cd227cb1",
+   "core.teams": "c4f3d5771375535cae49942ac1d063752901f25fe289e4e3b7ec75e41d10cc5a",
+   "core.transfers": "b95b66060688c6df78f7cb88b621c214bdccca4f540911a8851036d4338a939c",
+   "flagship.games": "d0bb721963a4b8e3e0dc0dc044b4cbfa0f914838376441bfddce17ab18c9e081",
+   "flagship.rosters": "51026ec28ad61b54d0ff3479c6e8c53092b5504336d180ea9150bb4fba17cb44",
+   "metadata.prod_schedule": "a6b5c82d080c040cd64761216cb229dab8b0a846cce0d36fa489e0a6db736d6a"
+  },
+  "relations_equal": true,
+  "replay": "cache-only (network refused), clock inside every cached payload TTL",
+  "status": {
+   "extract": "PROMOTED",
+   "full": "PROMOTED"
+  }
+ }
+}

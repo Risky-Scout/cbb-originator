@@ -231,22 +231,23 @@ def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
         why.append("ROUTINE_REFRESH")
     halted = ctx.ops("markers", "COMPLETED_INGESTION_HALTED.json").exists()
     unres = sch[(sch["knowable_at"] <= now) & ~sch["ingested"] & ~sch["not_played"]]
-    # early re-checks (every SYNC_RETRY_MINUTES) only within RESULT_LAG_RETRY_HOURS of a game becoming knowable; after
-    # that a lagging provider is picked up by the routine refresh (no unbounded polling)
+    # every sync force-refreshes the schedule windows of games that became knowable within RESULT_LAG_RETRY_HOURS
     recent = unres[now - unres["knowable_at"] <= pd.Timedelta(hours=PC.RESULT_LAG_RETRY_HOURS)]
-    if len(recent) and not halted and retry_ok:
-        final = recent["status"].astype(str).str.lower() == "final"
-        if final.any():
-            why.append("FINAL_NOT_INGESTED")
-        windows = {w for w in map(_window_of, recent.loc[~final, "scheduled_tip_utc"]) if w}
-        if windows:
-            why.append("RESULT_KNOWABLE")
+    final = recent["status"].astype(str).str.lower() == "final"
+    windows = set() if halted else {w for w in map(_window_of, recent.loc[~final, "scheduled_tip_utc"]) if w}
+    # a result-driven sync (beyond the routine refresh) only when an imminent scoring window needs that team's prior
+    # result (else the forecast would carry STALE_STATE); settlement simply waits for the next routine refresh
+    horizon = now + lead + pd.Timedelta(minutes=60)
+    soon_cut = open_[(open_["cutoff"] > now) & (open_["cutoff"] <= horizon)]
+    soon_teams = set(soon_cut["home_team_id"]) | set(soon_cut["away_team_id"])
+    blocking = unres[(unres["home_team_id"].isin(soon_teams) | unres["away_team_id"].isin(soon_teams))
+                     & (unres["knowable_at"] <= soon_cut["cutoff"].max() if len(soon_cut) else False)]
+    if len(blocking) and not halted and retry_ok:
+        why.append("RESULT_NEEDED_FOR_SCORING")
+        windows |= {w for w in map(_window_of, blocking["scheduled_tip_utc"]) if w}
     if last_ok is not None:
         nxt.append(("sync", last_ok + pd.Timedelta(hours=PC.SYNC_INTERVAL_HOURS)))
-    pend = sch[(sch["knowable_at"] > now) & ~sch["ingested"] & ~sch["not_played"]]
-    if len(pend):
-        nxt.append(("sync", pend["knowable_at"].min()))
-    if len(recent) and not halted and last_try is not None:
+    if len(blocking) and not halted and last_try is not None:
         nxt.append(("sync", last_try + pd.Timedelta(minutes=PC.SYNC_RETRY_MINUTES)))
     # ------------------------------------------------------------ events listing (free)
     lst = OF.listing(now, ctx.cache_raw)

@@ -220,7 +220,7 @@ def test_due_check_gate(tmp_path):
 def test_first_live_completed_game_ingestion_marker(life):
     t2 = life["t2"]
     assert t2["sync"]["status"] == "PROMOTED" and t2["sync"]["completed_games_ingested"] == 1
-    assert "RESULT_KNOWABLE" in t2["sync"]["why"] and t2["sync"]["refresh_windows"] == ["2026-11-01"]
+    assert t2["sync"]["why"] == ["ROUTINE_REFRESH"] and t2["sync"]["refresh_windows"] == ["2026-11-01"]
     m = json.loads((life["w"] / "ops" / "markers" / "FIRST_LIVE_COMPLETED_GAME_INGESTION.json").read_text())
     assert m["status"] == "PASS" and list(m["games"]) == [FF.gid("D")]
     g = m["games"][FF.gid("D")]
@@ -241,9 +241,8 @@ def test_completed_game_queue_and_cache_reuse(life):
     assert [e["status"] for e in ent if e["endpoint"] == "stats/player/season"] == ["FETCHED"]
     sch = life["sched_t4"]
     assert sch.loc[FF.gid("A"), "ingested"] and not sch.loc[FF.gid("B"), "ingested"]
-    assert life["plan_0510"]["sync_due"] is False                   # B / C not final: re-checked after the retry interval
-    p = life["plan_0530"]
-    assert p["sync_due"] and p["refresh_windows"] == ["2026-11-01"] and p["sync_why"] == ["RESULT_KNOWABLE"]
+    for p in (life["plan_0510"], life["plan_0530"]):              # B / C not final: no result-driven polling
+        assert p["sync_due"] is False and p["refresh_windows"] == ["2026-11-01"]   # ... refreshed at the next sync
 
 
 def test_completed_reuse_rule():
@@ -607,3 +606,16 @@ def test_cbbd_ttl_counts_from_last_verification(tmp_path):
     assert get("2026-11-02T12:00Z")["status"] == "CACHE_HIT"                  # 35 h after receipt, 11 h after verification
     assert len(fake.calls) == 2
     assert get("2026-11-03T02:00Z")["status"] == "FETCHED_UNCHANGED" and len(fake.calls) == 3
+
+
+def test_result_needed_for_imminent_scoring_triggers_sync(life, tmp_path):
+    """A knowable, not-yet-ingested game of a team whose next cutoff is imminent triggers a sync (else STALE_STATE)."""
+    st = ST.current(life["w"] / "prod" / "state")
+    sch = TK.schedule(st)
+    ctx = _ctx(tmp_path, life["hist"], Clock("2026-11-12T03:40Z"), None, None)
+    (tmp_path / "ops").mkdir()
+    OS.write_json(tmp_path / "ops" / "OPERATION.json", {"operation_started_at": "2026-11-01T00:00:00+00:00"})
+    p = TK.plan(ctx, st, pd.Timestamp("2026-11-12T03:40Z"))       # T (teams 6, 7) cutoff 05:00Z; N (team 7) unresolved
+    n = sch.set_index("canonical_game_id").loc[FF.gid("N")]
+    assert n["game_universe"] != "DI_VS_DI" and not n["ingested"]
+    assert "RESULT_NEEDED_FOR_SCORING" in p["sync_why"]
