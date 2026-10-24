@@ -36,3 +36,22 @@ modeling/v2_oos/
 
 # Production shadow layer: local state, ledger, runs, bundles, dry-run sandbox (never committed)
 data/prod/
+
+# --- stabilization gate 2026-10-24: generic caches / editor / credential material (no tracked file matches) ---
+.ipynb_checkpoints/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*

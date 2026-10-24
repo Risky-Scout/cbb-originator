@@ -1,0 +1,75 @@
+{
+ "registry_version": "cbb-model-registry-1.0.0",
+ "created": "2026-10-24",
+ "created_by": "repository stabilization gate (docs/STABILIZATION_GATE_2026-10-24.md); records existing facts only",
+ "rule": "DO NOT MODIFY FROZEN PRODUCTION ARTIFACTS IN PLACE. A new champion is a new registry entry with new artifact files, a new commit and architect promotion; the loader (cbb_platform/prod/loader.py) refuses any artifact whose sha256 differs from cbb_platform/prod/config.py ARTIFACTS.",
+ "authoritative_runtime_source": "cbb_platform/prod/config.py (ARTIFACTS, FROZEN_COMMIT, PRODUCTION_VERSION); this registry mirrors it and tests/test_model_registry.py proves they agree",
+ "current_champion": {
+  "champion_name": "JM1_FINAL",
+  "architecture": "JM1_FINAL",
+  "model_version": "cbb-v2-jm1-final-shadow-1.0.0",
+  "artifact_version": "cbb-v2-jm1-final-production-1.0.0",
+  "git_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+  "git_tag": "cbb-v2-jm1-final-2026-27",
+  "research_branch": "research/cbb-v2-interconnected",
+  "production_season": "2026-27 (canonical end-year 2027)",
+  "training_through": "2025-26 (canonical end-year 2026; supervised + historical state)",
+  "supported_stats": ["PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV"],
+  "supported_combos": {"PRA": ["PTS", "REB", "AST"], "PR": ["PTS", "REB"], "PA": ["PTS", "AST"], "RA": ["REB", "AST"], "STOCKS": ["STL", "BLK"]},
+  "draws_per_game": 20000,
+  "prediction_cutoff": "TIP_MINUS_1H (Stage 3 CUTOFF_RULE; retrospectively validated)",
+  "artifacts": {
+   "marginal": {"path": "modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json", "sha256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f"},
+   "jm1_final": {"path": "modeling/player_props_v2/jm1_final_through_2025_26.json", "sha256": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9"},
+   "residual_j2": {"path": "modeling/player_props_v2/jm1_final_residual_dependence_through_2025_26.json", "sha256": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"},
+   "production_manifest": {"path": "modeling/player_props_v2/jm1_final_production_manifest_2026_27.json", "sha256": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab"}
+  },
+  "validation_status": {
+   "protocol": "modeling/player_props_v2/jm1_final_protocol.json (commit 101dc64)",
+   "retrospective_2025_26_confirmation": "PASS, all 10 frozen gates (commit 6898df9; modeling/player_props_v2/jm1_final_confirmation.json)",
+   "final_refit_determinism": "2 fits, identical content sha256 (production manifest deterministic_final_fit)",
+   "production_integrity": "PASS (production manifest production_integrity)",
+   "known_monitoring_warnings": "production manifest known_monitoring_warnings (A_PTS_MEAN_BIAS, B_HIGH_COMBO_OVERS, ...); directional-bias audit RED: PTS; historical PTS repair campaign CLOSED (R1 REJECT, R2 EARLY_REJECT, weighting INFEASIBLE)",
+   "model_parameter_holdout_for_2025_26": false,
+   "prospective_2026_27_performance": "NOT YET OBSERVED (live milestone)"
+  },
+  "promotion": {
+   "frozen": "2026-10-19 (e1353e5)",
+   "shadow_integration": "2026-10-20 (780673f, release/cbb-v2-shadow-ready)",
+   "prospective_shadow_automated": "2026-10-23 (release/cbb-v2-prospective-shadow; scheduler on main d5824da)",
+   "operating_mode": "SHADOW_ONLY; WAGERING_ENABLED = False; PUBLIC_LAUNCH_STATUS = HOLD"
+  },
+  "rollback_artifact": {
+   "model": "S0 = Phase 1B marginals + Phase 2 J2",
+   "marginal": {"path": "modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json", "sha256": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f"},
+   "dependence": {"path": "modeling/player_props_v2/dependence_J2.json", "sha256": "b41564a988f37a4c01a0dec9f8a9cb67aea69717294809b3eaa49acf4babb1ff"},
+   "wired_for_scoring": false,
+   "note": "documented rollback model only (prod/config.py ROLLBACK_MODEL); activating it would be a new promotion, not a config flip"
+  }
+ },
+ "superseded_production_baselines": [
+  {"name": "CBB props v1 production baseline (marginal-only PMFs, 7 stats)", "status": "SUPERSEDED by JM1_FINAL for 2026-27; LEGACY",
+   "git_commit": "cc56eea", "git_tag": "cbb-props-v1-production-baseline", "branch": "release/cbb-v1-production",
+   "artifact": {"path": "modeling/player_props_v1/final_prelockbox_2024_25_artifact.json", "sha256": "96464d0052413841a7309e910d0068b74190d423fe792e08f65c91aafbdcb34f"},
+   "training_through": "2024-25", "validation_status": "2025-26 lockbox GO (1d8d01f, tag cbb-props-v1-lockbox-2025-26-go)"}
+ ],
+ "research_artifacts": {
+  "_note": "RESEARCH / EVIDENCE ONLY. Never loaded by cbb_platform/prod. Kept for reproducibility; do not delete.",
+  "modeling/player_props_v1/refit_2024_25_artifact.json": {"sha256": "3d343eb9511c31c6e50ff465d94a76a98ee929534cb3f3e61df7bd5cbc0639b1", "role": "v1 refit candidate (superseded)"},
+  "modeling/player_props_v1/stl_nb_challenger.json": {"sha256": "1438d4facca9e3b717c22f3d5125664584964eee95118ff947428a29e272fc53", "role": "v1 STL NB challenger (evidence)"},
+  "modeling/player_props_v2/v2_marginal_challenger_through_2025_26.json": {"sha256": "8cb25370be093bcd518f5a0bcbaff902fb0e3340e1ef355dd532d5d291d381f2", "role": "V2 Phase 1 marginal challenger (not selected)"},
+  "modeling/player_props_v2/jm1_final_confirmation_parameters.json": {"sha256": "00516bc6bea4d5a26e231369389bc85749999a2f6a47a906ce3e6a6da11cefc2", "role": "JM1_FINAL confirmation fit through 2024-25 (evidence)"},
+  "modeling/player_props_v2/joint_minutes_v2_dev_parameters.json": {"sha256": "008b906fb634ac757f7bb92222120e991727bc1159a098db4f7046d0eb6741cd", "role": "joint-minutes V2 development parameters (evidence)"},
+  "modeling/player_props_v2/states/": {"role": "Phase 1 annual-refit / stale state family (F2023-F2026 x V1REF/W0/W2/W4); W2 selected then superseded by v1 h=1 weighting"},
+  "modeling/v2_oos/ (gitignored, local)": {"role": "OOS forecast store; sha256 + counts in modeling/player_props_v2/oos_forecast_store*_manifest.json"}
+ },
+ "rejected_experiments_evidence": {
+  "_note": "Rejected work is evidence, not garbage. Branches are kept, never merged.",
+  "JM2": "rejected (modeling/player_props_v2/JM2_POSTMORTEM.md, jm2_postmortem.json)",
+  "Phase 3 S2/S3": "not promoted; S0 champion at 3c0f07d (phase3_selection*.json)",
+  "R1 PTS rate challenger": "R1_REJECT (research/cbb-v2-pts-rate-challenger e4b6e3d)",
+  "R2 PTS rate challenger": "R2_EARLY_REJECT (research/cbb-v2-pts-rate-challenger-r2 49d1a99)",
+  "constrained weighting selection": "WEIGHTING_FAMILY_INFEASIBLE (research/cbb-v2-pts-rate-constrained-selection 734bb25)",
+  "PTS rate calibration audit": "NOT_JUSTIFIED; campaign CLOSED (research/cbb-v2-pts-rate-calibration-audit fe19fcb)"
+ }
+}
