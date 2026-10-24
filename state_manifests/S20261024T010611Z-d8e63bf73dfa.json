@@ -1,0 +1,205 @@
+{
+ "coverage": {
+  "completed_games": 0,
+  "completed_with_player_box": 0,
+  "completed_with_substitutions": 0,
+  "completed_with_team_box": 0,
+  "games": 6015,
+  "last_completed_game": null,
+  "portal_rows_2026": 1584,
+  "recruit_rows_2026": 396,
+  "relation_sha256": {
+   "core.players": "76670f8dae0846b62e3f27bb70dfa51dac4373c4b0cea3ac4cbbdb632b7e3088",
+   "core.recruits": "194cb29fa7904895ca46d69c2bdbd6ad5fc667df5ddbeb4f39a79b4a0e333479",
+   "core.team_seasons": "e84fed11ef0b678c42575863a552f061f78f7b984044d590b53d7485cd227cb1",
+   "core.teams": "c4f3d5771375535cae49942ac1d063752901f25fe289e4e3b7ec75e41d10cc5a",
+   "core.transfers": "d1cde51124b4afada30dab614ebb35ebeeb13bc3726e7d300ddb66648fa21b67",
+   "flagship.games": "d0bb721963a4b8e3e0dc0dc044b4cbfa0f914838376441bfddce17ab18c9e081",
+   "flagship.rosters": "86494f20fd138b4c97d68de227267a02b4fee4fc51af8465151381f1b7babd1c",
+   "metadata.prod_schedule": "a6b5c82d080c040cd64761216cb229dab8b0a846cce0d36fa489e0a6db736d6a"
+  },
+  "scheduled_games": 6015
+ },
+ "created_at": "2026-10-24T01:06:11.614860+00:00",
+ "division_one_2026_27": {
+  "method": "NON_EMPTY_CBBD_ROSTER_2026_27",
+  "teams": 365
+ },
+ "feed_provenance": {
+  "games|{\"endDateRange\": \"2026-11-01\", \"season\": 2027, \"startDateRange\": \"2026-08-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2026-11-01",
+    "season": 2027,
+    "startDateRange": "2026-08-01"
+   },
+   "received_at": "2026-10-20T23:43:00.960686+00:00",
+   "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "games|{\"endDateRange\": \"2026-12-01\", \"season\": 2027, \"startDateRange\": \"2026-11-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2026-12-01",
+    "season": 2027,
+    "startDateRange": "2026-11-01"
+   },
+   "received_at": "2026-10-20T23:43:01.728819+00:00",
+   "sha256": "96660d054f6cdfa86196daec60a84e9e1d3ea3f50bbbc6d577eebd306b3ac4ce"
+  },
+  "games|{\"endDateRange\": \"2027-01-01\", \"season\": 2027, \"startDateRange\": \"2026-12-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2027-01-01",
+    "season": 2027,
+    "startDateRange": "2026-12-01"
+   },
+   "received_at": "2026-10-20T23:43:02.503929+00:00",
+   "sha256": "b040e5f78910966d01e1af2b6e3894307b76f31c3d6dfead149293ad401be698"
+  },
+  "games|{\"endDateRange\": \"2027-02-01\", \"season\": 2027, \"startDateRange\": \"2027-01-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2027-02-01",
+    "season": 2027,
+    "startDateRange": "2027-01-01"
+   },
+   "received_at": "2026-10-20T23:43:03.188562+00:00",
+   "sha256": "33a53fa50cef88f5b688bc1e5591b015ba1bbcb0204fb2bfe51a2536207b52fa"
+  },
+  "games|{\"endDateRange\": \"2027-03-01\", \"season\": 2027, \"startDateRange\": \"2027-02-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2027-03-01",
+    "season": 2027,
+    "startDateRange": "2027-02-01"
+   },
+   "received_at": "2026-10-20T23:43:05.116598+00:00",
+   "sha256": "a272e30fc81693ebecf52386da3df963cd1235b9ca6b572bd455ce0917438d25"
+  },
+  "games|{\"endDateRange\": \"2027-04-01\", \"season\": 2027, \"startDateRange\": \"2027-03-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2027-04-01",
+    "season": 2027,
+    "startDateRange": "2027-03-01"
+   },
+   "received_at": "2026-10-20T23:43:05.442224+00:00",
+   "sha256": "a8a97b2b2f9bcebced5f92638b17235d873431eecb41c6c67b7af76335d81c84"
+  },
+  "games|{\"endDateRange\": \"2027-07-31\", \"season\": 2027, \"startDateRange\": \"2027-04-01\"}": {
+   "endpoint": "games",
+   "params": {
+    "endDateRange": "2027-07-31",
+    "season": 2027,
+    "startDateRange": "2027-04-01"
+   },
+   "received_at": "2026-10-20T23:43:05.769967+00:00",
+   "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "recruiting/players|{\"year\": 2026}": {
+   "endpoint": "recruiting/players",
+   "file": "20261020T233154683491Z__ee131f4d063afd32.json.gz",
+   "params": {
+    "year": 2026
+   },
+   "received_at": "2026-10-20T23:31:54.683491+00:00",
+   "sha256": "ee131f4d063afd32ba6a4f5427e90c3ce5de1fba86d109e56a20e39eb5f5b8ab"
+  },
+  "recruiting/portal|{\"year\": 2026}": {
+   "endpoint": "recruiting/portal",
+   "file": "20261024T010606220035Z__0c4082d9e6358cc0.json.gz",
+   "params": {
+    "year": 2026
+   },
+   "received_at": "2026-10-24T01:06:06.220035+00:00",
+   "sha256": "0c4082d9e6358cc09ae859ca4780224f1c95203d5156d5f9677ec89ddfd5fa28"
+  },
+  "teams/roster|{\"season\": 2027}": {
+   "endpoint": "teams/roster",
+   "file": "20261020T233154324626Z__8a6052c5f508810a.json.gz",
+   "params": {
+    "season": 2027
+   },
+   "received_at": "2026-10-20T23:31:54.324626+00:00",
+   "sha256": "8a6052c5f508810a6fee44878abbd387db8ea0da82c93c48c8ecc49f8ccb7dce"
+  }
+ },
+ "feed_version": "cbb-prod-cbbd-feed-1.0.0",
+ "historical_rebuild": false,
+ "history_canonical": {
+  "path": "data/lockbox_2025_26/canonical/cbb.duckdb",
+  "role": "frozen, read-only, seasons <= 2025-26"
+ },
+ "increment_sha256": "d8e63bf73dfa9d4e8263f648c2568434fad6fc8281bdb06ac302224b8feecc0e",
+ "input_hashes": {
+  "increment_relations": {
+   "core.players": "76670f8dae0846b62e3f27bb70dfa51dac4373c4b0cea3ac4cbbdb632b7e3088",
+   "core.recruits": "194cb29fa7904895ca46d69c2bdbd6ad5fc667df5ddbeb4f39a79b4a0e333479",
+   "core.team_seasons": "e84fed11ef0b678c42575863a552f061f78f7b984044d590b53d7485cd227cb1",
+   "core.teams": "c4f3d5771375535cae49942ac1d063752901f25fe289e4e3b7ec75e41d10cc5a",
+   "core.transfers": "d1cde51124b4afada30dab614ebb35ebeeb13bc3726e7d300ddb66648fa21b67",
+   "flagship.games": "d0bb721963a4b8e3e0dc0dc044b4cbfa0f914838376441bfddce17ab18c9e081",
+   "flagship.rosters": "86494f20fd138b4c97d68de227267a02b4fee4fc51af8465151381f1b7babd1c",
+   "metadata.prod_schedule": "a6b5c82d080c040cd64761216cb229dab8b0a846cce0d36fa489e0a6db736d6a"
+  },
+  "new_rows": {
+   "core.players": "76670f8dae0846b62e3f27bb70dfa51dac4373c4b0cea3ac4cbbdb632b7e3088",
+   "core.recruits": "fba70c829f8dc6a152edcb655f2750471c4f97ef713eee9802092bb5e162d8b0",
+   "core.team_seasons": "e84fed11ef0b678c42575863a552f061f78f7b984044d590b53d7485cd227cb1",
+   "core.teams": "79580f6086c4613a5fbea2f97bf69a9f55ac6a6a32216b2f8f385e8f70cfdd98",
+   "core.transfers": "d1cde51124b4afada30dab614ebb35ebeeb13bc3726e7d300ddb66648fa21b67",
+   "flagship.games": "398f1b5060ea0701dfb0b687afff4afa208204d399727e174616f10d5f6e22b1",
+   "flagship.rosters": "8256841dea3299ef9a81b781bef974848a009864f645558687cbc8eb694b3388",
+   "metadata.prod_schedule": "de5c771b9650adcf64cf825dc288724ace966f03ed297bf49b6c320456912024"
+  }
+ },
+ "last_completed_game": null,
+ "last_completed_game_included": null,
+ "last_successful_sync": "2026-10-24T01:06:08.751045+00:00",
+ "model_refit": false,
+ "parent_state_version": "S20261023T010605Z-c4a32283e0b5",
+ "preseason_evidence": {
+  "note": "complete = the provider's full 2026 portal / class-of-2026 payloads were acquired; recruits the provider has not linked to a roster athlete stay suppressed (RECRUIT_IDENTITY_UNAVAILABLE)",
+  "portal_2026_complete": true,
+  "portal_as_of": "2026-10-24T01:06:06.220035+00:00",
+  "preseason_identity": {
+   "new_players": 403,
+   "recruits_by_method": {
+    "PROD_P2_COMMITTED_ROSTER_NAME_UNIQUE": 131,
+    "UNRESOLVED_NO_ATHLETE_ID": 265
+   },
+   "recruits_promoted_p2": 131,
+   "roster_players_known_before": 4885,
+   "roster_rows": 5288,
+   "roster_teams_nonempty": 365,
+   "transfers_by_method": {
+    "CANDIDATE_ORIGIN_ROSTER_NAME": 1155,
+    "RESOLVED_ROSTER_CORROBORATED": 300,
+    "UNRESOLVED_NO_ROSTER_MATCH": 129
+   }
+  },
+  "recruits_2026_complete": true,
+  "recruits_as_of": "2026-10-20T23:31:54.683491+00:00",
+  "roster_2027_acquired": true,
+  "source": "CBBD_API_PRODUCTION"
+ },
+ "production_season": 2027,
+ "provider": {
+  "feed_version": "cbb-prod-cbbd-feed-1.0.0",
+  "kind": "LIVE",
+  "name": "CBBD_API_PRODUCTION"
+ },
+ "replaced_relations": [
+  "core.recruits",
+  "core.team_seasons",
+  "core.transfers",
+  "flagship.rosters",
+  "metadata.prod_schedule"
+ ],
+ "roster_as_of": "2026-10-24T01:06:05.752177+00:00",
+ "schedule_as_of": "2026-10-20T23:43:00.960686+00:00",
+ "source_cutoff": "2026-10-24T01:06:08.751045+00:00",
+ "state_version": "S20261024T010611Z-d8e63bf73dfa",
+ "sync_id": "Y20261024T010603Z-d07ede",
+ "training_through": 2026
+}
