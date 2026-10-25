@@ -1,14 +1,23 @@
 {
  "current": {
-  "asset": "ws-K20261025T011217Z-8dc5b8.tar",
-  "created_at": "2026-10-25T01:12:30.862233+00:00",
-  "files": 37,
+  "asset": "ws-K20261025T124810Z-2c8c7c.tar",
+  "created_at": "2026-10-25T12:48:19.552727+00:00",
+  "files": 39,
   "state_version": "S20261025T011228Z-2598b6d08171",
   "tar_bytes": 13117440,
-  "tar_sha256": "05e1819bff15db8937017eb56c1ccc43f35fba8e973e9ddcb7ea920f4e7777db",
-  "tick_id": "K20261025T011217Z-8dc5b8"
+  "tar_sha256": "2b8e9a9b006a07cb95edd07625ed98fde87b653f86d8b7fd1cbfb499a7283b1b",
+  "tick_id": "K20261025T124810Z-2c8c7c"
  },
  "previous": [
+  {
+   "asset": "ws-K20261025T011217Z-8dc5b8.tar",
+   "created_at": "2026-10-25T01:12:30.862233+00:00",
+   "files": 37,
+   "state_version": "S20261025T011228Z-2598b6d08171",
+   "tar_bytes": 13117440,
+   "tar_sha256": "05e1819bff15db8937017eb56c1ccc43f35fba8e973e9ddcb7ea920f4e7777db",
+   "tick_id": "K20261025T011217Z-8dc5b8"
+  },
   {
    "asset": "ws-K20261024T124759Z-ea43a8.tar",
    "created_at": "2026-10-24T12:48:10.111176+00:00",
@@ -26,15 +35,6 @@
    "tar_bytes": 13905920,
    "tar_sha256": "ce54ea15286c35d0e155408ab24eb57b53cab34293cd00ebb912a0db0f3362ac",
    "tick_id": "K20261024T010601Z-87e73f"
-  },
-  {
-   "asset": "ws-K20261023T184822Z-cf7b5e.tar",
-   "created_at": "2026-10-23T18:48:31.953898+00:00",
-   "files": 35,
-   "state_version": "S20261023T010605Z-c4a32283e0b5",
-   "tar_bytes": 13639680,
-   "tar_sha256": "387fe191ceb1a91b49c8d162cc9cbe31135d81c84c8ec638d9ad8affb668ce81",
-   "tick_id": "K20261023T184822Z-cf7b5e"
   }
  ],
  "storage": "AES-256-CBC (openssl, pbkdf2 200000); key CBB_OPS_ENCRYPTION_KEY"
