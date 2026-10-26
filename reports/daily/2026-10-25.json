@@ -1,0 +1,514 @@
+{
+ "by_market": {
+  "AST": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "BLK": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "FG3M": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PA": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PR": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PRA": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "PTS": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "RA": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "REB": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "STL": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "STOCKS": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  },
+  "TOV": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   }
+  }
+ },
+ "center_pts": {
+  "C": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "non_C": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  }
+ },
+ "date_et": "2026-10-25",
+ "early_season": {
+  "first_30_days": {
+   "AST": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PR": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PRA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  },
+  "team_games_le_2": {
+   "AST": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PR": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PRA": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  }
+ },
+ "evidence": {
+  "excluded_not_clean": 0,
+  "player_projections": 0,
+  "quote_side_records": 0,
+  "quoted_lines": 0,
+  "settled_players_played": 0,
+  "settled_quote_sides": 0
+ },
+ "evidence_buckets_pts": {
+  "CUR_0": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_0_100": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_100_300": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  },
+  "CUR_300PLUS": {
+   "projection": {
+    "n": 0
+   },
+   "quoted_lines": {
+    "quoted_lines": 0
+   },
+   "sides": {
+    "opportunities": 0
+   }
+  }
+ },
+ "evidence_chain_head": "0000000000000000000000000000000000000000000000000000000000000000",
+ "high_exposure_pts": {
+  "PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING": false,
+  "definition": "PTS, pregame min_mu >= 30.0",
+  "projection": {
+   "n": 0
+  },
+  "quoted_lines": {
+   "quoted_lines": 0
+  },
+  "sides": {
+   "opportunities": 0
+  }
+ },
+ "market_benchmark": {
+  "all": {
+   "lines": 0,
+   "status": "WAITING_FOR_TWO_SIDED_SETTLED_QUOTES"
+  },
+  "by_market": {}
+ },
+ "operations": {
+  "cbbd": {
+   "cache_hits": 3,
+   "live_requests": 17,
+   "refused": 0
+  },
+  "games_by_status": {},
+  "games_predicted": 0,
+  "games_predicted_with_game_blockers": 0,
+  "games_registered": 0,
+  "games_settled": 0,
+  "odds_api": {
+   "credits_used": 0,
+   "live_requests": 2,
+   "quota_remaining_last": 4917794
+  },
+  "quote_snapshots": 0,
+  "quote_snapshots_with_bookmakers": 0,
+  "timing_deviation_minutes": {
+   "max": null,
+   "median": null,
+   "min": null,
+   "n": 0
+  }
+ },
+ "over_under_sides": {
+  "by_market": {},
+  "overall": {
+   "opportunities": 0
+  },
+  "stop_for_architect_review": false,
+  "warnings": []
+ },
+ "policy": "diagnostic only; AUTOMATIC_MODEL_CORRECTION = False; no launch sample threshold; architect decides",
+ "scope": "2026-10-25",
+ "sign_convention": "signed_error = forecast - actual (> 0 over-forecast)",
+ "transfer_cold_start": {
+  "COLD_NO_HISTORY": {
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "REB": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STOCKS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  },
+  "COLD_TRANSFER_IN": {
+   "PTS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "REB": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STL": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "STOCKS": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   },
+   "TOV": {
+    "projection": {
+     "n": 0
+    },
+    "quoted_lines": {
+     "quoted_lines": 0
+    },
+    "sides": {
+     "opportunities": 0
+    }
+   }
+  }
+ },
+ "warning_action": "NONE: diagnostic labels for architect review; no automatic correction, no research reopened",
+ "warnings": []
+}
