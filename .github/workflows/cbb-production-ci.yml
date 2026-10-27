@@ -1,0 +1,69 @@
+# CBB Originator PRODUCTION CI CANDIDATE (directive 2026-10-26 §15). Verification only: GitHub-hosted Ubuntu, no
+# secrets, no deployment, no SSH, no publication, no wagering. The active scheduler (cbb-shadow-tick.yml on main) and
+# cbb-shadow-ci.yml are NOT changed by this file.
+name: CBB production CI candidate
+
+on:
+  push:
+    branches: ["production/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cbb-production-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the locked environment
+        run: python -m pip install --require-hashes -r requirements.lock.txt
+      - name: Verify the frozen JM1_FINAL artifacts (sha256)
+        run: |
+          sha256sum -c - <<'EOF'
+          bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f  modeling/player_props_v2/v2_marginal_final_v1ref_through_2025_26.json
+          b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9  modeling/player_props_v2/jm1_final_through_2025_26.json
+          e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1  modeling/player_props_v2/jm1_final_residual_dependence_through_2025_26.json
+          7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab  modeling/player_props_v2/jm1_final_production_manifest_2026_27.json
+          EOF
+          python -m cbb_platform.prod.run verify-artifacts > /dev/null
+      - name: Focused production tests (replay equivalence skips without the local frozen stores)
+        run: python -m pytest tests/test_prod_shadow.py tests/test_prod_replay.py -q
+      - name: Focused 2026-27 data-feed tests (labeled CBBD-format fixtures, fake HTTP; no network, no credential)
+        run: python -m pytest tests/test_prod_live_feed.py -q
+      - name: Focused 2026-27 quote-feed tests (labeled The Odds API v4-format fixtures, fake HTTP; no network, no credential)
+        run: python -m pytest tests/test_prod_odds_feed.py -q
+      - name: Focused directional-bias audit + prospective side-monitor tests (synthetic; diagnostics only)
+        run: python -m pytest tests/test_prod_directional_audit.py tests/test_prod_side_monitor.py -q
+      - name: Focused prospective shadow-tick tests (fixtures, fake HTTP, temporary roots, dummy encryption key)
+        run: python -m pytest tests/test_prod_shadow_tick.py -q
+      - name: Stabilization gates (golden production equivalence, model registry / artifact hashes)
+        run: python -m pytest tests/test_prod_golden_equivalence.py tests/test_model_registry.py -q
+      - name: Production readiness gates (schedule freshness, monitor semantics, checkpoint invariance, boards / contract / publication)
+        run: >-
+          python -m pytest -q tests/test_prod_schedule_freshness.py tests/test_prod_monitor_semantics.py
+          tests/test_prod_checkpoint_invariance.py tests/test_prod_production_board.py
+      - name: Frozen-model production tests
+        run: python -m pytest -q tests/test_v2_jm1_final_production.py tests/test_props_v1_pricing.py
+      - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
+        run: |
+          python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke
+          python -m cbb_platform.prod.run verify-bundle data/prod/ci_smoke/bundle_A
+      - uses: actions/upload-artifact@v4
+        with:
+          name: production-fixture-bundle-${{ github.run_id }}
+          path: data/prod/ci_smoke/bundle_A
+          retention-days: 7
