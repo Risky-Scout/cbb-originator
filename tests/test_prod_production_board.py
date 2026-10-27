@@ -16,7 +16,7 @@ REQUIRED_CONDITIONS = (
     "PLAYER_IDENTITY_AMBIGUITY", "UNSUPPORTED_PLAYER_STATUS", "STALE_QUOTE", "ODDS_API_FAILURE", "CBBD_FAILURE",
     "MISSING_STATE", "FAILED_STATE_PROMOTION", "POINT_IN_TIME_VIOLATION", "GAME_ALREADY_STARTED", "SIMULATION_FAILURE",
     "NON_NORMALIZED_PMF", "PUBLICATION_FAILURE", "PUBLICATION_RECONCILIATION_MISMATCH",
-    "DUPLICATE_PUBLICATION_CONFLICTING_PAYLOAD")
+    "DUPLICATE_PUBLICATION_CONFLICTING_PAYLOAD", "COMMERCIAL_RIGHTS_UNVERIFIED")
 PRIVATE_ONLY = set(PB.PRIVATE_FIELDS) - set(PB.PUBLIC_FIELDS)
 
 
@@ -244,7 +244,16 @@ def test_invalid_or_empty_board_rejected(run, tmp_path):
         PB.publish(b, PB.LocalStagingTransport(tmp_path), tmp_path / "r.jsonl", now=FX.AS_OF)
 
 
-def test_production_transport_is_pending(run, tmp_path):
+def test_public_transport_refused_until_rights_approved(run, tmp_path):
+    assert PB.rights_gate()["COMMERCIAL_RIGHTS_GATE"] == "FAIL"               # register: RESEARCH_ONLY / UNVERIFIED
+    with pytest.raises(PB.PublicationRejected, match="COMMERCIAL_RIGHTS_UNVERIFIED"):
+        PB.publish(_boards(run)["public"], PB.PendingSiteConfirmationTransport(), tmp_path / "r.jsonl", now=FX.AS_OF)
+    approved = {k: "PRODUCTION_APPROVED" for k in PB.RIGHTS_REGISTER}
+    assert PB.rights_gate(approved)["COMMERCIAL_RIGHTS_GATE"] == "PASS"
+
+
+def test_production_transport_is_pending(run, tmp_path, monkeypatch):
+    monkeypatch.setattr(PB, "rights_gate", lambda *a, **k: {"COMMERCIAL_RIGHTS_GATE": "PASS", "unapproved_sources": {}})
     with pytest.raises(PB.TransportPending):
         PB.publish(_boards(run)["public"], PB.PendingSiteConfirmationTransport(), tmp_path / "r.jsonl", now=FX.AS_OF)
     assert not (tmp_path / "r.jsonl").exists() or "PUBLISHED" not in (tmp_path / "r.jsonl").read_text()

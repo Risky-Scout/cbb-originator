@@ -83,7 +83,21 @@ FAIL_CLOSED_MATRIX = {
     "PUBLICATION_RECONCILIATION_MISMATCH": (False, True, False, False, True),
     "DUPLICATE_PUBLICATION_CONFLICTING_PAYLOAD": (False, True, False, False, True),
     "BETTING_POLICY_MISSING": (True, True, False, False, False),
+    "COMMERCIAL_RIGHTS_UNVERIFIED": (False, True, False, False, True),
 }
+
+# ------------------------------------------------------------------ commercial / publication rights (frozen policy
+# docs/COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY.md §2-§3; spec v1 §9): a PUBLIC transport refuses any board
+# whose production sources are not PRODUCTION_APPROVED. Mirrors the register; a status change is a new, approved
+# register version (never edited here to make publication pass).
+RIGHTS_REGISTER = {"CBB Starter Pack (frozen history extract)": "RESEARCH_ONLY",
+                   "CBBD API (collegebasketballdata.com)": "UNVERIFIED"}
+PUBLIC_BOARD_SOURCES = tuple(RIGHTS_REGISTER)
+
+
+def rights_gate(register: dict = RIGHTS_REGISTER, sources=PUBLIC_BOARD_SOURCES) -> dict:
+    bad = {s: register.get(s, "MISSING") for s in sources if register.get(s) != "PRODUCTION_APPROVED"}
+    return {"COMMERCIAL_RIGHTS_GATE": "FAIL" if bad else "PASS", "unapproved_sources": bad}
 # run reason codes -> matrix condition (unknown codes block everything: fail closed)
 CODE_CONDITION = {
     "ARTIFACT_HASH_MISMATCH": "ARTIFACT_HASH_MISMATCH", "WRONG_PRODUCTION_SEASON": "WRONG_PRODUCTION_SEASON",
@@ -416,6 +430,7 @@ class TransportPending(RuntimeError):
 class PendingSiteConfirmationTransport:
     """The only production transport until the site owner confirms one (WIZARDOFODDS_INPUTS_REQUIRED)."""
     name = PUBLISH_TRANSPORT
+    public = True
 
     def send(self, payload: dict) -> dict:
         raise TransportPending("WizardOfOdds CBB publication transport is PENDING_SITE_CONFIRMATION")
@@ -427,6 +442,7 @@ class PendingSiteConfirmationTransport:
 class LocalStagingTransport:
     """Local, private staging target used by tests: content-addressed files keyed by idempotency key."""
     name = "LOCAL_STAGING"
+    public = False                                          # private: the rights gate applies to public transports
 
     def __init__(self, root: Path):
         self.root = Path(root)
@@ -461,6 +477,10 @@ def publish(payload: dict, transport, receipts_path: Path, *, now, tips: dict | 
     tips = tips if tips is not None else {r["canonical_game_id"]: r.get("scheduled_tip_utc") for r in payload["rows"]}
     if any(v is None or t >= _utc(v) for v in tips.values()):
         raise PublicationRejected("GAME_ALREADY_STARTED", "no publication at or after tip")
+    if getattr(transport, "public", True):
+        rg = rights_gate()
+        if rg["COMMERCIAL_RIGHTS_GATE"] != "PASS":
+            raise PublicationRejected("COMMERCIAL_RIGHTS_UNVERIFIED", json.dumps(rg["unapproved_sources"]))
     if payload["board_kind"] == "PUBLIC_PROJECTION_BOARD" and not any(r["status"] == "PUBLISHABLE" for r in payload["rows"]):
         raise PublicationRejected("NOTHING_PUBLISHABLE", "every row is suppressed")
     prior = [r for r in _receipts(receipts_path) if r["publication_id"] == payload["publication_id"]
