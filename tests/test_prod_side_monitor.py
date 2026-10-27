@@ -160,8 +160,8 @@ def _frame(n_games=60, err=0.0, under_hit=None, high=True, market="PTS", side_re
 
 def _codes(d):
     rep = {"high_exposure_pts": SD.high_exposure_pts(d),
-           "opening_season": {m: SD._group(d[d["opening_season"] & (d["market"] == m)]) for m in SD.OPENING_MARKETS},
-           "transfer": {m: SD._group(d[d["transfer_in"] & (d["market"] == m)]) for m in SD.TRANSFER_MARKETS},
+           "opening_season": {m: SD._group(d[d["opening_season"] & (d["market"] == m)]) for m in SD.SIDE_MONITOR_OPENING_SEASON_MARKETS},
+           "transfer": {m: SD._group(d[d["transfer_in"] & (d["market"] == m)]) for m in SD.SIDE_MONITOR_TRANSFER_IN_MARKETS},
            "by": {"market": {m: SD._group(g) for m, g in d.groupby("market")}}}
     return {w["code"] for w in SD.warnings(rep, d)}
 

@@ -39,9 +39,10 @@ SIDE_MONITOR_PATH = PC.LEDGER_PATH.parent / "side_monitor.jsonl"           # bes
 REPORT_PATH = PC.LEDGER_PATH.parent / "side_monitor_report.json"
 COMBO_MARKETS = tuple(PC.COMBOS)
 OPENING_TEAM_GAMES = DA.EARLY_TEAM_GAMES                       # team games so far <= 2 (historical RED subgroups)
-OPENING_MARKETS = ("PTS", "AST", "STL", "TOV")
+# Over/Under side-monitor strata (quoted sides only; diagnostics). Distinct from prospective_monitor's report strata.
+SIDE_MONITOR_OPENING_SEASON_MARKETS = ("PTS", "AST", "STL", "TOV")   # opening season: team games so far <= 2
 TRANSFER_CLASS = "COLD_TRANSFER_IN"
-TRANSFER_MARKETS = ("STL", "STOCKS", "TOV", "REB")
+SIDE_MONITOR_TRANSFER_IN_MARKETS = ("STL", "STOCKS", "TOV", "REB")      # cold_start_class == COLD_TRANSFER_IN
 HIGH_EXPOSURE_FOCUS = "PTS"
 Z = 1.959963984540054
 STAT_COLS = {"PTS": "points", "REB": "reb", "AST": "ast", "FG3M": "three_pm", "STL": "stl", "BLK": "blk", "TOV": "tov"}
@@ -408,8 +409,8 @@ def report(path: Path = SIDE_MONITOR_PATH) -> dict:
                                 ("role_pregame", "role_pregame"), ("sportsbook", "sportsbook"), ("day", "game_date"),
                                 ("week", "week"))}
     out["high_exposure_pts"] = high_exposure_pts(d)
-    out["opening_season"] = {m: _group(d[d["opening_season"].astype(bool) & (d["market"] == m)]) for m in OPENING_MARKETS}
-    out["transfer"] = {m: _group(d[d["transfer_in"].astype(bool) & (d["market"] == m)]) for m in TRANSFER_MARKETS}
+    out["opening_season"] = {m: _group(d[d["opening_season"].astype(bool) & (d["market"] == m)]) for m in SIDE_MONITOR_OPENING_SEASON_MARKETS}
+    out["transfer"] = {m: _group(d[d["transfer_in"].astype(bool) & (d["market"] == m)]) for m in SIDE_MONITOR_TRANSFER_IN_MARKETS}
     out["warnings"] = warnings(out, d)
     out["stop_for_architect_review"] = any(w["code"] == "STOP_HIGH_EXPOSURE_UNDER_PROJECTION_WITH_POOR_UNDER_CALIBRATION"
                                            for w in out["warnings"])

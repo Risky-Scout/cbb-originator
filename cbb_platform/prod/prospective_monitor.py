@@ -31,8 +31,10 @@ DATA_INTEGRITY_REASONS = {"FUTURE_LEAKAGE", "STALE_STATE", "MISSING_PLAYER_STATE
                           "PMF_NOT_NORMALIZED", "UNSUPPORTED_ROTATION_SHOCK", "PREDICTION_AFTER_CUTOFF",
                           "WRONG_PRODUCTION_SEASON"}
 HIGH_EXPOSURE_MIN = 30.0
-EARLY_MARKETS = ("PTS", "AST", "STL", "TOV", "PRA", "PR", "PA")
-TRANSFER_MARKETS = ("PTS", "REB", "STL", "TOV", "STOCKS")
+# Report strata of the cumulative / daily prospective report (projections, quoted lines and sides). Distinct from the
+# side monitor's SIDE_MONITOR_* lists: different reports, different historical motivation; memberships differ on purpose.
+EARLY_SEASON_REPORT_MARKETS = ("PTS", "AST", "STL", "TOV", "PRA", "PR", "PA")   # team games <= 2 AND first 30 days
+TRANSFER_COLD_START_REPORT_MARKETS = ("PTS", "REB", "STL", "TOV", "STOCKS")   # COLD_TRANSFER_IN and COLD_NO_HISTORY
 Z = 1.959963984540054
 
 
@@ -270,9 +272,9 @@ def build(ops_root: Path, date: str | None = None) -> dict:
     # 15. early season
     rep["early_season"] = {
         "team_games_le_2": {m: stratum(players, lt, d, m, _mask(players, "opening_season"), _mask(lt, "opening_season"),
-                                       _mask(d, "opening_season")) for m in EARLY_MARKETS},
+                                       _mask(d, "opening_season")) for m in EARLY_SEASON_REPORT_MARKETS},
         "first_30_days": {m: stratum(players, lt, d, m, _mask(players, "first_30_days"), _mask(lt, "first_30_days"),
-                                     _mask(d, "first_30_days")) for m in EARLY_MARKETS}}
+                                     _mask(d, "first_30_days")) for m in EARLY_SEASON_REPORT_MARKETS}}
     # 16. current-season evidence buckets (PTS)
     rep["evidence_buckets_pts"] = {b: stratum(players, lt, d, "PTS", _mask(players, "evidence_bucket", b),
                                               _mask(lt, "evidence_bucket", b), _mask(d, "evidence_bucket", b))
@@ -280,9 +282,9 @@ def build(ops_root: Path, date: str | None = None) -> dict:
     # 17. transfers / cold starts (existing cold_start_class only)
     rep["transfer_cold_start"] = {
         "COLD_TRANSFER_IN": {m: stratum(players, lt, d, m, _mask(players, "transfer_in"), _mask(lt, "transfer_in"),
-                                        _mask(d, "transfer_in")) for m in TRANSFER_MARKETS},
+                                        _mask(d, "transfer_in")) for m in TRANSFER_COLD_START_REPORT_MARKETS},
         "COLD_NO_HISTORY": {m: stratum(players, lt, d, m, _mask(players, "cold_start_new"), _mask(lt, "cold_start_new"),
-                                       _mask(d, "cold_start_new")) for m in TRANSFER_MARKETS}}
+                                       _mask(d, "cold_start_new")) for m in TRANSFER_COLD_START_REPORT_MARKETS}}
     # 18. centers (PTS), with the non-center reference
     rep["center_pts"] = {"C": stratum(players, lt, d, "PTS", _mask(players, "center"), _mask(lt, "center"), _mask(d, "center")),
                          "non_C": stratum(players, lt, d, "PTS", ~_mask(players, "center"), ~_mask(lt, "center"),
@@ -291,8 +293,8 @@ def build(ops_root: Path, date: str | None = None) -> dict:
     sides = {"overall": side_block(d), "by_market": {m: side_block(g) for m, g in d.groupby("market")} if len(d) else {}}
     if len(d):
         srep = {"high_exposure_pts": SD.high_exposure_pts(d),
-                "opening_season": {m: SD._group(d[d["opening_season"] & (d["market"] == m)]) for m in SD.OPENING_MARKETS},
-                "transfer": {m: SD._group(d[d["transfer_in"] & (d["market"] == m)]) for m in SD.TRANSFER_MARKETS},
+                "opening_season": {m: SD._group(d[d["opening_season"] & (d["market"] == m)]) for m in SD.SIDE_MONITOR_OPENING_SEASON_MARKETS},
+                "transfer": {m: SD._group(d[d["transfer_in"] & (d["market"] == m)]) for m in SD.SIDE_MONITOR_TRANSFER_IN_MARKETS},
                 "by": {"market": {m: SD._group(g) for m, g in d.groupby("market")}}}
         sides["warnings"] = SD.warnings(srep, d)
         sides["stop_for_architect_review"] = any(w["code"] == "STOP_HIGH_EXPOSURE_UNDER_PROJECTION_WITH_POOR_UNDER_CALIBRATION"
