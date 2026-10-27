@@ -72,6 +72,11 @@ SYNC_LOG = PROD_ROOT / "sync" / "sync_log.jsonl"
 MAX_LIVE_REQUESTS_PER_STAGE = 20         # architect limit for this phase: a stage that needs more STOPs first
 CBBD_QUOTA_RESERVE = 1_000               # never start a call when fewer than this remain on the account
 SCHEDULE_MAX_AGE_HOURS = 36              # schedule snapshot older than this at prediction time: STALE_STATE
+# REAL prediction / pricing / publication (architect decision 2026-10-26): per game, provider-verified within 2 h at the
+# checkpoint, else ONE targeted refresh of the game's schedule window, else FAIL (prod/schedule_freshness.py). The 36 h
+# rule above stays the run-level recording rule; this gate is additive and never reaches a forecast.
+SCHEDULE_FRESHNESS_MAX_AGE_HOURS = 2.0
+SCHEDULE_FRESHNESS_POLICY = "2_HOURS_TARGETED_REFRESH_FAIL_CLOSED"
 ROSTER_MAX_AGE_HOURS = 7 * 24            # roster snapshot older than this at prediction time: STALE_ROSTER
 
 # ------------------------------------------------------------------ 2026-27 sportsbook quotes (The Odds API v4; production-only path)
