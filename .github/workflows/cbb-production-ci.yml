@@ -59,7 +59,7 @@ jobs:
       - name: Frozen-model production tests
         run: python -m pytest -q tests/test_v2_jm1_final_production.py tests/test_props_v1_pricing.py
       - name: Daily walk-forward refit (eligibility, version store, monitoring arithmetic; the refit tests need local stores)
-        run: python -m pytest -q tests/test_walkforward_units.py tests/test_walkforward_fit.py tests/test_walkforward_training_rows.py tests/test_walkforward_daily.py
+        run: python -m pytest -q tests/test_walkforward_units.py tests/test_walkforward_finalize.py tests/test_walkforward_fit.py tests/test_walkforward_training_rows.py tests/test_walkforward_daily.py tests/test_cbbd_box_route_reconcile.py tests/test_prod_shadow.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke

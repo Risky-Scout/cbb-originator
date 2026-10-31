@@ -1,10 +1,23 @@
 # CBB Originator: 2026-27 daily walk-forward refit
 
-**Status:** implemented on branch `production/cbb-daily-walk-forward-2026-27`, tested locally, NOT merged, NOT scheduled,
-NOT deployed. Architect directive of 2026-10-31 ("CBB ORIGINATOR, 2026-27 DAILY WALK-FORWARD RETRAINING AND CONTINUOUS
+**Status:** implemented on branch `production/cbb-daily-walk-forward-2026-27`, approved in principle by the architect
+(2026-10-31), NOT merged, NOT wired into the live scheduler, NOT deployed. Architect directive of 2026-10-31 ("CBB ORIGINATOR, 2026-27 DAILY WALK-FORWARD RETRAINING AND CONTINUOUS
 PRODUCTION LEARNING"). Code: `cbb_platform/walkforward/`. Tests: `tests/test_walkforward_*.py`.
 
-**Policy change recorded here (precedence rule 5, `docs/ARCHITECTURE_PRECEDENCE.md`):** `DAILY_WALK_FORWARD_REFIT = ENABLED`.
+**Architect decisions of 2026-10-31 (recorded here; precedence rule 5, `docs/ARCHITECTURE_PRECEDENCE.md`):**
+
+1. **Daily parameter refits are APPROVED.** For the 2026-27 production system, approved JM1_FINAL *parameters* may refit
+   daily, and a candidate auto-promotes only after every hard production gate passes. Predictive *architecture* changes
+   stay prohibited without explicit architect approval. Feature search, methodology changes, hyperparameter search,
+   distribution-family changes and challenger promotion stay DISABLED.
+2. **New 2026-27 training-data eligibility:** IDENTITY_RESOLVED, BOX_RECONCILED, FINAL_STATUS, BOX_COMPLETE and
+   POINT_IN_TIME_LEGALITY must all hold. An unresolved game is DEFERRED, never discarded, and enters a later version once
+   valid (§3). The historical 2013-14..2025-26 training population is NOT changed. The ~158 historical 2025-26 games that
+   would fail the new rule stay in the frozen population, so the opening reproduction stays exact.
+3. **Monitoring thresholds:** `docs/walkforward/PROPOSED_MONITORING_THRESHOLDS.json` stays PROPOSED / report-only and
+   never blocks promotion. Already-approved governance thresholds are preserved.
+
+`DAILY_WALK_FORWARD_REFIT = ENABLED`.
 The ARCHITECTURE stays frozen (JM1_FINAL). The PARAMETERS are re-estimated every morning by the SAME approved procedure
 on newer legal data. This supersedes two things in operation:
 - "FREEZE JM1_FINAL FOR THE ENTIRE 2026-27 SEASON";
@@ -67,11 +80,10 @@ Behavior and reporting:
 - Each version's `training_manifest.json` records EXPECTED / FINALIZED / INCLUDED / DEFERRED / EXCLUDED games and the
   count by reason.
 
-**Population note for the architect.** The identity and reconciliation rules are stricter than the historical
-training store:
-- In 2025-26, 139 D-I games had ≥ 1 unresolved player row and 19 did not reconcile. Those games were in the historical
-  store.
-- The daily rule defers them, as the directive requires. Their player-state history is still used for features,
+**Population (architect ruling 2026-10-31).** The identity and reconciliation rules apply to NEW 2026-27 games only.
+- In 2025-26, 139 D-I games had ≥ 1 unresolved player row and 19 did not reconcile. They stay in the frozen historical
+  population, unchanged.
+- A 2026-27 game failing these rules is DEFERRED until valid. Its box rows still feed player-state history for features,
   exactly as historically.
 
 ## 4. Training rows (`walkforward/training_rows.py`)
@@ -122,10 +134,17 @@ re-composes the ~15 lines of `phase3.fit_structure / residual_rows / build_proce
 - Environment uses team-games 2013-14..T. The GLM uses OOS rows 2022-23..T.
 - The residual basis is 2024..T, with season F under structure F-1 (the frozen SELECT / CONFIRM / FINAL rule).
 
-**Season guard:**
-- `structural.env_fit` itself refuses seasons > 2026 (`structural.MAX_SEASON`).
-- Inside `fit()` only, `production_season_guard()` lifts it to 2027 and restores it afterwards. This mirrors
-  `prod.features.stage3_window`. No frozen file is edited (`test_frozen_predictive_code_unchanged` still pins them).
+**Season guard:** `structural.env_fit` itself refuses seasons > 2026 (`structural.MAX_SEASON`). No frozen file is
+edited (`test_frozen_predictive_code_unchanged` still pins them). `fit.production_season_guard()` is the only place that
+changes it. It:
+- refuses unless the module holds the frozen 2026;
+- captures the original, sets 2027 for ONE fit, and restores it in `finally` (also when the fit raises);
+- verifies the restoration;
+- is exclusive per process (a non-reentrant lock: a concurrent or nested entry raises instead of sharing modified module
+  state).
+
+`fit()` checks that 2027 is in force inside the fit and that the value is restored afterwards. Every morning run records
+`season_guard` (`tests/test_walkforward_finalize.py`).
 
 **Minimum-information rules:** none exists in the approved procedure, and none is added.
 - Every structural estimate is a pooled fit over 12+ seasons, so early-season 2026-27 rows enter with their natural
@@ -211,9 +230,29 @@ Any failure means `DAILY_MODEL_PROMOTION = REFUSED`.
 - Feature rows are cached per game, and no API call is made by the refit. Ingestion is the existing production sync,
   which fetches only new or unresolved games.
 
-**Corrections:** a changed label of an already-trained game is recorded in `manifests/corrections.jsonl` with
-CORRECTION_RECEIVED_AT, ORIGINAL_VALUE, CORRECTED_VALUE and FIRST_MODEL_VERSION_USING_CORRECTION. Old versions and old
-predictions are never touched.
+**Corrections (`walkforward/corrections.py`):** any MATERIAL change of an official box (player or team row added,
+removed or changed) of a game already in the previous version's training state is recorded in
+`manifests/corrections.jsonl`, with:
+- CORRECTION_RECEIVED_AT: the first state version carrying exactly the corrected box;
+- ORIGINAL_VALUE / CORRECTED_VALUE;
+- FIRST_MODEL_VERSION_USING_CORRECTION.
+
+The detection rules:
+- Identity and diff share one normalized representation: NaN = null = None, 5 = 5.0, timestamps compared as UTC
+  instants, arrays as lists, row order irrelevant.
+- Provenance fields (`event_time`, `historical_knowable_at`, `source_*`, `ingestion_version`, `received_at`,
+  `processed_at`, `player_game_key`) are never a correction.
+- A correction enters only the next version. Old versions and old predictions are never touched.
+
+**Run identity (`daily.run_identity`):** the run id hashes every material input:
+- the cutoff and the state version used;
+- every game's eligibility decision and reason;
+- the training-data identity;
+- the code commit and dirty flag, and the config hash;
+- the previous model the candidate chains to (version + manifest hash).
+
+A rerun is deduplicated only when ALL of these are identical. Any material change produces a new run, which is recorded
+and not suppressed.
 
 ## 8. Determinism and the opening reproduction (measured)
 
@@ -232,6 +271,32 @@ predictions are never touched.
   every bank sha256, input, prediction and board row at atol 1e-12.
 
 The baseline hashes were not updated.
+
+## 8b. Scorer model source (`prod/model_source.py`)
+
+`prod.run daily --model-source {FROZEN_OPENING_BASELINE|ACTIVE_DAILY} [--model-store ROOT]`. The default is
+`FROZEN_OPENING_BASELINE`: the frozen loader, unchanged, and what the live scheduler still uses.
+
+`ACTIVE_DAILY`:
+- loads only the atomic ACTIVE pointer's finalized version;
+- verifies the manifest sidecar, every artifact hash and the pointer's manifest hash;
+- refuses a model trained after the prediction time;
+- stamps `model_source`, the exact version, the training cutoff and all artifact hashes on every PREDICTION record.
+
+When ACTIVE_DAILY is missing or invalid, the scorer **fails closed** (`ModelSourceUnavailable`). There is no fallback to
+the frozen model, because no approved policy defines one. Candidate and refused directories are never loadable.
+
+## 8c. Near-tip quote snapshot (`walkforward/near_tip.py`)
+
+At T−10m before the provider's commence time, each priced game's event odds are captured ONCE. This is a **QUOTE
+SNAPSHOT ONLY**; nothing is rescored.
+- It goes through the existing `odds_feed.collect` / `odds_acquire.Session`: production guards, budget, quota reserve,
+  never at or after commence, and a cached payload under 10 min old is reused.
+- Each row keeps: game, player, market, line, over / under price, sportsbook, quote and collector timestamps, and the
+  preceding prediction (ids, version, training cutoff, P(over | no push) at the same line).
+- Label: **`NEAR_TIP_CLOSE_PROXY_T10M`**, `exact_market_close = False`. It is not a verified closing line.
+- CLV is reported as "CLV vs near-tip proxy".
+- Command: `walkforward.daily snapshot`. It is not wired into any scheduler.
 
 ## 9. Prospective monitoring (`walkforward/monitor.py`; diagnostics only)
 
@@ -264,7 +329,8 @@ The baseline hashes were not updated.
 - MODEL / MARKET / DELTA Brier and log loss (DELTA < 0: the model is better), by stat, role, stat×role, sportsbook,
   checkpoint, line range and model version.
 
-**CLV:** against real later prices only (`monitor.clv`). It is reported separately from proper scoring.
+**CLV:** against the near-tip proxy snapshot only (`monitor.clv_section`), never fabricated. It is reported separately
+from proper scoring.
 
 **ROI:** NOT_AUTHORIZED (wagering disabled).
 
@@ -301,6 +367,9 @@ Changes to existing non-frozen code (default behavior unchanged; golden and repl
 
 ## 11. Compute (measured on this Mac, single-threaded BLAS, `nice 15`)
 
+Shared-Droplet requirement: `docs/walkforward/DROPLET_RESOURCE_REQUIREMENT_CBB.md`. One standalone morning: 118.6 s,
+7.17 GB RSS, 11.2 GB peak footprint. **An 8 GB server is unsafe.**
+
 These are measured from the end-to-end chronology test (`tests/test_walkforward_daily.py`, real frozen history,
 fixture 2026-27 games).
 
@@ -333,5 +402,5 @@ gets at least 8 GB and runs alone.
   about 12 GB of local frozen stores (lockbox canonical, Stage 3 features / labels, OOS stores). The frozen stores are
   read-only.
 - The Git checkout supplies CODE_COMMIT (or set `CBB_CODE_COMMIT`).
-- Wiring the scorer to the ACTIVE pointer (`walkforward.daily.predict`) in place of the frozen loader is a separate,
-  architect-approved change to the live scheduler. It has NOT been made.
+- The scorer supports `--model-source ACTIVE_DAILY` (§8b). Switching the live scheduler to it is a separate,
+  architect-approved change. It has NOT been made.

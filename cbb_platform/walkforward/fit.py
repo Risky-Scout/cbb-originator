@@ -32,6 +32,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import threading
 
 import numpy as np
 import pandas as pd
@@ -48,15 +49,41 @@ class WalkForwardFitError(RuntimeError):
     pass
 
 
+FROZEN_MAX_SEASON = 2026                 # structural.MAX_SEASON as frozen (2025-26); never changed outside the guard
+_GUARD_LOCK = threading.Lock()          # one guarded window per process: no concurrent / nested use of the module state
+
+
+class SeasonGuardViolation(RuntimeError):
+    pass
+
+
 @contextlib.contextmanager
 def production_season_guard():
-    """Admit the production season to the frozen structural functions for this fit only (restored afterwards)."""
-    old = S.MAX_SEASON
-    S.MAX_SEASON = WC.PRODUCTION_SEASON
+    """Admit the production season to the frozen structural functions for ONE daily fit (structural.py is not edited).
+
+    The original value is captured and restored in `finally` (also when the fit raises) and the restoration is verified
+    before the context exits. The window is exclusive per process (a second concurrent or nested entry raises instead of
+    sharing the modified module state); other processes have their own module state."""
+    if not _GUARD_LOCK.acquire(blocking=False):
+        raise SeasonGuardViolation("production_season_guard is already active (concurrent or nested use refused)")
     try:
-        yield
+        old = S.MAX_SEASON
+        if old != FROZEN_MAX_SEASON:
+            raise SeasonGuardViolation(f"structural.MAX_SEASON is {old}, not the frozen {FROZEN_MAX_SEASON}, before the fit")
+        S.MAX_SEASON = WC.PRODUCTION_SEASON
+        try:
+            yield
+        finally:
+            S.MAX_SEASON = old
+            if S.MAX_SEASON != FROZEN_MAX_SEASON:                # pragma: no cover -- defensive
+                raise SeasonGuardViolation("structural.MAX_SEASON was not restored")
     finally:
-        S.MAX_SEASON = old
+        _GUARD_LOCK.release()
+
+
+def guard_state() -> dict:
+    return {"structural_MAX_SEASON": S.MAX_SEASON, "frozen": FROZEN_MAX_SEASON, "guard_active": _GUARD_LOCK.locked(),
+            "RESTORED": S.MAX_SEASON == FROZEN_MAX_SEASON and not _GUARD_LOCK.locked()}
 
 
 def _sort_team(tf: pd.DataFrame) -> pd.DataFrame:
@@ -138,9 +165,13 @@ def fit(cfg: dict, new: dict | None, log=print) -> dict:
     x = inputs(cfg, new)
     T = x["T"]
     with production_season_guard():
+        if S.MAX_SEASON != WC.PRODUCTION_SEASON:
+            raise SeasonGuardViolation("guard did not admit the production season")
         v0 = M.stl_policy(M.fit_v0(x["frame"], x["finals"], cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
         pst = M.fit_participation(x["part"], range(WC.PARTICIPATION_FIRST_SEASON, T + 1), B.POLICY, "WALK_FORWARD")
         params = fit_procedure(T, x["team"], x["store"], log)
+    if not guard_state()["RESTORED"]:
+        raise SeasonGuardViolation(f"season guard not restored after the fit: {guard_state()}")
     return {"T": T, "v0": v0, "pst": pst, "params": params,
             "rows": {"frame": int(len(x["frame"])), "part": int(len(x["part"])), "team": int(len(x["team"])),
                      "store": int(len(x["store"])), "resid": params["resid_rows"]},

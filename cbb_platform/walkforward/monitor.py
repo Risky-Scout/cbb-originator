@@ -107,6 +107,13 @@ def record_run(root: Path, summary: dict) -> dict:
                       on=["game_id", "player_id"], how="left")
         pm["game_date"] = pm["game_id"].map(df.drop_duplicates("game_id").set_index("game_id")["feature_cutoff"]
                                             .map(lambda x: str(pd.Timestamp(x).tz_convert(WC.TZ).date()))).fillna("")
+    qn = run_dir / "quotes_normalized.csv"                      # matched provider events (near-tip snapshot plan)
+    if qn.exists():
+        q = pd.read_csv(qn, dtype={"provider_event_id": str})
+        q = q[q["canonical_game_id"].notna() & q["canonical_game_id"].isin(set(df["game_id"]))]
+        ev = q.drop_duplicates("canonical_game_id")[["canonical_game_id", "provider_event_id", "provider_commence_time"]]
+        ev = ev.rename(columns={"canonical_game_id": "game_id"}).assign(first_run_id=summary["run_id"])
+        _upsert(SO.paths(root)["predictions"] / "events.parquet", ev.astype(str), ["game_id"])
     gd = run_dir / "game_diagnostics.json"
     known = {(r["run_id"], r["game_id"]) for r in SO.read_log(pp["diagnostics"])}
     for d in (json.loads(gd.read_text()) if gd.exists() else []):
@@ -366,6 +373,7 @@ def report(root: Path, day: date) -> dict:
                              "MODEL_VERSION": _by(d, ["model_version"], dist_fn)},
             "market_relative": _market_section(m),
             "drift": drift(b, d, [x for x in fr["diagnostics"]])}
+    out["clv"] = clv_section(root)
     out["roi"] = {"status": "NOT_AUTHORIZED (no actionable-betting policy; WAGERING_ENABLED = False)"}
     return out
 
@@ -399,6 +407,19 @@ def clv(sides: pd.DataFrame, closing: pd.DataFrame | None) -> dict:
     return {"status": "OK", "n": int(len(m)), "clv": PM.cmean(v, m["game_id"].to_numpy()),
             "by_sportsbook": {b: PM.cmean((g["book_decimal_odds"] / g["closing_decimal_odds"] - 1).to_numpy(),
                                           g["game_id"].to_numpy()) for b, g in m.groupby("sportsbook")}}
+
+
+def clv_section(root: Path) -> dict:
+    """CLV of every recorded quote side against the near-tip proxy snapshot (NOT a verified market close)."""
+    from cbb_platform.walkforward import near_tip as NT
+    pp = _p(root)
+    closing = NT.closing_frame(root)
+    if not pp["sides"].exists():
+        return {"status": "BLOCKED_NO_CLOSE_QUOTES", "n": 0, "reference": NT.LABEL}
+    q = SD.load(pp["sides"])
+    out = clv(q[["game_id", "player_id", "market", "line", "side", "sportsbook", "book_decimal_odds"]], closing)
+    return {**out, "reference": NT.LABEL, "exact_market_close": NT.EXACT_MARKET_CLOSE,
+            "note": "CLV vs the near-tip (T-10m) quote snapshot; not CLV vs a verified closing line"}
 
 
 def write_report(root: Path, day: date) -> dict:

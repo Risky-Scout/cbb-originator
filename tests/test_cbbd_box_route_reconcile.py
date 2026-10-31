@@ -167,7 +167,22 @@ def _label_case(ref_rows, rt_rows):
     return R.label_revisions(con, "l", {"ref": "v_ref", "rt": "v_rt"}, ("_row_key",), a, ["tournament"], ["x"])
 
 
-def test_provider_label_revision_is_explained_only_as_a_consistent_text_relabelling():
+# The 2026-27 production ingestion path (added 2026-10-20, after the reconciler and its sha-pinned lockbox evidence were
+# recorded on 2026-10-16) carries the provider `tournament` text through UNREAD: provider-record reshape (cbbd_feed),
+# dtype cast (sync), increment column contract (state) and the synthetic producers of that contract (fixtures,
+# feed_fixtures). The reconciler's LABEL_PRODUCERS cannot be extended without breaking the pinned evidence
+# (tests/test_lockbox_readiness.py), so the pass-through set is audited here, file by file.
+PRODUCTION_PASS_THROUGH = ("cbb_platform/prod/cbbd_feed.py", "cbb_platform/prod/feed_fixtures.py",
+                           "cbb_platform/prod/fixtures.py", "cbb_platform/prod/state.py", "cbb_platform/prod/sync.py")
+PREDICTIVE_PATHS = ("cbb_platform/prod/features.py", "cbb_platform/prod/inputs.py", "cbb_platform/prod/run.py",
+                    "cbb_platform/prod/simulate.py", "cbb_platform/prod/board.py", "cbb_platform/prod/pricing.py",
+                    "cbb_platform/stage3/", "cbb_platform/v2/", "cbb_platform/walkforward/", "cbb_platform/props_v")
+
+
+def test_provider_label_revision_is_explained_only_as_a_consistent_text_relabelling(monkeypatch):
+    # pairing semantics, isolated from the repository-wide consumer scan (tested on its own below)
+    real = R.label_consumers
+    monkeypatch.setattr(R, "label_consumers", lambda col: [])
     ok = _label_case("('a', 2025, 'NCAA Tournament', 1.0), ('b', 2025, 'NCAA Tournament', 2.0), ('c', 2025, NULL, 3.0)",
                      "('a', 2025, 'NCAA', 1.0), ('b', 2025, 'NCAA', 2.0), ('c', 2025, NULL, 3.0)")
     assert ok["by_cause"]["EXPLAINED_PROVIDER_LABEL_REVISION"] == 4 and ok["untraced"] == 0
@@ -178,12 +193,26 @@ def test_provider_label_revision_is_explained_only_as_a_consistent_text_relabell
     # one reference value mapped to two route values is not one-to-one
     amb = _label_case("('a', 2025, 'CBI', 1.0), ('b', 2025, 'CBI', 2.0)", "('a', 2025, 'X', 1.0), ('b', 2025, 'Y', 2.0)")
     assert amb["by_cause"]["EXPLAINED_PROVIDER_LABEL_REVISION"] == 0 and amb["untraced"] == 4
+    # a real downstream consumer still blocks the explanation (the safety rule itself is unchanged)
+    monkeypatch.setattr(R, "label_consumers", lambda col: ["cbb_platform/prod/features.py"])
+    blocked = _label_case("('a', 2025, 'NCAA Tournament', 1.0)", "('a', 2025, 'NCAA', 1.0)")
+    assert blocked["provider_label_revisions"]["applied"] is False
+    assert blocked["by_cause"].get("EXPLAINED_PROVIDER_LABEL_REVISION", 0) == 0
+    monkeypatch.setattr(R, "label_consumers", real)
 
 
-def test_provider_label_columns_are_read_by_no_feature_label_or_scoring_code():
+def test_provider_label_columns_are_read_by_no_feature_label_or_scoring_code(tmp_path):
     assert R.PROVIDER_LABEL_COLUMNS == ("tournament",)
-    assert R.label_consumers("tournament") == []
+    found = R.label_consumers("tournament")
+    assert set(found) <= set(PRODUCTION_PASS_THROUGH), sorted(set(found) - set(PRODUCTION_PASS_THROUGH))
+    assert not [f for f in found if f.startswith(PREDICTIVE_PATHS)]
     assert R.label_consumers("canonical_game_id")            # the scan does find consumed columns
+    probe = R.C.PROJECT_ROOT / "cbb_platform" / "prod" / "_label_probe_tmp.py"   # negative control: a new reader is caught
+    probe.write_text('COLUMN = "tournament"\n')
+    try:
+        assert "cbb_platform/prod/_label_probe_tmp.py" in R.label_consumers("tournament")
+    finally:
+        probe.unlink()
 
 
 def test_e8_classification_under_the_architect_ruling():

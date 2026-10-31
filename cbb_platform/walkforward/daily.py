@@ -38,7 +38,7 @@ import pandas as pd
 from cbb_platform import props_v0 as P, props_v1_refit as R
 from cbb_platform.prod import config as PC, run as RN, state as ST
 from cbb_platform.v2 import phase2 as P2
-from cbb_platform.walkforward import config as WC, eligibility as EL, fit as WF, gates as GT, monitor as MON
+from cbb_platform.walkforward import config as WC, corrections as CR, eligibility as EL, fit as WF, gates as GT, monitor as MON
 from cbb_platform.walkforward import store as SO, training_rows as TR
 
 
@@ -96,6 +96,23 @@ def history_identity() -> dict:
     if not all(sizes.values()):
         raise RuntimeError(f"a frozen training store changed size: {sizes}")
     return {k: v["sha256"] for k, v in dv.items()}
+
+
+def run_identity(cut, state_version: str | None, eligibility: pd.DataFrame, training_identity: dict, code: dict,
+                 cfg_hash: str, previous_model: dict | None) -> dict:
+    """EVERY material logical input of one morning run. Two runs share a run id (and the second is deduplicated) only
+    if all of these are identical: the cutoff, the state version used, every game's eligibility decision + reason, the
+    training-data identity (history store ids + current-season frame / feature-row hashes), the code commit (+ dirty
+    flag), the config identity and the previous model the candidate chains to (version + manifest hash)."""
+    el = eligibility.sort_values("game_id")[["game_id", "decision", "reason"]].astype(str).to_numpy().tolist() if len(eligibility) else []
+    return {"training_cutoff": pd.Timestamp(cut).isoformat(), "state_version": state_version,
+            "eligibility_sha256": _sha(el), "training_identity_sha256": _sha(training_identity),
+            "code_commit": code.get("commit"), "code_dirty": code.get("dirty"), "config_hash": cfg_hash,
+            "previous_model": previous_model}
+
+
+def run_id_of(day: date, ident: dict) -> str:
+    return f"WF-{day.strftime('%Y%m%d')}-{_sha(ident)[:16]}"
 
 
 # ============================================================================ ingest -> eligibility -> training rows
@@ -232,46 +249,6 @@ def build_candidate(root: Path, day: date, ts: dict, cfg: dict, prev_active: str
     return {"dir": cand, "version": vid, "fit_content_sha": shas, "timings": timings, "manifest": man}
 
 
-BOX_KEY = {"flagship.player_game_outcomes": ["canonical_team_id", "canonical_player_id"],
-           "flagship.team_game_outcomes": ["canonical_team_id"]}
-
-
-def _box(increment_db: Path, game_id: str) -> dict:
-    import duckdb
-    con = duckdb.connect(str(increment_db), read_only=True)
-    out = {rel: con.execute(f"""SELECT * EXCLUDE (historical_knowable_at) FROM {rel} WHERE canonical_game_id = ?
-                                ORDER BY ALL""", [game_id]).df() for rel in BOX_KEY}
-    con.close()
-    return out
-
-
-def _box_sha(box: dict) -> str:
-    return _sha({rel: TR._sha_df(df) for rel, df in box.items()})
-
-
-def _val(x):
-    """Comparable / JSON-able box value (NaN / None -> None; arrays -> lists)."""
-    if hasattr(x, "tolist"):
-        x = x.tolist()
-    if isinstance(x, (list, tuple)):
-        return list(x)
-    return None if pd.isna(x) else x
-
-
-def _box_diff(old: dict, new: dict) -> list[dict]:
-    out = []
-    for rel, key in BOX_KEY.items():
-        a, b = old[rel], new[rel]
-        cols = [c for c in b.columns if c not in key + ["canonical_game_id"] and c in a.columns]
-        for r in a.merge(b, on=key, how="outer", suffixes=("_old", "_new")).to_dict("records"):
-            for c in cols:
-                x, y = _val(r.get(f"{c}_old")), _val(r.get(f"{c}_new"))
-                if x != y:
-                    out.append({"relation": rel, **{k: r[k] for k in key}, "field": c,
-                                "original_value": x, "corrected_value": y})
-    return out
-
-
 def corrections(root: Path, prev_version: str | None, state: dict, vid: str, state_root: Path, cut) -> list[dict]:
     """Official box changes (player or team rows) of games ALREADY in the previous version's training state. The
     corrected box enters THIS version only (as labels and as later games' history); old versions are never touched."""
@@ -290,12 +267,12 @@ def corrections(root: Path, prev_version: str | None, state: dict, vid: str, sta
     later.sort(key=lambda v: (v["created_at"], v["state_version"]))
     out = []
     for g in sorted(pe.loc[pe["decision"] == "INCLUDED", "game_id"]):
-        a, b = _box(old_state["increment_db"], g), _box(state["increment_db"], g)
-        if _box_sha(a) == _box_sha(b):
+        a, b = CR.read_box(old_state["increment_db"], g), CR.read_box(state["increment_db"], g)
+        diff = CR.box_diff(a, b)                                 # material changes only (normalized values)
+        if not diff:
             continue
-        diff = _box_diff(a, b)
-        final = _box_sha(b)
-        recv = next((v for v in later if _box_sha(_box(v["increment_db"], g)) == final), None)
+        final = CR.box_identity(b)
+        recv = next((v for v in later if CR.box_identity(CR.read_box(v["increment_db"], g)) == final), None)
         out.append({"game_id": g, "CORRECTION_RECEIVED_AT": recv["created_at"].isoformat() if recv else None,
                     "correction_state_version": recv["state_version"] if recv else None, "changes": diff,
                     "ORIGINAL_VALUE": [d["original_value"] for d in diff], "CORRECTED_VALUE": [d["corrected_value"] for d in diff],
@@ -337,9 +314,16 @@ def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_R
         rec["eligibility"] = EL.summary(ts["eligibility"], prev_inc)
         ident = {"code": SO.code_commit(), "config_hash": config_hash(cfg), "training": ts["identity"]}
         ident["sha"] = _sha({"training": ts["identity"], "code": ident["code"]["commit"], "config": ident["config_hash"]})
-        run_id = f"WF-{day.strftime('%Y%m%d')}-{_sha({'cut': cut.isoformat(), 'ident': ident['sha']})[:12]}"
-        rec.update(run_id=run_id, CANDIDATE_MODEL_VERSION=None, ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"))
         vdir = SO.version_dir(root, day)
+        chain = (json.loads((vdir / SO.MANIFEST).read_text())["PREVIOUS_MODEL_VERSION"]   # a rerun chains as the first run did
+                 if vdir.exists() else prev_active)
+        rid = run_identity(cut, ts["state"]["state_version"] if ts["state"] else None, ts["eligibility"], ts["identity"],
+                           ident["code"], ident["config_hash"],
+                           {"version": chain, "manifest_sha256": SO.active(root)["PRODUCTION_MANIFEST_HASH"]
+                            if chain == prev_active else SO.verify_version(root, chain)["PRODUCTION_MANIFEST_HASH"]})
+        run_id = run_id_of(day, rid)
+        rec.update(run_id=run_id, run_identity=rid, CANDIDATE_MODEL_VERSION=None,
+                   ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"))
         if ts["identity"]["current_season"] is None:
             rec.update(DAILY_REFIT_STATUS="NO_NEW_DATA", DAILY_MODEL_PROMOTION="NOT_REQUIRED",
                        note="no 2026-27 game passes training eligibility at this cutoff: ACTIVE carries forward")
@@ -389,6 +373,7 @@ def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_R
                 shutil.move(str(c["dir"]), dest)
                 rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="REFUSED", refused_candidate=str(dest))
         a = SO.active(root)
+        rec["season_guard"] = WF.guard_state()                   # structural.MAX_SEASON restored to the frozen 2026
         rec.update(ACTIVE_MODEL_VERSION=a["ACTIVE_MODEL_VERSION"],
                    ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"),
                    total_s=time.time() - t0, peak_rss_gb=_rss_gb(),
@@ -401,12 +386,9 @@ def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_R
 
 # ============================================================================ scoring with the ACTIVE version
 def active_for(root: Path, as_of) -> "SO.LD.FrozenModel":
-    """The ACTIVE version, refused when it was trained on data after the prediction time."""
-    m = SO.load_active(root)
-    tc = m.identity["training_cutoff"]
-    if m.identity["model_kind"] == WC.DAILY_KIND and _utc(tc) > _utc(as_of):
-        raise RuntimeError(f"FUTURE_LEAKAGE: ACTIVE {m.identity['model_version']} trained through {tc} > as_of {as_of}")
-    return m
+    """The ACTIVE daily version through the explicit scorer model source (fail closed; never trained after as_of)."""
+    from cbb_platform.prod import model_source as MS
+    return MS.resolve("ACTIVE_DAILY", as_of, root)
 
 
 def predict(as_of, root: Path = WC.STORE_ROOT, quotes_paths=(), availability=None, **kw) -> dict:
@@ -432,6 +414,8 @@ def main(argv=None) -> None:
     p = sub.add_parser("predict")
     p.add_argument("--as-of", required=True)
     p.add_argument("--quotes", nargs="*", default=[])
+    sn = sub.add_parser("snapshot", help="near-tip (T-10m) quote snapshot of due priced games; quotes only, no rescoring")
+    sn.add_argument("--now", default=None)
     sub.add_parser("status")
     sub.add_parser("register-opening")
     rb = sub.add_parser("rollback")
@@ -443,6 +427,13 @@ def main(argv=None) -> None:
         out = morning(day)
     elif a.cmd == "predict":
         out = predict(a.as_of, quotes_paths=a.quotes)
+    elif a.cmd == "snapshot":
+        from cbb_platform.prod import odds_acquire as OA, odds_feed as OF
+        from cbb_platform.walkforward import near_tip as NT
+        now = pd.Timestamp(a.now) if a.now else pd.Timestamp.now(tz="UTC")
+        sess = OA.Session("near_tip_snapshot", event_commence=OF.event_commence_resolver(as_of=now),
+                          clock=lambda: now.to_pydatetime())
+        out = NT.snapshot(WC.STORE_ROOT, now, sess)
     elif a.cmd == "status":
         out = status()
     elif a.cmd == "register-opening":

@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
-                               loader as LD, matching as MT, odds_feed as OF, quotes as QT, readiness as RD,
+                               loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
                                side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
@@ -343,6 +343,9 @@ def main(argv=None) -> None:
     d.add_argument("--quotes", nargs="*", default=[])
     d.add_argument("--availability")
     d.add_argument("--horizon-hours", type=float, default=36.0)
+    d.add_argument("--model-source", choices=MS.SOURCES, default=MS.DEFAULT_SOURCE,
+                   help="FROZEN_OPENING_BASELINE (default; the live scheduler) or ACTIVE_DAILY (walk-forward pointer)")
+    d.add_argument("--model-store", default=None, help="walk-forward store root (ACTIVE_DAILY only)")
     sub.add_parser("verify-artifacts")
     v = sub.add_parser("verify-ledger")
     v.add_argument("--ledger", default=str(PC.LEDGER_PATH))
@@ -351,7 +354,8 @@ def main(argv=None) -> None:
     a = ap.parse_args(argv)
     if a.cmd == "daily":
         av = pd.read_csv(a.availability, parse_dates=["received_at"]) if a.availability else None
-        out = daily(a.as_of, a.quotes, av, horizon_hours=a.horizon_hours)
+        model = None if a.model_source == MS.DEFAULT_SOURCE else MS.resolve(a.model_source, a.as_of, a.model_store)
+        out = daily(a.as_of, a.quotes, av, horizon_hours=a.horizon_hours, model=model)
     elif a.cmd == "verify-artifacts":
         out = LD.verify()
     elif a.cmd == "verify-ledger":
