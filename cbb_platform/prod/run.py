@@ -97,7 +97,10 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
           horizon_hours: float = 36.0, sims: int = PC.SIMS, artifact_paths: dict | None = None,
           game_ids=None, sync_log: Path = PC.SYNC_LOG, odds_cache_root: Path = PC.ODDS_CACHE_RAW,
           odds_collections: Path | None = PC.ODDS_COLLECTIONS, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
-          odds_record: Path = PC.ODDS_VALIDATION_RECORD, side_monitor_path: Path | None = None) -> dict:
+          odds_record: Path = PC.ODDS_VALIDATION_RECORD, side_monitor_path: Path | None = None,
+          model: LD.FrozenModel | None = None) -> dict:
+    """model: an already verified model (the walk-forward ACTIVE daily version, cbb_platform/walkforward/store.py:
+    load_version); None = the frozen opening artifacts through LD.load. Nothing here fits or refits."""
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -105,7 +108,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     run_reasons, notes = [], []
     # ---------------------------------------------------------------- frozen model (hash-verified, never refit)
     try:
-        model = LD.load(artifact_paths)
+        model = model if model is not None else LD.load(artifact_paths)
     except LD.ArtifactIntegrityError as e:
         out = {"run_id": run_id, "readiness_state": "BLOCKED", "run_reasons": [e.reason], "error": str(e), "predictions": 0}
         (run_dir / "run_summary.json").write_text(json.dumps(out, indent=1, default=str))
@@ -289,7 +292,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             "collector_received_at": p.get("collector_received_at"), "readiness_state": p["readiness_state"],
             "eligibility_state": p["eligibility_state"], "suppression_reason": p["suppression_reason"],
             "distribution_method": p["distribution_method"], "pmf_q75": p["pmf_q75"], "mcse": p.get("mcse"),
-            "bank_sha256": p["bank_sha256"], "data_label": data_label}})
+            "bank_sha256": p["bank_sha256"], "data_label": data_label,
+            **{k: ident[k] for k in LD.WALK_FORWARD_IDENTITY_FIELDS if k in ident}}})
     lg = LG.append(recs, ledger_path)
     # ---------------------------------------------------------------- prospective side monitoring (diagnostic only)
     smp = Path(side_monitor_path) if side_monitor_path else Path(ledger_path).parent / "side_monitor.jsonl"
@@ -311,12 +315,16 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     bdir = Path(bundle_dir) if bundle_dir else run_dir / "bundle"
     BD.write(bdir, board, proj, bmeta)
     try:
-        bv = BD.verify(bdir)
+        bv = BD.verify(bdir, ident["artifact_sha256"] if "model_store_version" in ident else None)   # daily: its own hashes
     except BD.BundleChecksumFailure as e:
         run_reasons.append("BUNDLE_CHECKSUM_FAILURE")
         bv = {"BUNDLE_VALID": False, "error": str(e)}
     (run_dir / "game_diagnostics.json").write_text(json.dumps(diag, default=str))
     board.to_csv(run_dir / "board.csv", index=False)
+    if len(dist):                                                # full market pmfs (prospective PMF log score / CRPS)
+        mp = dist[dist["method"] != "NOT_PRICED"][["game_id", "team_id", "player_id", "market", "method", "projection", "pmf"]]
+        mp.assign(pmf=mp["pmf"].map(lambda a: np.asarray(a, dtype=float).tolist())).to_parquet(run_dir / "market_pmfs.parquet",
+                                                                                              index=False)
     row_states = pd.Series([p["readiness_state"] for p in priced]).value_counts().to_dict() if priced else {}
     summary.update({"readiness_state": RD.evaluate(run_reasons)["readiness_state"], "run_reasons": run_reasons,
                     "game_reasons": {g: sorted(set(r)) for g, r in game_reasons.items()}, "banks": banks,

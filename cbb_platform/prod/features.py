@@ -73,8 +73,14 @@ def _has(con, db: str, rel: str) -> bool:
 
 
 def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int,
-                      history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None) -> dict:
-    """Write the as_of-masked canonical input DB. Returns counts + provenance."""
+                      history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None,
+                      blank_targets: bool = True) -> dict:
+    """Write the as_of-masked canonical input DB. Returns counts + provenance.
+
+    blank_targets=False (walk-forward LABEL builds only, cbb_platform/walkforward/training_rows.py): the target games are
+    COMPLETED games whose own outcomes are needed as training labels; they keep their result / box / substitution rows,
+    which must be knowable at as_of (a target that is not is refused). The as_of mask is unchanged. Pregame features
+    are never taken from such a build."""
     out_path = Path(out_path)
     if out_path.exists():
         out_path.unlink()
@@ -110,16 +116,21 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     blank = [c for c in RESULT_COLS + ("has_team_box_score", "has_player_box_score") if c in have]
     nulls = ", ".join(f"NULL::{'BOOLEAN' if c.startswith('has_') else 'INTEGER' if c.endswith('_points') or c == 'overtime_count' else 'INTEGER[]'} AS {c}"
                       for c in blank)
+    not_tgt = "AND canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)" if blank_targets else ""
     con.execute(f"""
     CREATE TABLE flagship.games AS
     SELECT * EXCLUDE (_knowable) FROM sched
-    WHERE home_points IS NOT NULL AND _knowable <= TIMESTAMPTZ '{aso}'
-      AND canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)
-    UNION ALL BY NAME
+    WHERE home_points IS NOT NULL AND _knowable <= TIMESTAMPTZ '{aso}' {not_tgt}
+    {f'''UNION ALL BY NAME
     SELECT * EXCLUDE (_knowable, {", ".join(blank)}), {nulls}
-    FROM sched WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt);
+    FROM sched WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt)''' if blank_targets else ""};
     CREATE TABLE flagship.played_games AS SELECT * FROM flagship.games;
     """)
+    if not blank_targets:
+        unknown = con.execute("SELECT count(*) FROM tgt WHERE canonical_game_id NOT IN (SELECT canonical_game_id FROM flagship.games)").fetchone()[0]
+        if unknown:
+            raise FeatureBuildError(f"{unknown} label targets have no result knowable at {aso}")
+    not_tgt_r = "AND r.canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)" if blank_targets else ""
     for rel in ("team_game_outcomes", "player_game_outcomes"):
         body = " UNION ALL BY NAME ".join(f"SELECT * FROM {d}.flagship.{rel}" + (
             f" WHERE season BETWEEN {PC.HISTORY_FIRST_SEASON} AND {hi}" if d == "hist" else f" WHERE season = {PC.PRODUCTION_SEASON}")
@@ -127,7 +138,7 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
         con.execute(f"""CREATE TABLE flagship.{rel} AS SELECT r.* FROM ({body}) r
             WHERE r.historical_knowable_at <= TIMESTAMPTZ '{aso}'
               AND r.canonical_game_id IN (SELECT canonical_game_id FROM flagship.games)
-              AND r.canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)""")
+              {not_tgt_r}""")
     for rel in UNION_RELATIONS:
         parts = [f"SELECT * FROM {d}.{rel}" for d in srcs if _has(con, d, rel)]
         con.execute(f"CREATE TABLE {rel} AS {' UNION ALL BY NAME '.join(parts)}")
@@ -138,12 +149,12 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     con.execute(f"""CREATE TABLE flagship.substitutions AS SELECT s.* FROM ({body}) s
         WHERE s.historical_knowable_at <= TIMESTAMPTZ '{aso}'
           AND s.canonical_game_id IN (SELECT canonical_game_id FROM flagship.games)
-          AND s.canonical_game_id NOT IN (SELECT canonical_game_id FROM tgt)""")
+          {not_tgt_r.replace("r.", "s.")}""")
     for rel in EMPTY_RELATIONS:                       # outcome-event streams: no frozen JM1_FINAL input reads them
         con.execute(f"CREATE TABLE {rel} AS SELECT * FROM hist.{rel} LIMIT 0")
     counts = {r: con.execute(f"SELECT count(*) FROM {r}").fetchone()[0]
               for r in ("flagship.games", "flagship.team_game_outcomes", "flagship.player_game_outcomes", "flagship.substitutions")}
-    leak = con.execute("""SELECT
+    leak = 0 if not blank_targets else con.execute("""SELECT
         (SELECT count(*) FROM flagship.player_game_outcomes WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt))
       + (SELECT count(*) FROM flagship.team_game_outcomes WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt))
       + (SELECT count(*) FROM flagship.substitutions WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt))
@@ -157,7 +168,7 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     if leak or late:
         raise FeatureBuildError(f"FUTURE_LEAKAGE: target-game outcome rows {leak}, post-as_of rows {late}")
     return {"targets": len(targets), "as_of": aso, "counts": counts, "target_outcome_rows": leak, "post_as_of_rows": late,
-            "sources": srcs}
+            "sources": srcs, "blank_targets": blank_targets}
 
 
 def _universe(con) -> None:
@@ -267,13 +278,13 @@ def model_frame(features_db: Path, cfg: dict, target_game_ids, season: int) -> d
 
 
 def build(run_dir: Path, target_game_ids, target_season: int, as_of, cfg: dict,
-          history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None) -> dict:
+          history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None, blank_targets: bool = True) -> dict:
     """compact canonical -> Stage 3 features -> model frames, inside run_dir (scratch, gitignored)."""
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     t0 = datetime.now(timezone.utc)
     cdb, fdb = run_dir / "canonical_asof.duckdb", run_dir / "features_asof.duckdb"
-    canon = compact_canonical(cdb, target_game_ids, as_of, target_season, history_db, increment_db)
+    canon = compact_canonical(cdb, target_game_ids, as_of, target_season, history_db, increment_db, blank_targets)
     feats = build_features(cdb, fdb, target_game_ids, target_season)
     frames = model_frame(fdb, cfg, target_game_ids, target_season)
     return {**frames, "provenance": {"canonical": canon, "features": feats, "seconds": (datetime.now(timezone.utc) - t0).total_seconds(),

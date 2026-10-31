@@ -1,0 +1,21 @@
+{
+ "status": "PROPOSED_NOT_ACTIVE",
+ "purpose": "Drift / degradation alert thresholds for the 2026-27 daily walk-forward monitor (directive section 26). NONE of these is evaluated as an alert until the architect approves it; cbb_platform/walkforward/monitor.py reports the underlying metrics with N and game-clustered 95% intervals only.",
+ "already_approved_governance": {
+  "source": "PRODUCTION_SCORING_RETRAINING_AND_DEPLOYMENT_POLICY_v1_0.md section 8",
+  "calibration_slope_band": [0.85, 1.15],
+  "rolling_7_day_log_loss_vs_previous_bundle_nats": 0.01,
+  "note": "The calibration-slope band is reported as an ALERT label (never an automatic action). The paired 7-day log-loss rule needs the previous bundle shadow-scored on the same predictions, which the daily path does not do; it is NOT evaluable as written and is listed here for a ruling."
+ },
+ "proposals": {
+  "minimum_sample": {"binary_lines": 200, "distinct_games": 30, "rationale": "no alert below this; avoids first-week noise"},
+  "calibration_gap_abs": {"value": 0.03, "scope": "STAT x ROLE, ROLLING_14_DAY", "rule": "95% CI excludes 0 AND |gap| >= value"},
+  "model_minus_market_log_loss": {"value": 0.0, "scope": "STAT, ROLLING_30_DAY", "rule": "95% CI lower bound > 0 (market better)"},
+  "model_minus_market_brier": {"value": 0.0, "scope": "STAT, ROLLING_30_DAY", "rule": "95% CI lower bound > 0"},
+  "pts_bias_points": {"value": 0.5, "scope": "SEASON_TO_DATE", "rule": "95% CI excludes 0 AND |bias| >= value", "reference": "frozen manifest warning A (2025-26 confirmation JM1_FINAL +0.212)"},
+  "minutes_bias_minutes": {"value": 1.0, "scope": "ROLE, ROLLING_14_DAY", "rule": "95% CI excludes 0 AND |bias| >= value"},
+  "high_combo_overs_brier_vs_season": {"value": 0.002, "scope": "PRA / PR / PA lines >= pmf q75", "reference": "frozen manifest warning B"},
+  "same_team_dependence": {"rule": "mean realized standardized pair product - mean predicted correlation, 95% CI excludes 0", "reference": "frozen manifest warning C"}
+ },
+ "on_breach": "open a CHALLENGER investigation (separate from production, chronologically backtested, approved before promotion). Never an automatic architecture change, refit change or promotion."
+}
