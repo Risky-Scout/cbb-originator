@@ -19,7 +19,11 @@ from cbb_platform import props_v0 as P, props_v0_participation as Q
 from cbb_platform.v2 import latent as L, marginal as M, structural as S
 
 ROTATION_SHOCK_MINUTES = 20.0
-UNAVAILABLE = ("OUT", "OUT_FOR_SEASON")
+UNAVAILABLE = ("OUT", "OUT_FOR_SEASON", "OUT_SEASON", "SUSPENDED", "UNAVAILABLE", "LONG_TERM_OUT")
+# Optional provider columns (prod/rotowire_feed.availability_frame) carried beside the status. availability_gate marks an
+# unresolved status (GTD / QUESTIONABLE / DOUBTFUL / RETURN_DESIGNATION / UNKNOWN, or a source conflict): the player is
+# still forecast with the model's own P(play), unchanged, and every row of his is blocked (never actionable).
+AVAILABILITY_EXTRA = ("availability_source", "availability_raw_status", "availability_gate")
 
 
 def marginal_rows(cand: pd.DataFrame, cfg: dict, v0_state: dict, p_state: dict) -> pd.DataFrame:
@@ -56,13 +60,16 @@ def apply_availability(rows: pd.DataFrame, availability: pd.DataFrame | None) ->
     rows = rows.copy()
     rows["availability_status"] = "NO_REPORT"
     rows["availability_received_at"] = pd.NaT
+    extra = [c for c in AVAILABILITY_EXTRA if availability is not None and c in availability]
     if availability is not None and len(availability):
         a = availability.sort_values("received_at").drop_duplicates(["game_id", "player_id"], keep="last")
         rows = rows.drop(columns=["availability_status", "availability_received_at"]).merge(
-            a[["game_id", "player_id", "status", "received_at"]].rename(
+            a[["game_id", "player_id", "status", "received_at"] + extra].rename(
                 columns={"status": "availability_status", "received_at": "availability_received_at"}),
             on=["game_id", "player_id"], how="left")
         rows["availability_status"] = rows["availability_status"].fillna("NO_REPORT")
+    if "availability_gate" in rows:
+        rows["availability_gate"] = rows["availability_gate"].fillna("")
     out = rows["availability_status"].isin(UNAVAILABLE)
     rows["player_suppression"] = np.where(out, "CONFIRMED_UNAVAILABLE", "")
     missing = ~np.isfinite(rows[["p_play", "min_mu", "min_sigma"] + [f"{s}_mu" for s in L.STATS]].to_numpy(dtype=float)).all(axis=1)
@@ -74,6 +81,11 @@ def apply_availability(rows: pd.DataFrame, availability: pd.DataFrame | None) ->
         f = []
         if len(shock):
             f.append("UNSUPPORTED_ROTATION_SHOCK")
+        if "availability_gate" in gp:                     # an unresolved status in the rotation: the game is uncertain
+            unc = gp[(gp["availability_gate"] != "") & ((gp["role_diagnostic"] == "TOP5_MINUTES")
+                                                        | (gp["min_mu"] >= ROTATION_SHOCK_MINUTES))]
+            if len(unc):
+                f.append("AVAILABILITY_UNCERTAIN_ROTATION")
         if gp.loc[gp["_scored"], "team_id"].nunique() < 2:
             f.append("MISSING_PLAYER_STATE")
         flags[gid] = {"reasons": f, "shock_players": shock["player_id"].tolist()}

@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
                                loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
-                               side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
+                               rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -98,9 +98,12 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
           game_ids=None, sync_log: Path = PC.SYNC_LOG, odds_cache_root: Path = PC.ODDS_CACHE_RAW,
           odds_collections: Path | None = PC.ODDS_COLLECTIONS, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
           odds_record: Path = PC.ODDS_VALIDATION_RECORD, side_monitor_path: Path | None = None,
-          model: LD.FrozenModel | None = None) -> dict:
+          model: LD.FrozenModel | None = None, rotowire_root: Path | None = None,
+          rotowire_ledger: Path = PC.ROTOWIRE_REQUEST_LEDGER) -> dict:
     """model: an already verified model (the walk-forward ACTIVE daily version, cbb_platform/walkforward/store.py:
-    load_version); None = the frozen opening artifacts through LD.load. Nothing here fits or refits."""
+    load_version); None = the frozen opening artifacts through LD.load. Nothing here fits or refits.
+    rotowire_root: the RotoWire availability event store (prod/rotowire_feed.py); None (default) = the `availability`
+    frame as given. Availability conditions the priced set and the gates only, never a model parameter."""
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -151,11 +154,25 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             game_reasons[g].append("MISSING_PLAYER_STATE")
         notes.append("preseason membership evidence (portal 2026 / recruits 2026) incomplete: pregame universe incomplete")
     score_ids = slate.loc[slate["slate_status"] == "SCORE", "canonical_game_id"].tolist()
+    avail_summary = None
+    if rotowire_root is not None and availability is None:       # RotoWire availability, point in time at each game
+        sg = slate[slate["canonical_game_id"].isin(score_ids)]
+        ev = RW.EventStore(rotowire_root).frame()
+        availability, areasons = RW.availability_frame(ev, sg, aso)
+        fresh = RW.freshness(RA.ledger(rotowire_ledger), sg, aso)
+        for g in score_ids:
+            game_reasons[g] += areasons.get(g, []) + fresh["game_reasons"].get(g, [])
+        avail_summary = {"source": RW.PROVIDER, "schema_verified": RW.SCHEMA_VERIFIED, "events_in_store": int(len(ev)),
+                         "players_with_status": int(len(availability)),
+                         "status_counts": availability["status"].value_counts().to_dict() if len(availability) else {},
+                         "gated_players": int((availability["availability_gate"] != "").sum()) if len(availability) else 0,
+                         "freshness": fresh["detail"], "last_success": fresh["last_success"]}
     summary = {"run_id": run_id, "prediction_as_of": aso, "state_version": man["state_version"], "data_label": data_label,
                "state_as_of": (st.get("pointer") or {}).get("last_sync_source_cutoff") or man["source_cutoff"],
                "schedule_as_of": man.get("schedule_as_of"), "roster_as_of": man.get("roster_as_of"),
                "validated_prediction_cutoff": PC.VALIDATED_PREDICTION_CUTOFF,
-               "slate_games": int(len(slate)), "scored_games": 0, "model_identity": ident, "notes": notes}
+               "slate_games": int(len(slate)), "scored_games": 0, "model_identity": ident, "notes": notes,
+               "availability": avail_summary}
     banks, dists, diag, cand_names = {}, [], [], []
     rows, tgames = pd.DataFrame(), None
     teams = players = pd.DataFrame()
@@ -219,6 +236,9 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             rs = md["player_id"].map(lambda p: roster_sup.get((gid, p), ""))
             md.loc[rs != "", "method"] = "NOT_PRICED"            # simulated (frozen pool), never priced
             md["player_suppression"] = rs
+            if "availability_gate" in gp:                        # unresolved status: priced for the shadow, blocked
+                ag = md["player_id"].map(gp.set_index("player_id")["availability_gate"]).fillna("")
+                md.loc[(rs == "") & (ag != ""), "player_suppression"] = ag[(rs == "") & (ag != "")]
             dists.append(md)
             sup = gp[gp["player_suppression"] != ""]
             for r in sup.itertuples(index=False):             # suppressed players: recorded, not priced
@@ -346,6 +366,8 @@ def main(argv=None) -> None:
     d.add_argument("--model-source", choices=MS.SOURCES, default=MS.DEFAULT_SOURCE,
                    help="FROZEN_OPENING_BASELINE (default; the live scheduler) or ACTIVE_DAILY (walk-forward pointer)")
     d.add_argument("--model-store", default=None, help="walk-forward store root (ACTIVE_DAILY only)")
+    d.add_argument("--rotowire", action="store_true",
+                   help="condition on the RotoWire availability event store (default off: the live scheduler is unchanged)")
     sub.add_parser("verify-artifacts")
     v = sub.add_parser("verify-ledger")
     v.add_argument("--ledger", default=str(PC.LEDGER_PATH))
@@ -355,7 +377,8 @@ def main(argv=None) -> None:
     if a.cmd == "daily":
         av = pd.read_csv(a.availability, parse_dates=["received_at"]) if a.availability else None
         model = None if a.model_source == MS.DEFAULT_SOURCE else MS.resolve(a.model_source, a.as_of, a.model_store)
-        out = daily(a.as_of, a.quotes, av, horizon_hours=a.horizon_hours, model=model)
+        out = daily(a.as_of, a.quotes, av, horizon_hours=a.horizon_hours, model=model,
+                    rotowire_root=PC.ROTOWIRE_ROOT if a.rotowire and av is None else None)
     elif a.cmd == "verify-artifacts":
         out = LD.verify()
     elif a.cmd == "verify-ledger":

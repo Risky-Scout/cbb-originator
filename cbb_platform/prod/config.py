@@ -124,3 +124,18 @@ DAILY_REPORT_HOUR_UTC = 12                          # the daily report of ET dat
 FIRST_DAYS_WINDOW = 30                              # "first 30 calendar days" of the 2026-27 D-I schedule
 EVIDENCE_BUCKETS = ((None, 0.0, "CUR_0"), (0.0, 100.0, "CUR_0_100"), (100.0, 300.0, "CUR_100_300"),
                     (300.0, None, "CUR_300PLUS"))   # current-season minutes (calibration audit buckets; (lo, hi])
+
+# ------------------------------------------------------------------ RotoWire CBB player availability (prod/rotowire_*.py)
+# Availability conditioning only (prod/inputs.apply_availability): no status ever becomes a fitted feature or a numeric
+# P(play). Freshness bounds = PRODUCTION_SCORING_RETRAINING_AND_DEPLOYMENT_POLICY_v1_0.md §8 (6 h T24H, 90 min T6H,
+# 20 min T1H / T30M / T10M). Polling cadence is a proposal (docs/ROTOWIRE_AVAILABILITY_2026_27.md), never a hot loop.
+ROTOWIRE_FEED_VERSION = "cbb-prod-rotowire-availability-1.0.0"
+ROTOWIRE_CACHE_RAW = PROD_CACHE_ROOT / "raw"                 # raw_store layout: raw/rotowire/<endpoint_slug>/<file>
+ROTOWIRE_REQUEST_LEDGER = PROD_CACHE_ROOT / "rotowire_production_requests.jsonl"
+ROTOWIRE_ROOT = PROD_ROOT / "availability" / "rotowire"      # append-only event store + QA reports
+ROTOWIRE_MAP_ROOT = PROD_ROOT / "maps"                       # curated rotowire_team_map.csv / rotowire_player_map.csv
+ROTOWIRE_MAX_LIVE_REQUESTS_PER_STAGE = 6                     # one poll = snapshot + news (+ updates when enabled)
+ROTOWIRE_INCLUDE_UPDATES = False                             # News/Updates.php only if the injury feed proves insufficient
+AVAILABILITY_FRESHNESS_BOUNDS_MINUTES = ((24 * 60, 6 * 60), (6 * 60, 90), (0, 20))   # (min minutes to tip, bound)
+ROTOWIRE_POLL_MINUTES = {"OFF_DAY": 180, "GAME_DAY": 10, "CRITICAL_PRE_TIP": 5}       # PROPOSED_NOT_APPROVED
+ROTOWIRE_CRITICAL_WINDOW_HOURS = 3.0                         # inside this window before a slate tip: CRITICAL_PRE_TIP

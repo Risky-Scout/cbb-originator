@@ -11,7 +11,7 @@ import os
 import re
 
 _CONTROL = re.compile(r"\x1b\[[0-9;?]*[A-Za-z~]|\x1b.|[\x00-\x1f\x7f]")
-REGISTERED = ("CBBD_API_KEY", "BDL_API_KEY")
+REGISTERED = ("CBBD_API_KEY", "BDL_API_KEY", "ROTOWIRE_API_KEY")
 
 
 def get(name: str) -> str:
