@@ -3,12 +3,13 @@ conversions, monotonicity, separation of P(play), unchanged frozen model outputs
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from cbb_platform import lockbox, props_v0 as P, props_v0_participation as Q, props_v1_pricing as V
+from cbb_platform import config as C, lockbox, props_v0 as P, props_v0_participation as Q, props_v1_pricing as V
 
 RNG = np.random.default_rng(20261009)
 
@@ -18,8 +19,18 @@ def _pmfs():
     return np.vstack([P.pmf_matrix(mus, phi, 120) for phi in (0.0, 0.12, 0.25)])
 
 
+# These tests require large gitignored historical stores and run fully in the authoritative local validation environment.
+# GitHub CI retains frozen-artifact hash, golden-equivalence and fixture-backed production tests.
+# Explicit existence checks only: a store that exists but is corrupt or fails a check still fails the test.
+def _require_local_stores(*paths):
+    missing = [str(Path(p).relative_to(C.PROJECT_ROOT)) for p in paths if not Path(p).exists()]
+    if missing:
+        pytest.skip(f"local-only gitignored store absent: {', '.join(missing)}")
+
+
 @pytest.fixture(scope="module")
 def scored():
+    _require_local_stores(P.spec.FEATURES_DB, P.spec.LABELS_DB)
     model = V.load_model()
     cand = V.load_candidates()
     games = V.sample_games(cand)

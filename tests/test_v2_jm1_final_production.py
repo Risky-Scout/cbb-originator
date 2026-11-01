@@ -2,11 +2,22 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from cbb_platform.v2 import jm1_final as F, jm1_final_production as FP, joint_minutes_v2 as JM, structural as S
+from cbb_platform import config as C
+from cbb_platform.v2 import (jm1_final as F, jm1_final_production as FP, joint_minutes_v2 as JM, phase2 as P2,
+                             phase3 as P3, structural as S)
+
+# These tests require large gitignored historical stores and run fully in the authoritative local validation environment.
+# GitHub CI retains frozen-artifact hash, golden-equivalence and fixture-backed production tests.
+# Explicit existence checks only: a store that exists but is corrupt or fails a check still fails the test.
+def _require_local_stores(*paths):
+    missing = [str(Path(p).relative_to(C.PROJECT_ROOT)) for p in paths if not Path(p).exists()]
+    if missing:
+        pytest.skip(f"local-only gitignored store absent: {', '.join(missing)}")
 
 
 def test_final_chronology_and_rollback_identity():
@@ -14,6 +25,7 @@ def test_final_chronology_and_rollback_identity():
     assert max(FP.FINAL["resid_seasons"]) <= FP.FINAL["T"] <= F.MAX_SEASON < FP.PRODUCTION_SEASON
     with pytest.raises(F.JM1Violation):
         F.check_seasons([FP.PRODUCTION_SEASON])
+    _require_local_stores(P2.STORE, P3.PP.STORE_PATH, JM.USER_QA_FILE)    # F.guards() hashes these local-only files
     g = F.guards()
     assert g["MARGINAL_ARTIFACT_SHA256"] == FP.ROLLBACK["MARGINAL_ARTIFACT_SHA256"]
     assert g["PHASE2_DEPENDENCE_ARTIFACT_SHA256"] == FP.ROLLBACK["PHASE2_DEPENDENCE_ARTIFACT_SHA256"]
