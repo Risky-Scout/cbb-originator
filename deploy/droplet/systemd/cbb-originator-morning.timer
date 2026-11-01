@@ -1,0 +1,17 @@
+# CBB Originator morning refit timer. TEMPLATE: NOT installed, NOT enabled (enable only at the approved cutover).
+# 06:05 America/New_York every day: 5 min after the 06:00 ET training cutoff (walkforward/config.refit_cutoff;
+# a run before 06:00 would return CUTOFF_NOT_REACHED). systemd evaluates the zone itself, so DST is handled:
+# 06:05 EST = 11:05Z, 06:05 EDT = 10:05Z. The job's cutoff is computed from the ET date, not from the start time.
+[Unit]
+Description=CBB Originator walk-forward morning refit timer
+
+[Timer]
+OnCalendar=*-*-* 06:05:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+# A missed morning (host down) is NOT replayed automatically: the operator decides on the one manual retry.
+Persistent=false
+Unit=cbb-originator-morning.service
+
+[Install]
+WantedBy=timers.target

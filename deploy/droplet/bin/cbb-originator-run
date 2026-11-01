@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# CBB Originator: the ONLY entrypoint the Droplet systemd units call (deploy/droplet/systemd/*.service).
+# TEMPLATE, NOT INSTALLED. docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md.
+#
+#   cbb-originator-run preflight      safety + identity checks only (no lock, no model work)
+#   cbb-originator-run morning        walk-forward morning refit (heavy: shared heavy-job lock + MemAvailable gate)
+#   cbb-originator-run tick           prospective shadow tick (light: CBB writer lock only)
+#   CBB_DRY_RUN=1 ...                 run every check, print the command that would run, run nothing
+#
+# Exit codes: 0 ok | 1 job failed (incl. DAILY_REFIT_STATUS FAIL / NOT_RUN) | 2 frozen-hash gate FAIL (shadow tick)
+#             3 unsafe or invalid configuration (refused) | 4 this host is not the designated writer
+#             75 resource / lock unavailable (EX_TEMPFAIL: DAILY_REFIT_STATUS = FAIL (RESOURCE); ACTIVE unchanged)
+# Never prints secret values: only variable NAMES are ever reported.
+set -euo pipefail
+
+CMD="${1:-}"
+APP="${CBB_APP_DIR:-/opt/sports-models/cbb-originator/app}"
+VENV="${CBB_VENV_DIR:-/opt/sports-models/cbb-originator/venv}"
+LOCK_DIR="${CBB_LOCK_DIR:-/run/lock/sports-models}"
+HEAVY_LOCK="${SPORTS_MODEL_HEAVY_LOCK:-$LOCK_DIR/sports-model-heavy.lock}"
+WRITER_LOCK="$LOCK_DIR/cbb-originator.writer.lock"
+HEAVY_WAIT_SEC="${CBB_HEAVY_LOCK_WAIT_SEC:-1800}"
+WRITER_WAIT_SEC="${CBB_WRITER_LOCK_WAIT_SEC:-600}"
+MIN_MEM_GB="${CBB_MIN_MEMAVAILABLE_GB:-13}"
+MEM_WAIT_SEC="${CBB_MEM_WAIT_SEC:-1800}"
+MEMINFO="${CBB_MEMINFO:-/proc/meminfo}"
+DRY="${CBB_DRY_RUN:-0}"
+
+log() { echo "cbb-originator-run[$CMD]: $*" >&2; }
+refuse() { log "REFUSED: $*"; exit 3; }
+
+case "$CMD" in preflight|morning|tick) ;; *) echo "usage: cbb-originator-run preflight|morning|tick" >&2; exit 3 ;; esac
+
+# ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
+[ "${CBB_MODEL_SOURCE:-FROZEN_OPENING_BASELINE}" = "FROZEN_OPENING_BASELINE" ] \
+  || refuse "CBB_MODEL_SOURCE=${CBB_MODEL_SOURCE} (the scheduled shadow tick scores FROZEN_OPENING_BASELINE only; ACTIVE_DAILY scoring needs an explicit architect approval and a reviewed unit)"
+case "${ROTOWIRE_ENABLED:-false}" in
+  false) ;;
+  true) [ "${ROTOWIRE_RIGHTS_STATUS:-UNVERIFIED}" = "PRODUCTION_APPROVED" ] \
+          || refuse "ROTOWIRE_ENABLED=true while ROTOWIRE_RIGHTS_STATUS=${ROTOWIRE_RIGHTS_STATUS:-UNVERIFIED}"
+        refuse "ROTOWIRE_ENABLED=true: RotoWire is not wired into the scheduled units; activation is a separate reviewed change" ;;
+  *) refuse "ROTOWIRE_ENABLED must be true|false" ;;
+esac
+[ "${WIZARDOFODDS_PUBLICATION:-disabled}" = "disabled" ] || refuse "WIZARDOFODDS_PUBLICATION must be disabled (DISABLED_PENDING_SSH_ACCESS)"
+[ "${AUTOMATIC_WAGERING:-disabled}" = "disabled" ] || refuse "AUTOMATIC_WAGERING must be disabled"
+[ "${REAL_MONEY_ACTIONABILITY:-disabled}" = "disabled" ] || refuse "REAL_MONEY_ACTIONABILITY must be disabled (DISABLED_BY_AVAILABILITY_VALIDATION)"
+for v in OMP_NUM_THREADS OPENBLAS_NUM_THREADS MKL_NUM_THREADS VECLIB_MAXIMUM_THREADS NUMEXPR_NUM_THREADS; do
+  [ "${!v:-}" = "1" ] || refuse "$v must be 1 (walkforward/config.THREAD_ENV)"
+done
+
+# ------------------------------------------------------------------ 2. exact verified code identity
+[ -n "${CBB_EXPECTED_COMMIT:-}" ] || refuse "CBB_EXPECTED_COMMIT is not set"
+HEAD_SHA="$(git -C "$APP" rev-parse HEAD 2>/dev/null || true)"
+[ "$HEAD_SHA" = "$CBB_EXPECTED_COMMIT" ] || refuse "app checkout is at '${HEAD_SHA:-none}', expected $CBB_EXPECTED_COMMIT"
+[ -z "$(git -C "$APP" status --porcelain 2>/dev/null)" ] || refuse "app checkout has local modifications"
+export CBB_CODE_COMMIT="$HEAD_SHA"
+
+# ------------------------------------------------------------------ 3. single-writer role (scheduler cutover, docs §13)
+if [ "$CMD" != "preflight" ] && [ "${CBB_SCHEDULER_ROLE:-DISABLED}" != "PRIMARY_WRITER" ]; then
+  log "CBB_SCHEDULER_ROLE=${CBB_SCHEDULER_ROLE:-DISABLED}: this host is not the designated ops-state writer; nothing run"
+  exit 4
+fi
+
+PY="$VENV/bin/python"
+cd "$APP"
+export PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1
+
+mem_available_gb() { awk '/^MemAvailable:/ {printf "%.2f", $2 / 1048576}' "$MEMINFO"; }
+
+memory_gate() {   # wait up to MEM_WAIT_SEC for MemAvailable >= MIN_MEM_GB; re-check every 60 s
+  local waited=0 have
+  while :; do
+    have="$(mem_available_gb)"
+    if awk -v h="$have" -v n="$MIN_MEM_GB" 'BEGIN { exit !(h >= n) }'; then log "MemAvailable ${have} GB >= ${MIN_MEM_GB} GB"; return 0; fi
+    if [ "$waited" -ge "$MEM_WAIT_SEC" ]; then
+      log "DAILY_REFIT_STATUS = FAIL (RESOURCE): MemAvailable ${have} GB < ${MIN_MEM_GB} GB after ${waited} s; ACTIVE unchanged"
+      exit 75
+    fi
+    log "MemAvailable ${have} GB < ${MIN_MEM_GB} GB; waiting (${waited}/${MEM_WAIT_SEC} s)"
+    sleep 60; waited=$((waited + 60))
+  done
+}
+
+if [ "$CMD" = "preflight" ]; then
+  log "PREFLIGHT OK: commit $HEAD_SHA; MemAvailable $(mem_available_gb) GB; model source FROZEN_OPENING_BASELINE; rotowire/publication/wagering disabled"
+  exit 0
+fi
+
+if [ "$CMD" = "morning" ]; then
+  RUN=("$PY" -m cbb_platform.walkforward.daily morning)
+  if [ "$DRY" = "1" ]; then log "DRY RUN: would take $HEAVY_LOCK, gate MemAvailable >= ${MIN_MEM_GB} GB, take $WRITER_LOCK, run: ${RUN[*]}"; exit 0; fi
+  exec 8>>"$HEAVY_LOCK"
+  flock -w "$HEAVY_WAIT_SEC" 8 || { log "DAILY_REFIT_STATUS = FAIL (RESOURCE): shared heavy-job lock busy > ${HEAVY_WAIT_SEC} s; ACTIVE unchanged"; exit 75; }
+  memory_gate
+  exec 9>>"$WRITER_LOCK"
+  flock -w "$WRITER_WAIT_SEC" 9 || { log "DAILY_REFIT_STATUS = FAIL (RESOURCE): CBB writer lock busy > ${WRITER_WAIT_SEC} s"; exit 75; }
+  OUT="$(mktemp)"; trap 'rm -f "$OUT"' EXIT
+  set +e; "${RUN[@]}" | tee "$OUT"; rc=${PIPESTATUS[0]}; set -e
+  [ "$rc" -eq 0 ] || { log "morning job exited $rc"; exit 1; }
+  STATUS="$("$PY" -c 'import json,sys; t=open(sys.argv[1]).read(); i=t.rfind("\n{\n"); print(json.loads(t[i+1:] if i >= 0 else t).get("DAILY_REFIT_STATUS", "MISSING"))' "$OUT" 2>/dev/null || echo UNPARSEABLE)"
+  log "DAILY_REFIT_STATUS = $STATUS"
+  case "$STATUS" in PASS|NO_NEW_DATA) exit 0 ;; *) exit 1 ;; esac
+fi
+
+# tick: same command line as the GitHub workflow minus --restore (the Droplet keeps its restored state locally);
+# --persist/--commit/--push keep the encrypted release + ops-state branch as the off-machine copy (and the rollback path).
+OPS="$APP/data/prod/ops"
+RUN=("$PY" -m cbb_platform.prod.shadow_tick --ops-root "$OPS" --persist --commit --push)
+if [ "$DRY" = "1" ]; then log "DRY RUN: would take $WRITER_LOCK, run due_check, then: ${RUN[*]}"; exit 0; fi
+exec 9>>"$WRITER_LOCK"
+flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC} s; tick skipped"; exit 75; }
+DUE_OUT="$("$PY" cbb_platform/prod/due_check.py "$OPS")"
+log "$(echo "$DUE_OUT" | tr '\n' ' ')"
+echo "$DUE_OUT" | grep -qx 'due=true' || exit 0
+exec "${RUN[@]}"

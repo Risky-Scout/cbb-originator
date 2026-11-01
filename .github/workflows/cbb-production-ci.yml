@@ -62,6 +62,8 @@ jobs:
         run: python -m pytest -q -rs tests/test_walkforward_units.py tests/test_walkforward_finalize.py tests/test_walkforward_fit.py tests/test_walkforward_training_rows.py tests/test_walkforward_daily.py tests/test_cbbd_box_route_reconcile.py tests/test_prod_shadow.py
       - name: RotoWire availability (synthetic RotoWire-layout records, fake HTTP, dummy key; no network, no credential)
         run: python -m pytest -q tests/test_rotowire_availability.py
+      - name: Droplet deployment package (safe defaults, refusals, locks / memory gate, units, transfer manifest; no server)
+        run: python -m pytest -q -rs tests/test_droplet_deploy_package.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke

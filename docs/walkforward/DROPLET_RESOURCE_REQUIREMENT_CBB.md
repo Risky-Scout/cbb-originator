@@ -36,7 +36,7 @@ The future shared Droplet also runs Massey (NCAAF/NFL), NBA Prop Quant and NFLPr
    - The CBB morning refit runs at 06:00 America/New_York (systemd timer with `TZ`).
    - No other memory-heavy model job (Massey refits, NBA / NFL training) may overlap it.
 2. **Cross-model lock.**
-   - Every heavy model job takes one shared host lock (e.g. `flock /var/lock/sports-models-heavy.lock`) before it starts.
+   - Every heavy model job takes one shared host lock before it starts: `/run/lock/sports-models/sports-model-heavy.lock`, contract in `docs/operations/SHARED_DROPLET_HEAVY_JOB_POLICY.md`.
    - CBB already holds its own `locks/morning.lock`; the shared lock is in addition to it.
    - A job that cannot get the lock waits. It is not killed half-way.
 3. **systemd limits for the CBB unit:**
