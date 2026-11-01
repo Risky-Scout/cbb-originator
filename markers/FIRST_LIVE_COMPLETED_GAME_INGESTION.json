@@ -1,0 +1,21 @@
+{
+ "games": {
+  "G-ebb64de7fba5aa8a": {
+   "atomic_state_update": true,
+   "cache": true,
+   "final_status": true,
+   "future_game_chronology": true,
+   "game_identity": true,
+   "player_box_scores": true,
+   "request_ledger": true,
+   "substitution_data": true,
+   "substitution_rows": 99,
+   "team_box_scores": true
+  }
+ },
+ "parent_state_version": "S20261101T154424Z-7ae956c349e3",
+ "recorded_at": "2026-11-01T22:13:47.906266+00:00",
+ "state_version": "S20261101T221346Z-642d97d35e51",
+ "status": "PASS",
+ "sync_id": "Y20261101T221340Z-c70558"
+}

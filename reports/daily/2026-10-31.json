@@ -336,7 +336,7 @@
    }
   }
  },
- "evidence_chain_head": "51efcbfb8d08b56d585137275ebf57a9f0cc6eef649579b0ea37e029d84989b8",
+ "evidence_chain_head": "a1e1cd97f2c0e87fc04280b8217590eb8124170641b12f82f8cef6a338928b67",
  "high_exposure_pts": {
   "PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING": false,
   "definition": "PTS, pregame min_mu >= 30.0",

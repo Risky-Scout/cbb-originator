@@ -1,0 +1,96 @@
+{
+ "artifact_sha256": {
+  "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+  "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab",
+  "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+ },
+ "events": {
+  "error": "Odds API events failed: HTTP 401",
+  "status": "FAILED"
+ },
+ "finished_at": "2026-11-01T22:13:48.829933+00:00",
+ "first_live_completed_game_ingestion": "PASS",
+ "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+ "frozen_model_hash_gate": "PASS",
+ "max_readiness": "SHADOW_ONLY",
+ "model_refit": false,
+ "public_deployment": false,
+ "restore": {
+  "asset": "ws-K20261101T154415Z-0fead8.tar",
+  "errors": [],
+  "fallback_used": false,
+  "restored": true,
+  "restored_files": 25,
+  "state_version": "S20261101T154424Z-7ae956c349e3"
+ },
+ "settlement": {
+  "games": 1,
+  "kinds": {
+   "FINAL": 1
+  },
+  "players": 28,
+  "quote_sides": 0,
+  "quoted_predictions": 0
+ },
+ "source_commit": "ca00d6a89a1b487c7e4928641c3a7147bbb84049",
+ "started_at": "2026-11-01T22:13:39.369885+00:00",
+ "sync": {
+  "completed_budget_exhausted": null,
+  "completed_games_ingested": 1,
+  "completed_games_new": 1,
+  "completed_requests_deferred": null,
+  "coverage": {
+   "completed_games": 1,
+   "completed_with_player_box": 1,
+   "completed_with_substitutions": 1,
+   "completed_with_team_box": 1,
+   "games": 6019,
+   "last_completed_game": {
+    "canonical_game_id": "G-ebb64de7fba5aa8a",
+    "scheduled_tip_utc": "2026-11-01 14:30:00+00:00"
+   },
+   "portal_rows_2026": 1585,
+   "recruit_rows_2026": 396,
+   "scheduled_games": 6018
+  },
+  "error": null,
+  "reason": null,
+  "refresh_windows": [
+   "2026-11-01"
+  ],
+  "requests": {
+   "completed": {
+    "cache_hits": 0,
+    "live_requests": 4,
+    "max_live_requests": 20,
+    "quota_remaining": 124965,
+    "stage": "Y20261101T221340Z-c70558:completed"
+   },
+   "preseason": {
+    "cache_hits": 3,
+    "live_requests": 0,
+    "max_live_requests": 20,
+    "quota_remaining": null,
+    "stage": "Y20261101T221340Z-c70558:preseason"
+   },
+   "schedule": {
+    "cache_hits": 0,
+    "live_requests": 7,
+    "max_live_requests": 20,
+    "quota_remaining": 124969,
+    "stage": "Y20261101T221340Z-c70558:schedule"
+   }
+  },
+  "results_deferred_not_yet_knowable": 0,
+  "state_version": "S20261101T221346Z-642d97d35e51",
+  "status": "PROMOTED",
+  "sync_id": "Y20261101T221340Z-c70558",
+  "why": [
+   "ROUTINE_REFRESH"
+  ]
+ },
+ "tick_id": "K20261101T221339Z-aa7416",
+ "version": "cbb-prod-shadow-tick-1.0.0",
+ "wagering_enabled": false
+}
