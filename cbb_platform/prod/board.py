@@ -44,7 +44,9 @@ def build(dists: pd.DataFrame, quotes: pd.DataFrame, meta: dict) -> tuple[pd.Dat
         base = {"game_id": d.game_id, "game": d.game_label, "player_id": d.player_id, "player": d.player_label,
                 "team_id": d.team_id, "market": d.market, "projection": d.projection, "p_play": d.p_play,
                 "distribution_method": d.method, "pmf_q75": PX.quantile(d.pmf, 0.75), "bank_sha256": d.bank_sha256,
-                "game_reasons": list(d.game_reasons), "player_suppression": d.player_suppression}
+                "game_reasons": list(d.game_reasons), "player_suppression": d.player_suppression,
+                "availability_status": getattr(d, "availability_status", None),
+                "availability_received_at": getattr(d, "availability_received_at", None)}
         if d.method == "NOT_PRICED":                     # suppressed player: recorded with its reason, never priced
             priced.append({**base, "line": None, "side": None, "row_reasons": [d.player_suppression]})
             continue

@@ -21,8 +21,9 @@ from cbb_platform.v2 import latent as L, marginal as M, structural as S
 ROTATION_SHOCK_MINUTES = 20.0
 UNAVAILABLE = ("OUT", "OUT_FOR_SEASON", "OUT_SEASON", "SUSPENDED", "UNAVAILABLE", "LONG_TERM_OUT")
 # Optional provider columns (prod/rotowire_feed.availability_frame) carried beside the status. availability_gate marks an
-# unresolved status (GTD / QUESTIONABLE / DOUBTFUL / RETURN_DESIGNATION / UNKNOWN, or a source conflict): the player is
-# still forecast with the model's own P(play), unchanged, and every row of his is blocked (never actionable).
+# unresolved status (GTD / QUESTIONABLE / DOUBTFUL / RETURN_DESIGNATION: PRICED_BUT_NON_ACTIONABLE), an unrecognized
+# code or a source conflict (suppressed on the boards): the player is still forecast with the model's own P(play),
+# unchanged, and no row of his is ever actionable.
 AVAILABILITY_EXTRA = ("availability_source", "availability_raw_status", "availability_gate")
 
 

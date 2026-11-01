@@ -110,7 +110,7 @@ def test_null_and_unknown_status_are_never_coerced(tmp_path, ctx):
     e = store.load()[0]
     assert (e["raw_status"], e["normalized_status"]) == ("Probable", "UNKNOWN")      # raw kept verbatim
     st = _state(store, T0 + pd.Timedelta(minutes=1)).loc["r1"]
-    assert st["effective_status"] == "UNKNOWN" and st["gate"] == RW.GATE_UNCERTAIN
+    assert st["effective_status"] == "UNKNOWN" and st["gate"] == RW.GATE_UNRECOGNIZED          # suppressed, not priced
 
 
 def test_dnp_is_never_pregame_evidence(tmp_path, ctx):
@@ -181,6 +181,14 @@ def test_availability_reason_codes_known_blocking_and_mapped():
         assert c in RD.KNOWN and RD.evaluate((c,))["readiness_state"] == "BLOCKED"
         assert PB.condition_of(c)[2] is False                                       # never ACTIONABLE
     assert PB.condition_of("AVAILABILITY_STALE")[0] is False                        # policy §8: no publication
+    # architect ruling 2026-10-31: unresolved availability is PRICED_BUT_NON_ACTIONABLE; the rest stays suppressed
+    assert PB.FAIL_CLOSED_MATRIX["UNRESOLVED_AVAILABILITY"][:3] == (True, True, False)
+    for c in ("AVAILABILITY_UNCERTAIN", "AVAILABILITY_UNCERTAIN_ROTATION"):
+        assert PB.CODE_CONDITION[c] == "UNRESOLVED_AVAILABILITY" and c in PB.PRICED_BLOCKED_REASONS
+    for c in ("AVAILABILITY_SOURCE_CONFLICT", "AVAILABILITY_STATUS_UNRECOGNIZED", "CONFIRMED_UNAVAILABLE"):
+        assert PB.condition_of(c)[:3] == (False, False, False) and c not in PB.PRICED_BLOCKED_REASONS
+    assert set(RW.UNRESOLVED) == {"GTD", "QUESTIONABLE", "DOUBTFUL", "RETURN_DESIGNATION"}
+    assert not set(RW.OUT_LIKE) & set(RW.UNRESOLVED) and set(RW.OUT_LIKE) <= set(IN.UNAVAILABLE)
     assert PB.RIGHTS_REGISTER["RotoWire CBB API (availability)"] == "UNVERIFIED"
     assert PB.rights_gate()["COMMERCIAL_RIGHTS_GATE"] == "FAIL"
     assert PC.WAGERING_ENABLED is False
@@ -483,3 +491,89 @@ def test_run_daily_conditions_on_rotowire_point_in_time(tmp_path, smoke_state):
                     rotowire_root=store.root, rotowire_ledger=tmp_path / "rw.jsonl", **kw)
     lf = late["availability"]["freshness"]
     assert lf and all("AVAILABILITY_STALE" in late["game_reasons"][g] for g in lf)   # 105 min > 90: stale, blocked
+
+
+# ============================================================================ board policy: PRICED_BUT_NON_ACTIONABLE
+def test_gtd_player_is_priced_but_never_actionable(tmp_path, smoke_state):
+    hist, work, meta = smoke_state
+    t = meta["teams"]
+    star, bench = meta["roster"][t[1]][0], meta["roster"][t[0]][-1]           # star: quoted (fixture event U2, PTS)
+    con = duckdb.connect(str(hist), read_only=True)
+    teams = con.execute("SELECT DISTINCT canonical_team_id, school, display_name FROM core.teams").df()
+    names = dict(con.execute("SELECT canonical_player_id, any_value(display_name) FROM core.players GROUP BY 1").fetchall())
+    con.close()
+    roster = pd.DataFrame([(p, tm, names[p].split(" ", 1)[0], names[p].split(" ", 1)[-1], names[p], "Guard")
+                           for tm, ps in meta["roster"].items() for p in ps],
+                          columns=["canonical_player_id", "canonical_team_id", "first_name", "last_name", "player_name",
+                                   "position"])
+    ctx = RW.IdentityContext(teams.assign(mascot=None), roster)
+    who = roster.set_index("canonical_player_id")
+    tname = teams.drop_duplicates("canonical_team_id").set_index("canonical_team_id")["school"]
+    rec = lambda uid, p, s: news(uid, f"rw-{p}", who.loc[p, "first_name"], who.loc[p, "last_name"], s,
+                                 (FX.AS_OF - pd.Timedelta(hours=2)).isoformat(),
+                                 team=(f"t-{who.loc[p, 'canonical_team_id']}", tname[who.loc[p, "canonical_team_id"]]))
+    store, clock = RW.EventStore(tmp_path / "rw"), [FX.AS_OF - pd.Timedelta(minutes=5)]
+    RW.poll(_session(tmp_path, Fake(news_injuries={"Updates": [rec("u1", bench, "OUT"), rec("u2", star, "GTD")]},
+                                    snapshot={"Players": []}), clock), ctx, store)
+    q = FX.quotes_files(hist, meta, tmp_path / "quotes")
+    s = RN.daily(FX.AS_OF, q, state_root=work / "state", history_db=hist, ledger_path=tmp_path / "l.jsonl",
+                 run_root=tmp_path / "runs", sims=2000, sync_log=tmp_path / "sync.jsonl", odds_cache_root=tmp_path / "oc",
+                 odds_collections=None, odds_ledger=tmp_path / "odds.jsonl", odds_record=tmp_path / "odds_record.json",
+                 rotowire_root=store.root, rotowire_ledger=tmp_path / "rw.jsonl")
+    run_ctx = PB.load_run(s, tmp_path / "l.jsonl", work / "state")
+    run_ctx.data_label = "LIVE"                     # test-only relabel to exercise the priced path (FIXTURE never publishes)
+    sg = lambda: {"games": {g: {"SCHEDULE_FRESHNESS_GATE": "PASS", "reasons": [], "verified_at": FX.AS_OF.isoformat()}
+                            for g in {r["game_id"] for r in run_ctx.records}}}
+    b = PB.build_boards(run_ctx, FX.AS_OF, sg(), checkpoint_label="T-RW")
+    pub = [r for r in b["public"]["rows"] if r["player_id"] == star]
+    assert pub and all(r["status"] == "PUBLISHABLE" and r["projection"] is not None for r in pub)   # projection kept
+    assert all(not PB.PRICED_BLOCKED_REASONS & set(r["suppression_reasons"]) and "availability_status" not in r for r in pub)
+    assert all(r["status"] == "SUPPRESSED" for r in b["public"]["rows"] if r["player_id"] == bench)    # OUT: suppressed
+    star_rows = [r for r in b["internal"]["rows"] if r["player_id"] == star]
+    assert star_rows
+    for r in star_rows:
+        assert r["availability_status"] == "GTD" and r["QUOTE_QUALITY_GATE"] == "PASS"
+        assert r["pricing_status"] == "PRICING_ALLOWED" and r["board_state"] == "PRICED_BLOCKED"
+        p = r["p_over"] if r["side"] == "OVER" else r["p_under"]
+        fair = r["fair_decimal_over"] if r["side"] == "OVER" else r["fair_decimal_under"]
+        assert p is not None and fair is not None and r["raw_edge_ev_per_unit"] is not None   # fair price + diagnostic edge
+        assert "UNRESOLVED_AVAILABILITY" in r["actionable_block_reasons"]
+        assert r["actionable_bet_allowed"] is False and r["stake"] == 0.0
+    assert all(r["actionable_bet_allowed"] is False and r["stake"] == 0.0 and r["board_state"] in PB.BOARD_STATES
+               and "DISABLED_BY_AVAILABILITY_VALIDATION" in r["actionable_block_reasons"] for r in b["internal"]["rows"])
+    assert b["internal"]["real_money_actionability"] == "DISABLED_BY_AVAILABILITY_VALIDATION"
+    later = PB.build_boards(run_ctx, FX.AS_OF + pd.Timedelta(minutes=2), sg(), checkpoint_label="T-RW-2")
+    assert all(r["board_state"] != "PRICED_ACTIONABLE" and "UNRESOLVED_AVAILABILITY" in r["actionable_block_reasons"]
+               for r in later["internal"]["rows"] if r["player_id"] == star)       # the old price is never unlocked
+
+
+def test_uncertain_to_active_requires_fresh_quote_and_reprice():
+    """GTD at run 1; ACT knowable at T2. Neither the run-1 price nor a run-2 price on a pre-ACT quote is actionable; only
+    a new run whose quote was posted after the ACT confirmation, with a fresh availability observation, clears the row
+    gates (the production global blocks still apply)."""
+    T1, T2 = TIP - pd.Timedelta(hours=3), TIP - pd.Timedelta(hours=2)
+    T3 = T2 + pd.Timedelta(minutes=15)
+    av = lambda at: {"last_success": {"news_injuries": at.isoformat(), "snapshot": at.isoformat()}}
+    row = lambda st, recv, qa: {"availability_status": st, "availability_received_at": recv.isoformat(),
+                                "quote_available_at": None if qa is None else qa.isoformat()}
+    chk = lambda r, codes, cp, aso, obs, g=(): PB.actionable_block_reasons(
+        r, priced=True, codes=codes, checkpoint_at=cp, tip=TIP, prediction_as_of=aso, availability=av(obs), global_blocks=g)
+    old_quote = T1 - pd.Timedelta(minutes=10)
+    run1 = row("GTD", T1 - pd.Timedelta(minutes=30), old_quote)
+    assert "UNRESOLVED_AVAILABILITY" in chk(run1, {"AVAILABILITY_UNCERTAIN"}, T1, T1, T1 - pd.Timedelta(minutes=5))
+    assert "UNRESOLVED_AVAILABILITY" in chk(run1, {"AVAILABILITY_UNCERTAIN"}, T3, T1, T3)      # same run, later: blocked
+    assert chk(row("ACTIVE", T2, old_quote), set(), T3, T3, T3 - pd.Timedelta(minutes=2)) == \
+        ["QUOTE_PREDATES_AVAILABILITY_STATE"]                                                # no fresh quote
+    assert chk(row("ACTIVE", T2, None), set(), T3, T3, T3) == ["QUOTE_PREDATES_AVAILABILITY_STATE"]
+    fresh = row("ACTIVE", T2, T2 + pd.Timedelta(minutes=5))
+    assert chk(fresh, set(), T3, T3, T3 - pd.Timedelta(minutes=2)) == []                     # fresh quote + reprice
+    assert chk(fresh, set(), T3, T3, T3 - pd.Timedelta(minutes=120)) == ["AVAILABILITY_STALE_AT_CHECKPOINT"]
+    assert chk(row("ACTIVE", T3, T3), set(), T3, T3, T3) == ["REPRICE_REQUIRED"]              # state newer than the run
+    assert PB.actionable_block_reasons(fresh, priced=False, codes=set(), checkpoint_at=T3, tip=TIP, prediction_as_of=T3,
+                                       availability=None, global_blocks=()) == [
+        "AVAILABILITY_SOURCE_NOT_CONFIGURED", "NOT_PRICED"]
+    g = PB.global_actionable_blocks()
+    assert {"AUTOMATIC_ACTIONABLE_WAGER_DISABLED", "BETTING_POLICY_MISSING", "DISABLED_BY_AVAILABILITY_VALIDATION",
+            "WAGERING_DISABLED"} <= set(g)
+    assert chk(fresh, set(), T3, T3, T3, g) == sorted(g)                                      # production: never actionable
+    assert PC.AVAILABILITY_G4B_STATUS == "ACCUMULATING" and PC.REAL_MONEY_ACTIONABILITY == "DISABLED_BY_AVAILABILITY_VALIDATION"

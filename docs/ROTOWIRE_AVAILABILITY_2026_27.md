@@ -7,7 +7,7 @@ CLI `--rotowire` not set): the live scheduler is unchanged. Wagering is disabled
 This is availability conditioning only. JM1 (marginals, minutes, dispersion, dependence, feature set) is unchanged and
 nothing is refit. Code: `cbb_platform/prod/rotowire_acquire.py` (HTTP), `cbb_platform/prod/rotowire_feed.py` (events,
 identity, point in time, gates), `cbb_platform/prod/inputs.apply_availability` (the existing interface).
-Tests: `tests/test_rotowire_availability.py` (31, CI-safe).
+Tests: `tests/test_rotowire_availability.py` (33, CI-safe).
 
 ## 1. Endpoints (documented REST API; no scraping)
 
@@ -45,16 +45,16 @@ The mapping is exact on codes, case- and whitespace-insensitive:
 | SUSP | SUSPENDED | unavailable |
 | NA | UNAVAILABLE | unavailable |
 | IR, PUP | LONG_TERM_OUT | unavailable |
-| GTD | GTD | **uncertain**: forecast with the model's own P(play); every row blocked |
-| Q | QUESTIONABLE | uncertain |
-| D | DOUBTFUL | uncertain |
-| IR-R | RETURN_DESIGNATION | uncertain |
-| null / empty / anything else | UNKNOWN (raw kept) | uncertain |
+| GTD | GTD | **unresolved**: PRICED_BUT_NON_ACTIONABLE (§7a): forecast and priced with the model's own P(play); never actionable |
+| Q | QUESTIONABLE | unresolved (as GTD) |
+| D | DOUBTFUL | unresolved (as GTD) |
+| IR-R | RETURN_DESIGNATION | unresolved (as GTD) |
+| null / empty / anything else | UNKNOWN (raw kept) | gate `AVAILABILITY_STATUS_UNRECOGNIZED`: suppressed (fail closed) |
 | DNP | POSTGAME_ONLY | **never pregame evidence, for any game** (stored for audit only) |
 
 - **No status-to-probability mapping exists.** P(play) is never rewritten: a test asserts it is bit-identical with and without RotoWire.
 - An OUT-like rotation player triggers the existing `UNSUPPORTED_ROTATION_SHOCK`.
-- An uncertain rotation player triggers `AVAILABILITY_UNCERTAIN_ROTATION` (game-level). Rotation means `TOP5_MINUTES` or `min_mu ≥ 20`.
+- A gated (unresolved, unrecognized or conflicting) rotation player triggers `AVAILABILITY_UNCERTAIN_ROTATION` (game-level): the game is priced but never actionable. Rotation means `TOP5_MINUTES` or `min_mu ≥ 20`.
 - `inputs.UNAVAILABLE` also gained `OUT_SEASON`. This fixes a latent mismatch: the Sharp Stats adapter emits `OUT_SEASON`, while the interface only listed `OUT_FOR_SEASON`.
 
 ## 3. Event store (append-only)
@@ -98,15 +98,16 @@ Storage rules:
 
 Only RESOLVED events reach a player. An unresolved record whose current status is not ACTIVE / NOT_LISTED fails its games closed with `AVAILABILITY_IDENTITY_UNRESOLVED`: the games of its resolved team, or **every** game when its team is unresolved too. The record stays stored for QA.
 
-## 7. Gates (all blocking; `readiness.AVAILABILITY_*`; production-board matrix)
+## 7. Gates (all block readiness and actionability; `readiness.AVAILABILITY_*`; production-board matrix)
 
 | code | level | when | fail-closed matrix row |
 |---|---|---|---|
 | `AVAILABILITY_FEED_UNAVAILABLE` | game | no PROCESSED news **and** snapshot acquisition at or before as_of | MISSING_STATE |
 | `AVAILABILITY_STALE` | game | oldest of the two latest acquisitions is older than the policy bound | MISSING_STATE |
 | `AVAILABILITY_IDENTITY_UNRESOLVED` | game | §6 | PLAYER_IDENTITY_AMBIGUITY |
-| `AVAILABILITY_UNCERTAIN_ROTATION` | game | uncertain status on a rotation player | UNSUPPORTED_PLAYER_STATUS |
-| `AVAILABILITY_UNCERTAIN` / `AVAILABILITY_SOURCE_CONFLICT` | row | uncertain / conflicting status | UNSUPPORTED_PLAYER_STATUS |
+| `AVAILABILITY_UNCERTAIN_ROTATION` | game | gated status on a rotation player | **UNRESOLVED_AVAILABILITY** |
+| `AVAILABILITY_UNCERTAIN` | row | GTD / QUESTIONABLE / DOUBTFUL / RETURN_DESIGNATION | **UNRESOLVED_AVAILABILITY** |
+| `AVAILABILITY_SOURCE_CONFLICT` / `AVAILABILITY_STATUS_UNRECOGNIZED` | row | conflicting sources / unrecognized code | UNSUPPORTED_PLAYER_STATUS |
 
 **Freshness bound.** These are the repository's existing bounds (`PRODUCTION_SCORING_RETRAINING_AND_DEPLOYMENT_POLICY_v1_0.md` §8), not a new number:
 
@@ -116,7 +117,40 @@ Only RESOLVED events reach a player. An unresolved record whose current status i
 | ≥ 6 h | 90 min |
 | < 6 h (T1H / T30M / T10M) | 20 min |
 
+### 7a. Board policy (architect ruling 2026-10-31)
+
+New matrix row `UNRESOLVED_AVAILABILITY` = (publication yes, pricing yes, actionable **no**, retry yes, alert no).
+Internal pricing rows carry `board_state` ∈ {`PRICED_ACTIONABLE`, `PRICED_BLOCKED`, `SUPPRESSED`},
+`actionable_block_reasons`, `actionable_bet_allowed`, `stake` (always 0.0: no staking policy) and the RotoWire
+`availability_status` / `availability_received_at` the row was priced with. The status is internal only (it is not a
+public field, and actionability codes are removed from a publishable row's public `suppression_reasons`).
+
+| status | board |
+|---|---|
+| GTD / Q / D / unresolved IR-R | projection, PMF, fair probabilities and prices, diagnostic raw edge vs a valid quote; `PRICED_BLOCKED`, `UNRESOLVED_AVAILABILITY` |
+| OUT / SUSP / NA / LONG_TERM_OUT | `SUPPRESSED` (`CONFIRMED_UNAVAILABLE`) |
+| conflict / unrecognized | `SUPPRESSED` |
+| ACT / no report | actionable only when every gate passes (below) |
+| DNP | POSTGAME_ONLY: never pregame evidence |
+
+**Actionability** (`production_board.actionable_block_reasons`; ACTIONABLE only with no reason). Every input is from ONE run.
+- `UNRESOLVED_AVAILABILITY`: the status the row was priced with is unresolved.
+- `AVAILABILITY_SOURCE_NOT_CONFIGURED` / `AVAILABILITY_FEED_UNAVAILABLE` / `AVAILABILITY_STALE_AT_CHECKPOINT`: the run's availability observation must be within the §7 bound at the checkpoint.
+- `QUOTE_PREDATES_AVAILABILITY_STATE`: the sportsbook quote must be posted after the status in force became knowable.
+- `REPRICE_REQUIRED`: a status newer than the run's prediction instant.
+- Global: `AUTOMATIC_ACTIONABLE_WAGER_DISABLED`, `BETTING_POLICY_MISSING`, `DISABLED_BY_AVAILABILITY_VALIDATION` (G4B), `WAGERING_DISABLED`.
+
+**GTD/Q/D → ACT never unlocks an earlier price.** The run that priced the player while uncertain keeps that status at every
+later checkpoint. Only a new run (fresh availability → current player/minutes state → fresh quote posted after the ACT
+confirmation → fresh price and edge → all gates) can be actionable (`test_uncertain_to_active_requires_fresh_quote_and_reprice`).
+
 **Rights register.** `RotoWire CBB API (availability)` is added as **UNVERIFIED**, so any public transport refuses. This only makes the gate stricter.
+Changing it to `PRODUCTION_APPROVED` needs a new, approved register version (COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY §2–§3) backed by:
+1. the executed RotoWire license / subscription agreement (or order form) naming the licensee and the CBB feeds used;
+2. the permitted uses: commercial internal modeling and pricing, and whether derived outputs (projections, prices, availability status) may be published on WizardOfOdds;
+3. display / attribution and redistribution restrictions, especially on the raw status, news and analysis text;
+4. retention and caching terms for the raw licensed payloads;
+5. a written architect attestation recording 1–4 with its date.
 
 ## 8. Polling (configurable; PROPOSED_NOT_APPROVED)
 
@@ -138,7 +172,7 @@ Only RESOLVED events reach a player. An unresolved record whose current status i
 | G4A-2 / 3 / 4 / 7 | mechanism READY (tests) |
 | G4A-5 mapping report | per-poll identity counts (`ingest`), `smoke` identity counts; first real report on the first live poll |
 | G4A-6 schema accepted | **OPEN** (`SCHEMA_VERIFIED = False`) |
-| G4B | **NOT MET**: needs ≥ 14 operating days or ≥ 250 material rows, ≥ 99 % team and ≥ 97 % player mapping |
+| G4B | **ACCUMULATING** (`PC.AVAILABILITY_G4B_STATUS`): frozen item 1 is ≥ 14 consecutive operating days **or** ≥ 250 material rows, *whichever is larger*; plus ≥ 99 % team and ≥ 97 % player mapping. Until PASS: `REAL_MONEY_ACTIONABILITY = DISABLED_BY_AVAILABILITY_VALIDATION`. Collection, projections, pricing and prospective scoring still run. |
 
 ## 10. Not integrated (possible future challenger inputs)
 

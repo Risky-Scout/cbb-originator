@@ -139,3 +139,8 @@ ROTOWIRE_INCLUDE_UPDATES = False                             # News/Updates.php 
 AVAILABILITY_FRESHNESS_BOUNDS_MINUTES = ((24 * 60, 6 * 60), (6 * 60, 90), (0, 20))   # (min minutes to tip, bound)
 ROTOWIRE_POLL_MINUTES = {"OFF_DAY": 180, "GAME_DAY": 10, "CRITICAL_PRE_TIP": 5}       # PROPOSED_NOT_APPROVED
 ROTOWIRE_CRITICAL_WINDOW_HOURS = 3.0                         # inside this window before a slate tip: CRITICAL_PRE_TIP
+# G4B prospective availability validation (docs/AVAILABILITY_SOURCE_GATES_G4A_G4B.md, frozen). Until it is PASS, real-money
+# actionability is disabled whatever else passes; collection, projections, pricing and prospective scoring still run.
+# Changed only by a recorded G4B evidence review, never to launch.
+AVAILABILITY_G4B_STATUS = "ACCUMULATING"
+REAL_MONEY_ACTIONABILITY = "ENABLED" if AVAILABILITY_G4B_STATUS == "PASS" else "DISABLED_BY_AVAILABILITY_VALIDATION"

@@ -102,7 +102,11 @@ There is one row per quoted (player, market, line, side). It carries every publi
 | `mcse` | Monte Carlo standard error (combos) |
 | `QUOTE_QUALITY_GATE`, `failed_quote_gates` | §7 |
 | `pricing_status` | `PRICING_ALLOWED` or `PRICING_SUPPRESSED` |
-| `actionable_bet_allowed` | always `false` (§10) |
+| `actionable_bet_allowed` | `true` only for `board_state = PRICED_ACTIONABLE`; in this phase always `false` (§10) |
+| `board_state` | `PRICED_ACTIONABLE`, `PRICED_BLOCKED` or `SUPPRESSED` |
+| `actionable_block_reasons` | why the row is not actionable (docs/ROTOWIRE_AVAILABILITY_2026_27.md §7a) |
+| `stake` | always `0.0` (no staking policy) |
+| `availability_status`, `availability_received_at` | the availability status the row was priced with (internal only) |
 
 The board header also carries `betting_policy` (§10) and the full per-game gate status.
 

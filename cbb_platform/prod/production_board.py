@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform import config as C
-from cbb_platform.prod import config as PC, loader as LD, slate as SL
+from cbb_platform.prod import config as PC, loader as LD, rotowire_feed as RW, slate as SL
 
 CONTRACT_VERSION = "cbb-wizard-production-contract-2.0.0"
 OPERATIONAL_MODE = "PRODUCTION"
@@ -84,6 +84,8 @@ FAIL_CLOSED_MATRIX = {
     "DUPLICATE_PUBLICATION_CONFLICTING_PAYLOAD": (False, True, False, False, True),
     "BETTING_POLICY_MISSING": (True, True, False, False, False),
     "COMMERCIAL_RIGHTS_UNVERIFIED": (False, True, False, False, True),
+    # architect ruling 2026-10-31: GTD / QUESTIONABLE / DOUBTFUL / unresolved RETURN_DESIGNATION -> PRICED_BUT_NON_ACTIONABLE
+    "UNRESOLVED_AVAILABILITY": (True, True, False, True, False),
 }
 
 # ------------------------------------------------------------------ commercial / publication rights (frozen policy
@@ -121,11 +123,16 @@ CODE_CONDITION = {
     "UNSUPPORTED_MARKET": "SIMULATION_FAILURE",
     "AVAILABILITY_FEED_UNAVAILABLE": "MISSING_STATE", "AVAILABILITY_STALE": "MISSING_STATE",
     "AVAILABILITY_IDENTITY_UNRESOLVED": "PLAYER_IDENTITY_AMBIGUITY",
-    "AVAILABILITY_UNCERTAIN": "UNSUPPORTED_PLAYER_STATUS", "AVAILABILITY_SOURCE_CONFLICT": "UNSUPPORTED_PLAYER_STATUS",
-    "AVAILABILITY_UNCERTAIN_ROTATION": "UNSUPPORTED_PLAYER_STATUS",
+    "AVAILABILITY_UNCERTAIN": "UNRESOLVED_AVAILABILITY", "AVAILABILITY_UNCERTAIN_ROTATION": "UNRESOLVED_AVAILABILITY",
+    "AVAILABILITY_SOURCE_CONFLICT": "UNSUPPORTED_PLAYER_STATUS", "AVAILABILITY_STATUS_UNRECOGNIZED": "UNSUPPORTED_PLAYER_STATUS",
     **{c: ("ODDS_API_FAILURE" if c in ("ODDS_API_FAILURE", "QUOTE_INTEGRATION_UNVALIDATED") else "STALE_QUOTE")
        for c in QUOTE_ONLY_REASONS},
 }
+
+
+# codes that permit publication and pricing but never actionability (they are not suppression reasons)
+PRICED_BLOCKED_REASONS = frozenset(c for c, k in CODE_CONDITION.items() if k == "UNRESOLVED_AVAILABILITY")
+BOARD_STATES = ("PRICED_ACTIONABLE", "PRICED_BLOCKED", "SUPPRESSED")
 
 
 def condition_of(code: str) -> tuple[bool, bool, bool, bool, bool]:
@@ -266,6 +273,57 @@ def betting_policy(path: Path = BETTING_POLICY_PATH) -> dict:
             "AUTOMATIC_ACTIONABLE_WAGER": AUTOMATIC_ACTIONABLE_WAGER}
 
 
+# ============================================================================ actionability
+def global_actionable_blocks(policy: dict | None = None) -> list[str]:
+    """Blocks that apply to every row whatever its own gates: no automatic wager, no architect betting policy, G4B
+    availability validation not passed (PC.REAL_MONEY_ACTIONABILITY), wagering disabled."""
+    pol = policy if policy is not None else betting_policy()
+    b = []
+    if AUTOMATIC_ACTIONABLE_WAGER != "ENABLED":
+        b.append("AUTOMATIC_ACTIONABLE_WAGER_DISABLED")
+    if pol["ARCHITECT_BETTING_POLICY_REQUIRED"]:
+        b.append("BETTING_POLICY_MISSING")
+    if PC.REAL_MONEY_ACTIONABILITY != "ENABLED":
+        b.append(PC.REAL_MONEY_ACTIONABILITY)
+    if not PC.WAGERING_ENABLED:
+        b.append("WAGERING_DISABLED")
+    return b
+
+
+def actionable_block_reasons(row: dict, *, priced: bool, codes, checkpoint_at, tip, prediction_as_of,
+                             availability: dict | None, global_blocks) -> list[str]:
+    """Row actionability: ACTIONABLE only when this list is empty. Every input is from ONE run (prediction_as_of): the
+    availability state, the player / minutes state, the quote and the price. A price computed while a player was
+    GTD / Q / D is never unlocked: after the status resolves to ACT only a NEW run can be actionable, and only if its
+    availability observation is still fresh at the checkpoint and its sportsbook quote was posted after the status in
+    force became knowable (a quote from before the news has not priced it)."""
+    cp = _utc(checkpoint_at)
+    r = list(global_blocks)
+    if not priced:
+        r.append("NOT_PRICED")
+    if row.get("availability_status") in RW.UNRESOLVED or set(codes) & PRICED_BLOCKED_REASONS:
+        r.append("UNRESOLVED_AVAILABILITY")
+    last = (availability or {}).get("last_success") or {}
+    if availability is None:
+        r.append("AVAILABILITY_SOURCE_NOT_CONFIGURED")
+    elif not last or any(v is None for v in last.values()):
+        r.append("AVAILABILITY_FEED_UNAVAILABLE")
+    else:
+        mtt = -1.0 if tip is None else (_utc(tip) - cp).total_seconds() / 60.0
+        age = (cp - min(_utc(v) for v in last.values())).total_seconds() / 60.0
+        if age > RW.freshness_bound_minutes(mtt):
+            r.append("AVAILABILITY_STALE_AT_CHECKPOINT")
+    ra = row.get("availability_received_at")
+    if ra is not None:
+        ra = _utc(ra)
+        if ra >= _utc(prediction_as_of):
+            r.append("REPRICE_REQUIRED")
+        qa = row.get("quote_available_at")
+        if qa is None or _utc(qa) < ra:
+            r.append("QUOTE_PREDATES_AVAILABILITY_STATE")
+    return sorted(set(r))
+
+
 # ============================================================================ boards
 def _model_gate() -> tuple[bool, dict]:
     try:
@@ -299,6 +357,8 @@ def build_boards(ctx: RunContext, checkpoint_at, schedule_gate: dict, *, checkpo
     if ctx.data_label != "LIVE":
         run_codes.add("FIXTURE_DATA_NOT_PUBLISHABLE")
     games, public, internal = {}, [], []
+    pol = betting_policy()
+    gblocks = global_actionable_blocks(pol)
     for gid in sorted({r["game_id"] for r in ctx.records}):
         pit = point_in_time(ctx, gid)
         sg = (schedule_gate.get("games") or {}).get(gid) or {"SCHEDULE_FRESHNESS_GATE": "FAIL",
@@ -332,9 +392,12 @@ def build_boards(ctx: RunContext, checkpoint_at, schedule_gate: dict, *, checkpo
             row_codes = {c for c in str(r.get("suppression_reason") or "").split(";") if c} - set(codes) - {""}
             row_nonquote = row_codes - QUOTE_ONLY_REASONS
             if k not in seen:
-                pub_ok = games[gid]["publication_allowed"] and not row_nonquote and r.get("projection") is not None \
-                    and r["market"] in SUPPORTED_MARKETS and _decide(row_nonquote)["publication_allowed"]
+                pub_ok = games[gid]["publication_allowed"] and not (row_nonquote - PRICED_BLOCKED_REASONS) \
+                    and r.get("projection") is not None and r["market"] in SUPPORTED_MARKETS \
+                    and _decide(row_nonquote)["publication_allowed"]
                 reasons = sorted((codes - QUOTE_ONLY_REASONS) | row_nonquote)
+                if pub_ok:                                       # actionability blocks are private, not suppression
+                    reasons = sorted(set(reasons) - PRICED_BLOCKED_REASONS)
                 seen[k] = {**gbase, "game": r["game"], "player_id": r["player_id"], "player_name": r["player"],
                            "team_id": r["team_id"], "team": ctx.teams.get(r["team_id"], r["team_id"]),
                            "market": r["market"], "projection": _num(r.get("projection")) if pub_ok else None,
@@ -342,13 +405,19 @@ def build_boards(ctx: RunContext, checkpoint_at, schedule_gate: dict, *, checkpo
                            "p_play": _num(r.get("p_play")), "pmf_q75": r.get("pmf_q75") if pub_ok else None,
                            "distribution_method": r.get("distribution_method"),
                            "feature_cutoff": _iso(r["feature_cutoff"]),
-                           "status": "PUBLISHABLE" if pub_ok else "SUPPRESSED", "suppression_reasons": reasons}
+                           "status": "PUBLISHABLE" if pub_ok else "SUPPRESSED", "suppression_reasons": reasons,
+                           "availability_status": r.get("availability_status"),
+                           "availability_received_at": r.get("availability_received_at")}
                 public.append(seen[k])
             if r.get("line") is None:
                 continue
             qg = quote_gates(r, cp, tip, model_ok, pit["POINT_IN_TIME_LEGALITY"] == "PASS")
-            price_ok = games[gid]["pricing_allowed"] and not row_codes and qg["QUOTE_QUALITY_GATE"] == "PASS" \
-                and seen[k]["status"] == "PUBLISHABLE"
+            price_ok = games[gid]["pricing_allowed"] and not (row_codes - PRICED_BLOCKED_REASONS) \
+                and qg["QUOTE_QUALITY_GATE"] == "PASS" and seen[k]["status"] == "PUBLISHABLE"
+            blocks = actionable_block_reasons(r, priced=price_ok, codes=codes | row_codes, checkpoint_at=cp, tip=tip,
+                                              prediction_as_of=s["prediction_as_of"], availability=s.get("availability"),
+                                              global_blocks=gblocks)
+            state = "SUPPRESSED" if not price_ok else "PRICED_BLOCKED" if blocks else "PRICED_ACTIONABLE"
             over = r["side"] == "OVER"
             internal.append({**seen[k], "line": r["line"], "side": r["side"],
                              "p_over": r.get("probability") if over else None,
@@ -370,7 +439,9 @@ def build_boards(ctx: RunContext, checkpoint_at, schedule_gate: dict, *, checkpo
                              "mcse": r.get("mcse"), "QUOTE_QUALITY_GATE": qg["QUOTE_QUALITY_GATE"],
                              "failed_quote_gates": qg["failed"],
                              "pricing_status": "PRICING_ALLOWED" if price_ok else "PRICING_SUPPRESSED",
-                             "actionable_bet_allowed": False})
+                             "board_state": state, "actionable_block_reasons": blocks,
+                             "actionable_bet_allowed": state == "PRICED_ACTIONABLE",
+                             "stake": 0.0})                     # no architect staking policy: never a stake
     pub_fields = PUBLIC_FIELDS + (PRIVATE_FIELDS if publish_private_fields else ())
     public = [{k: r.get(k) for k in pub_fields} for r in public]
     head = {"contract_version": CONTRACT_VERSION, "operational_mode": OPERATIONAL_MODE,
@@ -381,13 +452,13 @@ def build_boards(ctx: RunContext, checkpoint_at, schedule_gate: dict, *, checkpo
             "checkpoint_at": cp.isoformat(), "prediction_as_of": _iso(s["prediction_as_of"]),
             "data_cutoff": ctx.state_manifest["source_cutoff"], "data_label": ctx.data_label,
             "schedule_freshness_policy": PC.SCHEDULE_FRESHNESS_POLICY}
-    pol = betting_policy()
     return {"public": envelope({**head, "board_kind": "PUBLIC_PROJECTION_BOARD", "rows": public,
                                 "games": {g: {k: v[k] for k in ("publication_allowed", "POINT_IN_TIME_LEGALITY",
                                                                 "SCHEDULE_FRESHNESS_GATE", "schedule_verified_at")}
                                           for g, v in games.items()}}),
             "internal": envelope({**head, "board_kind": "INTERNAL_PRICING_BOARD", "rows": internal,
-                                  "betting_policy": pol, "games": games}),
+                                  "betting_policy": pol, "real_money_actionability": PC.REAL_MONEY_ACTIONABILITY,
+                                  "availability_g4b_status": PC.AVAILABILITY_G4B_STATUS, "games": games}),
             "game_status": games}
 
 
@@ -534,4 +605,5 @@ def production_readiness(gates: dict) -> dict:
 
 
 __all__ = ["build_boards", "load_run", "point_in_time", "quote_gates", "betting_policy", "envelope", "publish",
-           "FAIL_CLOSED_MATRIX", "condition_of", "production_readiness"]
+           "FAIL_CLOSED_MATRIX", "condition_of", "production_readiness", "actionable_block_reasons",
+           "global_actionable_blocks"]

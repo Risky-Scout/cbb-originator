@@ -51,13 +51,18 @@ STATUS_MAP = {"ACT": "ACTIVE", "OUT": "OUT", "GTD": "GTD", "Q": "QUESTIONABLE", 
               "NA": "UNAVAILABLE", "IR": "LONG_TERM_OUT", "PUP": "LONG_TERM_OUT", "IR-R": "RETURN_DESIGNATION",
               "DNP": "POSTGAME_ONLY"}
 OUT_LIKE = ("OUT", "SUSPENDED", "UNAVAILABLE", "LONG_TERM_OUT")
-UNCERTAIN = ("GTD", "QUESTIONABLE", "DOUBTFUL", "RETURN_DESIGNATION", "UNKNOWN")
+# Architect ruling 2026-10-31: an UNRESOLVED status is PRICED_BUT_NON_ACTIONABLE (projection, PMF, fair price and a
+# diagnostic edge are produced with the model's own P(play); never actionable). UNKNOWN (an unrecognized provider code)
+# is not a ruling status: it stays suppressed (fail closed), as does a snapshot/news conflict.
+UNRESOLVED = ("GTD", "QUESTIONABLE", "DOUBTFUL", "RETURN_DESIGNATION")
+UNCERTAIN = UNRESOLVED + ("UNKNOWN",)
 POSTGAME = ("POSTGAME_ONLY",)
 NOT_LISTED = "NOT_LISTED"           # snapshot observation: a previously listed player left the current injury list
 NEWS_KINDS = ("NEWS_UPDATE", "UPDATES_STREAM")
 KIND_OF = {"news_injuries": "NEWS_UPDATE", "news_updates": "UPDATES_STREAM", "snapshot": "SNAPSHOT_OBSERVATION"}
 GATE_UNCERTAIN = "AVAILABILITY_UNCERTAIN"
 GATE_CONFLICT = "AVAILABILITY_SOURCE_CONFLICT"
+GATE_UNRECOGNIZED = "AVAILABILITY_STATUS_UNRECOGNIZED"
 
 
 def normalize_status(raw) -> str:
@@ -411,8 +416,10 @@ def player_state(events: pd.DataFrame, as_of) -> pd.DataFrame:
                 s["normalized_status"] == NOT_LISTED and n["normalized_status"] == "ACTIVE")
             eff, src = (n["normalized_status"], n) if same else ("UNKNOWN", s)
             gate = "" if same else GATE_CONFLICT
-        if eff in UNCERTAIN and not gate:
+        if eff in UNRESOLVED and not gate:
             gate = GATE_UNCERTAIN
+        elif eff == "UNKNOWN" and not gate:
+            gate = GATE_UNRECOGNIZED
         last = g.iloc[-1]                                # the most recent identity resolution for this provider id
         out.append({"rotowire_player_id": pid, "effective_status": eff, "gate": gate,
                     "news_status": None if n is None else n["normalized_status"],

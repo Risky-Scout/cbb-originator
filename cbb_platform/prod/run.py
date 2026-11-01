@@ -236,9 +236,11 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             rs = md["player_id"].map(lambda p: roster_sup.get((gid, p), ""))
             md.loc[rs != "", "method"] = "NOT_PRICED"            # simulated (frozen pool), never priced
             md["player_suppression"] = rs
-            if "availability_gate" in gp:                        # unresolved status: priced for the shadow, blocked
+            if "availability_gate" in gp:                        # unresolved status: priced, never actionable
                 ag = md["player_id"].map(gp.set_index("player_id")["availability_gate"]).fillna("")
                 md.loc[(rs == "") & (ag != ""), "player_suppression"] = ag[(rs == "") & (ag != "")]
+            for c in ("availability_status", "availability_received_at"):   # the status in force when this was priced
+                md[c] = md["player_id"].map(gp.set_index("player_id")[c])
             dists.append(md)
             sup = gp[gp["player_suppression"] != ""]
             for r in sup.itertuples(index=False):             # suppressed players: recorded, not priced
@@ -246,13 +248,15 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                                             "pmf": np.array([1.0]), "projection": float("nan"), "bank_mean": float("nan"),
                                             "method": "NOT_PRICED", "p_play": float(r.p_play), "game_label": label,
                                             "player_label": pname.get(r.player_id, r.player_id), "bank_sha256": bank["bank_sha256"],
-                                            "player_suppression": r.player_suppression} for m in PC.MARKETS]))
+                                            "player_suppression": r.player_suppression,
+                                            "availability_status": r.availability_status,
+                                            "availability_received_at": r.availability_received_at} for m in PC.MARKETS]))
             cand_names.append(gp[["game_id", "team_id", "player_id"]].assign(
                 display_name=gp["player_id"].map(lambda p: pname.get(p))))
         summary["scored_games"] = len(banks)
     dist = pd.concat(dists, ignore_index=True) if dists else pd.DataFrame(
         columns=["game_id", "team_id", "player_id", "market", "pmf", "projection", "method", "p_play", "game_label",
-                 "player_label", "bank_sha256", "player_suppression"])
+                 "player_label", "bank_sha256", "player_suppression", "availability_status", "availability_received_at"])
     dist["game_reasons"] = dist["game_id"].map(lambda g: sorted(set(game_reasons.get(g, []))))
     # ---------------------------------------------------------------- quotes -> strict matching -> freshness
     quotes_paths = list(quotes_paths)
@@ -311,6 +315,9 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             "sportsbook": p.get("sportsbook"), "edge": p.get("edge"), "quote_available_at": p.get("quote_available_at"),
             "collector_received_at": p.get("collector_received_at"), "readiness_state": p["readiness_state"],
             "eligibility_state": p["eligibility_state"], "suppression_reason": p["suppression_reason"],
+            "availability_status": p.get("availability_status"),
+            "availability_received_at": None if pd.isna(p.get("availability_received_at"))
+            else pd.Timestamp(p["availability_received_at"]).isoformat(),
             "distribution_method": p["distribution_method"], "pmf_q75": p["pmf_q75"], "mcse": p.get("mcse"),
             "bank_sha256": p["bank_sha256"], "data_label": data_label,
             **{k: ident[k] for k in LD.WALK_FORWARD_IDENTITY_FIELDS if k in ident}}})

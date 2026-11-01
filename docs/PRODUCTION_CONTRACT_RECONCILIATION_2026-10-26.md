@@ -468,6 +468,7 @@ The release tag `cbb-2026-27-shadow-ops` (encrypted assets) stays as it is.
 | duplicate publication with conflicting payload | no | (internal) yes | no | no | yes |
 | commercial rights unverified | no (public transport) | (internal) yes | no | no | yes |
 | betting policy missing | yes | yes | no | no | no |
+| unresolved availability (GTD / Q / D / unresolved IR-R; architect ruling 2026-10-31) | yes | yes | no | yes | no |
 
 - Every code in `prod/readiness.py` maps to a row.
 - An unknown code blocks everything and alerts.
