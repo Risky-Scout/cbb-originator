@@ -1,14 +1,23 @@
 {
  "current": {
-  "asset": "ws-K20261101T093627Z-e0a4bd.tar",
-  "created_at": "2026-11-01T09:36:37.536743+00:00",
+  "asset": "ws-K20261101T154415Z-0fead8.tar",
+  "created_at": "2026-11-01T15:44:26.774369+00:00",
   "files": 25,
-  "state_version": "S20261101T093634Z-b9441e85d936",
-  "tar_bytes": 13629440,
-  "tar_sha256": "0dbce5bbb2fd37b4aef1ee402d0f142d53100aaa1b0ceaafcf2f182d73f8072e",
-  "tick_id": "K20261101T093627Z-e0a4bd"
+  "state_version": "S20261101T154424Z-7ae956c349e3",
+  "tar_bytes": 13373440,
+  "tar_sha256": "4f957207f4887badacc83c6d5dd728b59356a29a4e258dac10661e3d3f406841",
+  "tick_id": "K20261101T154415Z-0fead8"
  },
  "previous": [
+  {
+   "asset": "ws-K20261101T093627Z-e0a4bd.tar",
+   "created_at": "2026-11-01T09:36:37.536743+00:00",
+   "files": 25,
+   "state_version": "S20261101T093634Z-b9441e85d936",
+   "tar_bytes": 13629440,
+   "tar_sha256": "0dbce5bbb2fd37b4aef1ee402d0f142d53100aaa1b0ceaafcf2f182d73f8072e",
+   "tick_id": "K20261101T093627Z-e0a4bd"
+  },
   {
    "asset": "ws-K20261101T011619Z-7f08f2.tar",
    "created_at": "2026-11-01T01:16:21.360796+00:00",
@@ -26,15 +35,6 @@
    "tar_bytes": 13373440,
    "tar_sha256": "5ce6ef8ba24f76be2c5a1b3414bd1721abbe3d94b27b4deaba188e7e9fb852ca",
    "tick_id": "K20261101T004325Z-8ffd5b"
-  },
-  {
-   "asset": "ws-K20261031T183652Z-a93c20.tar",
-   "created_at": "2026-10-31T18:36:54.610898+00:00",
-   "files": 27,
-   "state_version": "S20261031T123754Z-6ea7d0041481",
-   "tar_bytes": 13373440,
-   "tar_sha256": "74972f9967d876bf79047715b34d872f2dd4cbcd0b17404ce254243d14afeb7b",
-   "tick_id": "K20261031T183652Z-a93c20"
   }
  ],
  "storage": "AES-256-CBC (openssl, pbkdf2 200000); key CBB_OPS_ENCRYPTION_KEY"
