@@ -37,3 +37,4 @@
 {"events": {"error": "Odds API events failed: HTTP 401", "status": "FAILED"}, "registry": null, "settlement": null, "started_at": "2026-11-01T13:13:16.343158+00:00", "status": "OK", "sync": null, "tick_id": "K20261101T131316Z-65420d"}
 {"events": {"error": "Odds API events failed: HTTP 401", "status": "FAILED"}, "registry": null, "settlement": null, "started_at": "2026-11-01T13:44:05.550006+00:00", "status": "OK", "sync": null, "tick_id": "K20261101T134405Z-b7a93f"}
 {"events": {"error": "Odds API events failed: HTTP 401", "status": "FAILED"}, "registry": null, "settlement": null, "started_at": "2026-11-01T14:14:29.207023+00:00", "status": "OK", "sync": null, "tick_id": "K20261101T141429Z-1cebf0"}
+{"events": {"error": "Odds API events failed: HTTP 401", "status": "FAILED"}, "registry": null, "settlement": null, "started_at": "2026-11-01T14:44:14.739917+00:00", "status": "OK", "sync": null, "tick_id": "K20261101T144414Z-00f418"}
