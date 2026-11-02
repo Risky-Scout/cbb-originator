@@ -607,7 +607,7 @@
  },
  "evidence": {
   "excluded_not_clean": 0,
-  "player_projections": 271,
+  "player_projections": 304,
   "quote_side_records": 0,
   "quoted_lines": 0,
   "settled_players_played": 38,
@@ -671,7 +671,7 @@
    }
   }
  },
- "evidence_chain_head": "fdedf3d595150c2659aec51d1ae31c1deddd42d4cd312fa138d64786aa26201b",
+ "evidence_chain_head": "d854b6ad6001b22640c1863a4064cbe283fc0a89b79a55db7aa833493a061792",
  "high_exposure_pts": {
   "PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING": false,
   "definition": "PTS, pregame min_mu >= 30.0",
@@ -699,24 +699,24 @@
    "refused": 0
   },
   "games_by_status": {
-   "PREDICTED": 7
+   "PREDICTED": 8
   },
-  "games_predicted": 7,
-  "games_predicted_with_game_blockers": 7,
-  "games_registered": 7,
+  "games_predicted": 8,
+  "games_predicted_with_game_blockers": 8,
+  "games_registered": 8,
   "games_settled": 3,
   "odds_api": {
    "credits_used": 0,
-   "live_requests": 85,
+   "live_requests": 86,
    "quota_remaining_last": 4912393
   },
   "quote_snapshots": 0,
   "quote_snapshots_with_bookmakers": 0,
   "timing_deviation_minutes": {
    "max": 46.1327937,
-   "median": 38.70427156666666,
+   "median": 39.46632315833333,
    "min": 11.706526916666666,
-   "n": 7
+   "n": 8
   }
  },
  "over_under_sides": {
