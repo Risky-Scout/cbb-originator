@@ -1,0 +1,165 @@
+{
+ "artifact_sha256": {
+  "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+  "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab",
+  "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+ },
+ "events": {
+  "error": "Odds API events failed: HTTP 401",
+  "status": "FAILED"
+ },
+ "finished_at": "2026-11-02T21:17:04.188172+00:00",
+ "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+ "frozen_model_hash_gate": "PASS",
+ "max_readiness": "SHADOW_ONLY",
+ "model_refit": false,
+ "public_deployment": false,
+ "registry": [
+  {
+   "game_id": "G-48e42ccf8fe9e68b",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2685.379602
+  },
+  {
+   "game_id": "G-590187eae74014f9",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2685.379602
+  },
+  {
+   "game_id": "G-84b2d00ef8272db5",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2685.379602
+  },
+  {
+   "game_id": "G-8e183fbeb34256c8",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2685.379602
+  }
+ ],
+ "restore": {
+  "asset": "ws-K20261102T184409Z-4d5419.tar",
+  "errors": [],
+  "fallback_used": false,
+  "restored": true,
+  "restored_files": 45,
+  "state_version": "S20261102T184529Z-90adc5bbc413"
+ },
+ "scoring": {
+  "banks": {
+   "G-48e42ccf8fe9e68b": {
+    "bank_sha256": "a70b162c5057deda96d4f7a15e4e6357162fcc213a04e635ee0d945acfe66b3d",
+    "corr_min_eig": 0.08350202560001274,
+    "jitter": 0.0,
+    "priced_players": 32
+   },
+   "G-590187eae74014f9": {
+    "bank_sha256": "dbd05e2e0c0dbf488cab954a5ffb6882303693df83be37e7794f358069550e21",
+    "corr_min_eig": 0.09187056997881249,
+    "jitter": 0.0,
+    "priced_players": 38
+   },
+   "G-84b2d00ef8272db5": {
+    "bank_sha256": "d1bc6efa3acb446c78b23662bef00109d24b0a29860d0156c7ca88b18b658bd3",
+    "corr_min_eig": 0.08897377337324786,
+    "jitter": 0.0,
+    "priced_players": 35
+   },
+   "G-8e183fbeb34256c8": {
+    "bank_sha256": "11b05396f50178c0e2bde7bdb88b974a150f77c9fb4b6e050fef534990a61206",
+    "corr_min_eig": 0.09567331449071154,
+    "jitter": 0.0,
+    "priced_players": 43
+   }
+  },
+  "evidence": {
+   "predictions_quoted": 0,
+   "projections": 148
+  },
+  "game_reasons": {
+   "G-48e42ccf8fe9e68b": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-590187eae74014f9": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-84b2d00ef8272db5": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-8e183fbeb34256c8": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ]
+  },
+  "games_due": 4,
+  "games_scored": 4,
+  "one_joint_bank_per_game": true,
+  "player_universe": {
+   "pool_by_class": {
+    "FRESHMAN": 10,
+    "RETURNING": 105,
+    "TRANSFER": 33
+   },
+   "pool_by_roster_status": {
+    "NOT_ON_CURRENT_ROSTER": 49,
+    "ON_CURRENT_ROSTER": 90,
+    "ON_OTHER_TEAM_ROSTER": 9
+   },
+   "pool_cold_start": 17,
+   "pool_players": 148,
+   "pool_scoreable": 90,
+   "rows": 185,
+   "suppressed_by_reason": {
+    "IDENTITY_CONFLICT": 9,
+    "NOT_ON_CURRENT_ROSTER": 49,
+    "NO_FROZEN_MEMBERSHIP_EVIDENCE": 36,
+    "RECRUIT_IDENTITY_UNAVAILABLE": 1
+   }
+  },
+  "predictions": 1776,
+  "quote_coverage": {
+   "games": {
+    "G-48e42ccf8fe9e68b": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-590187eae74014f9": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-84b2d00ef8272db5": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-8e183fbeb34256c8": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    }
+   },
+   "listing": null
+  },
+  "quotes": {
+   "by_status": [],
+   "total": 0
+  },
+  "readiness_state": "BLOCKED",
+  "run_id": "R20261102T211514Z-ee5bea9d",
+  "run_reasons": [
+   "ODDS_API_FAILURE",
+   "QUOTE_INTEGRATION_UNVALIDATED"
+  ],
+  "side_monitor": {
+   "appended": 0,
+   "head": "0000000000000000000000000000000000000000000000000000000000000000",
+   "path": "../ops/ticks/K20261102T211512Z-2b40b6/side_monitor.jsonl"
+  }
+ },
+ "source_commit": "ca00d6a89a1b487c7e4928641c3a7147bbb84049",
+ "started_at": "2026-11-02T21:15:12.647215+00:00",
+ "tick_id": "K20261102T211512Z-2b40b6",
+ "version": "cbb-prod-shadow-tick-1.0.0",
+ "wagering_enabled": false
+}
