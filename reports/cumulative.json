@@ -2,18 +2,18 @@
  "by_market": {
   "AST": {
    "projection": {
-    "games": 1,
-    "mean_actual": 1.4,
-    "mean_model": 1.3117346324483097,
-    "n": 15,
-    "relative_error": -0.06304669110835039,
+    "games": 3,
+    "mean_actual": 1.2432432432432432,
+    "mean_model": 1.2255161722603325,
+    "n": 37,
+    "relative_error": -0.01425873100799352,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.08826536755169054
+     "games": 3,
+     "hi": 0.29588673827255435,
+     "lo": -0.3313408802383761,
+     "n": 37,
+     "se": 0.16000998575953995,
+     "value": -0.01772707098291086
     }
    },
    "quoted_lines": {
@@ -22,18 +22,18 @@
   },
   "BLK": {
    "projection": {
-    "games": 1,
-    "mean_actual": 0.3333333333333333,
-    "mean_model": 0.272179818010767,
-    "n": 15,
-    "relative_error": -0.18346054596769906,
+    "games": 3,
+    "mean_actual": 0.40540540540540543,
+    "mean_model": 0.2818201029875628,
+    "n": 37,
+    "relative_error": -0.30484374596401154,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.06115351532256635
+     "games": 3,
+     "hi": -0.04149283486924382,
+     "lo": -0.20567776996644122,
+     "n": 37,
+     "se": 0.04188468165544552,
+     "value": -0.12358530241784252
     }
    },
    "quoted_lines": {
@@ -42,18 +42,18 @@
   },
   "FG3M": {
    "projection": {
-    "games": 1,
-    "mean_actual": 1.2666666666666666,
-    "mean_model": 0.8791360224048417,
-    "n": 15,
-    "relative_error": -0.3059452454698619,
+    "games": 3,
+    "mean_actual": 1.054054054054054,
+    "mean_model": 0.8365578331676337,
+    "n": 37,
+    "relative_error": -0.20634256853327063,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.38753064426182504
+     "games": 3,
+     "hi": 0.12504715849235257,
+     "lo": -0.5600396002651933,
+     "n": 37,
+     "se": 0.17477024173949696,
+     "value": -0.21749622088642037
     }
    },
    "quoted_lines": {
@@ -62,18 +62,18 @@
   },
   "PA": {
    "projection": {
-    "games": 1,
-    "mean_actual": 9.866666666666667,
-    "mean_model": 9.158013333333335,
-    "n": 15,
-    "relative_error": -0.07182297297297302,
+    "games": 3,
+    "mean_actual": 9.864864864864865,
+    "mean_model": 8.372208108108106,
+    "n": 37,
+    "relative_error": -0.1513104109589041,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.7086533333333338
+     "games": 3,
+     "hi": 0.9721905851632859,
+     "lo": -3.9575040986767993,
+     "n": 37,
+     "se": 1.2575982831125696,
+     "value": -1.4926567567567568
     }
    },
    "quoted_lines": {
@@ -82,18 +82,18 @@
   },
   "PR": {
    "projection": {
-    "games": 1,
-    "mean_actual": 12.133333333333333,
-    "mean_model": 10.914763333333331,
-    "n": 15,
-    "relative_error": -0.10043159340659338,
+    "games": 3,
+    "mean_actual": 11.91891891891892,
+    "mean_model": 10.091740540540542,
+    "n": 37,
+    "relative_error": -0.15330068027210886,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -1.2185699999999997
+     "games": 3,
+     "hi": 0.39696078628994225,
+     "lo": -4.051317543046699,
+     "n": 37,
+     "se": 1.134785731886936,
+     "value": -1.8271783783783786
     }
    },
    "quoted_lines": {
@@ -102,18 +102,18 @@
   },
   "PRA": {
    "projection": {
-    "games": 1,
-    "mean_actual": 13.533333333333333,
-    "mean_model": 12.224843333333332,
-    "n": 15,
-    "relative_error": -0.0966864532019704,
+    "games": 3,
+    "mean_actual": 13.162162162162161,
+    "mean_model": 11.317894594594593,
+    "n": 37,
+    "relative_error": -0.14011889117043122,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -1.3084899999999995
+     "games": 3,
+     "hi": 0.6482375201163406,
+     "lo": -4.336772655251476,
+     "n": 37,
+     "se": 1.2717096371894945,
+     "value": -1.8442675675675675
     }
    },
    "quoted_lines": {
@@ -122,18 +122,18 @@
   },
   "PTS": {
    "projection": {
-    "games": 1,
-    "mean_actual": 8.466666666666667,
-    "mean_model": 7.850560750980149,
-    "n": 15,
-    "relative_error": -0.07276841523856513,
+    "games": 3,
+    "mean_actual": 8.621621621621621,
+    "mean_model": 7.144318722852518,
+    "n": 37,
+    "relative_error": -0.17134861208293675,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.6161059156865181
+     "games": 3,
+     "hi": 0.7511728441135885,
+     "lo": -3.7057786416517953,
+     "n": 37,
+     "se": 1.1369983124489145,
+     "value": -1.4773028987691033
     }
    },
    "quoted_lines": {
@@ -142,18 +142,18 @@
   },
   "RA": {
    "projection": {
-    "games": 1,
-    "mean_actual": 5.066666666666666,
-    "mean_model": 4.37691,
-    "n": 15,
-    "relative_error": -0.13613618421052637,
+    "games": 3,
+    "mean_actual": 4.54054054054054,
+    "mean_model": 4.171840540540541,
+    "n": 37,
+    "relative_error": -0.08120178571428573,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.6897566666666669
+     "games": 3,
+     "hi": 0.2108401902193694,
+     "lo": -0.9482401902193694,
+     "n": 37,
+     "se": 0.295689203878596,
+     "value": -0.3687
     }
    },
    "quoted_lines": {
@@ -162,18 +162,18 @@
   },
   "REB": {
    "projection": {
-    "games": 1,
-    "mean_actual": 3.6666666666666665,
-    "mean_model": 3.068206004544713,
-    "n": 15,
-    "relative_error": -0.16321654421507814,
+    "games": 3,
+    "mean_actual": 3.2972972972972974,
+    "mean_model": 2.945032902168747,
+    "n": 37,
+    "relative_error": -0.10683428376849474,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.5984606621219531
+     "games": 3,
+     "hi": -0.03184120006672858,
+     "lo": -0.6726875901903719,
+     "n": 37,
+     "se": 0.16348422603133472,
+     "value": -0.35226439512855023
     }
    },
    "quoted_lines": {
@@ -182,18 +182,18 @@
   },
   "STL": {
    "projection": {
-    "games": 1,
-    "mean_actual": 1.1333333333333333,
-    "mean_model": 0.5994949277640699,
-    "n": 15,
-    "relative_error": -0.47103388726699713,
+    "games": 3,
+    "mean_actual": 0.8918918918918919,
+    "mean_model": 0.629807805840533,
+    "n": 37,
+    "relative_error": -0.29385185405758424,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.5338384055692634
+     "games": 3,
+     "hi": 0.10584659270199037,
+     "lo": -0.6300147648047082,
+     "n": 37,
+     "se": 0.18772318351538067,
+     "value": -0.2620840860513589
     }
    },
    "quoted_lines": {
@@ -202,18 +202,18 @@
   },
   "STOCKS": {
    "projection": {
-    "games": 1,
-    "mean_actual": 1.4666666666666666,
-    "mean_model": 0.87104,
-    "n": 15,
-    "relative_error": -0.4061090909090909,
+    "games": 3,
+    "mean_actual": 1.2972972972972974,
+    "mean_model": 0.9126189189189189,
+    "n": 37,
+    "relative_error": -0.29652291666666675,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.5956266666666666
+     "games": 3,
+     "hi": -0.0599439525183163,
+     "lo": -0.7094128042384407,
+     "n": 37,
+     "se": 0.16568387400050508,
+     "value": -0.3846783783783785
     }
    },
    "quoted_lines": {
@@ -222,18 +222,18 @@
   },
   "TOV": {
    "projection": {
-    "games": 1,
-    "mean_actual": 1.5333333333333334,
-    "mean_model": 0.9608289204376116,
-    "n": 15,
-    "relative_error": -0.373372443192862,
+    "games": 3,
+    "mean_actual": 1.2432432432432432,
+    "mean_model": 0.950135235801418,
+    "n": 37,
+    "relative_error": -0.23576078859451152,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.5725044128957217
+     "games": 3,
+     "hi": 0.03991182937249521,
+     "lo": -0.6261278442561455,
+     "n": 37,
+     "se": 0.16991120216551853,
+     "value": -0.29310800744182514
     }
    },
    "quoted_lines": {
@@ -255,18 +255,18 @@
   },
   "non_C": {
    "projection": {
-    "games": 1,
-    "mean_actual": 8.466666666666667,
-    "mean_model": 7.850560750980149,
-    "n": 15,
-    "relative_error": -0.07276841523856513,
+    "games": 3,
+    "mean_actual": 8.621621621621621,
+    "mean_model": 7.144318722852518,
+    "n": 37,
+    "relative_error": -0.17134861208293675,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.6161059156865181
+     "games": 3,
+     "hi": 0.7511728441135885,
+     "lo": -3.7057786416517953,
+     "n": 37,
+     "se": 1.1369983124489145,
+     "value": -1.4773028987691033
     }
    },
    "quoted_lines": {
@@ -281,18 +281,18 @@
   "first_30_days": {
    "AST": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.4,
-     "mean_model": 1.3117346324483097,
-     "n": 15,
-     "relative_error": -0.06304669110835039,
+     "games": 3,
+     "mean_actual": 1.2432432432432432,
+     "mean_model": 1.2255161722603325,
+     "n": 37,
+     "relative_error": -0.01425873100799352,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.08826536755169054
+      "games": 3,
+      "hi": 0.29588673827255435,
+      "lo": -0.3313408802383761,
+      "n": 37,
+      "se": 0.16000998575953995,
+      "value": -0.01772707098291086
      }
     },
     "quoted_lines": {
@@ -304,18 +304,18 @@
    },
    "PA": {
     "projection": {
-     "games": 1,
-     "mean_actual": 9.866666666666667,
-     "mean_model": 9.158013333333335,
-     "n": 15,
-     "relative_error": -0.07182297297297302,
+     "games": 3,
+     "mean_actual": 9.864864864864865,
+     "mean_model": 8.372208108108106,
+     "n": 37,
+     "relative_error": -0.1513104109589041,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.7086533333333338
+      "games": 3,
+      "hi": 0.9721905851632859,
+      "lo": -3.9575040986767993,
+      "n": 37,
+      "se": 1.2575982831125696,
+      "value": -1.4926567567567568
      }
     },
     "quoted_lines": {
@@ -327,18 +327,18 @@
    },
    "PR": {
     "projection": {
-     "games": 1,
-     "mean_actual": 12.133333333333333,
-     "mean_model": 10.914763333333331,
-     "n": 15,
-     "relative_error": -0.10043159340659338,
+     "games": 3,
+     "mean_actual": 11.91891891891892,
+     "mean_model": 10.091740540540542,
+     "n": 37,
+     "relative_error": -0.15330068027210886,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -1.2185699999999997
+      "games": 3,
+      "hi": 0.39696078628994225,
+      "lo": -4.051317543046699,
+      "n": 37,
+      "se": 1.134785731886936,
+      "value": -1.8271783783783786
      }
     },
     "quoted_lines": {
@@ -350,18 +350,18 @@
    },
    "PRA": {
     "projection": {
-     "games": 1,
-     "mean_actual": 13.533333333333333,
-     "mean_model": 12.224843333333332,
-     "n": 15,
-     "relative_error": -0.0966864532019704,
+     "games": 3,
+     "mean_actual": 13.162162162162161,
+     "mean_model": 11.317894594594593,
+     "n": 37,
+     "relative_error": -0.14011889117043122,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -1.3084899999999995
+      "games": 3,
+      "hi": 0.6482375201163406,
+      "lo": -4.336772655251476,
+      "n": 37,
+      "se": 1.2717096371894945,
+      "value": -1.8442675675675675
      }
     },
     "quoted_lines": {
@@ -373,18 +373,18 @@
    },
    "PTS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 8.466666666666667,
-     "mean_model": 7.850560750980149,
-     "n": 15,
-     "relative_error": -0.07276841523856513,
+     "games": 3,
+     "mean_actual": 8.621621621621621,
+     "mean_model": 7.144318722852518,
+     "n": 37,
+     "relative_error": -0.17134861208293675,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.6161059156865181
+      "games": 3,
+      "hi": 0.7511728441135885,
+      "lo": -3.7057786416517953,
+      "n": 37,
+      "se": 1.1369983124489145,
+      "value": -1.4773028987691033
      }
     },
     "quoted_lines": {
@@ -396,18 +396,18 @@
    },
    "STL": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.1333333333333333,
-     "mean_model": 0.5994949277640699,
-     "n": 15,
-     "relative_error": -0.47103388726699713,
+     "games": 3,
+     "mean_actual": 0.8918918918918919,
+     "mean_model": 0.629807805840533,
+     "n": 37,
+     "relative_error": -0.29385185405758424,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.5338384055692634
+      "games": 3,
+      "hi": 0.10584659270199037,
+      "lo": -0.6300147648047082,
+      "n": 37,
+      "se": 0.18772318351538067,
+      "value": -0.2620840860513589
      }
     },
     "quoted_lines": {
@@ -419,18 +419,18 @@
    },
    "TOV": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.5333333333333334,
-     "mean_model": 0.9608289204376116,
-     "n": 15,
-     "relative_error": -0.373372443192862,
+     "games": 3,
+     "mean_actual": 1.2432432432432432,
+     "mean_model": 0.950135235801418,
+     "n": 37,
+     "relative_error": -0.23576078859451152,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.5725044128957217
+      "games": 3,
+      "hi": 0.03991182937249521,
+      "lo": -0.6261278442561455,
+      "n": 37,
+      "se": 0.16991120216551853,
+      "value": -0.29310800744182514
      }
     },
     "quoted_lines": {
@@ -444,18 +444,18 @@
   "team_games_le_2": {
    "AST": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.4,
-     "mean_model": 1.3117346324483097,
-     "n": 15,
-     "relative_error": -0.06304669110835039,
+     "games": 3,
+     "mean_actual": 1.2432432432432432,
+     "mean_model": 1.2255161722603325,
+     "n": 37,
+     "relative_error": -0.01425873100799352,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.08826536755169054
+      "games": 3,
+      "hi": 0.29588673827255435,
+      "lo": -0.3313408802383761,
+      "n": 37,
+      "se": 0.16000998575953995,
+      "value": -0.01772707098291086
      }
     },
     "quoted_lines": {
@@ -467,18 +467,18 @@
    },
    "PA": {
     "projection": {
-     "games": 1,
-     "mean_actual": 9.866666666666667,
-     "mean_model": 9.158013333333335,
-     "n": 15,
-     "relative_error": -0.07182297297297302,
+     "games": 3,
+     "mean_actual": 9.864864864864865,
+     "mean_model": 8.372208108108106,
+     "n": 37,
+     "relative_error": -0.1513104109589041,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.7086533333333338
+      "games": 3,
+      "hi": 0.9721905851632859,
+      "lo": -3.9575040986767993,
+      "n": 37,
+      "se": 1.2575982831125696,
+      "value": -1.4926567567567568
      }
     },
     "quoted_lines": {
@@ -490,18 +490,18 @@
    },
    "PR": {
     "projection": {
-     "games": 1,
-     "mean_actual": 12.133333333333333,
-     "mean_model": 10.914763333333331,
-     "n": 15,
-     "relative_error": -0.10043159340659338,
+     "games": 3,
+     "mean_actual": 11.91891891891892,
+     "mean_model": 10.091740540540542,
+     "n": 37,
+     "relative_error": -0.15330068027210886,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -1.2185699999999997
+      "games": 3,
+      "hi": 0.39696078628994225,
+      "lo": -4.051317543046699,
+      "n": 37,
+      "se": 1.134785731886936,
+      "value": -1.8271783783783786
      }
     },
     "quoted_lines": {
@@ -513,18 +513,18 @@
    },
    "PRA": {
     "projection": {
-     "games": 1,
-     "mean_actual": 13.533333333333333,
-     "mean_model": 12.224843333333332,
-     "n": 15,
-     "relative_error": -0.0966864532019704,
+     "games": 3,
+     "mean_actual": 13.162162162162161,
+     "mean_model": 11.317894594594593,
+     "n": 37,
+     "relative_error": -0.14011889117043122,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -1.3084899999999995
+      "games": 3,
+      "hi": 0.6482375201163406,
+      "lo": -4.336772655251476,
+      "n": 37,
+      "se": 1.2717096371894945,
+      "value": -1.8442675675675675
      }
     },
     "quoted_lines": {
@@ -536,18 +536,18 @@
    },
    "PTS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 8.466666666666667,
-     "mean_model": 7.850560750980149,
-     "n": 15,
-     "relative_error": -0.07276841523856513,
+     "games": 3,
+     "mean_actual": 8.621621621621621,
+     "mean_model": 7.144318722852518,
+     "n": 37,
+     "relative_error": -0.17134861208293675,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.6161059156865181
+      "games": 3,
+      "hi": 0.7511728441135885,
+      "lo": -3.7057786416517953,
+      "n": 37,
+      "se": 1.1369983124489145,
+      "value": -1.4773028987691033
      }
     },
     "quoted_lines": {
@@ -559,18 +559,18 @@
    },
    "STL": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.1333333333333333,
-     "mean_model": 0.5994949277640699,
-     "n": 15,
-     "relative_error": -0.47103388726699713,
+     "games": 3,
+     "mean_actual": 0.8918918918918919,
+     "mean_model": 0.629807805840533,
+     "n": 37,
+     "relative_error": -0.29385185405758424,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.5338384055692634
+      "games": 3,
+      "hi": 0.10584659270199037,
+      "lo": -0.6300147648047082,
+      "n": 37,
+      "se": 0.18772318351538067,
+      "value": -0.2620840860513589
      }
     },
     "quoted_lines": {
@@ -582,18 +582,18 @@
    },
    "TOV": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.5333333333333334,
-     "mean_model": 0.9608289204376116,
-     "n": 15,
-     "relative_error": -0.373372443192862,
+     "games": 3,
+     "mean_actual": 1.2432432432432432,
+     "mean_model": 0.950135235801418,
+     "n": 37,
+     "relative_error": -0.23576078859451152,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 15,
-      "se": null,
-      "value": -0.5725044128957217
+      "games": 3,
+      "hi": 0.03991182937249521,
+      "lo": -0.6261278442561455,
+      "n": 37,
+      "se": 0.16991120216551853,
+      "value": -0.29310800744182514
      }
     },
     "quoted_lines": {
@@ -607,27 +607,27 @@
  },
  "evidence": {
   "excluded_not_clean": 0,
-  "player_projections": 154,
+  "player_projections": 193,
   "quote_side_records": 0,
   "quoted_lines": 0,
-  "settled_players_played": 15,
+  "settled_players_played": 38,
   "settled_quote_sides": 0
  },
  "evidence_buckets_pts": {
   "CUR_0": {
    "projection": {
-    "games": 1,
-    "mean_actual": 8.466666666666667,
-    "mean_model": 7.850560750980149,
-    "n": 15,
-    "relative_error": -0.07276841523856513,
+    "games": 3,
+    "mean_actual": 8.621621621621621,
+    "mean_model": 7.144318722852518,
+    "n": 37,
+    "relative_error": -0.17134861208293675,
     "signed_error": {
-     "games": 1,
-     "hi": null,
-     "lo": null,
-     "n": 15,
-     "se": null,
-     "value": -0.6161059156865181
+     "games": 3,
+     "hi": 0.7511728441135885,
+     "lo": -3.7057786416517953,
+     "n": 37,
+     "se": 1.1369983124489145,
+     "value": -1.4773028987691033
     }
    },
    "quoted_lines": {
@@ -671,7 +671,7 @@
    }
   }
  },
- "evidence_chain_head": "22ab2faa89e3d08302ba9fb4aada04f6d5e738627812f0c45fad136d85e0ac5e",
+ "evidence_chain_head": "9e829ea66bb14b25b63cc95f7b79c117847f47f18ac2fcad490878af60413ccd",
  "high_exposure_pts": {
   "PTS_HIGH_EXPOSURE_UNDER_BIAS_WARNING": false,
   "definition": "PTS, pregame min_mu >= 30.0",
@@ -694,29 +694,29 @@
  },
  "operations": {
   "cbbd": {
-   "cache_hits": 68,
-   "live_requests": 210,
+   "cache_hits": 71,
+   "live_requests": 222,
    "refused": 0
   },
   "games_by_status": {
-   "PREDICTED": 4
+   "PREDICTED": 5
   },
-  "games_predicted": 4,
-  "games_predicted_with_game_blockers": 4,
-  "games_registered": 4,
-  "games_settled": 1,
+  "games_predicted": 5,
+  "games_predicted_with_game_blockers": 5,
+  "games_registered": 5,
+  "games_settled": 3,
   "odds_api": {
    "credits_used": 0,
-   "live_requests": 73,
+   "live_requests": 74,
    "quota_remaining_last": 4912393
   },
   "quote_snapshots": 0,
   "quote_snapshots_with_bookmakers": 0,
   "timing_deviation_minutes": {
    "max": 46.1327937,
-   "median": 30.217242,
+   "median": 36.65288606666666,
    "min": 11.706526916666666,
-   "n": 4
+   "n": 5
   }
  },
  "over_under_sides": {
@@ -734,18 +734,18 @@
   "COLD_NO_HISTORY": {
    "PTS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 4.666666666666667,
-     "mean_model": 5.336679569834693,
-     "n": 3,
-     "relative_error": 0.14357419353600584,
+     "games": 2,
+     "mean_actual": 6.142857142857143,
+     "mean_model": 4.990280501403132,
+     "n": 7,
+     "relative_error": -0.18762875558553668,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 3,
-      "se": null,
-      "value": 0.6700129031680273
+      "games": 2,
+      "hi": 1.9093175294532343,
+      "lo": -4.214470812361256,
+      "n": 7,
+      "se": 1.5622196096760328,
+      "value": -1.152576641454011
      }
     },
     "quoted_lines": {
@@ -757,18 +757,18 @@
    },
    "REB": {
     "projection": {
-     "games": 1,
-     "mean_actual": 2.3333333333333335,
-     "mean_model": 2.1396606394756703,
-     "n": 3,
-     "relative_error": -0.08300258308185539,
+     "games": 2,
+     "mean_actual": 2.5714285714285716,
+     "mean_model": 2.0760524020577678,
+     "n": 7,
+     "relative_error": -0.1926462880886458,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 3,
-      "se": null,
-      "value": -0.1936726938576626
+      "games": 2,
+      "hi": 0.011476355786040504,
+      "lo": -1.0022286945276477,
+      "n": 7,
+      "se": 0.25860297901126356,
+      "value": -0.4953761693708036
      }
     },
     "quoted_lines": {
@@ -780,18 +780,18 @@
    },
    "STL": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.0,
-     "mean_model": 0.47274262360962876,
-     "n": 3,
-     "relative_error": -0.5272573763903713,
+     "games": 2,
+     "mean_actual": 0.8571428571428571,
+     "mean_model": 0.4618674505909676,
+     "n": 7,
+     "relative_error": -0.46115464097720454,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 3,
-      "se": null,
-      "value": -0.5272573763903713
+      "games": 2,
+      "hi": -0.1735497715586815,
+      "lo": -0.6170010415450977,
+      "n": 7,
+      "se": 0.11312740271869871,
+      "value": -0.3952754065518896
      }
     },
     "quoted_lines": {
@@ -803,18 +803,18 @@
    },
    "STOCKS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.0,
-     "mean_model": 0.6977666666666668,
-     "n": 3,
-     "relative_error": -0.3022333333333333,
+     "games": 2,
+     "mean_actual": 0.8571428571428571,
+     "mean_model": 0.6830428571428572,
+     "n": 7,
+     "relative_error": -0.2031166666666666,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 3,
-      "se": null,
-      "value": -0.3022333333333333
+      "games": 2,
+      "hi": 0.041160044473484814,
+      "lo": -0.3893600444734847,
+      "n": 7,
+      "se": 0.10982857142857141,
+      "value": -0.17409999999999995
      }
     },
     "quoted_lines": {
@@ -826,18 +826,18 @@
    },
    "TOV": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.6666666666666667,
-     "mean_model": 0.7627823640661786,
-     "n": 3,
-     "relative_error": -0.5423305815602928,
+     "games": 2,
+     "mean_actual": 0.8571428571428571,
+     "mean_model": 0.7509866635123917,
+     "n": 7,
+     "relative_error": -0.12384889256887627,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 3,
-      "se": null,
-      "value": -0.903884302600488
+      "games": 2,
+      "hi": 1.2340024032579533,
+      "lo": -1.446314790518884,
+      "n": 7,
+      "se": 0.6837669505457339,
+      "value": -0.10615619363046537
      }
     },
     "quoted_lines": {
@@ -851,18 +851,18 @@
   "COLD_TRANSFER_IN": {
    "PTS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 8.0,
-     "mean_model": 9.385811749581052,
-     "n": 8,
-     "relative_error": 0.17322646869763147,
+     "games": 3,
+     "mean_actual": 9.277777777777779,
+     "mean_model": 8.269121072560203,
+     "n": 18,
+     "relative_error": -0.10871748918512747,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 8,
-      "se": null,
-      "value": 1.3858117495810518
+      "games": 3,
+      "hi": 4.237266991091874,
+      "lo": -6.254580401527018,
+      "n": 18,
+      "se": 2.676540863857001,
+      "value": -1.0086567052175717
      }
     },
     "quoted_lines": {
@@ -874,18 +874,18 @@
    },
    "REB": {
     "projection": {
-     "games": 1,
-     "mean_actual": 3.75,
-     "mean_model": 3.5073643963285472,
-     "n": 8,
-     "relative_error": -0.06470282764572073,
+     "games": 3,
+     "mean_actual": 3.111111111111111,
+     "mean_model": 3.1864829088199866,
+     "n": 18,
+     "relative_error": 0.024226649263567063,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 8,
-      "se": null,
-      "value": -0.24263560367145276
+      "games": 3,
+      "hi": 1.0659802483900125,
+      "lo": -0.915236652972262,
+      "n": 18,
+      "se": 0.5054217620807986,
+      "value": 0.07537179770887531
      }
     },
     "quoted_lines": {
@@ -897,18 +897,18 @@
    },
    "STL": {
     "projection": {
-     "games": 1,
-     "mean_actual": 0.875,
-     "mean_model": 0.6460415765785431,
-     "n": 8,
-     "relative_error": -0.2616667696245222,
+     "games": 3,
+     "mean_actual": 0.7222222222222222,
+     "mean_model": 0.6535753109156169,
+     "n": 18,
+     "relative_error": -0.09504956950145346,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 8,
-      "se": null,
-      "value": -0.22895842342145692
+      "games": 3,
+      "hi": 0.1889779579197005,
+      "lo": -0.32627178053291106,
+      "n": 18,
+      "se": 0.13144367511771538,
+      "value": -0.06864691130660527
      }
     },
     "quoted_lines": {
@@ -920,18 +920,18 @@
    },
    "STOCKS": {
     "projection": {
-     "games": 1,
-     "mean_actual": 1.25,
-     "mean_model": 0.9288000000000001,
-     "n": 8,
-     "relative_error": -0.25695999999999997,
+     "games": 3,
+     "mean_actual": 1.2777777777777777,
+     "mean_model": 0.9562500000000002,
+     "n": 18,
+     "relative_error": -0.25163043478260866,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 8,
-      "se": null,
-      "value": -0.3212
+      "games": 3,
+      "hi": -0.1563303741184594,
+      "lo": -0.486725181437096,
+      "n": 18,
+      "se": 0.08428593839599827,
+      "value": -0.3215277777777777
      }
     },
     "quoted_lines": {
@@ -943,18 +943,18 @@
    },
    "TOV": {
     "projection": {
-     "games": 1,
-     "mean_actual": 2.0,
-     "mean_model": 1.0813601752322146,
-     "n": 8,
-     "relative_error": -0.4593199123838926,
+     "games": 3,
+     "mean_actual": 1.7222222222222223,
+     "mean_model": 1.0408882184343118,
+     "n": 18,
+     "relative_error": -0.3956132925220125,
      "signed_error": {
-      "games": 1,
-      "hi": null,
-      "lo": null,
-      "n": 8,
-      "se": null,
-      "value": -0.9186398247677852
+      "games": 3,
+      "hi": -0.2299592018956128,
+      "lo": -1.132708805680208,
+      "n": 18,
+      "se": 0.23029749804215,
+      "value": -0.6813340037879104
      }
     },
     "quoted_lines": {
