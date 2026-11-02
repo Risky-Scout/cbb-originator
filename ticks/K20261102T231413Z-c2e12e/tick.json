@@ -1,0 +1,454 @@
+{
+ "artifact_sha256": {
+  "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+  "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab",
+  "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+ },
+ "events": {
+  "error": "Odds API events failed: HTTP 401",
+  "status": "FAILED"
+ },
+ "finished_at": "2026-11-02T23:16:39.755986+00:00",
+ "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+ "frozen_model_hash_gate": "PASS",
+ "max_readiness": "SHADOW_ONLY",
+ "model_refit": false,
+ "public_deployment": false,
+ "registry": [
+  {
+   "game_id": "G-0aed32e6ce15bdee",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-19fc38bf060f76bd",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-26fa0abf0119fd35",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-5b49bf0235aafba8",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-5df552c4f7ab7b07",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-721183662f26a8a6",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-7d9335df5d987277",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-918c3e0e115150f1",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-92fb4dcc6f899894",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-95bb8947c63a0d5f",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-a1e2b2dd49fc1934",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-b958272d64383631",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-c3e78dd87d2304c2",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-ca74259b2c4cf819",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-da8fa7fb7a865204",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-db2d08240ed59ada",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-ecd1cecdf2578c02",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-f6da6646a19c15c4",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  },
+  {
+   "game_id": "G-fc3a1f44cf524696",
+   "status": "PREDICTED",
+   "timing_deviation_seconds": 2744.894504
+  }
+ ],
+ "restore": {
+  "asset": "ws-K20261102T184409Z-4d5419.tar",
+  "errors": [],
+  "fallback_used": false,
+  "restored": true,
+  "restored_files": 45,
+  "state_version": "S20261102T184529Z-90adc5bbc413"
+ },
+ "scoring": {
+  "banks": {
+   "G-0aed32e6ce15bdee": {
+    "bank_sha256": "ad37e0ed836b92658f51d8fac801951432274142bf0c4fc63d3ea64f10dda37b",
+    "corr_min_eig": 0.0861374142114153,
+    "jitter": 0.0,
+    "priced_players": 46
+   },
+   "G-19fc38bf060f76bd": {
+    "bank_sha256": "59d6711090dcd6ece1524e909aa678983b489e82e5b7133fcc381f23b7338428",
+    "corr_min_eig": 0.09033168727863172,
+    "jitter": 0.0,
+    "priced_players": 38
+   },
+   "G-26fa0abf0119fd35": {
+    "bank_sha256": "3ffff9cfbb5b24556fb03cf171e0a5c956799b6e80c8c2ddcf6cecbc73a46203",
+    "corr_min_eig": 0.08359736784996108,
+    "jitter": 0.0,
+    "priced_players": 33
+   },
+   "G-5b49bf0235aafba8": {
+    "bank_sha256": "eff0ad479e8f654ffc9d83dcfd31c1b089332363ba4350813fd9668806e93349",
+    "corr_min_eig": 0.08897377337324786,
+    "jitter": 0.0,
+    "priced_players": 35
+   },
+   "G-5df552c4f7ab7b07": {
+    "bank_sha256": "b185be0ea623d1d2662d0f3853ed558677784556ad07c14da91fce6045d7da31",
+    "corr_min_eig": 0.08962688426612098,
+    "jitter": 0.0,
+    "priced_players": 36
+   },
+   "G-721183662f26a8a6": {
+    "bank_sha256": "0c61255addc616400e6ef878719d9ece0e5315807450eb3ca745497e671a3cee",
+    "corr_min_eig": 0.08267552497776687,
+    "jitter": 0.0,
+    "priced_players": 30
+   },
+   "G-7d9335df5d987277": {
+    "bank_sha256": "05800e5473b499a305e13c1b2e92e583223a406f71f7ae1277e171506a5851c9",
+    "corr_min_eig": 0.0763528352324507,
+    "jitter": 0.0,
+    "priced_players": 26
+   },
+   "G-918c3e0e115150f1": {
+    "bank_sha256": "b33c27b47efd7e5672695d48b1684f6c5cbff8ddf91dcdb3ac3830d943b72078",
+    "corr_min_eig": 0.07644934455747611,
+    "jitter": 0.0,
+    "priced_players": 32
+   },
+   "G-92fb4dcc6f899894": {
+    "bank_sha256": "5f8cf99afd408362835ace4ef0d1f94e1a596832ff59cff411dae0c2bcfff9df",
+    "corr_min_eig": 0.09236795708303269,
+    "jitter": 0.0,
+    "priced_players": 42
+   },
+   "G-95bb8947c63a0d5f": {
+    "bank_sha256": "4dfad4f884b2135cccc3ea2e5c4506d32f8b4bd104c8b6e35852028b861ded10",
+    "corr_min_eig": 0.09262424265027502,
+    "jitter": 0.0,
+    "priced_players": 39
+   },
+   "G-a1e2b2dd49fc1934": {
+    "bank_sha256": "19475edf6aaddd451df79d0cfbfe3f8ba9842f0d51ee512ca929e73c0857d262",
+    "corr_min_eig": 0.07368926137739129,
+    "jitter": 0.0,
+    "priced_players": 37
+   },
+   "G-b958272d64383631": {
+    "bank_sha256": "4d9a7591780c1b4fdf4d1a4c7240feb808e9ee1b9b71f3bbba146a51cd143ab5",
+    "corr_min_eig": 0.09034983734277979,
+    "jitter": 0.0,
+    "priced_players": 38
+   },
+   "G-c3e78dd87d2304c2": {
+    "bank_sha256": "b0fb4a3d0e03304cf07046e3be48252af6251fe2383bbd5e14df9087c37ad9bb",
+    "corr_min_eig": 0.09187056997881249,
+    "jitter": 0.0,
+    "priced_players": 38
+   },
+   "G-ca74259b2c4cf819": {
+    "bank_sha256": "524ae4b66e50c8f8fc633c079c703d81cd40fc74094d77bec2201ae1d1b3b9a2",
+    "corr_min_eig": 0.08832052044124317,
+    "jitter": 0.0,
+    "priced_players": 36
+   },
+   "G-da8fa7fb7a865204": {
+    "bank_sha256": "2ac39c1ec880516f2a5bbf1914e8850ba2d0f2d7f8a7906ae633f604ac3205e8",
+    "corr_min_eig": 0.09358379176977545,
+    "jitter": 0.0,
+    "priced_players": 41
+   },
+   "G-db2d08240ed59ada": {
+    "bank_sha256": "672a1ade9b9f7ecaa2a9a8e72fb6696dab55130676ef80e0a454c59628ac464d",
+    "corr_min_eig": 0.086854347911681,
+    "jitter": 0.0,
+    "priced_players": 33
+   },
+   "G-ecd1cecdf2578c02": {
+    "bank_sha256": "268eb2f44e91713fcf7f04e46cacccce65557e84af301ab3082a1f66bb20e09d",
+    "corr_min_eig": 0.09318487427277082,
+    "jitter": 0.0,
+    "priced_players": 40
+   },
+   "G-f6da6646a19c15c4": {
+    "bank_sha256": "ebfb2c0d2a6c2b94ce568e37217beb99a057ed5f7d840feed8f510fe410d61d9",
+    "corr_min_eig": 0.08030767369008449,
+    "jitter": 0.0,
+    "priced_players": 29
+   },
+   "G-fc3a1f44cf524696": {
+    "bank_sha256": "4b78fc003eb92e5b070355b80bb6e9c5402d55ca1f557d8d5031ddb178fa8028",
+    "corr_min_eig": 0.08605473264577723,
+    "jitter": 0.0,
+    "priced_players": 34
+   }
+  },
+  "evidence": {
+   "predictions_quoted": 0,
+   "projections": 683
+  },
+  "game_reasons": {
+   "G-0aed32e6ce15bdee": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-19fc38bf060f76bd": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-26fa0abf0119fd35": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-5b49bf0235aafba8": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-5df552c4f7ab7b07": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-721183662f26a8a6": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-7d9335df5d987277": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-918c3e0e115150f1": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-92fb4dcc6f899894": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-95bb8947c63a0d5f": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-a1e2b2dd49fc1934": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-b958272d64383631": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-c3e78dd87d2304c2": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-ca74259b2c4cf819": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-da8fa7fb7a865204": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-db2d08240ed59ada": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-ecd1cecdf2578c02": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-f6da6646a19c15c4": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ],
+   "G-fc3a1f44cf524696": [
+    "ODDS_EVENT_NOT_YET_LISTED"
+   ]
+  },
+  "games_due": 19,
+  "games_scored": 19,
+  "one_joint_bank_per_game": true,
+  "player_universe": {
+   "pool_by_class": {
+    "FRESHMAN": 34,
+    "RETURNING": 540,
+    "TRANSFER": 109
+   },
+   "pool_by_roster_status": {
+    "NOT_ON_CURRENT_ROSTER": 308,
+    "ON_CURRENT_ROSTER": 323,
+    "ON_CURRENT_ROSTER_PROVIDER_ID_CHANGED": 1,
+    "ON_OTHER_TEAM_ROSTER": 51
+   },
+   "pool_cold_start": 73,
+   "pool_players": 683,
+   "pool_scoreable": 324,
+   "rows": 944,
+   "suppressed_by_reason": {
+    "AMBIGUOUS_PLAYER": 3,
+    "DUPLICATE_PROVIDER_IDENTITY": 1,
+    "IDENTITY_CONFLICT": 51,
+    "NOT_ON_CURRENT_ROSTER": 308,
+    "NO_FROZEN_MEMBERSHIP_EVIDENCE": 244,
+    "RECRUIT_IDENTITY_UNAVAILABLE": 9,
+    "TRANSFERRED_OUT": 4
+   }
+  },
+  "predictions": 8196,
+  "quote_coverage": {
+   "games": {
+    "G-0aed32e6ce15bdee": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-19fc38bf060f76bd": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-26fa0abf0119fd35": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-5b49bf0235aafba8": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-5df552c4f7ab7b07": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-721183662f26a8a6": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-7d9335df5d987277": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-918c3e0e115150f1": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-92fb4dcc6f899894": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-95bb8947c63a0d5f": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-a1e2b2dd49fc1934": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-b958272d64383631": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-c3e78dd87d2304c2": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-ca74259b2c4cf819": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-da8fa7fb7a865204": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-db2d08240ed59ada": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-ecd1cecdf2578c02": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-f6da6646a19c15c4": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    },
+    "G-fc3a1f44cf524696": {
+     "event_ids": [],
+     "listing_covers_tip": false,
+     "unresolved_events": []
+    }
+   },
+   "listing": null
+  },
+  "quotes": {
+   "by_status": [],
+   "total": 0
+  },
+  "readiness_state": "BLOCKED",
+  "run_id": "R20261102T231415Z-e7fa4f97",
+  "run_reasons": [
+   "ODDS_API_FAILURE",
+   "QUOTE_INTEGRATION_UNVALIDATED"
+  ],
+  "side_monitor": {
+   "appended": 0,
+   "head": "0000000000000000000000000000000000000000000000000000000000000000",
+   "path": "../ops/ticks/K20261102T231413Z-c2e12e/side_monitor.jsonl"
+  }
+ },
+ "source_commit": "ca00d6a89a1b487c7e4928641c3a7147bbb84049",
+ "started_at": "2026-11-02T23:14:13.360013+00:00",
+ "tick_id": "K20261102T231413Z-c2e12e",
+ "version": "cbb-prod-shadow-tick-1.0.0",
+ "wagering_enabled": false
+}
