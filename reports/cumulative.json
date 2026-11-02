@@ -707,7 +707,7 @@
   "games_settled": 3,
   "odds_api": {
    "credits_used": 0,
-   "live_requests": 84,
+   "live_requests": 85,
    "quota_remaining_last": 4912393
   },
   "quote_snapshots": 0,
