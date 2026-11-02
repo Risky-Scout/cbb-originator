@@ -1,0 +1,95 @@
+{
+ "artifact_sha256": {
+  "jm1_final": "b932fa2155de77f95e2c2afb15b45b22ecf8fa1e49a2d175b7da7cbfca2428f9",
+  "marginal": "bfcef1fb983b882170ab6e2e2a9857c9ecec8ff5059eaf01f048c8badf40d10f",
+  "production_manifest": "7d83e9cf4e9c68478e5e71e57ccdcf204b8d3267c4de98d7ea86ee8d5ddcbcab",
+  "residual_j2": "e42548675fd3c0e363cf26a464d133f384ae659d99b603105510f0937b6570f1"
+ },
+ "events": {
+  "error": "Odds API events failed: HTTP 401",
+  "status": "FAILED"
+ },
+ "finished_at": "2026-11-02T18:45:31.848422+00:00",
+ "frozen_commit": "e1353e5d0b1d653f53e4ee138c3bd9241934e32a",
+ "frozen_model_hash_gate": "PASS",
+ "max_readiness": "SHADOW_ONLY",
+ "model_refit": false,
+ "public_deployment": false,
+ "restore": {
+  "asset": "ws-K20261102T122310Z-87507a.tar",
+  "errors": [],
+  "fallback_used": false,
+  "restored": true,
+  "restored_files": 41,
+  "state_version": "S20261102T122319Z-76c9915343c7"
+ },
+ "settlement": {
+  "games": 2,
+  "kinds": {
+   "FINAL": 2
+  },
+  "players": 79,
+  "quote_sides": 0,
+  "quoted_predictions": 0
+ },
+ "source_commit": "ca00d6a89a1b487c7e4928641c3a7147bbb84049",
+ "started_at": "2026-11-02T18:44:09.264056+00:00",
+ "sync": {
+  "completed_budget_exhausted": null,
+  "completed_games_ingested": 2,
+  "completed_games_new": 2,
+  "completed_requests_deferred": null,
+  "coverage": {
+   "completed_games": 5,
+   "completed_with_player_box": 5,
+   "completed_with_substitutions": 5,
+   "completed_with_team_box": 5,
+   "games": 6019,
+   "last_completed_game": {
+    "canonical_game_id": "G-934eabd57ea8a978",
+    "scheduled_tip_utc": "2026-11-02 14:00:00+00:00"
+   },
+   "portal_rows_2026": 1585,
+   "recruit_rows_2026": 396,
+   "scheduled_games": 6014
+  },
+  "error": null,
+  "reason": null,
+  "refresh_windows": [
+   "2026-11-01"
+  ],
+  "requests": {
+   "completed": {
+    "cache_hits": 0,
+    "live_requests": 5,
+    "max_live_requests": 20,
+    "quota_remaining": 124931,
+    "stage": "Y20261102T184410Z-851f28:completed"
+   },
+   "preseason": {
+    "cache_hits": 0,
+    "live_requests": 3,
+    "max_live_requests": 20,
+    "quota_remaining": 124943,
+    "stage": "Y20261102T184410Z-851f28:preseason"
+   },
+   "schedule": {
+    "cache_hits": 0,
+    "live_requests": 7,
+    "max_live_requests": 20,
+    "quota_remaining": 124936,
+    "stage": "Y20261102T184410Z-851f28:schedule"
+   }
+  },
+  "results_deferred_not_yet_knowable": 4,
+  "state_version": "S20261102T184529Z-90adc5bbc413",
+  "status": "PROMOTED",
+  "sync_id": "Y20261102T184410Z-851f28",
+  "why": [
+   "ROUTINE_REFRESH"
+  ]
+ },
+ "tick_id": "K20261102T184409Z-4d5419",
+ "version": "cbb-prod-shadow-tick-1.0.0",
+ "wagering_enabled": false
+}

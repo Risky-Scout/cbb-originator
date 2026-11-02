@@ -20,21 +20,21 @@ SHADOW_ONLY. Diagnostic only: no automatic model correction, no wagering, no pub
  },
  "quote_snapshots": 0,
  "quote_snapshots_with_bookmakers": 0,
- "games_settled": 3,
+ "games_settled": 5,
  "odds_api": {
-  "live_requests": 86,
+  "live_requests": 87,
   "credits_used": 0,
   "quota_remaining_last": 4912393
  },
  "cbbd": {
-  "live_requests": 222,
+  "live_requests": 237,
   "cache_hits": 71,
   "refused": 0
  }
 }
 ```
 
-Evidence: {"player_projections": 304, "settled_players_played": 38, "excluded_not_clean": 0, "quoted_lines": 0, "quote_side_records": 0, "settled_quote_sides": 0}
+Evidence: {"player_projections": 304, "settled_players_played": 57, "excluded_not_clean": 0, "quoted_lines": 0, "quote_side_records": 0, "settled_quote_sides": 0}
 
 Warnings: none
 
@@ -52,26 +52,26 @@ Market benchmark (same lines): {}
 
 | stratum | N played | mean model | mean actual | signed error (95% CI) | rel. error | settled/quoted lines | quoted-line Brier | quoted-line log loss | Over/Under favored |
 |---|---|---|---|---|---|---|---|---|---|
-| PTS team_games_le_2 | 37 | 7.144 | 8.622 | -1.477 [-3.706, 0.751] (n=37, games=3) | -0.171 | 0/0 | - | - | 0/0 |
-| AST team_games_le_2 | 37 | 1.226 | 1.243 | -0.018 [-0.331, 0.296] (n=37, games=3) | -0.014 | 0/0 | - | - | 0/0 |
-| STL team_games_le_2 | 37 | 0.630 | 0.892 | -0.262 [-0.630, 0.106] (n=37, games=3) | -0.294 | 0/0 | - | - | 0/0 |
-| TOV team_games_le_2 | 37 | 0.950 | 1.243 | -0.293 [-0.626, 0.040] (n=37, games=3) | -0.236 | 0/0 | - | - | 0/0 |
-| PRA team_games_le_2 | 37 | 11.318 | 13.162 | -1.844 [-4.337, 0.648] (n=37, games=3) | -0.140 | 0/0 | - | - | 0/0 |
-| PR team_games_le_2 | 37 | 10.092 | 11.919 | -1.827 [-4.051, 0.397] (n=37, games=3) | -0.153 | 0/0 | - | - | 0/0 |
-| PA team_games_le_2 | 37 | 8.372 | 9.865 | -1.493 [-3.958, 0.972] (n=37, games=3) | -0.151 | 0/0 | - | - | 0/0 |
-| PTS first_30_days | 37 | 7.144 | 8.622 | -1.477 [-3.706, 0.751] (n=37, games=3) | -0.171 | 0/0 | - | - | 0/0 |
-| AST first_30_days | 37 | 1.226 | 1.243 | -0.018 [-0.331, 0.296] (n=37, games=3) | -0.014 | 0/0 | - | - | 0/0 |
-| STL first_30_days | 37 | 0.630 | 0.892 | -0.262 [-0.630, 0.106] (n=37, games=3) | -0.294 | 0/0 | - | - | 0/0 |
-| TOV first_30_days | 37 | 0.950 | 1.243 | -0.293 [-0.626, 0.040] (n=37, games=3) | -0.236 | 0/0 | - | - | 0/0 |
-| PRA first_30_days | 37 | 11.318 | 13.162 | -1.844 [-4.337, 0.648] (n=37, games=3) | -0.140 | 0/0 | - | - | 0/0 |
-| PR first_30_days | 37 | 10.092 | 11.919 | -1.827 [-4.051, 0.397] (n=37, games=3) | -0.153 | 0/0 | - | - | 0/0 |
-| PA first_30_days | 37 | 8.372 | 9.865 | -1.493 [-3.958, 0.972] (n=37, games=3) | -0.151 | 0/0 | - | - | 0/0 |
+| PTS team_games_le_2 | 55 | 6.956 | 8.382 | -1.426 [-3.175, 0.324] (n=55, games=5) | -0.170 | 0/0 | - | - | 0/0 |
+| AST team_games_le_2 | 55 | 1.225 | 1.436 | -0.212 [-0.694, 0.270] (n=55, games=5) | -0.147 | 0/0 | - | - | 0/0 |
+| STL team_games_le_2 | 55 | 0.612 | 0.782 | -0.170 [-0.460, 0.120] (n=55, games=5) | -0.218 | 0/0 | - | - | 0/0 |
+| TOV team_games_le_2 | 55 | 0.976 | 1.273 | -0.297 [-0.534, -0.060] (n=55, games=5) | -0.233 | 0/0 | - | - | 0/0 |
+| PRA team_games_le_2 | 55 | 11.161 | 13.309 | -2.148 [-4.344, 0.049] (n=55, games=5) | -0.161 | 0/0 | - | - | 0/0 |
+| PR team_games_le_2 | 55 | 9.937 | 11.873 | -1.936 [-3.721, -0.151] (n=55, games=5) | -0.163 | 0/0 | - | - | 0/0 |
+| PA team_games_le_2 | 55 | 8.180 | 9.818 | -1.638 [-3.763, 0.487] (n=55, games=5) | -0.167 | 0/0 | - | - | 0/0 |
+| PTS first_30_days | 55 | 6.956 | 8.382 | -1.426 [-3.175, 0.324] (n=55, games=5) | -0.170 | 0/0 | - | - | 0/0 |
+| AST first_30_days | 55 | 1.225 | 1.436 | -0.212 [-0.694, 0.270] (n=55, games=5) | -0.147 | 0/0 | - | - | 0/0 |
+| STL first_30_days | 55 | 0.612 | 0.782 | -0.170 [-0.460, 0.120] (n=55, games=5) | -0.218 | 0/0 | - | - | 0/0 |
+| TOV first_30_days | 55 | 0.976 | 1.273 | -0.297 [-0.534, -0.060] (n=55, games=5) | -0.233 | 0/0 | - | - | 0/0 |
+| PRA first_30_days | 55 | 11.161 | 13.309 | -2.148 [-4.344, 0.049] (n=55, games=5) | -0.161 | 0/0 | - | - | 0/0 |
+| PR first_30_days | 55 | 9.937 | 11.873 | -1.936 [-3.721, -0.151] (n=55, games=5) | -0.163 | 0/0 | - | - | 0/0 |
+| PA first_30_days | 55 | 8.180 | 9.818 | -1.638 [-3.763, 0.487] (n=55, games=5) | -0.167 | 0/0 | - | - | 0/0 |
 
 ## Current-season evidence buckets (PTS)
 
 | stratum | N played | mean model | mean actual | signed error (95% CI) | rel. error | settled/quoted lines | quoted-line Brier | quoted-line log loss | Over/Under favored |
 |---|---|---|---|---|---|---|---|---|---|
-| CUR_0 | 37 | 7.144 | 8.622 | -1.477 [-3.706, 0.751] (n=37, games=3) | -0.171 | 0/0 | - | - | 0/0 |
+| CUR_0 | 55 | 6.956 | 8.382 | -1.426 [-3.175, 0.324] (n=55, games=5) | -0.170 | 0/0 | - | - | 0/0 |
 | CUR_0_100 | 0 | - | - | - | - | 0/0 | - | - | 0/0 |
 | CUR_100_300 | 0 | - | - | - | - | 0/0 | - | - | 0/0 |
 | CUR_300PLUS | 0 | - | - | - | - | 0/0 | - | - | 0/0 |
@@ -80,23 +80,23 @@ Market benchmark (same lines): {}
 
 | stratum | N played | mean model | mean actual | signed error (95% CI) | rel. error | settled/quoted lines | quoted-line Brier | quoted-line log loss | Over/Under favored |
 |---|---|---|---|---|---|---|---|---|---|
-| PTS COLD_TRANSFER_IN | 18 | 8.269 | 9.278 | -1.009 [-6.255, 4.237] (n=18, games=3) | -0.109 | 0/0 | - | - | 0/0 |
-| REB COLD_TRANSFER_IN | 18 | 3.186 | 3.111 | 0.075 [-0.915, 1.066] (n=18, games=3) | 0.024 | 0/0 | - | - | 0/0 |
-| STL COLD_TRANSFER_IN | 18 | 0.654 | 0.722 | -0.069 [-0.326, 0.189] (n=18, games=3) | -0.095 | 0/0 | - | - | 0/0 |
-| TOV COLD_TRANSFER_IN | 18 | 1.041 | 1.722 | -0.681 [-1.133, -0.230] (n=18, games=3) | -0.396 | 0/0 | - | - | 0/0 |
-| STOCKS COLD_TRANSFER_IN | 18 | 0.956 | 1.278 | -0.322 [-0.487, -0.156] (n=18, games=3) | -0.252 | 0/0 | - | - | 0/0 |
-| PTS COLD_NO_HISTORY | 7 | 4.990 | 6.143 | -1.153 [-4.214, 1.909] (n=7, games=2) | -0.188 | 0/0 | - | - | 0/0 |
-| REB COLD_NO_HISTORY | 7 | 2.076 | 2.571 | -0.495 [-1.002, 0.011] (n=7, games=2) | -0.193 | 0/0 | - | - | 0/0 |
-| STL COLD_NO_HISTORY | 7 | 0.462 | 0.857 | -0.395 [-0.617, -0.174] (n=7, games=2) | -0.461 | 0/0 | - | - | 0/0 |
-| TOV COLD_NO_HISTORY | 7 | 0.751 | 0.857 | -0.106 [-1.446, 1.234] (n=7, games=2) | -0.124 | 0/0 | - | - | 0/0 |
-| STOCKS COLD_NO_HISTORY | 7 | 0.683 | 0.857 | -0.174 [-0.389, 0.041] (n=7, games=2) | -0.203 | 0/0 | - | - | 0/0 |
+| PTS COLD_TRANSFER_IN | 23 | 8.144 | 9.522 | -1.377 [-5.567, 2.812] (n=23, games=5) | -0.145 | 0/0 | - | - | 0/0 |
+| REB COLD_TRANSFER_IN | 23 | 3.042 | 3.348 | -0.306 [-1.244, 0.633] (n=23, games=5) | -0.091 | 0/0 | - | - | 0/0 |
+| STL COLD_TRANSFER_IN | 23 | 0.645 | 0.696 | -0.051 [-0.259, 0.157] (n=23, games=5) | -0.073 | 0/0 | - | - | 0/0 |
+| TOV COLD_TRANSFER_IN | 23 | 1.040 | 1.696 | -0.656 [-1.214, -0.098] (n=23, games=5) | -0.387 | 0/0 | - | - | 0/0 |
+| STOCKS COLD_TRANSFER_IN | 23 | 0.931 | 1.348 | -0.417 [-0.893, 0.060] (n=23, games=5) | -0.309 | 0/0 | - | - | 0/0 |
+| PTS COLD_NO_HISTORY | 10 | 4.954 | 5.700 | -0.746 [-3.140, 1.647] (n=10, games=4) | -0.131 | 0/0 | - | - | 0/0 |
+| REB COLD_NO_HISTORY | 10 | 2.048 | 2.600 | -0.552 [-1.481, 0.376] (n=10, games=4) | -0.212 | 0/0 | - | - | 0/0 |
+| STL COLD_NO_HISTORY | 10 | 0.456 | 0.800 | -0.344 [-0.587, -0.102] (n=10, games=4) | -0.431 | 0/0 | - | - | 0/0 |
+| TOV COLD_NO_HISTORY | 10 | 0.732 | 1.000 | -0.268 [-1.116, 0.580] (n=10, games=4) | -0.268 | 0/0 | - | - | 0/0 |
+| STOCKS COLD_NO_HISTORY | 10 | 0.674 | 0.900 | -0.226 [-0.601, 0.149] (n=10, games=4) | -0.251 | 0/0 | - | - | 0/0 |
 
 ## Centers (PTS)
 
 | stratum | N played | mean model | mean actual | signed error (95% CI) | rel. error | settled/quoted lines | quoted-line Brier | quoted-line log loss | Over/Under favored |
 |---|---|---|---|---|---|---|---|---|---|
 | C | 0 | - | - | - | - | 0/0 | - | - | 0/0 |
-| non_C | 37 | 7.144 | 8.622 | -1.477 [-3.706, 0.751] (n=37, games=3) | -0.171 | 0/0 | - | - | 0/0 |
+| non_C | 55 | 6.956 | 8.382 | -1.426 [-3.175, 0.324] (n=55, games=5) | -0.170 | 0/0 | - | - | 0/0 |
 
 ## Over / Under sides
 
@@ -115,15 +115,15 @@ Lines 0. Brier model -, market -, difference -. Log loss model -, market -, diff
 
 | market | N played | signed error | rel. error | settled lines | Brier | log loss |
 |---|---|---|---|---|---|---|
-| PTS | 37 | -1.477 [-3.706, 0.751] (n=37, games=3) | -0.171 | 0 | - | - |
-| REB | 37 | -0.352 [-0.673, -0.032] (n=37, games=3) | -0.107 | 0 | - | - |
-| AST | 37 | -0.018 [-0.331, 0.296] (n=37, games=3) | -0.014 | 0 | - | - |
-| FG3M | 37 | -0.217 [-0.560, 0.125] (n=37, games=3) | -0.206 | 0 | - | - |
-| STL | 37 | -0.262 [-0.630, 0.106] (n=37, games=3) | -0.294 | 0 | - | - |
-| BLK | 37 | -0.124 [-0.206, -0.041] (n=37, games=3) | -0.305 | 0 | - | - |
-| TOV | 37 | -0.293 [-0.626, 0.040] (n=37, games=3) | -0.236 | 0 | - | - |
-| PRA | 37 | -1.844 [-4.337, 0.648] (n=37, games=3) | -0.140 | 0 | - | - |
-| PR | 37 | -1.827 [-4.051, 0.397] (n=37, games=3) | -0.153 | 0 | - | - |
-| PA | 37 | -1.493 [-3.958, 0.972] (n=37, games=3) | -0.151 | 0 | - | - |
-| RA | 37 | -0.369 [-0.948, 0.211] (n=37, games=3) | -0.081 | 0 | - | - |
-| STOCKS | 37 | -0.385 [-0.709, -0.060] (n=37, games=3) | -0.297 | 0 | - | - |
+| PTS | 55 | -1.426 [-3.175, 0.324] (n=55, games=5) | -0.170 | 0 | - | - |
+| REB | 55 | -0.509 [-0.802, -0.217] (n=55, games=5) | -0.146 | 0 | - | - |
+| AST | 55 | -0.212 [-0.694, 0.270] (n=55, games=5) | -0.147 | 0 | - | - |
+| FG3M | 55 | -0.119 [-0.453, 0.214] (n=55, games=5) | -0.137 | 0 | - | - |
+| STL | 55 | -0.170 [-0.460, 0.120] (n=55, games=5) | -0.218 | 0 | - | - |
+| BLK | 55 | -0.131 [-0.262, 0.001] (n=55, games=5) | -0.288 | 0 | - | - |
+| TOV | 55 | -0.297 [-0.534, -0.060] (n=55, games=5) | -0.233 | 0 | - | - |
+| PRA | 55 | -2.148 [-4.344, 0.049] (n=55, games=5) | -0.161 | 0 | - | - |
+| PR | 55 | -1.936 [-3.721, -0.151] (n=55, games=5) | -0.163 | 0 | - | - |
+| PA | 55 | -1.638 [-3.763, 0.487] (n=55, games=5) | -0.167 | 0 | - | - |
+| RA | 55 | -0.721 [-1.425, -0.018] (n=55, games=5) | -0.146 | 0 | - | - |
+| STOCKS | 55 | -0.301 [-0.622, 0.021] (n=55, games=5) | -0.243 | 0 | - | - |
