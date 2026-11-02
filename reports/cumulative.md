@@ -22,13 +22,13 @@ SHADOW_ONLY. Diagnostic only: no automatic model correction, no wagering, no pub
  "quote_snapshots_with_bookmakers": 0,
  "games_settled": 1,
  "odds_api": {
-  "live_requests": 69,
+  "live_requests": 70,
   "credits_used": 0,
   "quota_remaining_last": 4912393
  },
  "cbbd": {
-  "live_requests": 203,
-  "cache_hits": 65,
+  "live_requests": 210,
+  "cache_hits": 68,
   "refused": 0
  }
 }
