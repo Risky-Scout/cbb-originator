@@ -6,23 +6,23 @@ SHADOW_ONLY. Diagnostic only: no automatic model correction, no wagering, no pub
 
 ```
 {
- "games_registered": 8,
+ "games_registered": 9,
  "games_by_status": {
-  "PREDICTED": 8
+  "PREDICTED": 9
  },
- "games_predicted": 8,
- "games_predicted_with_game_blockers": 8,
+ "games_predicted": 9,
+ "games_predicted_with_game_blockers": 9,
  "timing_deviation_minutes": {
-  "n": 8,
+  "n": 9,
   "min": 11.706526916666666,
-  "median": 39.46632315833333,
+  "median": 40.22837474999999,
   "max": 46.1327937
  },
  "quote_snapshots": 0,
  "quote_snapshots_with_bookmakers": 0,
  "games_settled": 5,
  "odds_api": {
-  "live_requests": 87,
+  "live_requests": 88,
   "credits_used": 0,
   "quota_remaining_last": 4912393
  },
@@ -34,7 +34,7 @@ SHADOW_ONLY. Diagnostic only: no automatic model correction, no wagering, no pub
 }
 ```
 
-Evidence: {"player_projections": 304, "settled_players_played": 57, "excluded_not_clean": 0, "quoted_lines": 0, "quote_side_records": 0, "settled_quote_sides": 0}
+Evidence: {"player_projections": 345, "settled_players_played": 57, "excluded_not_clean": 0, "quoted_lines": 0, "quote_side_records": 0, "settled_quote_sides": 0}
 
 Warnings: none
 
