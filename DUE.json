@@ -1,14 +1,14 @@
 {
- "chain_head": "83be0d218b6d94f7c4cee98343f901c0f45f5761e6e3890776e7426acdb1f679",
+ "chain_head": "e70d63c96c377bcd8367a2f7e1f74ecc60014110b600cff8a984f61d6598313a",
  "due_now": true,
  "heartbeat_hours": 6.0,
  "next_by_kind": {
-  "events": "2026-11-02T23:46:02.258026+00:00",
+  "events": "2026-11-03T00:37:47.559298+00:00",
   "report": "2026-11-03T12:00:00+00:00",
-  "score": "2026-11-03T00:10:00+00:00",
+  "score": "2026-11-03T00:40:00+00:00",
   "sync": "2026-11-03T00:45:27.924910+00:00"
  },
- "next_due_at": "2026-11-02T23:46:02.258026+00:00",
+ "next_due_at": "2026-11-03T00:37:47.559298+00:00",
  "score_lead_minutes": 50,
  "state_version": "S20261102T184529Z-90adc5bbc413",
  "version": "cbb-prod-shadow-tick-1.0.0"
