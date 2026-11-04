@@ -38,7 +38,8 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform.prod import (config as PC, history_extract as HX, ledger as LG, loader as LD, matching as MT,
-                               odds_acquire as OA, odds_feed as OF, ops_store as OS, prospective_monitor as PM,
+                               odds_acquire as OA, odds_feed as OF, ops_store as OS, pmf_evidence as PE,
+                               prospective_monitor as PM,
                                run as RN, slate as SL, state as ST, sync as Y)
 
 TICK_VERSION = "cbb-prod-shadow-tick-1.0.0"
@@ -530,6 +531,12 @@ def scoring_evidence(ctx: Ctx, tdir: Path, s: dict, timing: dict, sch: pd.DataFr
     # timing fields (the records already carry prediction_as_of, identical to the run's as-of)
     tim = pd.DataFrame([{"game_id": g, **{k: v for k, v in t.items() if k != "prediction_as_of"}} for g, t in timing.items()])
     out = {}
+    # the complete PMFs this prediction used, persisted with the tick (the run directory is ephemeral on a runner)
+    pe = PE.from_run(run_dir, s["run_id"], s["prediction_as_of"], (s.get("model_identity") or {}).get("model_version"))
+    if len(pe):
+        w = PE.write(tdir / PE.FILE, pe)
+        out["pmfs"] = w.get("pmfs", int(pe["prediction_receipt_id"].nunique()))
+        out["pmfs_sha256"] = w["sha256"]
     if len(preds):
         base = preds.drop_duplicates(["game_id", "player_id", "market"])
         proj = base.set_index(["game_id", "player_id", "team_id", "market"])["projection"].astype(float).unstack(
@@ -610,7 +617,7 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                       PC.ODDS_PROP_WINDOW_HOURS)
         teams = team_names(ctx, st)
         lst = OF.listing(now, ctx.cache_raw)
-        mev = OF.match_events(lst["events"] if lst else None, sl, MT.team_index(teams, None))
+        mev = OF.match_events(lst["events"] if lst else None, sl, MT.team_index(teams, MT.odds_team_map()))
         mev = mev[mev["canonical_game_id"].isin(set(due["canonical_game_id"])) & mev["canonical_game_id"].map(lambda x: isinstance(x, str))]
         order = due["canonical_game_id"].tolist()
         due_events = sorted(((g, e) for g, e in zip(mev["canonical_game_id"], mev["provider_event_id"])),

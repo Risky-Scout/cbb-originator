@@ -5,6 +5,10 @@
 #   cbb-originator-run preflight      safety + identity checks only (no lock, no model work)
 #   cbb-originator-run morning        walk-forward morning refit (heavy: shared heavy-job lock + MemAvailable gate)
 #   cbb-originator-run tick           prospective shadow tick (light: CBB writer lock only)
+#   cbb-originator-run lifecycle-morning          07:00 ET daily lifecycle (prod/lifecycle.py morning: settlement,
+#                                                 prior-day Grades, walk-forward update, INITIAL forecast, exports;
+#                                                 heavy: shared heavy-job lock + MemAvailable gate + CBB writer lock)
+#   cbb-originator-run lifecycle-refresh HH:MM    10:00 / 13:00 / 16:00 / 18:00 ET RotoWire refresh + exports (writer lock)
 #   CBB_DRY_RUN=1 ...                 run every check, print the command that would run, run nothing
 #
 # Exit codes: 0 ok | 1 job failed (incl. DAILY_REFIT_STATUS FAIL / NOT_RUN) | 2 frozen-hash gate FAIL (shadow tick)
@@ -29,7 +33,9 @@ DRY="${CBB_DRY_RUN:-0}"
 log() { echo "cbb-originator-run[$CMD]: $*" >&2; }
 refuse() { log "REFUSED: $*"; exit 3; }
 
-case "$CMD" in preflight|morning|tick) ;; *) echo "usage: cbb-originator-run preflight|morning|tick" >&2; exit 3 ;; esac
+case "$CMD" in preflight|morning|tick|lifecycle-morning) ;;
+  lifecycle-refresh) case "${2:-}" in 10:00|13:00|16:00|18:00) ;; *) echo "lifecycle-refresh needs one of 10:00 13:00 16:00 18:00" >&2; exit 3 ;; esac ;;
+  *) echo "usage: cbb-originator-run preflight|morning|tick|lifecycle-morning|lifecycle-refresh HH:MM" >&2; exit 3 ;; esac
 
 # ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
 [ "${CBB_MODEL_SOURCE:-FROZEN_OPENING_BASELINE}" = "FROZEN_OPENING_BASELINE" ] \
@@ -100,6 +106,25 @@ if [ "$CMD" = "morning" ]; then
   STATUS="$("$PY" -c 'import json,sys; t=open(sys.argv[1]).read(); i=t.rfind("\n{\n"); print(json.loads(t[i+1:] if i >= 0 else t).get("DAILY_REFIT_STATUS", "MISSING"))' "$OUT" 2>/dev/null || echo UNPARSEABLE)"
   log "DAILY_REFIT_STATUS = $STATUS"
   case "$STATUS" in PASS|NO_NEW_DATA) exit 0 ;; *) exit 1 ;; esac
+fi
+
+if [ "$CMD" = "lifecycle-morning" ] || [ "$CMD" = "lifecycle-refresh" ]; then
+  OPS="$APP/data/prod/ops"
+  if [ "$CMD" = "lifecycle-morning" ]; then RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" morning)
+  else RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" refresh --window "$2"); fi
+  if [ "$DRY" = "1" ]; then
+    [ "$CMD" = "lifecycle-morning" ] && log "DRY RUN: would take $HEAVY_LOCK, gate MemAvailable >= ${MIN_MEM_GB} GB, take $WRITER_LOCK, run: ${RUN[*]}" \
+      || log "DRY RUN: would take $WRITER_LOCK, run: ${RUN[*]}"
+    exit 0
+  fi
+  if [ "$CMD" = "lifecycle-morning" ]; then
+    exec 8>>"$HEAVY_LOCK"
+    flock -w "$HEAVY_WAIT_SEC" 8 || { log "DAILY_REFIT_STATUS = FAIL (RESOURCE): shared heavy-job lock busy > ${HEAVY_WAIT_SEC} s; ACTIVE unchanged"; exit 75; }
+    memory_gate
+  fi
+  exec 9>>"$WRITER_LOCK"
+  flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC} s; $CMD skipped"; exit 75; }
+  exec "${RUN[@]}"
 fi
 
 # tick: same command line as the GitHub workflow minus --restore (the Droplet keeps its restored state locally);

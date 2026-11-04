@@ -27,7 +27,7 @@ Exit codes:
 | slate games | `ops/registry/games.jsonl`: the decided `PREDICTED` row per game (tick, run, scheduled tip, cutoff rule) |
 | board / grade population | `ops/ticks/<tick>/side_monitor.jsonl.gz`: hash-chained QUOTE_SIDE receipts. There is one per prediction × sportsbook offer side, and the chain is verified on read. |
 | outcomes | `ops/ticks/*/side_settlements.parquet` (CBBD final box). `NO_ACTION` becomes VOID; no settlement yet means PENDING. |
-| PMFs | `runs/<run_id>/market_pmfs.parquet` (written by `prod.run.daily`) or `ops/ticks/<tick>/market_pmfs.parquet` |
+| PMFs | the durable evidence: `ops/ticks/<tick>/pmfs.parquet` for official predictions and `ops/forecasts/<D>/<snapshot>/pmfs.parquet` for forecast snapshots (`prod.pmf_evidence`). Per game, the latest prediction made before the game's cutoff is exported. Legacy fallback: `runs/<run_id>/market_pmfs.parquet` |
 | names | `core.teams` of the frozen history store and of the current state increment (falls back to the team id) |
 
 Field conventions:
@@ -54,17 +54,22 @@ Field conventions:
   byte-identical).
 - XLSX is written with the standard library, so no dependency was added.
 
-## Current evidence gaps (2026-11-04)
+## Evidence status (updated 2026-11-04, live daily lifecycle directive)
 
-1. Quotes:
-   - No QUOTE_SIDE receipt exists yet. The quote integration is unvalidated, and every scored game so far is
-     `ODDS_EVENT_NOT_YET_LISTED`.
-   - Until a real priced offer exists, Boards and Grades report `MISSING_EVIDENCE`.
-2. PMFs:
-   - `market_pmfs.parquet` lives in the run directory. On the GitHub-hosted runner that directory is ephemeral, and it
-     is not part of the ops evidence tree or the encrypted working set.
-   - So Distributions has no real evidence for the GitHub-era ticks.
-   - On a persistent host (the Droplet), `data/prod/runs` persists. Copying the file into the tick directory would be
-     an evidence-serialization change and needs separate authorization.
-3. Scheduling: none is wired. The command is ready to run after prediction production and the settlement refresh;
-   scheduler integration is deferred to the cutover directive.
+1. **PMFs (fixed).**
+   - Each official prediction tick writes `pmfs.parquet` into its tick directory, which is part of the committed
+     evidence tree.
+   - Each forecast snapshot writes `pmfs.parquet` into `ops/forecasts/<D>/<snapshot>/`.
+   - Distributions therefore no longer depend on the runner's temporary run directory. The fields are listed in
+     `cbb_platform/prod/pmf_evidence.py`.
+2. **Distributions are line-independent.**
+   - The workbook is written whenever durable PMFs exist for the slate, including forecast snapshots that have no
+     sportsbook quote.
+   - Boards and Grades still require real pre-tip priced QUOTE_SIDE receipts. Unquoted forecasts are never graded as
+     bets.
+3. **Scheduling.** `prod.lifecycle` runs:
+   - 07:00 ET: settlement, the prior-day Grades, the walk-forward update, the INITIAL forecast and the exports.
+   - 10:00 / 13:00 / 16:00 / 18:00 ET: the RotoWire refresh, then the exports.
+
+   The Droplet unit templates are in `deploy/droplet/lifecycle/`; they are prepared but not installed.
+   See `docs/operations/CBB_LIVE_DAILY_LIFECYCLE_2026-11-04.md`.

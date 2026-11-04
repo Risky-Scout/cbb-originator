@@ -16,7 +16,10 @@ the module imports no network or acquisition code; tests run it with every socke
                         prediction x sportsbook offer, prediction-time fields only, written by prod.side_monitor),
                         ticks/*/side_settlements.parquet (settlement against the CBBD final box), ticks/<tick>/
                         projections.parquet (labels)
-    run directory       runs/<run_id>/market_pmfs.parquet (official marginal PMFs written by prod.run.daily)
+    durable PMFs        ticks/<tick>/pmfs.parquet (the official prediction's PMFs, prod.pmf_evidence) and
+                        forecasts/<D>/<snapshot>/pmfs.parquet (line-independent forecast snapshots, prod.lifecycle);
+                        per game the LATEST prediction made before the game's production cutoff is exported. Legacy
+                        fallback: runs/<run_id>/market_pmfs.parquet (ephemeral on a GitHub runner)
     names               core.teams of the frozen history store + the current 2026-27 state increment (read-only)
 
 Field sources (no new convention is introduced; every figure is copied from the receipt or uses an existing formula):
@@ -51,7 +54,7 @@ from xml.sax.saxutils import escape
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import config as PC
+from cbb_platform.prod import config as PC, pmf_evidence as PE
 
 EXPORT_VERSION = "cbb-prod-daily-exports-1.0.0"
 TZ = "America/New_York"
@@ -432,34 +435,98 @@ def reconcile(of: pd.DataFrame, summ: dict) -> dict:
 
 
 # ============================================================================ distributions
-def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, names: dict) -> tuple[list, list]:
-    """(rows, missing): official marginal PMFs of every priced (game, player, market) of the slate."""
-    rows, missing, recs = [], [], []
-    for g in games.sort_values(["tip_utc", "game_id"]).itertuples(index=False):
-        cand = [Path(ops_root) / "ticks" / str(g.tick_id) / "market_pmfs.parquet",
-                Path(runs_root) / str(g.run_id) / "market_pmfs.parquet"]
-        src = next((p for p in cand if p.exists()), None)
-        if src is None:
-            missing.append({"game_id": g.game_id, "run_id": g.run_id, "looked_in": [str(p) for p in cand]})
+def _check_pmf(pmf: np.ndarray, what: str) -> None:
+    if not np.isfinite(pmf).all() or (pmf < 0).any():
+        raise ExportIntegrityError(f"negative / non-finite PMF {what}")
+    if abs(pmf.sum() - 1.0) > PMF_TOL:
+        raise ExportIntegrityError(f"PMF mass {pmf.sum()} {what}")
+
+
+def _official_pmfs(ops_root: Path, runs_root: Path, g) -> tuple[pd.DataFrame | None, str | None, list]:
+    """The PMFs of one official (shadow-tick) prediction: the durable tick evidence ticks/<tick>/pmfs.parquet
+    (prod.pmf_evidence), else the legacy run-directory market_pmfs.parquet. Returns (frame with game_label / player_label
+    / team_id / stat / mean / pmf, source path, paths looked in)."""
+    tick = Path(ops_root) / "ticks" / str(g.tick_id)
+    durable = tick / PE.FILE
+    cand = [durable, tick / "market_pmfs.parquet", Path(runs_root) / str(g.run_id) / "market_pmfs.parquet"]
+    if durable.exists():
+        d = [x for x in PE.distributions(PE.read(durable)) if x["game_id"] == g.game_id]
+        return pd.DataFrame(d), str(durable), cand
+    src = next((p for p in cand[1:] if p.exists()), None)
+    if src is None:
+        return None, None, cand
+    mp = pd.read_parquet(src)
+    mp = mp[mp["game_id"] == g.game_id]
+    lab = tick / "projections.parquet"
+    lb = pd.read_parquet(lab).drop_duplicates(["game_id", "player_id"]).set_index(["game_id", "player_id"]) \
+        if lab.exists() else pd.DataFrame()
+    rows = []
+    for r in mp.itertuples(index=False):
+        k = (g.game_id, r.player_id)
+        rows.append({"game_id": g.game_id, "player_id": r.player_id, "team_id": r.team_id, "stat": r.market,
+                     "mean": _f(r.projection), "pmf": np.asarray(r.pmf, dtype=float),
+                     "game_label": lb.loc[k, "game"] if len(lb) and k in lb.index else g.game_id,
+                     "player_label": lb.loc[k, "player"] if len(lb) and k in lb.index else r.player_id})
+    return pd.DataFrame(rows), str(src), cand
+
+
+def forecast_sources(ops_root: Path, date: str) -> dict:
+    """game_id -> [(prediction_as_of, cutoff, pmfs path)] of every line-independent forecast snapshot of ET date
+    `date` (prod.lifecycle) that forecast the game BEFORE its production cutoff."""
+    out: dict = {}
+    for r in _jsonl(Path(ops_root) / "forecasts" / "index.jsonl"):
+        if r.get("slate_date") != date or r.get("status") != "FORECAST" or not r.get("prediction_as_of"):
             continue
-        mp = pd.read_parquet(src)
-        mp = mp[mp["game_id"] == g.game_id]
-        lab = Path(ops_root) / "ticks" / str(g.tick_id) / "projections.parquet"
-        lb = pd.read_parquet(lab).drop_duplicates(["game_id", "player_id"]).set_index(["game_id", "player_id"]) \
-            if lab.exists() else pd.DataFrame()
-        for r in mp.itertuples(index=False):
+        p = Path(ops_root) / "forecasts" / date / r["snapshot_id"] / PE.FILE
+        if not p.exists():
+            continue
+        aso = _utc(r["prediction_as_of"])
+        for gid in r.get("games") or []:
+            cut = _utc((r.get("cutoffs") or {}).get(gid))
+            if cut is not None and aso < cut:
+                out.setdefault(gid, []).append((aso, cut, p))
+    return out
+
+
+def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, names: dict,
+                      date: str | None = None) -> tuple[list, list]:
+    """(rows, missing): the complete PMFs of every eligible (game, player, stat) prediction of the slate. Per game the
+    LATEST valid pre-cutoff prediction is used (directive §8): the official shadow-tick prediction when it exists (it
+    is made inside [cutoff - lead, cutoff)), else the latest forecast snapshot made before the game's cutoff. PMFs are
+    read from the durable evidence exactly as persisted (never recomputed). games: the PREDICTED registry rows."""
+    rows, missing, recs = [], [], []
+    fsrc = forecast_sources(ops_root, date) if date else {}
+    official = {g.game_id: g for g in games.itertuples(index=False)}
+    order = {g.game_id: g.tip_utc for g in games.itertuples(index=False)}
+    for gid in sorted(set(official) | set(fsrc)):
+        best = None
+        if gid in official:
+            g = official[gid]
+            df, src, looked = _official_pmfs(ops_root, runs_root, g)
+            aso = _utc(getattr(g, "prediction_as_of", None))
+            if df is not None:
+                best = (aso or pd.Timestamp.max.tz_localize("UTC"), df, src)
+            elif gid not in fsrc:
+                missing.append({"game_id": gid, "run_id": g.run_id, "looked_in": [str(p) for p in looked]})
+                continue
+        for aso, cut, p in fsrc.get(gid, []):
+            if best is None or (aso > best[0] and aso < cut):
+                d = [x for x in PE.distributions(PE.read(p)) if x["game_id"] == gid]
+                best = (aso, pd.DataFrame(d), str(p))
+        if best is None or not len(best[1]):
+            continue
+        df = best[1]
+        tip = order.get(gid)
+        if tip is None:
+            tip = min((c for _, c, _ in fsrc.get(gid, [])), default=None)
+        for r in df.itertuples(index=False):
             pmf = np.asarray(r.pmf, dtype=float)
-            if not np.isfinite(pmf).all() or (pmf < 0).any():
-                raise ExportIntegrityError(f"negative / non-finite PMF {g.game_id} {r.player_id} {r.market}")
-            if abs(pmf.sum() - 1.0) > PMF_TOL:
-                raise ExportIntegrityError(f"PMF mass {pmf.sum()} {g.game_id} {r.player_id} {r.market}")
+            _check_pmf(pmf, f"{gid} {r.player_id} {r.stat}")
             nz = np.flatnonzero(pmf)
             last = int(nz[-1]) if len(nz) else 0                 # trailing zeros only; the folded tail point stays
-            k = (g.game_id, r.player_id)
-            game = lb.loc[k, "game"] if len(lb) and k in lb.index else g.game_id
-            player = lb.loc[k, "player"] if len(lb) and k in lb.index else r.player_id
-            recs.append((g.tip_utc, game, player, r.market, names.get(r.team_id, r.team_id), _f(r.projection), pmf[: last + 1]))
-    recs.sort(key=lambda x: (x[0], x[1], x[2], x[3]))
+            recs.append((tip, r.game_label, r.player_label, r.stat, names.get(r.team_id, r.team_id), _f(r.mean),
+                         pmf[: last + 1]))
+    recs.sort(key=lambda x: (x[0] or pd.Timestamp.max.tz_localize("UTC"), x[1], x[2], x[3]))
     for _, game, player, market, team, mean, pmf in recs:
         rows += [[game, team, player, market, mean, int(o), float(p)] for o, p in enumerate(pmf)]
     return rows, missing
@@ -783,12 +850,23 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
            "refits_triggered": 0}
     games = slate_games(ops_root, date)
     rep["predicted_games"] = int(len(games))
+    names = team_names(history_db, state_root)
+    rows, missing = distribution_rows(ops_root, runs_root, games, names, date)
+    if rows and not missing:
+        p = distributions_workbook(rows, out_dir / names_["distributions"])
+        rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), **pmf_mass_check(rows)}
+    elif rows:
+        rep["distributions"] = {"status": "MISSING_EVIDENCE",
+                                "missing": f"durable PMFs absent for {len(missing)} predicted game(s)", "games": missing[:20]}
+    else:
+        rep["distributions"] = {"status": "MISSING_EVIDENCE",
+                                "missing": f"no durable PMF evidence (official tick pmfs.parquet or pre-cutoff forecast "
+                                           f"snapshot) for ET slate date {date}", "games": missing[:20]}
     if not len(games):
-        for k in ("boards", "distributions", "grades"):
+        for k in ("boards", "grades"):
             rep[k] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game with ET slate date {date} "
                                                                f"in {Path(ops_root) / 'registry' / 'games.jsonl'}"}
         return rep
-    names = team_names(history_db, state_root)
     rc = receipts(ops_root, games, labels)
     of, leak = offers(rc, side_settlements(ops_root), names)
     rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
@@ -812,14 +890,6 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
                 f"{date}; ticks: {sorted(set(games['tick_id']))}")
         rep["boards"] = {"status": "MISSING_EVIDENCE", "missing": miss}
         rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": miss}
-    rows, missing = distribution_rows(ops_root, runs_root, games, names)
-    if rows and not missing:
-        p = distributions_workbook(rows, out_dir / names_["distributions"])
-        rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), **pmf_mass_check(rows)}
-    else:
-        rep["distributions"] = {"status": "MISSING_EVIDENCE",
-                                "missing": f"official market_pmfs.parquet absent for {len(missing)} of {len(games)} "
-                                           f"predicted game(s)", "games": missing[:20]}
     return rep
 
 

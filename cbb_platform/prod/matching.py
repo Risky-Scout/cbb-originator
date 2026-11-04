@@ -48,6 +48,19 @@ def team_index(teams: pd.DataFrame, team_map: pd.DataFrame | None) -> dict:
     return {"explicit": explicit, "exact": idx}
 
 
+def odds_team_map(path=None) -> pd.DataFrame:
+    """The curated, committed explicit map (step 1 above) of The Odds API team names whose spelling is not the
+    canonical one ("Wichita St Shockers", "CSU Northridge Matadors", "Loyola (Chi) Ramblers"). Every entry names
+    exactly one canonical team and was verified against the canonical school + mascot; nothing is inferred at run
+    time. Columns: provider_team_name, canonical_team_id (+ canonical_display_name, verified_on, evidence)."""
+    from cbb_platform.prod import config as PC
+    m = pd.read_csv(path or PC.ODDS_TEAM_MAP, dtype=str)
+    dup = m[m["provider_team_name"].map(norm).duplicated(keep=False)]
+    if len(dup):
+        raise ValueError(f"odds team map: duplicate provider names {sorted(dup['provider_team_name'])}")
+    return m
+
+
 def resolve_team(name: str, tidx: dict) -> tuple[str | None, str]:
     k = norm(name)
     if k in tidx["explicit"]:

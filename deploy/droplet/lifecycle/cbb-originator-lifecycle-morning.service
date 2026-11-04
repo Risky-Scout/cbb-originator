@@ -1,0 +1,51 @@
+# CBB Originator: 07:00 ET DAILY LIFECYCLE (prod/lifecycle.py morning). TEMPLATE: prepared, NOT installed, NOT enabled.
+# Prior-day settlement (shadow tick) -> prior-day Grades -> walk-forward update (existing gates; last-known-good kept)
+# -> INITIAL forecast snapshot of today's slate (line-independent, PMFs persisted) -> Distributions / Boards exports.
+# No secrets here; nothing publishes (WizardOfOdds) or wagers. Installed only by the cutover directive.
+[Unit]
+Description=CBB Originator 07:00 ET daily lifecycle (settlement, grades, walk-forward, initial forecast)
+Documentation=file:///opt/sports-models/cbb-originator/app/docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/sports-models/cbb-originator.env
+
+[Service]
+Type=oneshot
+User=cbb-originator
+Group=cbb-originator
+SupplementaryGroups=sports-models
+WorkingDirectory=/opt/sports-models/cbb-originator/app
+EnvironmentFile=/etc/sports-models/cbb-originator.env
+Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
+ExecStart=/opt/sports-models/cbb-originator/app/deploy/droplet/bin/cbb-originator-run lifecycle-morning
+# Exit 75 = resource/lock unavailable (DAILY_REFIT_STATUS = FAIL (RESOURCE)): reported as failure, never retried
+# automatically (at most one attempt per cutoff + one manual retry).
+Restart=no
+TimeoutStartSec=120min
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cbb-originator-lifecycle-morning
+# ---- resource controls (measured: 7.17 GB RSS, 11.2 GB peak footprint, 118.6 s; DuckDB memory_limit 12 GB)
+MemoryHigh=12G
+MemoryMax=14G
+MemorySwapMax=0
+Nice=10
+CPUQuota=200%
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+# ---- isolation: the app checkout is read-only; CBB runtime state lives under /var/lib/sports-models/cbb-originator
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+UMask=0077
+ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models
+BindPaths=/var/lib/sports-models/cbb-originator/prod:/opt/sports-models/cbb-originator/app/data/prod
+BindPaths=/var/lib/sports-models/cbb-originator/scratch/duckdb_tmp:/opt/sports-models/cbb-originator/app/modeling/store/duckdb_tmp
+# frozen stores, bound read-only at the exact paths the code expects (the tracked route_build.json beside cbb.duckdb
+# stays visible: only the file and the untracked stage3/ directory are bound; mount points are created at install)
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/canonical/cbb.duckdb:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/canonical/cbb.duckdb
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/stage3:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/stage3
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/v2_oos:/opt/sports-models/cbb-originator/app/modeling/v2_oos

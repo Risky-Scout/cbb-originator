@@ -1,0 +1,8 @@
+provider_team_name,canonical_team_id,canonical_display_name,verified_on,evidence
+CSU Northridge Matadors,T-be38d13b6bcc187d,Cal State Northridge Matadors,2026-11-04,The Odds API events listing 2026-11-04 (Wichita St vs CSU Northridge 2026-11-05T00:30Z); unique canonical school+mascot
+Georgia St Panthers,T-b99d61dfa2604350,Georgia State Panthers,2026-11-04,The Odds API events listing 2026-11-04 (Charlotte vs Georgia St 2026-11-06T00:00Z); unique canonical school+mascot
+Jacksonville St Gamecocks,T-fee0662a38c313fd,Jacksonville State Gamecocks,2026-11-04,The Odds API events listing 2026-11-04 (South Alabama vs Jacksonville St 2026-11-06T01:00Z); unique canonical school+mascot
+Loyola (Chi) Ramblers,T-29f153e69b95afda,Loyola Chicago Ramblers,2026-11-04,The Odds API events listing 2026-11-04 (Loyola (Chi) vs West Georgia 2026-11-06T01:00Z); the only canonical Ramblers
+Michigan St Spartans,T-64d137df389e9aa3,Michigan State Spartans,2026-11-04,The Odds API events listing 2026-11-04 (Michigan St vs Toledo 2026-11-06T01:00Z); unique canonical school+mascot
+North Dakota St Bison,T-31d095e663a2c164,North Dakota State Bison,2026-11-04,The Odds API events listing 2026-11-04 (Saint Mary's vs North Dakota St 2026-11-05T03:00Z); unique canonical school+mascot
+Wichita St Shockers,T-3216cda83ee1dea6,Wichita State Shockers,2026-11-04,The Odds API events listing 2026-11-04 (Wichita St vs CSU Northridge 2026-11-05T00:30Z); the only canonical Shockers

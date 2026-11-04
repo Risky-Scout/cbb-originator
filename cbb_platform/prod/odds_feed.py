@@ -293,7 +293,7 @@ def validate(event_id: str, *, now=None, session: OA.Session | None = None, run_
                      PC.ODDS_PROP_WINDOW_HOURS)
     lst = listing(t, session.cache_root)
     teams, _ = RN._names(history_db)
-    mev = match_events(lst["events"], slate, MT.team_index(teams, None))
+    mev = match_events(lst["events"], slate, MT.team_index(teams, MT.odds_team_map()))
     hit = mev[mev["provider_event_id"] == event_id]
     if not len(hit) or not isinstance(hit["canonical_game_id"].iat[0], str):
         raise RuntimeError(f"event {event_id} does not resolve strictly to a 2026-27 slate game "
@@ -340,7 +340,7 @@ def main(argv=None) -> None:
         slate = SL.build(st["increment_db"], t, st["manifest"].get("schedule_as_of") or st["manifest"]["source_cutoff"],
                          a.hours)
         teams, _ = RN._names(PC.HISTORY_CANONICAL)
-        mev = match_events(lst["events"], slate, MT.team_index(teams, None))
+        mev = match_events(lst["events"], slate, MT.team_index(teams, MT.odds_team_map()))
         print(json.dumps({"request": {k: v for k, v in ent.items() if k != "body"}, "acquisition": s.summary(),
                           "listed_events": int(len(lst["events"])), "slate_games": int(len(slate)),
                           "matched": int(mev["canonical_game_id"].notna().sum()),

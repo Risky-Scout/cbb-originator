@@ -70,6 +70,23 @@ KEYS = {"flagship.games": ("canonical_game_id",),
         "core.players": ("canonical_player_id",),
         "metadata.identity_link_quarantine": ("canonical_player_id", "from_season", "to_season"),
         "metadata.prod_schedule": ("canonical_game_id",)}
+# A box / substitution row whose source athlete resolved to no canonical player (identity_status UNRESOLVED_*, e.g. a
+# non-D-I opponent's player) carries canonical_player_id NULL. As in the frozen canonical build (build_canonical:
+# coalesce(canonical_player_id, 'UNRESOLVED:' || player_game_key)), such rows are keyed by their source record, never
+# collapsed onto one NULL player: one team's unresolved players are distinct rows, not duplicate keys.
+UNRESOLVED_KEY = {"flagship.player_game_outcomes": "player_game_key", "flagship.substitutions": "source_athlete_id"}
+
+
+def key_exprs(rel: str, alias: str = "", cols=None) -> list[str]:
+    """Key expressions of `rel`. cols: the relation's columns; the unresolved fallback applies only when its source
+    column is present (a relation without it keys exactly as before)."""
+    a = f"{alias}." if alias else ""
+    fb = UNRESOLVED_KEY.get(rel)
+    use = fb is not None and (cols is None or fb in set(cols))
+    return [f"coalesce({a}{k}, 'UNRESOLVED:' || {a}{fb})" if k == "canonical_player_id" and use else f"{a}{k}"
+            for k in KEYS[rel]]
+
+
 SEASONAL = ("flagship.games", "flagship.team_game_outcomes", "flagship.player_game_outcomes", "flagship.substitutions",
             "flagship.rosters", "core.team_seasons", "metadata.prod_schedule")
 TIP_QUALITY = ("EXACT", "DATE_ONLY", "TBD", "TBD_FLAG")            # TBD_FLAG / DATE_ONLY: the canonical inexact values
@@ -135,7 +152,8 @@ def _upsert(con, rel: str, df: pd.DataFrame, replace: bool = False) -> None:
     if not exists:
         con.execute(f"CREATE TABLE {rel} AS SELECT * FROM new_rows")
     else:
-        key = " AND ".join(f"t.{k} IS NOT DISTINCT FROM n.{k}" for k in KEYS[rel])
+        tcols = {r[0] for r in con.execute(f"DESCRIBE {rel}").fetchall()} & set(df.columns)
+        key = " AND ".join(f"{t} IS NOT DISTINCT FROM {n}" for t, n in zip(key_exprs(rel, "t", tcols), key_exprs(rel, "n", tcols)))
         con.execute(f"DELETE FROM {rel} t WHERE EXISTS (SELECT 1 FROM new_rows n WHERE {key})")
         con.execute(f"INSERT INTO {rel} BY NAME SELECT * FROM new_rows")
     con.unregister("new_rows")
@@ -159,7 +177,7 @@ def validate(db: Path, source_cutoff) -> dict:
         if miss:
             errs.append(f"{rel}: missing columns {miss}")
             continue
-        dup = con.execute(f"SELECT count(*) FROM (SELECT {', '.join(KEYS[rel])} FROM {rel} GROUP BY ALL HAVING count(*) > 1)").fetchone()[0]
+        dup = con.execute(f"SELECT count(*) FROM (SELECT {', '.join(key_exprs(rel, cols=got))} FROM {rel} GROUP BY ALL HAVING count(*) > 1)").fetchone()[0]
         if dup:
             errs.append(f"{rel}: {dup} duplicate keys {KEYS[rel]}")
         if rel in SEASONAL:

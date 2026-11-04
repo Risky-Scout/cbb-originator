@@ -1,0 +1,15 @@
+# CBB Originator 07:00 ET daily lifecycle timer. TEMPLATE: NOT installed, NOT enabled (cutover directive only).
+# systemd evaluates the zone itself (DST-correct). Runs after the 06:05 ET walk-forward timer's window; the lifecycle's
+# walk-forward step is idempotent (a second run on the same inputs is NO_NEW_DATA / IDEMPOTENT_NO_CHANGE).
+[Unit]
+Description=CBB Originator 07:00 ET daily lifecycle timer
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-lifecycle-morning.service
+
+[Install]
+WantedBy=timers.target

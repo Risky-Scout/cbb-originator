@@ -1,0 +1,48 @@
+# CBB Originator: RotoWire availability REFRESH (prod/lifecycle.py refresh) at exactly 10:00 / 13:00 / 16:00 / 18:00 ET.
+# TEMPLATE: prepared, NOT installed, NOT enabled. Re-forecasts only games whose availability changed and whose
+# production cutoff has not passed (new immutable snapshot; earlier snapshots are never rewritten), then regenerates
+# Boards / Distributions. Without ROTOWIRE_API_KEY (or before the RotoWire smoke PASS) it records BLOCKED_NO_KEY.
+[Unit]
+Description=CBB Originator RotoWire refresh %I ET
+Documentation=file:///opt/sports-models/cbb-originator/app/docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/sports-models/cbb-originator.env
+
+[Service]
+Type=oneshot
+User=cbb-originator
+Group=cbb-originator
+SupplementaryGroups=sports-models
+WorkingDirectory=/opt/sports-models/cbb-originator/app
+EnvironmentFile=/etc/sports-models/cbb-originator.env
+Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
+ExecStart=/opt/sports-models/cbb-originator/app/deploy/droplet/bin/cbb-originator-run lifecycle-refresh %I
+Restart=no
+TimeoutStartSec=40min
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cbb-originator-lifecycle-refresh
+# PROPOSED limits: the tick's peak memory has not been measured on the Droplet; measure during validation and adjust.
+MemoryHigh=4G
+MemoryMax=6G
+MemorySwapMax=0
+Nice=5
+CPUQuota=100%
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+UMask=0077
+ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models
+BindPaths=/var/lib/sports-models/cbb-originator/prod:/opt/sports-models/cbb-originator/app/data/prod
+BindPaths=/var/lib/sports-models/cbb-originator/scratch/duckdb_tmp:/opt/sports-models/cbb-originator/app/modeling/store/duckdb_tmp
+# frozen stores, bound read-only at the exact paths the code expects (the tracked route_build.json beside cbb.duckdb
+# stays visible: only the file and the untracked stage3/ directory are bound; mount points are created at install)
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/canonical/cbb.duckdb:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/canonical/cbb.duckdb
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/stage3:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/stage3
+BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/v2_oos:/opt/sports-models/cbb-originator/app/modeling/v2_oos

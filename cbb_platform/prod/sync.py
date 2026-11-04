@@ -131,6 +131,33 @@ def completed_reuse_age(endpoint: str, params: dict, games: pd.DataFrame, sched:
     return None if want <= have else 0.0
 
 
+BOX_WINDOW_ENDPOINTS = ("games/teams", "games/players")
+
+
+def latest_receipt_per_game(payloads: list[tuple]) -> tuple[list[dict], int]:
+    """Overlapping date windows ([d-1, d+1]) return a game in two payloads. A window cached earlier (reused because it
+    already carries every game it must carry) can hold an older provider version of a game that a later-fetched window
+    returns corrected; record-level dedupe then fails closed on the conflict (observed 2026-11-03: team_game_stats key
+    ('372661', '168')). Each game's box records are therefore taken whole from the most recently RECEIVED payload that
+    carries it (ties: request order); records of one game are never mixed across payloads. Records within one payload
+    are untouched, so a conflict inside a single provider response still fails closed in cbbd_box_route.dedupe.
+    payloads: [(received_at, request_index, body)]. Returns (records, games whose older copies were superseded)."""
+    far = pd.Timestamp.min.tz_localize("UTC")
+    order = sorted(payloads, key=lambda x: (-(x[0] or far).value, x[1]))
+    owner, out, superseded = {}, [], set()
+    for i, (_, _, body) in enumerate(order):
+        for r in body or []:
+            g = str(r.get("gameId")) if isinstance(r, dict) else None
+            if g is None:
+                out.append(r)
+                continue
+            if owner.setdefault(g, i) == i:
+                out.append(r)
+            else:
+                superseded.add(g)
+    return out, len(superseded)
+
+
 def _log(entry: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as f:
@@ -237,6 +264,7 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
             plan = plan_completed(newly, S, G)
             box = {"games": [g for g, _ in games], "games/teams": [], "games/players": [], "stats/player/season": []}
             subs_req, got_stats = [], False
+            window_payloads = {ep: [] for ep in BOX_WINDOW_ENDPOINTS}
             for n_done, (ep, p) in enumerate(plan):
                 try:
                     e = s.get(ep, p, max_age_hours=completed_reuse_age(ep, p, newly, S, cache_root, clock()),
@@ -247,9 +275,13 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
                     break
                 if ep == "substitutions/game":
                     subs_req.append((ep, p))
+                elif ep in BOX_WINDOW_ENDPOINTS:
+                    window_payloads[ep].append((_utc(e["received_at"]) if e.get("received_at") else None, n_done, e["body"]))
                 else:
                     box[ep] += e["body"]
                     got_stats |= ep == "stats/player/season"
+            for ep, got in window_payloads.items():
+                box[ep], rec.setdefault("box_window_games_superseded", {})[ep] = latest_receipt_per_game(got)
             subs_ok = {F.cid("G", "game", p["gameId"]) for _, p in subs_req}
             rec["requests"]["completed"] = s.summary()
         if len(newly) and "completed" in stages and not got_stats:

@@ -40,7 +40,7 @@ import pandas as pd
 from cbb_platform import props_v0 as P, props_v1_refit as R
 from cbb_platform.v2 import jm1_final as F, jm1_final_production as JP, joint_minutes_v2 as JM, marginal as M
 from cbb_platform.v2 import phase1b as B, phase3 as P3, structural as S
-from cbb_platform.walkforward import config as WC
+from cbb_platform.walkforward import config as WC, history_source as HS
 
 _HIST: dict = {}
 
@@ -93,9 +93,12 @@ def _sort_team(tf: pd.DataFrame) -> pd.DataFrame:
 def history(cfg: dict) -> dict:
     """The frozen through-2025-26 training inputs, read once per process by the FROZEN loaders (never mutated)."""
     if not _HIST:
-        frame, finals = M.load_frames(cfg, range(WC.MARGINAL_FIRST_SEASON, WC.OPENING_THROUGH + 1))
-        _HIST.update(frame=frame, finals=finals,
-                     part=M.load_participation(range(WC.PARTICIPATION_FIRST_SEASON, WC.OPENING_THROUGH + 1)),
+        fdb, ldb = HS.stage3_paths()                 # CONTROL: the frozen defaults (provenance.LB_FEATURES / LB_LABELS)
+        frame, finals = M.load_frames(cfg, range(WC.MARGINAL_FIRST_SEASON, WC.OPENING_THROUGH + 1), features_db=fdb,
+                                      labels_db=ldb)
+        _HIST.update(frame=frame, finals=finals, source=HS.selected(),
+                     part=M.load_participation(range(WC.PARTICIPATION_FIRST_SEASON, WC.OPENING_THROUGH + 1),
+                                               features_db=fdb, labels_db=ldb),
                      team=_sort_team(S.load_team_frame(range(WC.TEAM_FIRST_SEASON, WC.OPENING_THROUGH + 1), labels=True)),
                      store=P3.load_store(range(WC.GLM_FIRST_SEASON, WC.OPENING_THROUGH + 1)))
     return _HIST

@@ -264,6 +264,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         quotes_paths = OF.collections(aso, odds_collections)      # latest live collection per event, received <= as_of
     qs = [QT.load_collected(p) for p in quotes_paths]
     quotes = QT.typed(pd.concat(qs, ignore_index=True) if qs else pd.DataFrame(columns=QT.COLUMNS))
+    team_map = MT.odds_team_map() if team_map is None else team_map      # the curated explicit map (matching step 1)
     tidx = MT.team_index(teams, team_map) if len(teams) else {"explicit": {}, "exact": {}}
     if len(quotes):
         quotes = MT.match_games(quotes, slate, tidx)
@@ -349,7 +350,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     (run_dir / "game_diagnostics.json").write_text(json.dumps(diag, default=str))
     board.to_csv(run_dir / "board.csv", index=False)
     if len(dist):                                                # full market pmfs (prospective PMF log score / CRPS)
-        mp = dist[dist["method"] != "NOT_PRICED"][["game_id", "team_id", "player_id", "market", "method", "projection", "pmf"]]
+        mp = dist[dist["method"] != "NOT_PRICED"][["game_id", "team_id", "player_id", "market", "method", "projection", "pmf",
+                                                   "game_label", "player_label"]]
         mp.assign(pmf=mp["pmf"].map(lambda a: np.asarray(a, dtype=float).tolist())).to_parquet(run_dir / "market_pmfs.parquet",
                                                                                               index=False)
     row_states = pd.Series([p["readiness_state"] for p in priced]).value_counts().to_dict() if priced else {}

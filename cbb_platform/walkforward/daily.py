@@ -39,7 +39,7 @@ from cbb_platform import props_v0 as P, props_v1_refit as R
 from cbb_platform.prod import config as PC, run as RN, state as ST
 from cbb_platform.v2 import phase2 as P2
 from cbb_platform.walkforward import config as WC, corrections as CR, eligibility as EL, fit as WF, gates as GT, monitor as MON
-from cbb_platform.walkforward import store as SO, training_rows as TR
+from cbb_platform.walkforward import history_source as HS, store as SO, training_rows as TR
 
 
 class MorningJobLocked(RuntimeError):
@@ -87,15 +87,11 @@ def config_hash(cfg: dict) -> str:
 
 
 def history_identity() -> dict:
-    """The frozen through-2025-26 training stores, identified by the sha256 recorded in the frozen production manifest
-    (+ size, re-checked each run; a full re-hash of the 2.4 GB store would cost minutes on the shared machine)."""
-    man = json.loads((PC.MODEL_DIR / "jm1_final_production_manifest_2026_27.json").read_text())
-    dv = man["data_versions"]
-    from cbb_platform import config as C
-    sizes = {k: (C.PROJECT_ROOT / v["path"]).stat().st_size == v["bytes"] for k, v in dv.items()}
-    if not all(sizes.values()):
-        raise RuntimeError(f"a frozen training store changed size: {sizes}")
-    return {k: v["sha256"] for k, v in dv.items()}
+    """The frozen through-2025-26 training stores, identified by the sha256 recorded in the frozen production manifest.
+    CONTROL re-checks the original stores' sizes (a full re-hash of the 2.4 GB store would cost minutes on the shared
+    machine); CANDIDATE verifies the compact source (sha256 + bytes vs its manifest, extracted from exactly these
+    data_versions). history_source.identity."""
+    return HS.identity()
 
 
 def run_identity(cut, state_version: str | None, eligibility: pd.DataFrame, training_identity: dict, code: dict,
@@ -282,7 +278,13 @@ def corrections(root: Path, prev_version: str | None, state: dict, vid: str, sta
 
 # ============================================================================ morning
 def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_ROOT,
-            history_db: Path = PC.HISTORY_CANONICAL, now=None, log=print) -> dict:
+            history_db: Path | None = None, now=None, log=print) -> dict:
+    """history_db None: the selected history source (history_source.history_db: the frozen canonical under CONTROL)."""
+    with HS.active():
+        return _morning(day, root, state_root, HS.history_db() if history_db is None else history_db, now, log)
+
+
+def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log) -> dict:
     now = _utc(now) if now is not None else pd.Timestamp.now(tz="UTC")
     cut = WC.refit_cutoff(day)
     t0 = time.time()
