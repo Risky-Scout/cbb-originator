@@ -378,8 +378,14 @@ def test_export_no_network_no_refit_no_artifact_change(full, monkeypatch, tmp_pa
     arts = {k: hashlib.sha256((C.PROJECT_ROOT / p).read_bytes()).hexdigest() for k, (p, _) in PC.ARTIFACTS.items()}
     assert arts == {k: h for k, (_, h) in PC.ARTIFACTS.items()}
     calls = []
-    real_connect = socket.socket.connect
-    monkeypatch.setattr(socket.socket, "connect", lambda *a, **k: calls.append(a) or real_connect(*a, **k))
+
+    def refuse(*a, **k):
+        calls.append(a)
+        raise OSError("network refused in export test")
+    for name in ("connect", "connect_ex"):
+        monkeypatch.setattr(socket.socket, name, refuse)
+    monkeypatch.setattr(socket, "create_connection", refuse)
+    monkeypatch.setattr(socket, "getaddrinfo", refuse)
     import cbb_platform.prod.run as RN
     import cbb_platform.walkforward.daily as WD
     import cbb_platform.walkforward.fit as WF
@@ -393,9 +399,6 @@ def test_export_no_network_no_refit_no_artifact_change(full, monkeypatch, tmp_pa
                 monkeypatch.setattr(mod, name, boom)
     rep = _run(tree)
     assert calls == [] and rep["network_calls"] == 0 and rep["refits_triggered"] == 0
-    with EX.no_network():
-        with pytest.raises(EX.NetworkCallRefused):
-            socket.create_connection(("example.com", 443))
     imports = [l.strip() for l in Path(EX.__file__).read_text().splitlines() if l.strip().startswith(("import ", "from "))]
     for forbidden in ("walkforward", "run", "simulate", "odds_acquire", "cbbd_acquire", "rotowire_acquire", "requests",
                       "urllib", "http", "sync", "shadow_tick"):

@@ -20,7 +20,7 @@ Exit codes:
 - **2**: at least one workbook's evidence is absent. That workbook is **not** written, and its missing dependency is
   printed in the JSON report. Nothing is ever fetched to fill the gap.
 
-## Evidence read (read-only; no network: generation runs inside a socket guard)
+## Evidence read (read-only; no network: the module imports no network or acquisition code)
 
 | Need | Source |
 |---|---|

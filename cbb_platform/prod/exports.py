@@ -9,7 +9,7 @@ writes, for the America/New_York slate date D, into data/prod/exports/D/ (gitign
     CBB_Grades_MM_DD_YYYY.xlsx         Graded Bets | Performance Summary
 
 Read-only over evidence that production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call:
-generation runs inside a socket guard that refuses every connection):
+the module imports no network or acquisition code; tests run it with every socket entry point refused):
 
     ops evidence tree   registry/games.jsonl (the decided PREDICTED row of each game: tick, run, scheduled tip, cutoff
                         rule), ticks/<tick>/side_monitor.jsonl.gz (the hash-chained QUOTE_SIDE receipts: one per
@@ -43,7 +43,6 @@ import hashlib
 import json
 import math
 import os
-import socket
 import sys
 import zipfile
 from pathlib import Path
@@ -98,28 +97,6 @@ FORMATS = {"MODEL%": "0.0%", "MARKET%": "0.0%", "EDGE": "0.0%", "HIT_RATE": "0.0
 
 class ExportIntegrityError(RuntimeError):
     """An invariant of the export contract failed (immutable field changed, negative / non-normalized PMF, ...)."""
-
-
-class NetworkCallRefused(RuntimeError):
-    pass
-
-
-# ============================================================================ guards
-@contextlib.contextmanager
-def no_network():
-    """Refuse every outbound connection while an export is generated (the export reads persisted evidence only)."""
-    saved = (socket.socket.connect, socket.socket.connect_ex, socket.create_connection, socket.getaddrinfo)
-
-    def refuse(*a, **k):
-        raise NetworkCallRefused("exports make no network call")
-    socket.socket.connect = refuse
-    socket.socket.connect_ex = refuse
-    socket.create_connection = refuse
-    socket.getaddrinfo = refuse
-    try:
-        yield
-    finally:
-        socket.socket.connect, socket.socket.connect_ex, socket.create_connection, socket.getaddrinfo = saved
 
 
 # ============================================================================ small helpers
@@ -804,46 +781,45 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     names_ = file_names(date)
     rep = {"version": EXPORT_VERSION, "date": date, "timezone": TZ, "out_dir": str(out_dir), "network_calls": 0,
            "refits_triggered": 0}
-    with no_network():
-        games = slate_games(ops_root, date)
-        rep["predicted_games"] = int(len(games))
-        if not len(games):
-            for k in ("boards", "distributions", "grades"):
-                rep[k] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game with ET slate date {date} "
-                                                                   f"in {Path(ops_root) / 'registry' / 'games.jsonl'}"}
-            return rep
-        names = team_names(history_db, state_root)
-        rc = receipts(ops_root, games, labels)
-        of, leak = offers(rc, side_settlements(ops_root), names)
-        rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
-        if len(of):
-            sidecar = out_dir / "grade_receipts.json"
-            rep["receipt_immutability"] = check_receipts(sidecar, of)
-            p = boards_workbook(of, out_dir / names_["boards"])
-            bf = board_frames(of)
-            rep["boards"] = {"status": "WRITTEN", "path": str(p), **{s: len(bf[s]) for s in BOARD_SHEETS}}
-            p = grades_workbook(of, date, out_dir / names_["grades"])
-            summ = summary(of, date)
-            rec = reconcile(of, summ)
-            rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": int(len(of)),
-                             "results": of["result"].value_counts().to_dict(), "reconciliation": rec,
-                             "GRADE_RECONCILIATION": "PASS" if all(rec.values()) else "FAIL"}
-            tmp = sidecar.with_name(sidecar.name + ".tmp")
-            tmp.write_text(json.dumps({"date": date, "receipts": _immutable(of)}, sort_keys=True, indent=0, default=str))
-            os.replace(tmp, sidecar)
-        else:
-            miss = (f"no QUOTE_SIDE receipt (priced pre-tip sportsbook offer) for the {len(games)} predicted game(s) of "
-                    f"{date}; ticks: {sorted(set(games['tick_id']))}")
-            rep["boards"] = {"status": "MISSING_EVIDENCE", "missing": miss}
-            rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": miss}
-        rows, missing = distribution_rows(ops_root, runs_root, games, names)
-        if rows and not missing:
-            p = distributions_workbook(rows, out_dir / names_["distributions"])
-            rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), **pmf_mass_check(rows)}
-        else:
-            rep["distributions"] = {"status": "MISSING_EVIDENCE",
-                                    "missing": f"official market_pmfs.parquet absent for {len(missing)} of {len(games)} "
-                                               f"predicted game(s)", "games": missing[:20]}
+    games = slate_games(ops_root, date)
+    rep["predicted_games"] = int(len(games))
+    if not len(games):
+        for k in ("boards", "distributions", "grades"):
+            rep[k] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game with ET slate date {date} "
+                                                               f"in {Path(ops_root) / 'registry' / 'games.jsonl'}"}
+        return rep
+    names = team_names(history_db, state_root)
+    rc = receipts(ops_root, games, labels)
+    of, leak = offers(rc, side_settlements(ops_root), names)
+    rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
+    if len(of):
+        sidecar = out_dir / "grade_receipts.json"
+        rep["receipt_immutability"] = check_receipts(sidecar, of)
+        p = boards_workbook(of, out_dir / names_["boards"])
+        bf = board_frames(of)
+        rep["boards"] = {"status": "WRITTEN", "path": str(p), **{s: len(bf[s]) for s in BOARD_SHEETS}}
+        p = grades_workbook(of, date, out_dir / names_["grades"])
+        summ = summary(of, date)
+        rec = reconcile(of, summ)
+        rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": int(len(of)),
+                         "results": of["result"].value_counts().to_dict(), "reconciliation": rec,
+                         "GRADE_RECONCILIATION": "PASS" if all(rec.values()) else "FAIL"}
+        tmp = sidecar.with_name(sidecar.name + ".tmp")
+        tmp.write_text(json.dumps({"date": date, "receipts": _immutable(of)}, sort_keys=True, indent=0, default=str))
+        os.replace(tmp, sidecar)
+    else:
+        miss = (f"no QUOTE_SIDE receipt (priced pre-tip sportsbook offer) for the {len(games)} predicted game(s) of "
+                f"{date}; ticks: {sorted(set(games['tick_id']))}")
+        rep["boards"] = {"status": "MISSING_EVIDENCE", "missing": miss}
+        rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": miss}
+    rows, missing = distribution_rows(ops_root, runs_root, games, names)
+    if rows and not missing:
+        p = distributions_workbook(rows, out_dir / names_["distributions"])
+        rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), **pmf_mass_check(rows)}
+    else:
+        rep["distributions"] = {"status": "MISSING_EVIDENCE",
+                                "missing": f"official market_pmfs.parquet absent for {len(missing)} of {len(games)} "
+                                           f"predicted game(s)", "games": missing[:20]}
     return rep
 
 
