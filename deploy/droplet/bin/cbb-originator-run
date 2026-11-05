@@ -137,4 +137,7 @@ flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC
 DUE_OUT="$("$PY" cbb_platform/prod/due_check.py "$OPS")"
 log "$(echo "$DUE_OUT" | tr '\n' ' ')"
 echo "$DUE_OUT" | grep -qx 'due=true' || exit 0
-exec "${RUN[@]}"
+set +e; "${RUN[@]}"; RC=$?; set -e
+# post-tick export (same writer lock): provisional Board from the new priced receipts; frozen at cutoff. No fit.
+"$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" exports >/dev/null || log "post-tick exports failed (tick rc=$RC)"
+exit $RC

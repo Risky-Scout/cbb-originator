@@ -137,7 +137,7 @@ def test_boards_sheets_columns_membership_thresholds_and_order(full):
         assert s["freeze"] == "A2" and s["filters"] == [s["filters"][0]] and s["filters"][0].startswith("A1:P")
         assert all(f"{c}1" in s["bold"] for c in "ABCDEFGHIJKLMNOP")
     full_rows = wb["Full Board"]["rows"][1:]
-    assert len(full_rows) == 10                                 # every valid priced pre-tip offer, no EV / edge filter
+    assert len(full_rows) == 6                                  # one official best offer per GAME x PLAYER x PROP
     p60 = {(r[2], r[3], r[7], r[11]) for r in wb["60 Percent Plus"]["rows"][1:]}
     assert ("Amy", "REB", "OVER", "betmgm") in p60 and ("Amy", "REB", "OVER", "draftkings") not in p60
     assert all(r[8] >= 0.60 for r in wb["60 Percent Plus"]["rows"][1:])
@@ -146,8 +146,8 @@ def test_boards_sheets_columns_membership_thresholds_and_order(full):
     assert len(wb["65 Percent Plus"]["rows"]) - 1 == sum(1 for r in full_rows if r[8] >= 0.65)
     # order: tip (G1 00:00Z before G2 02:00Z), GAME, PLAYER, PROP, LINE, PICK, BOOK
     keys = [(r[0], r[2], r[3], r[4], r[7], r[11]) for r in full_rows]
-    assert [k[0].startswith("Away G1") for k in keys] == [True] * 6 + [False] * 4
-    assert keys[:6] == sorted(keys[:6]) and keys[6:] == sorted(keys[6:])
+    assert [k[0].startswith("Away G1") for k in keys] == [True] * 3 + [False] * 3
+    assert keys[:3] == sorted(keys[:3]) and keys[3:] == sorted(keys[3:])
     z = [r for r in full_rows if r[2] == "Zed" and r[7] == "OVER"][0]
     assert z[5] == pytest.approx(15.5) and z[6] == pytest.approx(1.0)          # PROJ, ΔLINE = PROJ - LINE
     assert z[9] == pytest.approx((1 / 2.2) / (1 / 2.2 + 1 / (1 + 100 / 150)))   # same-book no-vig MARKET%
@@ -194,17 +194,17 @@ def test_grades_sheets_columns_results_and_profit(full):
     g = wb["Graded Bets"]["rows"]
     assert g[0] == list(EX.GRADE_COLS)
     by = {(r[2], r[3], r[5], r[9]): r for r in g[1:]}
-    assert len(g) - 1 == 10 and all(r[11] in EX.RESULTS for r in g[1:])
+    assert len(g) - 1 == 6 and all(r[11] in EX.RESULTS for r in g[1:])
     assert by[("Zed", "PTS", "OVER", "fanduel")][13] == pytest.approx(1.2)               # +120 WIN
     assert by[("Bo", "AST", "UNDER", "fanduel")][13] == pytest.approx(100 / 130)          # -130 WIN
-    assert by[("Zed", "PTS", "UNDER", "fanduel")][13] == -1.0                             # LOSS
+    assert by[("Amy", "REB", "OVER", "betmgm")][13] == -1.0                               # LOSS
+    assert ("Zed", "PTS", "UNDER", "fanduel") not in by and ("Amy", "REB", "OVER", "draftkings") not in by
     assert by[("Amy", "PRA", "OVER", "draftkings")][11] == "PUSH" and by[("Amy", "PRA", "OVER", "draftkings")][13] == 0.0
     v = by[("Cy", "PTS", "OVER", "fanduel")]
     assert v[11] == "VOID" and v[13] == 0.0 and v[12] is None
     p = by[("Di", "PTS", "OVER", "fanduel")]
     assert p[11] == "PENDING" and p[12] is None and p[13] is None
-    u = by[("Bo", "AST", "OVER", "fanduel")]
-    assert u[11] == "UNSUPPORTED" and u[13] is None                                      # odds 0: never a fabricated profit
+    assert ("Bo", "AST", "OVER", "fanduel") not in by                                     # odds 0: never an official selection
     assert by[("Zed", "PTS", "OVER", "fanduel")][12] == 20.0                             # REALIZED = authoritative stat
     assert EX.profit("WIN", 250) == 2.5 and EX.profit("WIN", -200) == 0.5 and EX.profit("LOSS", 100) == -1.0
     assert EX.profit("PUSH", -110) == 0.0 and EX.profit("VOID", -110) == 0.0
@@ -249,10 +249,10 @@ def test_performance_summary_sections_and_reconciliation(full):
     assert hdr == list(EX.OVERALL_COLS)
     ov = dict(zip(hdr, body[0]))
     assert ov["NIGHT"] == DATE and ov["SOURCE"] == EX.SOURCE_TEXT
-    assert (ov["BETS"], ov["WINS"], ov["LOSSES"], ov["PUSHES"], ov["VOIDS"], ov["PENDING"], ov["UNSUPPORTED"]) == (10, 2, 3, 2, 1, 1, 1)
-    assert ov["DECISIONS"] == 5 and ov["HIT_RATE"] == pytest.approx(0.4)
-    prof = 1.2 + 100 / 130 - 3
-    assert ov["PROFIT"] == pytest.approx(prof) and ov["ROI"] == pytest.approx(prof / 5)
+    assert (ov["BETS"], ov["WINS"], ov["LOSSES"], ov["PUSHES"], ov["VOIDS"], ov["PENDING"], ov["UNSUPPORTED"]) == (6, 2, 1, 1, 1, 1, 0)
+    assert ov["DECISIONS"] == 3 and ov["HIT_RATE"] == pytest.approx(2 / 3)
+    prof = 1.2 + 100 / 130 - 1
+    assert ov["PROFIT"] == pytest.approx(prof) and ov["ROI"] == pytest.approx(prof / 3)
     hdr, body = sec["Performance by Stat"]
     assert hdr == ["STAT_CATEGORY"] + list(EX.GROUP_METRICS)
     assert [r[0] for r in body] == ["AST", "PRA", "PTS", "REB", "TOTAL"]      # canonical keys, alphabetical, no merging
@@ -261,7 +261,7 @@ def test_performance_summary_sections_and_reconciliation(full):
         assert tot[k] == ov[k] == sum(dict(zip(hdr, r))[k] for r in body[:-1])
     assert tot["PROFIT"] == pytest.approx(ov["PROFIT"])
     pts = dict(zip(hdr, body[2]))
-    assert pts["BETS"] == 4 and pts["AVG_MODEL%"] == pytest.approx((0.62 + 0.38 + 0.45 + 0.56) / 4)
+    assert pts["BETS"] == 3 and pts["AVG_MODEL%"] == pytest.approx((0.62 + 0.45 + 0.56) / 3)
     hdr, body = sec["Performance by Stat × Player Role"]
     assert hdr == ["STAT_CATEGORY", "PLAYER_ROLE"] + list(EX.GROUP_METRICS)
     assert [(r[0], r[1]) for r in body] == [("AST", "LIMITED_UNDER_20"), ("PRA", "ROTATION_20_TO_30"),
@@ -275,10 +275,10 @@ def test_performance_summary_sections_and_reconciliation(full):
     assert hdr == list(EX.BAND_COLS) and [r[0] for r in body] == [b[0] for b in EX.BANDS]
     bands = {r[0]: dict(zip(hdr, r)) for r in body}
     assert sum(b["BETS"] for b in bands.values()) == ov["BETS"]
-    assert bands["55-60%"]["BETS"] == 2 and bands["<50%"]["BETS"] == 2 and bands["60-65%"]["BETS"] == 3 and bands["65-70%"]["BETS"] == 1
+    assert bands["55-60%"]["BETS"] == 1 and bands["<50%"]["BETS"] == 1 and bands["60-65%"]["BETS"] == 2 and bands["65-70%"]["BETS"] == 1
     w = bands["70%+"]
     assert w["BETS"] == 1 and w["REALIZED_WIN_RATE"] == 1.0 and w["CALIBRATION_ERROR"] == pytest.approx(1.0 - 0.72)
-    assert bands["50-55%"]["BETS"] == 1 and bands["50-55%"]["DECISIONS"] == 0
+    assert bands["50-55%"]["BETS"] == 0 and bands["50-55%"]["DECISIONS"] == 0
     assert bands["50-55%"]["REALIZED_WIN_RATE"] is None and bands["50-55%"]["CALIBRATION_ERROR"] is None
     assert [EX.model_band(p) for p in (0.4999, 0.5, 0.5499, 0.55, 0.5999, 0.6, 0.6499, 0.65, 0.6999, 0.7)] == \
         ["<50%", "50-55%", "50-55%", "55-60%", "55-60%", "60-65%", "60-65%", "65-70%", "65-70%", "70%+"]
@@ -303,8 +303,8 @@ def test_role_boundaries_unknown_and_no_realized_minutes_leakage(full):
     assert [r[0] for r in body] == list(EX.ROLES) + ["TOTAL"]
     roles = {r[0]: r[1] for r in body}
     # Bo: expected 10 min (prediction time) but realized 39 min -> stays LIMITED_UNDER_20
-    assert roles == {"CORE_30_PLUS": 2, "ROTATION_20_TO_30": 4, "LIMITED_UNDER_20": 2, "NO_EXPECTED_MINUTES": 1,
-                     "UNKNOWN_ROLE": 1, "TOTAL": 10}
+    assert roles == {"CORE_30_PLUS": 1, "ROTATION_20_TO_30": 2, "LIMITED_UNDER_20": 1, "NO_EXPECTED_MINUTES": 1,
+                     "UNKNOWN_ROLE": 1, "TOTAL": 6}
     assert sum(roles[r] for r in EX.ROLES) == roles["TOTAL"]
 
 

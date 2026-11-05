@@ -258,7 +258,7 @@ def _index(rec: dict) -> dict:
 def exports_for(life: Life, day: date) -> dict:
     from cbb_platform.prod import exports as EX
     return EX.daily(day.isoformat(), ops_root=Path(life.ops_root), runs_root=life.runs, out_root=life.exports,
-                    history_db=life.history_db or HX.resolve(), state_root=life.state_root)
+                    history_db=life.history_db or HX.resolve(), state_root=life.state_root, now=life.now())
 
 
 def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None) -> dict:
@@ -285,9 +285,16 @@ def refresh(life: Life, window: str) -> dict:
     return {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
 
 
+def exports_now(life: Life) -> dict:
+    """Post-tick export (quote refresh): reprices nothing and fits nothing; rebuilds today's workbooks from the
+    persisted evidence so a new official tick's priced offers appear on the provisional Board and freeze at cutoff."""
+    return {"lifecycle": "EXPORTS", "exports": _brief(exports_for(life, et_date(life.now())))}
+
+
 def _brief(rep: dict) -> dict:
     return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing")} if isinstance(v, dict) else v
-            for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "predicted_games")}
+            for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "predicted_games",
+                                             "raw_quote_rows", "official_rows", "official_frozen_rows")}
 
 
 def main(argv=None) -> None:
@@ -303,6 +310,7 @@ def main(argv=None) -> None:
     f = sub.add_parser("forecast")
     f.add_argument("--window", default=INITIAL, choices=(INITIAL,) + ROTOWIRE_REFRESH_TIMES_ET)
     sub.add_parser("schedule")
+    sub.add_parser("exports")
     a = ap.parse_args(argv)
     life = Life(ops_root=a.ops_root, prod_root=a.prod_root, model_root=a.model_root)
     if a.cmd == "morning":
@@ -311,6 +319,8 @@ def main(argv=None) -> None:
         out = refresh(life, a.window)
     elif a.cmd == "forecast":
         out = forecast(life, a.window)
+    elif a.cmd == "exports":
+        out = exports_now(life)
     else:
         out = schedule_spec()
     print(json.dumps(out, indent=1, default=str))
