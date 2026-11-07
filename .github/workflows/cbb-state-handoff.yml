@@ -1,0 +1,13 @@
+# TEMPORARY placeholder (2026-11-07) so the one-time CBB state handoff can be dispatched with --ref
+# ops/cbb-state-handoff-2026-11-07 (GitHub dispatches only workflows whose file exists on the default branch).
+# Runs nothing and uses no secret when dispatched on main. Deleted after the handoff import verifies.
+name: CBB state handoff (one-time)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  noop:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "placeholder on the default branch; the real job runs only on ops/cbb-state-handoff-2026-11-07"
