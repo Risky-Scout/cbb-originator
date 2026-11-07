@@ -58,7 +58,7 @@ from cbb_platform.prod import config as PC, pmf_evidence as PE
 
 EXPORT_VERSION = "cbb-prod-daily-exports-1.0.0"
 TZ = "America/New_York"
-EXPORT_ROOT = PC.PROD_ROOT / "exports"
+EXPORT_ROOT = Path(os.environ.get("CBB_EXPORT_ROOT") or (PC.PROD_ROOT / "exports"))   # <root>/<YYYY-MM-DD>/CBB_*.xlsx
 RUNS_ROOT = PC.RUNS_ROOT
 PMF_TOL = 1e-9                                   # = prod.pricing.SUM_TOL = prod.simulate.PMF_TOL (production PMF tolerance)
 LIVE_LABELS = ("LIVE",)

@@ -50,7 +50,10 @@ STATE_MAX_AGE_HOURS = 36                 # a state older than this (vs predictio
 SIMS = 20_000                            # manifest random_seed_policy.draws_per_game (JM.SIMS)
 
 # ------------------------------------------------------------------ local paths (all gitignored)
-PROD_ROOT = C.PROJECT_ROOT / "data" / "prod"
+# CBB_PROD_ROOT relocates EVERY mutable production path (state, ledgers, runs, cache, odds, ops, exports, scratch) out
+# of the code tree, e.g. /var/lib/sports-models/cbb-originator/prod on the Droplet (immutable release under /opt).
+import os as _os
+PROD_ROOT = Path(_os.environ.get("CBB_PROD_ROOT") or (C.PROJECT_ROOT / "data" / "prod"))
 STATE_ROOT = PROD_ROOT / "state"
 LEDGER_PATH = PROD_ROOT / "ledger" / "shadow_ledger.jsonl"
 RUNS_ROOT = PROD_ROOT / "runs"

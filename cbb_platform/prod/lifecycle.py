@@ -34,8 +34,10 @@ dependence / thresholds. No WizardOfOdds publication, no wagering (PC.WAGERING_E
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -52,6 +54,14 @@ MORNING_TIME_ET = "07:00"
 ROTOWIRE_REFRESH_TIMES_ET = ("10:00", "13:00", "16:00", "18:00")       # exactly four; no other fixed refresh time
 SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") for t in ROTOWIRE_REFRESH_TIMES_ET)
 INITIAL = "INITIAL"
+# ---- shared cross-model heavy-job lock (operational only; nothing here reaches a forecast). Only the walk-forward step
+# takes it. Not acquired within the wait -> DEFERRED_SHARED_LOCK: the last-known-good ACTIVE model stays, the rest of
+# the morning still runs (the day is never left without forecasts), and ONE retry runs at REFIT_RETRY_TIME_ET.
+REFIT_RETRY = "REFIT_RETRY"
+REFIT_RETRY_TIME_ET = "08:00"
+DEFERRED_SHARED_LOCK = "DEFERRED_SHARED_LOCK"
+HEAVY_LOCK_ENV, HEAVY_WAIT_ENV, MIN_MEM_ENV = "CBB_HEAVY_LOCK", "CBB_HEAVY_LOCK_WAIT_SEC", "CBB_MIN_MEMAVAILABLE_MB"
+WF_KEYS = ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION", "CANDIDATE_MODEL_VERSION", "note", "reason")
 ROTOWIRE_KEY_ENV = "ROTOWIRE_API_KEY"
 PLAYER_COLS = ["game_id", "team_id", "player_id", "min_mu", "min_sigma", "p_play", "availability_status",
                "availability_received_at", "player_suppression", "cold_start_class", "role_diagnostic"]
@@ -77,7 +87,8 @@ class Life:
     @property
     def runs(self) -> Path: return Path(self.prod_root) / "runs"
     @property
-    def exports(self) -> Path: return Path(self.export_root or Path(self.prod_root) / "exports")
+    def exports(self) -> Path:
+        return Path(self.export_root or os.environ.get("CBB_EXPORT_ROOT") or Path(self.prod_root) / "exports")
     def forecasts(self, *p) -> Path: return Path(self.ops_root).joinpath("forecasts", *p)
 
 
@@ -99,6 +110,8 @@ def schedule_spec() -> dict:
 def window_label(window: str) -> str:
     if window == INITIAL:
         return "INITIAL_0700"
+    if window == REFIT_RETRY:
+        return "REFIT_RETRY_" + REFIT_RETRY_TIME_ET.replace(":", "")
     if window not in ROTOWIRE_REFRESH_TIMES_ET:
         raise ValueError(f"refresh window {window!r} is not one of {ROTOWIRE_REFRESH_TIMES_ET}")
     return "ROTOWIRE_" + window.replace(":", "")
@@ -178,7 +191,7 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     day = et_date(now)
     sid = "F" + now.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     rec = {"snapshot_id": sid, "version": LIFECYCLE_VERSION, "window": window_label(window), "slate_date": day.isoformat(),
-           "scheduled_time_et": MORNING_TIME_ET if window == INITIAL else window, "executed_at": now.isoformat(),
+           "scheduled_time_et": {INITIAL: MORNING_TIME_ET, REFIT_RETRY: REFIT_RETRY_TIME_ET}.get(window, window), "executed_at": now.isoformat(),
            "wagering_enabled": PC.WAGERING_ENABLED, "quotes_used": 0, "paid_requests": 0}
     try:
         LD.verify(life.artifact_paths)
@@ -190,7 +203,7 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     games = slate(st, day, now)
     if game_ids is not None:
         games = games[games["canonical_game_id"].isin(set(game_ids))]
-    if window != INITIAL:
+    if window not in (INITIAL, REFIT_RETRY):                   # a REFIT_RETRY re-forecasts every pre-cutoff game
         rw = rotowire_state(life)
         rec["rotowire_refresh"] = rw
         if rw != "ENABLED":
@@ -261,6 +274,128 @@ def exports_for(life: Life, day: date) -> dict:
                     history_db=life.history_db or HX.resolve(), state_root=life.state_root, now=life.now())
 
 
+# ============================================================================ walk-forward under the shared heavy lock
+def _mem_available_mb(meminfo: Path = Path("/proc/meminfo")) -> float | None:
+    try:
+        for ln in Path(meminfo).read_text().splitlines():
+            if ln.startswith("MemAvailable:"):
+                return int(ln.split()[1]) / 1024.0
+    except OSError:
+        return None
+    return None
+
+
+def acquire_heavy_lock(path: str, wait_s: float, sleep=time.sleep, clock=time.monotonic):
+    """Exclusive flock(2) on the shared heavy lock, waiting at most wait_s. Returns the open fd (held until closed;
+    the kernel releases it on exit, crash or kill) or None. Never deletes or rewrites the lock file."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o660)
+    deadline = clock() + float(wait_s)
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            if clock() >= deadline:
+                os.close(fd)
+                return None
+            sleep(max(0.0, min(5.0, deadline - clock())))
+
+
+def wf_attempts_path(life: Life, day: date) -> Path:
+    return Path(life.prod_root) / "walkforward_attempts" / f"{day.isoformat()}.jsonl"
+
+
+def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=None) -> dict:
+    """One authorized walk-forward attempt (walkforward.daily.morning: existing gates, atomic promotion, last-known-good
+    kept on any failure). The shared heavy lock (env CBB_HEAVY_LOCK) is held for exactly this step."""
+    lock, wait = os.environ.get(HEAVY_LOCK_ENV), float(os.environ.get(HEAVY_WAIT_ENV, "1800"))
+    rec = {"attempt": attempt, "day": day.isoformat(), "heavy_lock": lock, "lock_wait_limit_s": wait,
+           "started_at": life.now().isoformat()}
+    fd, t0 = None, time.monotonic()
+    if lock:
+        fd = acquire_heavy_lock(lock, wait)
+        rec["lock_wait_s"] = round(time.monotonic() - t0, 1)
+        rec["lock_result"] = "ACQUIRED" if fd is not None else "NOT_ACQUIRED"
+        if fd is None:
+            rec.update(DAILY_REFIT_STATUS=DEFERRED_SHARED_LOCK, DAILY_MODEL_PROMOTION="NOT_ATTEMPTED",
+                       note="shared heavy lock busy; last-known-good ACTIVE model retained")
+            OS.append_jsonl(wf_attempts_path(life, day), [rec])
+            return rec
+    else:
+        rec["lock_result"] = "NOT_CONFIGURED"
+    try:
+        need = os.environ.get(MIN_MEM_ENV)
+        have = _mem_available_mb()
+        rec["mem_available_mb_at_start"] = None if have is None else round(have, 1)
+        if need and have is not None and have < float(need):
+            rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_ATTEMPTED",
+                       reason=f"RESOURCE: MemAvailable {have:.0f} MB < {float(need):.0f} MB; last-known-good retained")
+        else:
+            from cbb_platform.walkforward import config as WC, daily as WD
+            run = runner or WD.morning
+            try:
+                wf = run(day, root=Path(life.model_root or WC.STORE_ROOT), state_root=life.state_root, now=life.now())
+                rec.update({k: wf.get(k) for k in WF_KEYS})
+            except Exception as e:                       # noqa: BLE001 -- promotion is atomic: ACTIVE is unchanged
+                rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_PROMOTED",
+                           reason=f"{type(e).__name__}: {e}"[:400])
+    finally:
+        if fd is not None:
+            os.close(fd)
+    rec["finished_at"] = life.now().isoformat()
+    OS.append_jsonl(wf_attempts_path(life, day), [rec])
+    return rec
+
+
+def refit_retry(life: Life, day: date | None = None, runner=None) -> dict:
+    """08:00 ET: one retry, ONLY when the 07:00 attempt of the day was DEFERRED_SHARED_LOCK. A retry that promotes a
+    new model re-forecasts the still-pre-cutoff games (new immutable snapshot; earlier snapshots stand)."""
+    day = day or et_date(life.now())
+    recs = OS.read_jsonl(wf_attempts_path(life, day))
+    out = {"lifecycle": REFIT_RETRY, "day": day.isoformat()}
+    if not recs or recs[-1].get("DAILY_REFIT_STATUS") != DEFERRED_SHARED_LOCK \
+            or any(r.get("attempt") == "RETRY_0800" for r in recs):
+        out.update(status="NO_OP", reason="the 07:00 walk-forward was not DEFERRED_SHARED_LOCK (or already retried)")
+        health(life, day, refit_retry=out)
+        return out
+    wf = walk_forward(life, day, "RETRY_0800", runner=runner)
+    out.update(status="RAN", walk_forward=wf)
+    if wf.get("DAILY_MODEL_PROMOTION") == "PROMOTED":
+        out["forecast"] = forecast(life, REFIT_RETRY)
+        out["exports"] = _brief(exports_for(life, day))
+    health(life, day, refit_retry=out)
+    return out
+
+
+# ============================================================================ daily health record (no secrets)
+def health_path(life: Life, day: date) -> Path:
+    return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
+
+
+def health(life: Life, day: date, **sections) -> dict:
+    """Merge this step's machine-readable summary into <prod_root>/health/<D>.json (one file per ET date)."""
+    p = health_path(life, day)
+    h = OS.read_json(p, {}) or {}
+    h.update({"et_date": day.isoformat(), "code_sha": os.environ.get("CBB_CODE_COMMIT") or SH.source_commit(),
+              "updated_at": life.now().isoformat(), "rotowire_mode": "HARD_DISABLED_NO_KEY"
+              if not os.environ.get(ROTOWIRE_KEY_ENV) else "KEY_PRESENT",
+              "automatic_wagering": "DISABLED", "wizardofodds_publication": "DISABLED"})
+    for k, v in sections.items():
+        h[k] = v
+    fc = sections.get("forecast")
+    if isinstance(fc, dict) and fc.get("status") == "FORECAST":
+        h["latest_forecast"] = {k: fc.get(k) for k in ("snapshot_id", "window", "model_version", "games_forecast",
+                                                        "players_forecast", "stat_predictions", "pmfs_persisted")}
+    ex = sections.get("exports")
+    if isinstance(ex, dict):
+        h["export_paths"] = {k: (v or {}).get("path") for k, v in ex.items() if isinstance(v, dict)}
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(h, indent=1, default=str))
+    os.replace(tmp, p)
+    return h
+
+
 def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None) -> dict:
     now = life.now()
     day = day or et_date(now)
@@ -271,24 +406,29 @@ def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None)
     out["tick"] = {k: t.get(k) for k in ("tick_id", "status", "sync", "settlement", "did_work")}
     life.history_db = life.history_db or ctx.history_db
     out["prior_day_exports"] = _brief(exports_for(life, day - timedelta(days=1)))
-    from cbb_platform.walkforward import config as WC, daily as WD
-    wf = WD.morning(day, root=Path(life.model_root or WC.STORE_ROOT), state_root=life.state_root, now=life.now())
-    out["walk_forward"] = {k: wf.get(k) for k in ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION",
-                                                  "CANDIDATE_MODEL_VERSION", "note", "reason")}
+    out["walk_forward"] = walk_forward(life, day, "MORNING_0700")
     out["forecast"] = forecast(life, INITIAL)
     out["exports"] = _brief(exports_for(life, day))
+    health(life, day, morning_tick=out["tick"], prior_day_exports=out["prior_day_exports"],
+           walk_forward=out["walk_forward"], forecast=out["forecast"], exports=out["exports"])
     return out
 
 
 def refresh(life: Life, window: str) -> dict:
     rec = forecast(life, window)
-    return {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
+    out = {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
+    health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": {
+        "rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note")}},
+        exports=out["exports"])
+    return out
 
 
 def exports_now(life: Life) -> dict:
     """Post-tick export (quote refresh): reprices nothing and fits nothing; rebuilds today's workbooks from the
     persisted evidence so a new official tick's priced offers appear on the provisional Board and freeze at cutoff."""
-    return {"lifecycle": "EXPORTS", "exports": _brief(exports_for(life, et_date(life.now())))}
+    out = {"lifecycle": "EXPORTS", "exports": _brief(exports_for(life, et_date(life.now())))}
+    health(life, et_date(life.now()), exports=out["exports"])
+    return out
 
 
 def _brief(rep: dict) -> dict:
@@ -311,6 +451,8 @@ def main(argv=None) -> None:
     f.add_argument("--window", default=INITIAL, choices=(INITIAL,) + ROTOWIRE_REFRESH_TIMES_ET)
     sub.add_parser("schedule")
     sub.add_parser("exports")
+    rr = sub.add_parser("refit-retry")
+    rr.add_argument("--date", default=None)
     a = ap.parse_args(argv)
     life = Life(ops_root=a.ops_root, prod_root=a.prod_root, model_root=a.model_root)
     if a.cmd == "morning":
@@ -321,6 +463,8 @@ def main(argv=None) -> None:
         out = forecast(life, a.window)
     elif a.cmd == "exports":
         out = exports_now(life)
+    elif a.cmd == "refit-retry":
+        out = refit_retry(life, date.fromisoformat(a.date) if a.date else None)
     else:
         out = schedule_spec()
     print(json.dumps(out, indent=1, default=str))

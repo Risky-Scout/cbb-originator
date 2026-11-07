@@ -1,6 +1,6 @@
 """Droplet deployment package (deploy/droplet; docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md): safe defaults,
-refusals, single-writer role, exact-commit identity, no secrets, and the transfer manifest's hashes. Nothing here
-touches a server. The wrapper runs against a throwaway git repository with a fake /proc/meminfo."""
+refusals, single-writer role, exact-release identity (git-archive release + sha256 manifest), mutable paths outside the
+release, no secrets, and the transfer manifest's hashes. Nothing here touches a server."""
 from __future__ import annotations
 
 import json
@@ -33,41 +33,49 @@ def _env_example() -> dict:
     return out
 
 
+def _release(tmp_path: Path, sha: str = "a" * 40) -> dict:
+    """A git-archive style release: releases/<sha>/ + releases/<sha>.sha256sums, current -> releases/<sha>."""
+    rel = tmp_path / "releases" / sha
+    (rel / "pkg").mkdir(parents=True)
+    (rel / "README").write_text("x\n")
+    (rel / "pkg" / "m.py").write_text("y = 1\n")
+    lines = []
+    import hashlib
+    for p in sorted(q for q in rel.rglob("*") if q.is_file()):
+        lines.append(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  ./{p.relative_to(rel)}")
+    (tmp_path / "releases" / f"{sha}.sha256sums").write_text("\n".join(lines) + "\n")
+    cur = tmp_path / "current"
+    cur.symlink_to(rel)
+    return {"rel": rel, "current": cur, "sha": sha}
+
+
 @pytest.fixture
 def app(tmp_path):
-    repo = tmp_path / "app"
-    repo.mkdir()
-    g = lambda *a: subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True, text=True)  # noqa: E731
-    g("init", "-q")
-    (repo / "README").write_text("x\n")
-    g("add", "README")
-    g("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x")
-    sha = g("rev-parse", "HEAD").stdout.strip()
+    r = _release(tmp_path)
+    state = tmp_path / "state"
     meminfo = tmp_path / "meminfo"
-    meminfo.write_text("MemTotal:       33554432 kB\nMemAvailable:   20971520 kB\n")     # 20 GB available
-    lock = tmp_path / "lock"
-    lock.mkdir()
-    base = {"PATH": os.environ["PATH"], "HOME": str(tmp_path), "CBB_APP_DIR": str(repo), "CBB_EXPECTED_COMMIT": sha,
-            "CBB_MEMINFO": str(meminfo), "CBB_LOCK_DIR": str(lock), "CBB_VENV_DIR": str(tmp_path / "venv"), **THREADS}
-    return {"repo": repo, "sha": sha, "env": base, "meminfo": meminfo, "tmp": tmp_path}
+    meminfo.write_text("MemTotal:       8131776 kB\nMemAvailable:   7340032 kB\n")
+    base = {"PATH": os.environ["PATH"], "HOME": str(tmp_path), "CBB_APP_ROOT": str(r["current"]),
+            "CBB_EXPECTED_COMMIT": r["sha"], "CBB_MEMINFO": str(meminfo), "CBB_STATE_ROOT": str(state),
+            "CBB_HEAVY_LOCK": str(tmp_path / "heavy.lock"), "CBB_VENV_DIR": str(tmp_path / "venv"), **THREADS}
+    return {**r, "env": base, "meminfo": meminfo, "tmp": tmp_path, "state": state}
 
 
-def _run(app, cmd, **extra):
+def _run(app, *cmd, **extra):
     env = {**app["env"], **{k: v for k, v in extra.items() if v is not None}}
     for k in [k for k, v in extra.items() if v is None]:
         env.pop(k, None)
-    return subprocess.run(["bash", str(RUN), cmd], env=env, capture_output=True, text=True, timeout=60)
+    return subprocess.run(["bash", str(RUN), *cmd], env=env, capture_output=True, text=True, timeout=60)
 
 
 # ------------------------------------------------------------------ safe defaults
 def test_env_template_defaults_are_safe_and_hold_no_secret_values():
     e = _env_example()
-    assert e["CBB_MODEL_SOURCE"] == "FROZEN_OPENING_BASELINE"
-    assert e["ROTOWIRE_ENABLED"] == "false" and e["ROTOWIRE_RIGHTS_STATUS"] == "UNVERIFIED"
+    assert e["ROTOWIRE_ENABLED"] == "false"
     assert e["WIZARDOFODDS_PUBLICATION"] == "disabled" and e["AUTOMATIC_WAGERING"] == "disabled"
     assert e["REAL_MONEY_ACTIONABILITY"] == "disabled"
     assert e["CBB_SCHEDULER_ROLE"] == "DISABLED" and e["CBB_EXPECTED_COMMIT"] == ""
-    assert e["CBB_MIN_MEMAVAILABLE_GB"] == "13"
+    assert e["CBB_HISTORY_SOURCE"] in ("CONTROL", "CANDIDATE")
     assert all(e[k] == "" for k in SECRET_NAMES)
 
 
@@ -79,132 +87,196 @@ def test_code_level_safety_constants_still_hold():
     assert MS.DEFAULT_SOURCE == "FROZEN_OPENING_BASELINE"
 
 
-def test_preflight_passes_on_defaults(app):
+def test_preflight_passes_on_an_intact_release(app):
     r = _run(app, "preflight")
     assert r.returncode == 0, r.stderr
-    assert "PREFLIGHT OK" in r.stderr
+    assert "PREFLIGHT OK" in r.stderr and app["sha"] in r.stderr
+
+
+def test_modified_release_file_is_refused(app):
+    (app["rel"] / "pkg" / "m.py").write_text("y = 2\n")
+    r = _run(app, "preflight")
+    assert r.returncode == 3 and "differs from its manifest" in r.stderr
+
+
+def test_extra_file_in_release_is_refused(app):
+    (app["rel"] / "pkg" / "planted.py").write_text("import os\n")
+    r = _run(app, "preflight")
+    assert r.returncode == 3 and "outside its manifest" in r.stderr
+
+
+def test_missing_release_manifest_is_refused(app):
+    (app["rel"].parent / f"{app['sha']}.sha256sums").unlink()
+    assert _run(app, "preflight").returncode == 3
+
+
+def test_prod_root_inside_the_release_is_refused(app):
+    r = _run(app, "preflight", CBB_PROD_ROOT=str(app["rel"] / "data" / "prod"))
+    assert r.returncode == 3 and "inside the application tree" in r.stderr
+
+
+def test_git_checkout_mode_still_verifies_identity(tmp_path, app):
+    repo = tmp_path / "gitapp"
+    repo.mkdir()
+    g = lambda *a: subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True, text=True)  # noqa: E731
+    g("init", "-q")
+    (repo / "README").write_text("x\n")
+    g("add", "README")
+    g("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x")
+    sha = g("rev-parse", "HEAD").stdout.strip()
+    assert _run(app, "preflight", CBB_APP_ROOT=str(repo), CBB_EXPECTED_COMMIT=sha).returncode == 0
+    (repo / "README").write_text("changed\n")
+    assert _run(app, "preflight", CBB_APP_ROOT=str(repo), CBB_EXPECTED_COMMIT=sha).returncode == 3
 
 
 @pytest.mark.parametrize("extra", [
     {"ROTOWIRE_ENABLED": "true"},
-    {"ROTOWIRE_ENABLED": "true", "ROTOWIRE_RIGHTS_STATUS": "PRODUCTION_APPROVED"},     # not wired: still refused
     {"ROTOWIRE_ENABLED": "yes"},
     {"WIZARDOFODDS_PUBLICATION": "enabled"},
     {"AUTOMATIC_WAGERING": "enabled"},
     {"REAL_MONEY_ACTIONABILITY": "enabled"},
-    {"CBB_MODEL_SOURCE": "ACTIVE_DAILY"},
+    {"CBB_MODEL_SOURCE": "SOMETHING_ELSE"},
     {"OMP_NUM_THREADS": "4"},
     {"MKL_NUM_THREADS": None},
+    {"CBB_DUCKDB_THREADS": "2"},
     {"CBB_EXPECTED_COMMIT": "0" * 40},
     {"CBB_EXPECTED_COMMIT": None},
 ])
 def test_unsafe_or_unverified_configuration_is_refused(app, extra):
-    for cmd in ("preflight", "morning", "tick"):
-        r = _run(app, cmd, CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1", **extra)
+    for cmd in (["preflight"], ["lifecycle-morning"], ["refit-retry"], ["tick"], ["lifecycle-refresh", "10:00"]):
+        r = _run(app, *cmd, CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1", **extra)
         assert r.returncode == 3, (cmd, extra, r.stderr)
         assert "REFUSED" in r.stderr
 
 
-def test_modified_checkout_is_refused(app):
-    (app["repo"] / "README").write_text("changed\n")
-    assert _run(app, "preflight").returncode == 3
-
-
 def test_no_writer_role_means_nothing_runs(app):
-    for cmd in ("morning", "tick"):
-        r = _run(app, cmd)                                  # CBB_SCHEDULER_ROLE unset -> DISABLED
+    for cmd in (["lifecycle-morning"], ["refit-retry"], ["tick"], ["lifecycle-refresh", "13:00"]):
+        r = _run(app, *cmd)                                  # CBB_SCHEDULER_ROLE unset -> DISABLED
         assert r.returncode == 4 and "not the designated" in r.stderr
-        assert _run(app, cmd, CBB_SCHEDULER_ROLE="SECONDARY").returncode == 4
+        assert _run(app, *cmd, CBB_SCHEDULER_ROLE="SECONDARY").returncode == 4
 
 
-def test_dry_run_shows_lock_order_and_commands(app):
-    m = _run(app, "morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+def test_dry_run_paths_are_outside_the_release(app):
+    m = _run(app, "lifecycle-morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
     assert m.returncode == 0, m.stderr
     s = m.stderr
-    assert s.index("sports-model-heavy.lock") < s.index("MemAvailable") < s.index("cbb-originator.writer.lock")
-    assert "cbb_platform.walkforward.daily morning" in s
+    assert "cbb_platform.prod.lifecycle" in s and " morning" in s
+    assert f"--prod-root {app['state']}/prod" in s and f"--ops-root {app['state']}/prod/ops" in s
+    assert f"{app['state']}/locks/cbb-originator.writer.lock" in s
+    assert str(app["rel"]) not in s.split("run:", 1)[1].replace(f"{app['tmp']}/venv", "")
     t = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
-    assert t.returncode == 0, t.stderr
-    assert "cbb_platform.prod.shadow_tick" in t.stderr and "--restore" not in t.stderr
-    assert "sports-model-heavy.lock" not in t.stderr      # light job: never takes the shared heavy lock
-
-
-# ------------------------------------------------------------------ lock + memory + exit-code mapping (needs flock)
-def _fake_python(app, status: str):
-    py = app["tmp"] / "venv" / "bin" / "python"
-    py.parent.mkdir(parents=True, exist_ok=True)
-    py.write_text("#!/usr/bin/env bash\nif [ \"$1\" = \"-m\" ]; then echo 'log line'; "
-                  f"printf '{{\\n \"DAILY_REFIT_STATUS\": \"{status}\"\\n}}\\n'; exit 0; fi\nexec python3 \"$@\"\n")
-    py.chmod(0o755)
+    assert t.returncode == 0 and "cbb_platform.prod.shadow_tick" in t.stderr and "--restore" not in t.stderr
 
 
 @needs_flock
-def test_memory_gate_fails_closed_with_tempfail(app):
-    app["meminfo"].write_text("MemTotal:  8388608 kB\nMemAvailable:  6291456 kB\n")      # 6 GB < 13 GB
-    _fake_python(app, "PASS")
-    r = _run(app, "morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_MEM_WAIT_SEC="0")
-    assert r.returncode == 75 and "FAIL (RESOURCE)" in r.stderr
-
-
-@needs_flock
-def test_heavy_lock_busy_fails_closed_with_tempfail(app):
-    _fake_python(app, "PASS")
-    lockf = Path(app["env"]["CBB_LOCK_DIR"]) / "sports-model-heavy.lock"
-    holder = subprocess.Popen(["flock", str(lockf), "sleep", "20"])
+def test_writer_lock_busy_fails_closed_with_tempfail(app):
+    lockd = app["state"] / "locks"
+    lockd.mkdir(parents=True)
+    holder = subprocess.Popen(["flock", str(lockd / "cbb-originator.writer.lock"), "sleep", "20"])
     try:
         import time
         time.sleep(0.5)
-        r = _run(app, "morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_HEAVY_LOCK_WAIT_SEC="1")
-        assert r.returncode == 75 and "heavy-job lock busy" in r.stderr
+        r = _run(app, "refit-retry", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_WRITER_LOCK_WAIT_SEC="1")
+        assert r.returncode == 75 and "writer lock busy" in r.stderr
     finally:
         holder.kill()
         holder.wait()
 
 
-@needs_flock
-@pytest.mark.parametrize("status,rc", [("PASS", 0), ("NO_NEW_DATA", 0), ("FAIL", 1), ("NOT_RUN", 1)])
-def test_refit_status_maps_to_exit_code(app, status, rc):
-    _fake_python(app, status)
-    r = _run(app, "morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")
-    assert r.returncode == rc, r.stderr
-    assert f"DAILY_REFIT_STATUS = {status}" in r.stderr
+def test_prod_root_env_relocates_every_mutable_production_path(tmp_path):
+    """No mutable production path may stay under the immutable release (CBB_PROD_ROOT / CBB_WF_ROOT / CBB_EXPORT_ROOT)."""
+    code = ("import json; from cbb_platform.prod import config as PC, exports as EX, history_extract as HX, lifecycle as L;"
+            "from cbb_platform.walkforward import config as WC; from cbb_platform import ops_persistence as OP;"
+            "p={k: str(v) for k, v in vars(PC).items() if k.isupper() and hasattr(v, 'is_absolute') and 'ROOT' in k or k in"
+            "('LEDGER_PATH','SYNC_LOG','CBBD_REQUEST_LEDGER','ODDS_REQUEST_LEDGER','ROTOWIRE_REQUEST_LEDGER','ODDS_VALIDATION_RECORD',"
+            "'ODDS_COLLECTIONS','CBBD_CACHE_RAW','ODDS_CACHE_RAW','ROTOWIRE_CACHE_RAW','ROTOWIRE_MAP_ROOT')};"
+            "p.update(EXPORT=str(EX.EXPORT_ROOT), RUNS=str(EX.RUNS_ROOT), HX_OUT=str(HX.DEFAULT_OUT), WF=str(WC.STORE_ROOT),"
+            "LIFE_EXPORTS=str(L.Life().exports), LIFE_OPS=str(L.Life().ops_root), LIFE_STATE=str(L.Life().state_root));"
+            "print(json.dumps(p))")
+    env = {**os.environ, "CBB_PROD_ROOT": str(tmp_path / "prod"), "CBB_WF_ROOT": str(tmp_path / "wf"),
+           "CBB_EXPORT_ROOT": str(tmp_path / "exports"), "PYTHONPATH": str(C.PROJECT_ROOT), "PYTHONDONTWRITEBYTECODE": "1"}
+    out = subprocess.run([os.environ.get("PYTHON", __import__("sys").executable), "-c", code], env=env,
+                         capture_output=True, text=True, check=True, cwd=str(tmp_path)).stdout
+    paths = json.loads(out)
+    assert len(paths) > 15
+    for k, v in paths.items():
+        assert Path(v).is_relative_to(tmp_path), (k, v)
+        assert not Path(v).is_relative_to(C.PROJECT_ROOT), (k, v)
+    assert paths["EXPORT"] == str(tmp_path / "exports") and paths["LIFE_EXPORTS"] == str(tmp_path / "exports")
+    assert paths["WF"] == str(tmp_path / "wf" / "cbb-originator")
 
 
-# ------------------------------------------------------------------ systemd templates
+# ------------------------------------------------------------------ systemd units
+HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.service")
+LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
+
+
+def _mem(s: str, key: str) -> int:
+    v = re.search(rf"^{key}=(\d+)M$", s, re.M).group(1)
+    return int(v)
+
+
 def test_units_are_isolated_and_hold_no_secrets():
-    assert {u.name for u in UNITS} == {"cbb-originator-morning.service", "cbb-originator-morning.timer",
-                                       "cbb-originator-tick.service", "cbb-originator-tick.timer"}
+    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, "cbb-originator-morning.timer",
+                                       "cbb-originator-refit-retry.timer", "cbb-originator-quotes.timer",
+                                       *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
     for u in UNITS:
         s = u.read_text()
+        assert u.name.startswith("cbb-originator-")
         for name in SECRET_NAMES:
             assert not re.search(rf"^\s*Environment=.*\b{name}=", s, re.M), (u.name, name)
-        assert not re.search(r"(?i)massey|nba|nfl|ncaaf|wizard_deploy|/home/|/Users/", s.replace("WizardOfOdds", "")), u.name
+        assert not re.search(r"(?i)massey|nfl|ncaaf|wizard_deploy|/home/|/Users/", s), u.name
     for u in (D / "systemd").glob("*.service"):
         s = u.read_text()
+        lines = s.splitlines()
         for line in ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
-                     "EnvironmentFile=/etc/sports-models/cbb-originator.env", "WorkingDirectory=/opt/sports-models/cbb-originator/app",
-                     "ProtectSystem=strict", "NoNewPrivileges=yes", "StandardOutput=journal", "MemorySwapMax=0",
+                     "SupplementaryGroups=sports-models-heavy",
+                     "EnvironmentFile=/etc/sports-models/cbb-originator.env",
+                     "WorkingDirectory=/opt/sports-models/cbb-originator/current",
+                     "Environment=CBB_APP_ROOT=/opt/sports-models/cbb-originator/current",
+                     "Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod",
+                     "Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward",
+                     "Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports",
+                     "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
+                     "Environment=CBB_DUCKDB_THREADS=1",
+                     "ProtectSystem=strict", "PrivateTmp=yes", "NoNewPrivileges=yes", "StandardOutput=journal",
+                     "MemorySwapMax=0", "ReadOnlyPaths=/opt/sports-models/cbb-originator",
                      "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models"):
-            assert line in s.splitlines(), (u.name, line)
-        assert "ExecStart=/opt/sports-models/cbb-originator/app/deploy/droplet/bin/cbb-originator-run " in s
+            assert line in lines, (u.name, line)
+        assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run " in s
+        inacc = [ln for ln in lines if ln.startswith("InaccessiblePaths=")]
+        assert inacc and all(p in inacc[0] for p in ("/opt/nba-prop-runtime", "/srv/nba-production"))
+        active = [ln for ln in lines if ln.strip() and not ln.startswith("#") and not ln.startswith("InaccessiblePaths=")]
+        assert not [ln for ln in active if re.search(r"(?i)nba|--restore|publish|wager", ln)], u.name
         for k in THREADS:
             assert f"{k}=1" in s
-        directives = [ln for ln in s.splitlines() if ln.strip() and not ln.startswith("#")]
-        assert not [ln for ln in directives if re.search(r"(?i)--restore|publish|wager|deploy_dryrun", ln)], u.name
-    m = (D / "systemd" / "cbb-originator-morning.service").read_text()
-    assert "MemoryHigh=12G" in m and "MemoryMax=14G" in m
+        assert _mem(s, "MemoryHigh") < _mem(s, "MemoryMax")
+    for n in HEAVY_UNITS:
+        s = (D / "systemd" / n).read_text()
+        assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200        # 8 GB host: 4 GiB reserve kept
+    for n in LIGHT_UNITS:
+        assert _mem((D / "systemd" / n).read_text(), "MemoryMax") < 3200
 
 
-def test_timers_are_dst_correct_and_match_the_approved_cadence():
-    m = (D / "systemd" / "cbb-originator-morning.timer").read_text()
-    assert "OnCalendar=*-*-* 06:05:00 America/New_York" in m and "Persistent=false" in m
-    t = [ln for ln in (D / "systemd" / "cbb-originator-tick.timer").read_text().splitlines() if ln.startswith("OnCalendar=")]
-    assert t == ["OnCalendar=*-11,12,01,02,03-* 00..04,12..23:12,42:00 UTC", "OnCalendar=*-04-01..08 00..04,12..23:12,42:00 UTC",
-                 "OnCalendar=*-11,12,01,02,03-* 06,09:34:00 UTC", "OnCalendar=*-04..10-* 00,06,12,18:34:00 UTC"]
-    wf = (C.PROJECT_ROOT / ".github" / "workflows" / "cbb-shadow-tick.yml")
-    if wf.exists():                                         # the scheduled copy lives on main
-        for cron in ("12,42 12-23,0-4 * 11,12,1,2,3 *", "12,42 12-23,0-4 1-8 4 *", "34 6,9 * 11,12,1,2,3 *", "34 */6 * 4-10 *"):
-            assert cron in wf.read_text()
+def test_timers_are_dst_correct_and_match_the_approved_schedule():
+    cal = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")]
+           for p in (D / "systemd").glob("*.timer")}
+    assert cal == {"cbb-originator-morning.timer": ["OnCalendar=*-*-* 07:00:00 America/New_York"],
+                   "cbb-originator-refit-retry.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
+                   "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
+                   **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
+                      for t in ("10:00", "13:00", "16:00", "18:00")}}
+    for p in (D / "systemd").glob("*.timer"):
+        assert "Persistent=false" in p.read_text()
+    for t in ("1000", "1300", "1600", "1800"):
+        hh = f"{t[:2]}:{t[2:]}"
+        assert f"Unit=cbb-originator-availability@{hh}.service" in (D / "systemd" / f"cbb-originator-availability-{t}.timer").read_text()
+
+
+def test_shared_heavy_lock_tmpfiles_entry():
+    s = (D / "tmpfiles" / "sports-models-heavy.conf").read_text().splitlines()
+    assert "d /run/lock/sports-models 0770 root sports-models-heavy -" in s
+    assert "f /run/lock/sports-models/heavy.lock 0660 root sports-models-heavy -" in s
 
 
 # ------------------------------------------------------------------ transfer manifest

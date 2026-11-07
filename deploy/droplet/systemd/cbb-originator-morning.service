@@ -1,10 +1,7 @@
-# CBB Originator: 2026-27 walk-forward MORNING REFIT (heavy). TEMPLATE: reviewed, NOT installed, NOT enabled.
-# docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md, docs/operations/SHARED_DROPLET_HEAVY_JOB_POLICY.md.
-# No secrets here: every credential is read from the root-owned 0640 EnvironmentFile.
-# Nothing here publishes (WizardOfOdds) or wagers; cbb-originator-run refuses any unsafe mode (exit 3).
+# CBB Originator: 07:00 ET daily lifecycle: settlement, prior-day Grades, walk-forward under the shared heavy lock, INITIAL forecast, exports, health
+# Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator walk-forward morning refit (06:00 America/New_York cutoff)
-Documentation=file:///opt/sports-models/cbb-originator/app/docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md
+Description=CBB Originator 07:00 ET daily lifecycle
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/etc/sports-models/cbb-originator.env
@@ -13,39 +10,43 @@ ConditionPathExists=/etc/sports-models/cbb-originator.env
 Type=oneshot
 User=cbb-originator
 Group=cbb-originator
-SupplementaryGroups=sports-models
-WorkingDirectory=/opt/sports-models/cbb-originator/app
+SupplementaryGroups=sports-models-heavy
+WorkingDirectory=/opt/sports-models/cbb-originator/current
 EnvironmentFile=/etc/sports-models/cbb-originator.env
 Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 Environment=OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Environment=CBB_DUCKDB_THREADS=1
+Environment=CBB_APP_ROOT=/opt/sports-models/cbb-originator/current
+Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod
 Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
-ExecStart=/opt/sports-models/cbb-originator/app/deploy/droplet/bin/cbb-originator-run morning
-# Exit 75 = resource/lock unavailable (DAILY_REFIT_STATUS = FAIL (RESOURCE)): reported as failure, never retried
-# automatically (at most one attempt per cutoff + one manual retry).
+Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
+Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
+Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock
+Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run lifecycle-morning
 Restart=no
-TimeoutStartSec=75min
+TimeoutStartSec=120min
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=cbb-originator-morning
-# ---- resource controls (measured: 7.17 GB RSS, 11.2 GB peak footprint, 118.6 s; DuckDB memory_limit 12 GB)
-MemoryHigh=12G
-MemoryMax=14G
+MemoryHigh=2800M
+MemoryMax=3200M
 MemorySwapMax=0
 Nice=10
-CPUQuota=200%
+CPUQuota=100%
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
-# ---- isolation: the app checkout is read-only; CBB runtime state lives under /var/lib/sports-models/cbb-originator
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
+PrivateDevices=yes
 NoNewPrivileges=yes
-UMask=0077
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+ReadOnlyPaths=/opt/sports-models/cbb-originator
 ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models
-BindPaths=/var/lib/sports-models/cbb-originator/prod:/opt/sports-models/cbb-originator/app/data/prod
-BindPaths=/var/lib/sports-models/cbb-originator/scratch/duckdb_tmp:/opt/sports-models/cbb-originator/app/modeling/store/duckdb_tmp
-# frozen stores, bound read-only at the exact paths the code expects (the tracked route_build.json beside cbb.duckdb
-# stays visible: only the file and the untracked stage3/ directory are bound; mount points are created at install)
-BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/canonical/cbb.duckdb:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/canonical/cbb.duckdb
-BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/lockbox_2025_26/stage3:/opt/sports-models/cbb-originator/app/data/lockbox_2025_26/stage3
-BindReadOnlyPaths=/var/lib/sports-models/cbb-originator/stores/v2_oos:/opt/sports-models/cbb-originator/app/modeling/v2_oos
+InaccessiblePaths=-/opt/nba-prop-runtime -/srv/nba-production -/var/lib/nba-prop -/etc/nba-prop-quant

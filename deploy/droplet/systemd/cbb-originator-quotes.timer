@@ -1,0 +1,13 @@
+# CBB Originator 10-minute quote due-check timer. systemd evaluates the zone itself (DST-correct).
+[Unit]
+Description=CBB Originator 10-minute quote due-check timer
+
+[Timer]
+OnCalendar=*-*-* *:00/10:00
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-quotes.service
+
+[Install]
+WantedBy=timers.target

@@ -63,7 +63,7 @@ def source_commit() -> str | None:
     """The operational code's commit, read from the checkout's own .git (no shell). GITHUB_SHA is only a fallback: in a
     scheduled run it names the default-branch commit that holds the workflow, not the checked-out release code."""
     sha = _git_head(PC.C.PROJECT_ROOT / ".git")
-    return sha or os.environ.get("GITHUB_SHA") or None
+    return sha or os.environ.get("CBB_CODE_COMMIT") or os.environ.get("GITHUB_SHA") or None   # CBB_CODE_COMMIT: git-archive release
 
 
 def _git_head(g: Path) -> str | None:

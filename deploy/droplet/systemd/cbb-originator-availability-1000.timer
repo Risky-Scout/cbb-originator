@@ -1,0 +1,13 @@
+# CBB Originator 10:00 ET availability refresh timer. systemd evaluates the zone itself (DST-correct).
+[Unit]
+Description=CBB Originator 10:00 ET availability refresh timer
+
+[Timer]
+OnCalendar=*-*-* 10:00:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-availability@10:00.service
+
+[Install]
+WantedBy=timers.target

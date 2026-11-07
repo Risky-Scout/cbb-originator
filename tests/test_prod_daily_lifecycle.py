@@ -257,28 +257,113 @@ def test_unresolved_players_are_distinct_rows_but_resolved_duplicates_still_fail
     assert ST.key_exprs("flagship.substitutions")[2] == "coalesce(canonical_player_id, 'UNRESOLVED:' || source_athlete_id)"
 
 
-# ============================================================================ prepared Droplet schedule (not installed)
-def test_prepared_lifecycle_units_implement_exactly_the_fixed_schedule():
+# ============================================================================ Droplet schedule (deploy/droplet/systemd)
+def test_droplet_units_implement_exactly_the_fixed_schedule():
     import re
     import subprocess
     d = PC.C.PROJECT_ROOT / "deploy" / "droplet"
-    lc = d / "lifecycle"
-    timers = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")] for p in lc.glob("*.timer")}
-    assert timers == {"cbb-originator-lifecycle-morning.timer": ["OnCalendar=*-*-* 07:00:00 America/New_York"],
-                      **{f"cbb-originator-lifecycle-refresh-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
-                         for t in L.ROTOWIRE_REFRESH_TIMES_ET}}
-    for p in list(lc.glob("*.timer")) + list(lc.glob("*.service")):
-        s = p.read_text()
-        assert "NOT installed" in s and not re.search(r"(?i)^\s*Environment=.*(API_KEY|ENCRYPTION_KEY)=", s, re.M)
-        assert "Persistent=false" in s or p.suffix == ".service"
-    for p in lc.glob("*.service"):
-        s = p.read_text().splitlines()
-        for line in ("Type=oneshot", "User=cbb-originator", "Restart=no", "ProtectSystem=strict", "NoNewPrivileges=yes",
-                     "EnvironmentFile=/etc/sports-models/cbb-originator.env", "MemorySwapMax=0"):
-            assert line in s, (p.name, line)
-    assert {p.name for p in (d / "systemd").glob("*")} == {"cbb-originator-morning.service", "cbb-originator-morning.timer",
-                                                           "cbb-originator-tick.service", "cbb-originator-tick.timer"}
+    sd = d / "systemd"
+    timers = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")] for p in sd.glob("*.timer")}
+    assert timers["cbb-originator-morning.timer"] == [f"OnCalendar=*-*-* {L.MORNING_TIME_ET}:00 America/New_York"]
+    assert timers["cbb-originator-refit-retry.timer"] == [f"OnCalendar=*-*-* {L.REFIT_RETRY_TIME_ET}:00 America/New_York"]
+    for t in L.ROTOWIRE_REFRESH_TIMES_ET:
+        assert timers[f"cbb-originator-availability-{t.replace(':', '')}.timer"] == [f"OnCalendar=*-*-* {t}:00 America/New_York"]
+    for p in sd.glob("*"):
+        assert not re.search(r"(?i)^\s*Environment=.*(API_KEY|ENCRYPTION_KEY|TOKEN)=", p.read_text(), re.M)
     run = d / "bin" / "cbb-originator-run"
-    for bad in (["lifecycle-refresh", "12:00"], ["lifecycle-refresh"], ["lifecycle-noon"]):
+    for bad in (["lifecycle-refresh", "12:00"], ["lifecycle-refresh"], ["lifecycle-noon"], ["morning"]):
         r = subprocess.run(["bash", str(run), *bad], capture_output=True, text=True, env={"PATH": "/usr/bin:/bin"})
         assert r.returncode == 3, (bad, r.stderr)
+
+
+# ============================================================================ shared heavy lock: walk-forward only
+def _wf_life(tmp_path):
+    clock = Clock(pd.Timestamp("2026-11-10T12:00Z"))
+    return L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", model_root=tmp_path / "wf", clock=clock)
+
+
+def test_busy_shared_lock_defers_the_refit_and_keeps_last_good(tmp_path, monkeypatch):
+    import fcntl
+    import os
+    lock = tmp_path / "heavy.lock"
+    monkeypatch.setenv(L.HEAVY_LOCK_ENV, str(lock))
+    monkeypatch.setenv(L.HEAVY_WAIT_ENV, "0.2")
+    life = _wf_life(tmp_path)
+    calls = []
+    holder = os.open(lock, os.O_WRONLY | os.O_CREAT)
+    fcntl.flock(holder, fcntl.LOCK_EX)
+    try:
+        r = L.walk_forward(life, L.et_date(life.now()), runner=lambda *a, **k: calls.append(1) or {})
+    finally:
+        os.close(holder)
+    assert r["DAILY_REFIT_STATUS"] == L.DEFERRED_SHARED_LOCK and r["lock_result"] == "NOT_ACQUIRED"
+    assert calls == []                                   # nothing fitted; ACTIVE untouched
+    assert lock.exists()                                 # never deleted
+    recs = OS.read_jsonl(L.wf_attempts_path(life, L.et_date(life.now())))
+    assert [x["DAILY_REFIT_STATUS"] for x in recs] == [L.DEFERRED_SHARED_LOCK]
+
+
+def test_lock_is_held_only_during_the_walk_forward_and_released(tmp_path, monkeypatch):
+    import fcntl
+    import os
+    lock = tmp_path / "heavy.lock"
+    monkeypatch.setenv(L.HEAVY_LOCK_ENV, str(lock))
+    monkeypatch.setenv(L.HEAVY_WAIT_ENV, "1")
+    life = _wf_life(tmp_path)
+    seen = {}
+
+    def runner(*a, **k):
+        fd = os.open(lock, os.O_WRONLY)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            seen["held"] = False
+        except BlockingIOError:
+            seen["held"] = True
+        finally:
+            os.close(fd)
+        return {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED", "ACTIVE_MODEL_VERSION": "v2"}
+    r = L.walk_forward(life, L.et_date(life.now()), runner=runner)
+    assert seen["held"] is True and r["lock_result"] == "ACQUIRED" and r["DAILY_MODEL_PROMOTION"] == "PROMOTED"
+    fd = os.open(lock, os.O_WRONLY)
+    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)        # released after the step
+    os.close(fd)
+
+
+def test_walk_forward_exception_keeps_last_good_and_is_recorded(tmp_path, monkeypatch):
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    life = _wf_life(tmp_path)
+
+    def boom(*a, **k):
+        raise MemoryError("synthetic")
+    r = L.walk_forward(life, L.et_date(life.now()), runner=boom)
+    assert r["DAILY_REFIT_STATUS"] == "FAIL" and r["DAILY_MODEL_PROMOTION"] == "NOT_PROMOTED" and "MemoryError" in r["reason"]
+
+
+def test_refit_retry_is_a_no_op_unless_the_morning_was_deferred(tmp_path, monkeypatch):
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    life = _wf_life(tmp_path)
+    day = L.et_date(life.now())
+    calls = []
+    r = L.refit_retry(life, day, runner=lambda *a, **k: calls.append(1) or {})
+    assert r["status"] == "NO_OP" and calls == []
+    OS.append_jsonl(L.wf_attempts_path(life, day), [{"attempt": "MORNING_0700", "DAILY_REFIT_STATUS": "PASS"}])
+    assert L.refit_retry(life, day, runner=lambda *a, **k: calls.append(1) or {})["status"] == "NO_OP" and calls == []
+    h = json.loads(L.health_path(life, day).read_text())
+    assert h["et_date"] == day.isoformat() and h["refit_retry"]["status"] == "NO_OP"
+
+
+def test_refit_retry_runs_once_after_deferral_and_reforecasts_on_promotion(tmp_path, monkeypatch):
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    life = _wf_life(tmp_path)
+    day = L.et_date(life.now())
+    OS.append_jsonl(L.wf_attempts_path(life, day), [{"attempt": "MORNING_0700", "DAILY_REFIT_STATUS": L.DEFERRED_SHARED_LOCK}])
+    fc = []
+    monkeypatch.setattr(L, "forecast", lambda lf, w=L.INITIAL, **k: fc.append(w) or {"status": "FORECAST", "window": w})
+    monkeypatch.setattr(L, "exports_for", lambda lf, d: {})
+    r = L.refit_retry(life, day, runner=lambda *a, **k: {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED"})
+    assert r["status"] == "RAN" and fc == [L.REFIT_RETRY]
+    assert L.window_label(L.REFIT_RETRY) == "REFIT_RETRY_0800"
+    again = L.refit_retry(life, day, runner=lambda *a, **k: {"DAILY_MODEL_PROMOTION": "PROMOTED"})
+    assert again["status"] == "NO_OP" and fc == [L.REFIT_RETRY]          # exactly one retry per day
+    h = json.loads(L.health_path(life, day).read_text())
+    assert not any(k in json.dumps(h) for k in ("API_KEY=", "ENCRYPTION_KEY="))

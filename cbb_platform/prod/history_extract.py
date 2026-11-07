@@ -135,7 +135,17 @@ def verify(extract: Path = DEFAULT_OUT, history_db: Path | None = PC.HISTORY_CAN
 
 def resolve(extract: Path = DEFAULT_OUT, history_db: Path = PC.HISTORY_CANONICAL) -> Path:
     """The history database the production path reads: the frozen source when present; otherwise the extract, only if
-    its sha256 equals the tracked manifest. Raises HistoryUnavailable otherwise."""
+    its sha256 equals the tracked manifest. Raises HistoryUnavailable otherwise.
+    CBB_HISTORY_SOURCE=CANDIDATE (the equivalence-proven compact runtime, walkforward.history_source): the candidate, only
+    after its sha256 / bytes equal its manifest and its sources equal the frozen data_versions (it holds these relations
+    verbatim). Selection only: no relation, value or scoring rule changes."""
+    from cbb_platform.walkforward import history_source as HS
+    if HS.selected() == "CANDIDATE":
+        try:
+            HS.verify_candidate()
+        except HS.HistorySourceError as e:
+            raise HistoryUnavailable(f"compact history candidate rejected: {e}") from None
+        return HS.history_db()
     if Path(history_db).exists():
         return Path(history_db)
     if not Path(extract).exists():

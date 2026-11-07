@@ -1,5 +1,16 @@
 # CBB Originator: Droplet deployment package (pre-migration readiness)
 
+> **SUPERSEDED IN PART (2026-11-07, Droplet deployment).** The installed layout is: immutable git-archive release
+> `/opt/sports-models/cbb-originator/releases/<sha>` (+ root-owned `<sha>.sha256sums`, re-verified before every job)
+> behind `current`; mutable state only under `/var/lib/sports-models/cbb-originator/{prod,walkforward,exports,locks}`
+> (`CBB_PROD_ROOT` / `CBB_WF_ROOT` / `CBB_EXPORT_ROOT`); units `deploy/droplet/systemd/cbb-originator-{morning,
+> refit-retry,availability@,quotes}`; shared heavy lock `/run/lock/sports-models/heavy.lock` (group
+> `sports-models-heavy`, held by `nba-prop-daily.service` via an authorized drop-in and by the CBB walk-forward step
+> only; busy for 30 min -> `DAILY_REFIT_STATUS = DEFERRED_SHARED_LOCK`, last-known-good kept, one 08:00 ET retry);
+> heavy-unit limits `MemoryHigh=2800M` / `MemoryMax=3200M` / `MemorySwapMax=0` on the 8 GB host. The `.../app` checkout,
+> bind mounts, `sports-model-heavy.lock` path and 12G/14G/13 GB values below are historical.
+
+
 **Status:** PREPARED, NOT DEPLOYED. Nothing has been installed, copied, enabled or cut over. The live writer is still the GitHub scheduled workflow `CBB shadow tick` on `main`.
 
 **Package files**
