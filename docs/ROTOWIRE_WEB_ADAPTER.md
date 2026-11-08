@@ -42,7 +42,7 @@ python -m cbb_platform.prod.rotowire_web_acquire --ops-root $CBB_PROD_ROOT/ops b
 ```
 
 `accept` writes `ops/markers/ROTOWIRE_WEB_ACCEPTANCE.json` (PASS only if auth, both HTTP 200, rows > 0, no reason
-code). Inspect `NEWS_EXAMPLES_BY_RULE` (explicit out, doubtful, uncertain, out-for-season, eligibility) by hand. Then
+code, and TEAM_MAPPING_RATE = 1.0). Inspect `NEWS_EXAMPLES_BY_RULE` (explicit out, doubtful, uncertain, out-for-season, eligibility) by hand. Then
 set `ROTOWIRE_SOURCE=WEB` and `ROTOWIRE_ENABLED=true` and enable the four `cbb-originator-availability-*.timer` units.
 `cbb-originator-run` refuses WEB without a protected session file; `lifecycle.rotowire_state` keeps the refresh
 disabled until the marker is PASS.
@@ -53,6 +53,26 @@ disabled until the marker is PASS.
 * Identity: RotoWire player ID from `/cbasketball/player/<slug>-<ID>`; production resolution uses only the persisted
   `maps/rotowire_web_team_map.csv` and `maps/rotowire_web_player_map.csv` (exact deterministic additions, never
   overwritten; anything else → `maps/rotowire_web_map_review.jsonl` and `AVAILABILITY_IDENTITY_UNRESOLVED`).
+  * Teams: exact normalized canonical name, else a row of the committed, curated
+    `cbb_platform/prod/rotowire_web_team_aliases.csv` (exact string only; `verified_on` + `evidence` required; a
+    conflict with an exact name or a persisted row goes to review, never overwrites). To add an alias: verify the one
+    canonical on-roster team, add the row, add it to the test, commit, redeploy, rerun `build-maps`.
+  * Players: exact normalized full name, unique on the mapped team's current roster. A position disagreement alone does
+    not reject such a match; it is mapped with method `..._POSITION_DISCREPANCY` and recorded in
+    `maps/rotowire_web_identity_discrepancies.jsonl`. Two roster rows with the name, or a canonical player already held
+    by another RotoWire ID, stay unresolved. Unresolved reasons: `NOT_ON_CURRENT_TEAM_ROSTER`,
+    `NO_EXACT_NAME_ON_TEAM_ROSTER_NEAR_NAME_NOT_MAPPED` (candidates listed for a human; never used to map),
+    `EXACT_NAME_ONLY_ON_OTHER_TEAM_ROSTER`, `EXACT_NAME_MULTIPLE`, `CANONICAL_PLAYER_ALREADY_MAPPED`, `TEAM_UNMATCHED`.
+  * `build-maps` writes an immutable audit record `maps/build_maps/<acquisition_id>.json` (rows added, discrepancies,
+    every unresolved row with its reason).
+* News coverage: the injury-news page exposes only the latest 25 items; no pagination, offset, cursor, load-more,
+  archive, date filter or structured news endpoint is exposed by the authenticated page (inspected 2026-11-08), so
+  `NEWS_COVERAGE_COMPLETE = UNPROVEN_25_ITEM_WINDOW`. Continuity guard: every window (item keys + RotoWire player IDs)
+  is persisted in `news_windows.jsonl`; an INGEST window that shares no item with the previous INGEST window is
+  `ROTOWIRE_WEB_NEWS_COVERAGE_GAP` — its items are kept as evidence but produce no news event and a `COVERAGE_GAP`
+  ledger entry, and `rotowire_feed.freshness` fails every game closed until a later window overlaps. The first INGEST
+  window is `BASELINE`; acceptance windows never set continuity. The full injury snapshot remains the current-state
+  reconciliation source.
 * News text: deterministic phrase rules; OUT-like / unresolved / explicit-available language; postgame (DNP) text is
   `POSTGAME_ONLY` (never pregame evidence); mixed signals → `UNKNOWN` (suppressed); no availability language → no event.
 * Fail closed (no event, no PROCESSED ledger entry → the existing freshness gate blocks the games): missing / insecure /
