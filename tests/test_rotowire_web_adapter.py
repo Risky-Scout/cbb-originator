@@ -270,7 +270,8 @@ def test_19_append_only_only_genuinely_new_records(env):
 def test_24_disappearance_from_news_is_not_active(env):
     env["run"](Site())
     assert state(env).set_index("rotowire_player_id").loc["101", "effective_status"] == "OUT"
-    env["run"](Site(news=news_page(item("201", "Kai Ito", "Away St", "C", "Ankle", "GTD", "Ito is a game-time decision."))))
+    env["run"](Site(news=news_page(item("201", "Kai Ito", "Away St", "C", "Ankle", "Game-time decision",
+                                        "Ito (ankle) is a game-time decision."))))      # overlapping window, 101 gone
     s = state(env).set_index("rotowire_player_id")
     assert s.loc["101", "effective_status"] == "OUT" and s.loc["101", "news_status"] == "OUT"   # still the last news
     env["run"](Site(rows=[row("201", "Kai", "Ito", "Away St", "C", "Ankle", "Game Time Decision")]))   # off the list too
@@ -629,3 +630,168 @@ def test_identity_context_tolerates_missing_mascots(tmp_path, monkeypatch):
     monkeypatch.setattr(ST, "current", lambda root: {"increment_db": inc})
     c = RW.load_identity_context(tmp_path, hist, tmp_path / "maps")
     assert c.resolve_team({"team_name": "Home U"})[0] == "T1" and c.resolve_team({"team_name": "New U"})[0] == "T3"
+
+
+# ============================================================================ curated team aliases (2026-11-08 review)
+OBSERVED_ALIAS_NAMES = ["Connecticut", "Louisiana State", "Mississippi", "St. Joseph's", "Texas-Arlington",
+                        "Texas-San Antonio", "UNC-Charlotte", "Wisconsin-Green Bay"]
+
+
+def aliases(**m):
+    return pd.DataFrame([{"rotowire_team_name": k, "canonical_team_id": v, "canonical_display_name": "x",
+                          "verified_on": "2026-11-08", "evidence": "test"} for k, v in m.items()], columns=W.ALIAS_COLS)
+
+
+def test_committed_alias_file_is_exactly_the_reviewed_eight_and_valid(tmp_path):
+    m = W.team_aliases()
+    assert list(m["rotowire_team_name"]) == OBSERVED_ALIAS_NAMES
+    assert m["canonical_team_id"].str.fullmatch(r"T-[0-9a-f]{16}").all() and m["canonical_team_id"].is_unique
+    assert (m["verified_on"] == "2026-11-08").all() and m["evidence"].str.contains("W20261108T150352Z-60c436").all()
+    expected = {"Connecticut": "UConn Huskies", "Louisiana State": "LSU Tigers", "Mississippi": "Ole Miss Rebels",
+                "St. Joseph's": "Saint Joseph's Hawks", "Texas-Arlington": "UT Arlington Mavericks",
+                "Texas-San Antonio": "UTSA Roadrunners", "UNC-Charlotte": "Charlotte 49ers",
+                "Wisconsin-Green Bay": "Green Bay Phoenix"}
+    assert dict(zip(m["rotowire_team_name"], m["canonical_display_name"])) == expected
+    bad = tmp_path / "a.csv"
+    m2 = pd.concat([m, m.iloc[:1]])
+    m2.to_csv(bad, index=False)
+    with pytest.raises(ValueError, match="duplicate"):
+        W.team_aliases(bad)
+    m.assign(evidence="").to_csv(bad, index=False)
+    with pytest.raises(ValueError, match="required"):
+        W.team_aliases(bad)
+    m.drop(columns="evidence").to_csv(bad, index=False)
+    with pytest.raises(ValueError, match="columns"):
+        W.team_aliases(bad)
+
+
+def _f(pid, first, last, team, pos="G"):
+    return {"rotowire_player_id": pid, "first_name": first, "last_name": last, "team_name": team, "position": pos}
+
+
+def test_alias_maps_only_the_exact_spelling_and_is_audited(ctx, tmp_path):
+    al = aliases(**{"Home University": "T1"})
+    res = W.extend_maps(ctx, [_f("101", "Jon", "Doe", "Home University"), _f("102", "Ann", "Lee", "Home Univ."),
+                              _f("103", "Ann", "Lee", "home university")], tmp_path, aliases=al)
+    tm = pd.read_csv(tmp_path / W.TEAM_MAP_FILE, dtype=str)
+    assert dict(zip(tm["rotowire_team_name"], tm["method"])) == {"Home University": W.M_TEAM_ALIAS}
+    assert {x["rotowire_team_name"] for x in res["review"] if x["kind"] == "TEAM"} == {"Home Univ.", "home university"}
+    pm = pd.read_csv(tmp_path / W.PLAYER_MAP_FILE, dtype=str)
+    assert dict(zip(pm["rotowire_player_id"], pm["canonical_player_id"])) == {"101": "P1"}   # player rule after alias
+    assert W.WebIdentity(ctx, tmp_path).resolve({"team_name": "Home University", "rotowire_player_id": "101"}
+                                                 )["identity_resolution_status"] == "RESOLVED"
+
+
+def test_alias_conflicts_and_off_roster_alias_never_map_or_overwrite(ctx, tmp_path):
+    res = W.extend_maps(ctx, [_f("101", "Jon", "Doe", "Home U"), _f("9", "A", "B", "Ghost U")], tmp_path,
+                        aliases=aliases(**{"Home U": "T2", "Ghost U": "T404"}))
+    why = {x["rotowire_team_name"]: x["reason"] for x in res["review"] if x["kind"] == "TEAM"}
+    assert why == {"Home U": "CURATED_ALIAS_CONFLICTS_WITH_EXACT_NAME", "Ghost U": "CURATED_ALIAS_TEAM_NOT_ON_CURRENT_ROSTER"}
+    assert not (tmp_path / W.TEAM_MAP_FILE).exists()
+    W.extend_maps(ctx, [_f("101", "Jon", "Doe", "Home U")], tmp_path, aliases=aliases())        # persisted: Home U -> T1
+    before = (tmp_path / W.TEAM_MAP_FILE).read_bytes()
+    res = W.extend_maps(ctx, [_f("101", "Jon", "Doe", "Home U")], tmp_path, aliases=aliases(**{"Home U": "T2"}))
+    assert (tmp_path / W.TEAM_MAP_FILE).read_bytes() == before
+    assert [x["reason"] for x in res["review"]] == ["CURATED_ALIAS_CONFLICTS_WITH_PERSISTED_MAP"]
+
+
+# ============================================================================ player review rules
+def test_position_discrepancy_alone_does_not_reject_a_unique_exact_match_but_is_audited(ctx, tmp_path):
+    res = W.extend_maps(ctx, [_f("201", "Kai", "Ito", "Away St", pos="G")], tmp_path, aliases=aliases())  # roster: Center
+    pm = pd.read_csv(tmp_path / W.PLAYER_MAP_FILE, dtype=str)
+    assert pm[["rotowire_player_id", "canonical_player_id", "method"]].values.tolist() == [["201", "P5", W.M_PLAYER_POS]]
+    d = W.OS.read_jsonl(tmp_path / W.DISCREPANCY_FILE)
+    assert len(d) == 1 and d[0]["rotowire_position"] == "G" and d[0]["roster_position"] == "Center"
+    assert d[0]["canonical_player_id"] == "P5" and res["discrepancies"] == d
+    W.extend_maps(ctx, [_f("201", "Kai", "Ito", "Away St", pos="G")], tmp_path, aliases=aliases())
+    assert len(W.OS.read_jsonl(tmp_path / W.DISCREPANCY_FILE)) == 1                         # recorded once
+
+
+def test_two_same_name_roster_rows_or_a_shared_canonical_player_stay_unresolved(tmp_path):
+    teams = pd.DataFrame({"canonical_team_id": ["T1"], "school": ["Home U"], "display_name": ["Home U"], "mascot": [None]})
+    roster = pd.DataFrame([("P1", "T1", "Jon", "Doe", "Jon Doe", "Guard"), ("P9", "T1", "Jon", "Doe", "Jon Doe", "Center"),
+                           ("P2", "T1", "Ann", "Lee", "Ann Lee", "Forward")],
+                          columns=["canonical_player_id", "canonical_team_id", "first_name", "last_name", "player_name", "position"])
+    c = RW.IdentityContext(teams, roster)
+    res = W.extend_maps(c, [_f("101", "Jon", "Doe", "Home U"), _f("102", "Ann", "Lee", "Home U"),
+                            _f("103", "Ann", "Lee", "Home U")], tmp_path, aliases=aliases())
+    why = {x["rotowire_player_id"]: x["reason"] for x in res["review"]}
+    assert why == {"101": "EXACT_NAME_MULTIPLE", "102": "CANONICAL_PLAYER_ALREADY_MAPPED",
+                   "103": "CANONICAL_PLAYER_ALREADY_MAPPED"}
+    assert not (tmp_path / W.PLAYER_MAP_FILE).exists()
+
+
+def test_unresolved_players_carry_the_exact_reason_and_are_never_guessed(ctx, tmp_path):
+    res = W.extend_maps(ctx, [_f("301", "Jonathan", "Doe", "Home U"),      # near name only (same last name)
+                              _f("302", "Kai", "Ito", "Home U", pos="C"),  # exact name, but on the OTHER team's roster
+                              _f("303", "Zed", "Quill", "Home U")], tmp_path, aliases=aliases())
+    r = {x["rotowire_player_id"]: x for x in res["review"]}
+    assert r["301"]["reason"] == "NO_EXACT_NAME_ON_TEAM_ROSTER_NEAR_NAME_NOT_MAPPED"
+    assert [x["canonical_player_id"] for x in r["301"]["candidates"]] == ["P1"]
+    assert r["302"]["reason"] == "EXACT_NAME_ONLY_ON_OTHER_TEAM_ROSTER"
+    assert r["303"]["reason"] == "NOT_ON_CURRENT_TEAM_ROSTER" and r["303"]["candidates"] == []
+    assert not (tmp_path / W.PLAYER_MAP_FILE).exists()
+    assert len(W.OS.read_jsonl(tmp_path / W.REVIEW_FILE)) == 3
+
+
+def test_acceptance_reports_unresolved_and_requires_every_team_resolved(env):
+    html = news_page(item("101", "Jon Doe", "Home U", "G", "Knee", "Ruled out", "Doe is out Tuesday."),
+                     item("777", "Zed Quill", "Mystery College", "G", "Knee", "Ruled out", "Quill is out."))
+    r = env["run"](Site(news=html), ingest=False)
+    s = W.acceptance_summary(r, env["ctx"], env["maps"])
+    assert s["UNRESOLVED_TEAMS"] == ["Mystery College"] and s["TEAM_MAPPING_RATE"] == 0.6667
+    assert s["ROTOWIRE_WEB_LIVE_ACCEPTANCE"] == "FAIL" and s["TEAM_MAPPING_RATE_PERSISTED_MAP"] == 0.0
+    assert [x["rotowire_player_id"] for x in s["UNRESOLVED_PLAYERS"]] == ["777"]
+    assert s["UNRESOLVED_PLAYERS"][0]["reason"] == "TEAM_UNMATCHED"
+    assert s["NEWS_COVERAGE_COMPLETE"] == "UNPROVEN_25_ITEM_WINDOW" and s["NEWS_WINDOW_SIZE"] == 2
+
+
+# ============================================================================ news continuity guard
+NEWER = news_page(*[item(str(500 + i), f"Pl {chr(97 + i)}", "Home U", "G", "Knee", "Ruled out", f"Player {i} is out.",
+                         date="November 11, 2026") for i in range(3)])
+
+
+def test_news_window_without_overlap_is_a_coverage_gap_that_fails_every_game_closed(env):
+    r1 = env["run"](Site())
+    assert r1["news_continuity"] == "BASELINE" and r1["news_status"] == "PROCESSED"
+    n_news = sum(e["event_kind"] == "NEWS_UPDATE" for e in env["store"].load())
+    r2 = env["run"](Site(news=NEWER))                                       # shares no item with the last window
+    assert r2["news_continuity"] == "GAP" and r2["news_status"] == "COVERAGE_GAP"
+    assert r2["reasons"] == [W.R_NEWS_GAP] == ["ROTOWIRE_WEB_NEWS_COVERAGE_GAP"]
+    assert r2["snapshot_status"] == "PROCESSED"                             # the snapshot still reconciles
+    assert sum(e["event_kind"] == "NEWS_UPDATE" for e in env["store"].load()) == n_news   # no news event from a gap
+    led = W.OS.read_jsonl(env["ledger"])
+    gap = [e for e in led if e.get("status") == RW.NEWS_GAP_STATUS]
+    assert len(gap) == 1 and gap[0]["reason"] == W.R_NEWS_GAP and len(processed(env, "news_injuries")) == 1
+    at = pd.Timestamp(env["clock"].t) + pd.Timedelta(minutes=1)
+    g = GAMES.assign(start_time=[at + pd.Timedelta(hours=30)])              # earlier PROCESSED news is within its bound
+    f = RW.freshness(led, g, at)
+    assert f["game_reasons"]["G1"] == [RW.NEWS_COVERAGE_GAP] and f["news_coverage_gap_since"]
+    w = W.OS.read_jsonl(env["root"] / W.NEWS_WINDOW_FILE)                   # every observed window + IDs persisted
+    assert [x["continuity"] for x in w] == ["BASELINE", "GAP"] and w[1]["rotowire_player_ids"] == ["500", "501", "502"]
+    assert {i["provider_player_id"] for i in W.OS.read_jsonl(env["root"] / "news_items.jsonl")} >= {"500", "501", "502"}
+    # the next window overlaps the gap window -> continuous again, PROCESSED, the gate closes
+    later = news_page(item("503", "Pl x", "Home U", "G", "Knee", "Ruled out", "Player x is out.", date="November 11, 2026"),
+                      *[item(str(500 + i), f"Pl {chr(97 + i)}", "Home U", "G", "Knee", "Ruled out", f"Player {i} is out.",
+                             date="November 11, 2026") for i in range(3)])
+    r3 = env["run"](Site(news=later))
+    assert r3["news_continuity"] == "CONTINUOUS" and r3["news_window_overlap"] == 3 and r3["news_status"] == "PROCESSED"
+    at = pd.Timestamp(env["clock"].t) + pd.Timedelta(minutes=1)
+    assert RW.freshness(W.OS.read_jsonl(env["ledger"]), GAMES.assign(start_time=[at + pd.Timedelta(hours=30)]),
+                        at)["game_reasons"]["G1"] == []
+
+
+def test_failed_polls_and_acceptance_runs_do_not_reset_continuity(env):
+    env["run"](Site(), ingest=False)                                        # acceptance: recorded, never the baseline
+    assert env["run"](Site(news=NEWER))["news_continuity"] == "BASELINE"
+    env["run"](Site(news=Resp("", url=W.NEWS_URL)))                         # failed poll: no window recorded
+    assert env["run"](Site(news=NEWER))["news_continuity"] == "CONTINUOUS"
+    assert env["run"](Site())["news_continuity"] == "GAP"
+    assert [x["mode"] for x in W.OS.read_jsonl(env["root"] / W.NEWS_WINDOW_FILE)] == ["ACCEPTANCE", "INGEST", "INGEST", "INGEST"]
+
+
+def test_coverage_gap_code_is_known_blocking_and_unpublishable():
+    from cbb_platform.prod import production_board as PB, readiness as RD
+    c = RW.NEWS_COVERAGE_GAP
+    assert c in RD.AVAILABILITY_GAME_REASONS and RD.evaluate((), (c,))["readiness_state"] == "BLOCKED"
+    assert PB.CODE_CONDITION[c] == "MISSING_STATE" and PB.condition_of(c)[:3] == (False, False, False)

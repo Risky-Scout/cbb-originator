@@ -15,7 +15,7 @@ RUN_REASONS = ("ARTIFACT_HASH_MISMATCH", "WRONG_PRODUCTION_SEASON", "STATE_UPDAT
                "QUOTE_INTEGRATION_UNVALIDATED")
 # Availability (prod/rotowire_feed): game- and row-level, all blocking (policy §8 no-publish conditions).
 AVAILABILITY_GAME_REASONS = ("AVAILABILITY_FEED_UNAVAILABLE", "AVAILABILITY_STALE", "AVAILABILITY_IDENTITY_UNRESOLVED",
-                             "AVAILABILITY_UNCERTAIN_ROTATION")
+                             "AVAILABILITY_UNCERTAIN_ROTATION", "ROTOWIRE_WEB_NEWS_COVERAGE_GAP")
 AVAILABILITY_ROW_REASONS = ("AVAILABILITY_UNCERTAIN", "AVAILABILITY_SOURCE_CONFLICT", "AVAILABILITY_STATUS_UNRECOGNIZED")
 # Retired: QUOTE_COVERAGE_UNVERIFIED ("unknown whether The Odds API supports NCAAB player props"). Support is documented;
 # the remaining quote states are operational (odds_feed.coverage). A retired code is unknown -> it still blocks.

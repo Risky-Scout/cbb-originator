@@ -25,8 +25,13 @@ HTML counts as a provider timestamp.
 Identity (directive §9-10): provider player ID = the numeric suffix of /cbasketball/player/<slug>-<ID>. Production maps
 it ONLY through the persisted tables <maps>/rotowire_web_player_map.csv and rotowire_web_team_map.csv. New rows are
 added to those tables by extend_maps() with exactly one deterministic rule (exact normalized team name; exact normalized
-full name on that team's current roster, position compatible, unique) -- every addition is persisted with its method
+full name on that team's current roster, unique; or the curated exact alias in prod/rotowire_web_team_aliases.csv;
+a position disagreement is an audited discrepancy, never a silent accept) -- every addition is persisted with its method
 and time, never overwritten, and anything else is left unmapped -> AVAILABILITY_IDENTITY_UNRESOLVED (fail closed).
+
+News continuity: the injury-news page exposes only the latest 25 items (no pagination / archive / cursor). Each window
+is persisted (news_windows.jsonl); a window that shares no item with the previous one is ROTOWIRE_WEB_NEWS_COVERAGE_GAP:
+no news event, no PROCESSED entry, and rotowire_feed.freshness fails every game closed until a later window overlaps.
 
     .venv/bin/python -m cbb_platform.prod.rotowire_web_acquire accept      ONE live acquisition: evidence + report only
     .venv/bin/python -m cbb_platform.prod.rotowire_web_acquire build-maps  persist exact deterministic map additions
@@ -87,7 +92,8 @@ R_SCHEMA = "ROTOWIRE_WEB_SCHEMA_CHANGED"
 R_ID_MISSING = "ROTOWIRE_WEB_PROVIDER_ID_MISSING"
 R_COLLAPSE = "ROTOWIRE_WEB_ROW_COUNT_COLLAPSE"
 R_AUTH_MARKER = "ROTOWIRE_WEB_AUTH_MARKER_MISSING"
-W_NEWS_GAP = "ROTOWIRE_WEB_NEWS_COVERAGE_GAP"          # warning: no overlap with the previous news page
+R_NEWS_GAP = RW.NEWS_COVERAGE_GAP   # this news window does not overlap the previous one: items may have been missed
+NEWS_WINDOW_FILE = "news_windows.jsonl"      # every observed news window: item keys + RotoWire player IDs (append-only)
 
 
 class WebAcquisitionFailure(RuntimeError):
@@ -573,48 +579,153 @@ class WebIdentity:
                 "identity_method": "EXPLICIT_WEB_PLAYER_MAP"}
 
 
+ALIAS_COLS = ["rotowire_team_name", "canonical_team_id", "canonical_display_name", "verified_on", "evidence"]
+REVIEW_FILE = "rotowire_web_map_review.jsonl"
+DISCREPANCY_FILE = "rotowire_web_identity_discrepancies.jsonl"
+M_TEAM_EXACT = "EXACT_NORMALIZED_TEAM_NAME"
+M_TEAM_ALIAS = "CURATED_EXACT_ALIAS"
+M_PLAYER_EXACT = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER"
+M_PLAYER_POS = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER_POSITION_DISCREPANCY"
+
+
+def team_aliases(path: Path | None = None) -> pd.DataFrame:
+    """The curated, committed RotoWire-web team aliases (prod/rotowire_web_team_aliases.csv): one row per observed
+    RotoWire team spelling that is not an exact normalized canonical name. Each row names exactly one canonical team,
+    with the date and evidence of its verification. Matched by EXACT string only -- never normalized, never fuzzy."""
+    m = pd.read_csv(path or PC.ROTOWIRE_WEB_TEAM_ALIASES, dtype=str, keep_default_na=False)
+    if list(m.columns) != ALIAS_COLS:
+        raise ValueError(f"rotowire web team aliases: columns must be {ALIAS_COLS}")
+    if (m[ALIAS_COLS] == "").any().any():
+        raise ValueError("rotowire web team aliases: every field (incl. verified_on, evidence) is required")
+    dup = m[m["rotowire_team_name"].duplicated(keep=False)]
+    if len(dup):
+        raise ValueError(f"rotowire web team aliases: duplicate names {sorted(dup['rotowire_team_name'])}")
+    return m
+
+
+def _review_player(ctx: RW.IdentityContext, f: dict, r: dict) -> dict:
+    """Exact reason a player was not mapped, with the roster rows a human would look at (never used to map)."""
+    name = " ".join(x for x in (f.get("first_name"), f.get("last_name")) if x)
+    out = {"kind": "PLAYER", "rotowire_player_id": str(f.get("rotowire_player_id")), "rotowire_player_name": name,
+           "rotowire_team_name": f.get("team_name"), "rotowire_position": f.get("position"),
+           "canonical_team_id": r.get("canonical_team_id"), "reason": r["identity_method"], "candidates": []}
+    tid, k = r.get("canonical_team_id"), MT.norm(name)
+    if r["identity_method"] == "EXACT_NAME_NONE" and tid:
+        team = ctx._by_team.get(tid)
+        other = ctx._roster[(ctx._roster["_n"] == k) & (ctx._roster["canonical_team_id"] != tid)] if k else ()
+        toks = k.split()
+        near = team[team["_n"].map(lambda n: bool(toks) and (n.split()[-1:] == toks[-1:] or n.split()[:1] == toks[:1]))] \
+            if team is not None and toks else pd.DataFrame()
+        if len(other):
+            out["reason"] = "EXACT_NAME_ONLY_ON_OTHER_TEAM_ROSTER"
+            out["candidates"] = [{"canonical_player_id": x.canonical_player_id, "canonical_team_id": x.canonical_team_id,
+                                  "roster_name": x.player_name} for x in other.itertuples()]
+        elif len(near):
+            out["reason"] = "NO_EXACT_NAME_ON_TEAM_ROSTER_NEAR_NAME_NOT_MAPPED"
+            out["candidates"] = [{"canonical_player_id": x.canonical_player_id, "roster_name": x.player_name,
+                                  "roster_position": x.position} for x in near.itertuples()]
+        else:
+            out["reason"] = "NOT_ON_CURRENT_TEAM_ROSTER"
+        out["team_roster_size"] = 0 if team is None else int(len(team))
+    return out
+
+
 def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC.ROTOWIRE_MAP_ROOT, now=None,
-                write: bool = True) -> dict:
-    """Add persisted map rows with the ONE deterministic rule (module doc); never overwrite or remove a row. Returns
-    {'teams_added', 'players_added', 'review': [...unresolvable...]}. write=False computes without persisting."""
+                write: bool = True, aliases: pd.DataFrame | None = None) -> dict:
+    """Add persisted map rows; never overwrite or remove a row. Teams: exact normalized canonical name, else the curated
+    exact alias (team_aliases). Players: exact normalized full name on the mapped team's current roster, unique; a
+    position disagreement does NOT reject a unique exact team + name match but is recorded as an audited discrepancy.
+    A canonical player already held by another RotoWire ID is never mapped twice. Everything else -> review rows with
+    the exact reason. Returns {'teams_added', 'players_added', 'discrepancies', 'review'}; write=False only computes."""
     now = _iso(now or _now())
     root = Path(map_root)
+    aliases = team_aliases() if aliases is None else aliases
+    alias = dict(zip(aliases["rotowire_team_name"], aliases["canonical_team_id"]))
     tm, pm = _read_map(root / TEAM_MAP_FILE, TEAM_MAP_COLS), _read_map(root / PLAYER_MAP_FILE, PLAYER_MAP_COLS)
     have_t, have_p = set(tm["rotowire_team_name"]), set(pm["rotowire_player_id"].astype(str))
+    roster_teams = set(ctx._roster["canonical_team_id"])
     new_t, review = [], []
-    for name in sorted({f["team_name"] for f in fields if f.get("team_name")} - have_t):
+    names = {f["team_name"] for f in fields if f.get("team_name")}
+    for name in sorted(names & have_t):                    # a persisted row is never overwritten: disagreement -> review
+        held = set(tm.loc[tm["rotowire_team_name"] == name, "canonical_team_id"])
+        if name in alias and held != {alias[name]}:
+            review.append({"kind": "TEAM", "rotowire_team_name": name, "reason": "CURATED_ALIAS_CONFLICTS_WITH_PERSISTED_MAP",
+                           "persisted": sorted(held), "alias": alias[name]})
+    for name in sorted(names - have_t):
         tid, how = MT.resolve_team(name, ctx._tidx)
+        if tid and name in alias and alias[name] != tid:
+            review.append({"kind": "TEAM", "rotowire_team_name": name, "reason": "CURATED_ALIAS_CONFLICTS_WITH_EXACT_NAME",
+                           "exact": tid, "alias": alias[name]})
+            continue
+        method = M_TEAM_EXACT if tid else None
+        if not tid and name in alias:
+            tid, method = alias[name], M_TEAM_ALIAS
+            if tid not in roster_teams:
+                review.append({"kind": "TEAM", "rotowire_team_name": name, "reason": "CURATED_ALIAS_TEAM_NOT_ON_CURRENT_ROSTER",
+                               "alias": tid})
+                continue
         if tid:
-            new_t.append({"rotowire_team_name": name, "canonical_team_id": tid, "method": "EXACT_NORMALIZED_TEAM_NAME",
+            new_t.append({"rotowire_team_name": name, "canonical_team_id": tid, "method": method,
                           "added_at": now, "parser_version": PARSER_VERSION})
         else:
             review.append({"kind": "TEAM", "rotowire_team_name": name, "reason": how})
     team_rows = pd.concat([tm, pd.DataFrame(new_t, columns=TEAM_MAP_COLS)], ignore_index=True)
+    team_rows = team_rows[team_rows.groupby("rotowire_team_name")["canonical_team_id"].transform("nunique") == 1]
     tmap = team_rows.drop_duplicates("rotowire_team_name").rename(columns={"rotowire_team_name": "rotowire_team_id"})
     exact = RW.IdentityContext(ctx.teams, ctx.roster, team_map=tmap[["rotowire_team_id", "canonical_team_id"]])
-    new_p, seen = [], set()
+    cand, seen = [], set()
     for f in fields:
         pid = str(f.get("rotowire_player_id") or "")
         if not pid or pid in have_p or pid in seen:
             continue
         seen.add(pid)
         r = exact.resolve({**f, "rotowire_team_id": f.get("team_name"), "team_name": None, "sportdataio_player_id": None})
-        if r["identity_resolution_status"] == "RESOLVED" and r["team_resolution"] == "EXPLICIT_MAP":
-            new_p.append({"rotowire_player_id": pid, "canonical_player_id": r["canonical_player_id"],
-                          "canonical_team_id": r["canonical_team_id"],
-                          "rotowire_player_name": " ".join(x for x in (f.get("first_name"), f.get("last_name")) if x),
-                          "rotowire_team_name": f.get("team_name"), "method": "EXACT_NAME_ON_MAPPED_TEAM_ROSTER",
-                          "added_at": now, "parser_version": PARSER_VERSION})
+        name = " ".join(x for x in (f.get("first_name"), f.get("last_name")) if x)
+        row = {"rotowire_player_id": pid, "canonical_team_id": r["canonical_team_id"], "rotowire_player_name": name,
+               "rotowire_team_name": f.get("team_name"), "added_at": now, "parser_version": PARSER_VERSION}
+        if r["team_resolution"] != "EXPLICIT_MAP":
+            review.append(_review_player(ctx, f, {**r, "identity_method": "TEAM_UNMATCHED"}))
+        elif r["identity_resolution_status"] == "RESOLVED":
+            cand.append(({**row, "canonical_player_id": r["canonical_player_id"], "method": M_PLAYER_EXACT}, None, f))
+        elif r["identity_method"] == "EXACT_NAME_POSITION_CONFLICT":
+            team = exact._by_team[r["canonical_team_id"]]
+            hit = team[team["_n"] == MT.norm(name)]
+            if len(hit) != 1:                              # resolve() already guarantees one; never assume it
+                review.append(_review_player(ctx, f, {**r, "identity_method": "EXACT_NAME_MULTIPLE"}))
+                continue
+            h = hit.iloc[0]
+            disc = {"kind": "POSITION_DISCREPANCY", "rotowire_player_id": pid, "rotowire_player_name": name,
+                    "rotowire_team_name": f.get("team_name"), "canonical_player_id": h["canonical_player_id"],
+                    "canonical_team_id": r["canonical_team_id"], "roster_player_name": h["player_name"],
+                    "rotowire_position": f.get("position"), "roster_position": h["position"],
+                    "basis": "exact canonical team + exact full name + the only such roster row", "at": now}
+            cand.append(({**row, "canonical_player_id": h["canonical_player_id"], "method": M_PLAYER_POS}, disc, f))
         else:
-            review.append({"kind": "PLAYER", "rotowire_player_id": pid, "rotowire_team_name": f.get("team_name"),
-                           "reason": r["identity_method"]})
+            review.append(_review_player(ctx, f, r))
+    held_c = pm["canonical_player_id"].astype(str).value_counts().to_dict()
+    for c in [x[0]["canonical_player_id"] for x in cand]:
+        held_c[c] = held_c.get(c, 0) + 1
+    new_p, disc = [], []
+    for rowd, d, f in cand:
+        if held_c[rowd["canonical_player_id"]] > 1:        # two RotoWire IDs -> one canonical player: neither is mapped
+            review.append({**_review_player(ctx, f, {"canonical_team_id": rowd["canonical_team_id"],
+                                                     "identity_method": "CANONICAL_PLAYER_ALREADY_MAPPED"}),
+                           "candidates": [{"canonical_player_id": rowd["canonical_player_id"]}]})
+            continue
+        new_p.append(rowd)
+        if d:
+            disc.append(d)
     if write and (new_t or new_p):
         root.mkdir(parents=True, exist_ok=True)
         _append_csv(root / TEAM_MAP_FILE, new_t, TEAM_MAP_COLS)
         _append_csv(root / PLAYER_MAP_FILE, new_p, PLAYER_MAP_COLS)
+    if write and disc:
+        OS.append_jsonl(root / DISCREPANCY_FILE, disc)
     if write and review:
-        OS.append_jsonl(root / "rotowire_web_map_review.jsonl", [{**x, "at": now} for x in review])
-    return {"teams_added": len(new_t), "players_added": len(new_p), "review": review}
+        root.mkdir(parents=True, exist_ok=True)
+        OS.append_jsonl(root / REVIEW_FILE, [{**x, "at": now} for x in review])
+    return {"teams_added": len(new_t), "players_added": len(new_p), "discrepancies": disc, "review": review,
+            "team_rows": new_t, "player_rows": new_p}
 
 
 def _append_csv(path: Path, rows: list[dict], cols: list[str]) -> None:
@@ -780,12 +891,34 @@ class _Ledger:
         return entry
 
 
+# ============================================================================ news continuity (25-item window)
+def prior_news_window(root: Path) -> dict | None:
+    """The latest news window observed by an INGEST acquisition (acceptance windows never set continuity)."""
+    w = [r for r in OS.read_jsonl(Path(root) / NEWS_WINDOW_FILE) if r.get("mode") == "INGEST"]
+    return w[-1] if w else None
+
+
+def news_continuity(items: list[dict], prior: dict | None) -> tuple[str, int]:
+    """The injury-news page shows only the latest N items, newest first, with no pagination / archive / cursor. If the
+    new window shares an item with the previous one, nothing published in between can have been skipped (CONTINUOUS);
+    if it shares none, items may have been missed (GAP: fail closed). No previous window: BASELINE."""
+    if prior is None:
+        return "BASELINE", 0
+    n = len({i["item_key"] for i in items} & set(prior.get("item_keys") or []))
+    return ("CONTINUOUS" if n else "GAP"), n
+
+
 # ============================================================================ one acquisition
 def _prior_counts(root: Path, key: str) -> list[int]:
     """Row counts of earlier successfully PROCESSED acquisitions (key: news_rows | snapshot_rows)."""
     st = key.replace("_rows", "_status")
     return [int(r[key]) for r in OS.read_jsonl(Path(root) / "acquisitions.jsonl")
             if r.get("mode") != "ACCEPTANCE" and r.get(st) == "PROCESSED" and r.get(key)]
+
+
+def _map_counts(res: dict) -> dict:
+    return {"teams_added": res["teams_added"], "players_added": res["players_added"],
+            "position_discrepancies": len(res["discrepancies"]), "review": len(res["review"])}
 
 
 def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.EventStore | None = None,
@@ -839,18 +972,34 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
         if bad:
             raise WebAcquisitionFailure(bad[0], ",".join(bad), meta)
         prev_keys = {r["item_key"] for r in OS.read_jsonl(root / "news_items.jsonl")}
-        if prev_keys and len(items) >= 20 and not any(i["item_key"] in prev_keys for i in items):
-            rep["warnings"].append(W_NEWS_GAP)
+        prior = prior_news_window(root)
+        cont, overlap = news_continuity(items, prior)
+        rep.update(news_continuity=cont, news_window_overlap=overlap,
+                   news_prior_window=prior.get("acquisition_id") if prior else None)
+        OS.append_jsonl(root / NEWS_WINDOW_FILE, [{
+            "acquisition_id": acq_id, "mode": rep["mode"], "collected_at": meta["collected_at"],
+            "news_sha256": meta["sha256"], "window_size": len(items), "continuity": cont, "overlap": overlap,
+            "prior_window": rep["news_prior_window"], "item_keys": [i["item_key"] for i in items],
+            "rotowire_player_ids": [i["provider_player_id"] for i in items],
+            "displayed_dates": [i["provider_displayed_date"] for i in items]}])
         rep["news_new_items"] = sum(1 for i in items if i["item_key"] not in prev_keys)
         rep["news_classification"] = pd.Series([i["classification_normalized_status"] for i in items]).value_counts().to_dict()
         rep["_news_items"] = items
         fields = [news_fields(i) for i in reversed(items)]          # oldest first: later items get the later seq
         status_fields = [x for x in fields if x["normalized_status"] != "NO_STATUS" and x["rotowire_player_id"]]
         rep["_news_fields"] = fields
+        if ingest and cont == "GAP":
+            # every item is still kept (evidence + continuity for the next poll), but NO news event and NO PROCESSED
+            # entry: the COVERAGE_GAP ledger entry fails every game closed until a later window overlaps this one
+            new = [{**i, "acquisition_id": acq_id} for i in reversed(items) if i["item_key"] not in prev_keys]
+            OS.append_jsonl(root / "news_items.jsonl", new)
+            led._log({"endpoint": "news_injuries", "status": RW.NEWS_GAP_STATUS, "reason": R_NEWS_GAP,
+                      "collected_at": meta["collected_at"], "raw_payload_sha256": meta["sha256"],
+                      "prior_window": rep["news_prior_window"], "records": len(items)})
+            raise WebAcquisitionFailure(R_NEWS_GAP, "news window does not overlap the previous window", meta)
         if ingest:
             if automap and ctx is not None:
-                rep["news_maps"] = {k: v for k, v in extend_maps(ctx, status_fields, map_root, client.clock()).items()
-                                    if k != "review"}
+                rep["news_maps"] = _map_counts(extend_maps(ctx, status_fields, map_root, client.clock()))
                 ident.reload()
             new = [{**i, "acquisition_id": acq_id} for i in reversed(items) if i["item_key"] not in prev_keys]
             OS.append_jsonl(root / "news_items.jsonl", new)          # append-only: every item, never collapsed
@@ -862,10 +1011,10 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
             rep["news_events_new"] = out["events_new"]
         rep["news_status"] = "PROCESSED" if ingest else "PARSED"
     except WebAcquisitionFailure as e:
-        rep["news_status"] = "FAILED"
+        rep["news_status"] = "COVERAGE_GAP" if e.reason == R_NEWS_GAP else "FAILED"
         rep["reasons"].append(e.reason)
         rep["news_error"] = e.detail[:200]
-        if ingest:
+        if ingest and e.reason != R_NEWS_GAP:
             led._log({"endpoint": "news_injuries", "status": "FAILED", "reason": e.reason, "detail": e.detail[:200],
                       "http_status": e.meta.get("http_status"), "raw_payload_sha256": e.meta.get("sha256")})
 
@@ -887,8 +1036,7 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
         rep["_snapshot_fields"] = fields
         if ingest:
             if automap and ctx is not None:
-                rep["snapshot_maps"] = {k: v for k, v in extend_maps(ctx, fields, map_root, client.clock()).items()
-                                        if k != "review"}
+                rep["snapshot_maps"] = _map_counts(extend_maps(ctx, fields, map_root, client.clock()))
                 ident.reload()
             out = RW.ingest_parsed(fields, len(rows), len(rows) - len(fields),
                                    {"collected_at": meta["collected_at"], "raw_payload_sha256": meta["sha256"]},
@@ -906,7 +1054,7 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
                       "http_status": e.meta.get("http_status"), "raw_payload_sha256": e.meta.get("sha256")})
 
     rep["auth"] = "PASS" if set(auth_ok) == {"news", "snapshot_page"} else "FAIL"
-    if rep["auth"] == "PASS" and not rep["reasons"]:
+    if rep["auth"] == "PASS" and not [x for x in rep["reasons"] if x != R_NEWS_GAP]:
         try:
             rep["session_rotated"] = client.persist_rotation()
         except OSError as e:
@@ -917,7 +1065,46 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
 
 
 # ============================================================================ acceptance report (directive §17)
-def acceptance_summary(rep: dict, ctx: RW.IdentityContext | None, map_root: Path = PC.ROTOWIRE_MAP_ROOT) -> dict:
+NEWS_COVERAGE_FINDING = "UNPROVEN_25_ITEM_WINDOW"   # latest-N page, no pagination / archive / cursor (2026-11-08)
+
+
+def identity_report(rep: dict, ctx: RW.IdentityContext, map_root: Path = PC.ROTOWIRE_MAP_ROOT,
+                    aliases: pd.DataFrame | None = None) -> dict:
+    """Team / player resolution of every row this acquisition observed: through the PERSISTED maps (what production
+    resolves with) and after the deterministic additions extend_maps would make (write=False)."""
+    fields = (rep.get("_snapshot_fields") or []) + [x for x in rep.get("_news_fields") or [] if x["rotowire_player_id"]]
+    names = sorted({f["team_name"] for f in fields if f.get("team_name")})
+    persisted = WebIdentity(ctx, map_root)
+    would = extend_maps(ctx, fields, map_root, write=False, aliases=aliases)
+    bad_t = {x["rotowire_team_name"] for x in would["review"] if x["kind"] == "TEAM"}
+    first = {}
+    for f in fields:
+        first.setdefault(str(f["rotowire_player_id"]), f)
+    pres = {p: persisted.resolve(f) for p, f in first.items()}
+    unresolved = {x["rotowire_player_id"]: x for x in would["review"] if x["kind"] == "PLAYER"}
+    for p, r in pres.items():                               # persisted rows that no longer resolve (e.g. roster moved)
+        if p not in unresolved and r["identity_resolution_status"] != "RESOLVED" and \
+                r["identity_method"] not in ("PROVIDER_ID_UNMAPPED", "TEAM_UNMAPPED"):
+            unresolved[p] = {"kind": "PLAYER", "rotowire_player_id": p, "rotowire_team_name": first[p].get("team_name"),
+                             "reason": r["identity_method"], "candidates": []}
+    disc = would["discrepancies"] + [d for d in OS.read_jsonl(Path(map_root) / DISCREPANCY_FILE)
+                                     if d["rotowire_player_id"] in first]
+    n = len(first)
+    return {"TEAM_MAPPING_RATE": round((len(names) - len(bad_t)) / len(names), 4) if names else None,
+            "TEAM_MAPPING_RATE_PERSISTED_MAP": round(sum(1 for x in names if persisted.resolve_team(x)[0]) / len(names), 4)
+            if names else None,
+            "PLAYER_MAPPING_RATE": round((n - len(unresolved)) / n, 4) if n else None,
+            "PLAYER_MAPPING_RATE_PERSISTED_MAP": round(sum(1 for r in pres.values()
+                                                           if r["identity_resolution_status"] == "RESOLVED") / n, 4) if n else None,
+            "OBSERVED_TEAMS": len(names), "OBSERVED_PLAYERS": n,
+            "UNRESOLVED_TEAMS": sorted(bad_t), "UNRESOLVED_PLAYERS": sorted(unresolved.values(), key=lambda x: (x["reason"], x["rotowire_player_id"])),
+            "UNRESOLVED_PLAYER_REASONS": pd.Series([x["reason"] for x in unresolved.values()]).value_counts().to_dict(),
+            "POSITION_DISCREPANCIES": disc,
+            "PENDING_MAP_ADDITIONS": {"teams": would["teams_added"], "players": would["players_added"]}}
+
+
+def acceptance_summary(rep: dict, ctx: RW.IdentityContext | None, map_root: Path = PC.ROTOWIRE_MAP_ROOT,
+                       aliases: pd.DataFrame | None = None) -> dict:
     snap, news = rep.get("_snapshot_rows") or [], rep.get("_news_items") or []
     rows = snap + news
     out = {"ROTOWIRE_WEB_AUTH": rep.get("auth"), "SNAPSHOT_HTTP": rep.get("snapshot_http"),
@@ -925,25 +1112,17 @@ def acceptance_summary(rep: dict, ctx: RW.IdentityContext | None, map_root: Path
            "SNAPSHOT_ROWS": rep.get("snapshot_rows", 0), "NEWS_ROWS": rep.get("news_rows", 0),
            "PLAYER_ID_EXTRACTION_RATE": round(sum(1 for r in rows if r["provider_player_id"]) / len(rows), 4) if rows else None,
            "REASONS": rep.get("reasons"), "WARNINGS": rep.get("warnings"),
+           "NEWS_WINDOW_SIZE": rep.get("news_rows", 0), "NEWS_CONTINUITY": rep.get("news_continuity"),
+           "NEWS_WINDOW_OVERLAP": rep.get("news_window_overlap"),
+           "NEWS_DISPLAYED_DATES": pd.Series([i["provider_displayed_date"] for i in news]).value_counts().sort_index().to_dict(),
+           "NEWS_COVERAGE_COMPLETE": NEWS_COVERAGE_FINDING,
            "NEWS_CLASSIFICATION": rep.get("news_classification"),
            "SNAPSHOT_STATUS_LABELS": rep.get("snapshot_status_labels"),
            "SNAPSHOT_UNRECOGNIZED_LABELS": rep.get("snapshot_unrecognized_labels"),
            "NEWS_TIMESTAMP_STATUS": pd.Series([i["provider_timestamp_status"] for i in news]).value_counts().to_dict(),
            "SUBSCRIBER_ANALYSIS_VISIBLE": sum(1 for i in news if i["subscriber_analysis"])}
     if ctx is not None and rows:
-        fields = (rep.get("_snapshot_fields") or []) + [x for x in rep.get("_news_fields") or [] if x["rotowire_player_id"]]
-        names = {f["team_name"] for f in fields if f.get("team_name")}
-        persisted = WebIdentity(ctx, map_root)
-        would = extend_maps(ctx, fields, map_root, write=False)
-        exact_teams = {n for n in names if MT.resolve_team(n, ctx._tidx)[0]}
-        out["TEAM_MAPPING_RATE"] = round(len(exact_teams | (names & set(persisted.team))) / len(names), 4) if names else None
-        out["TEAM_MAPPING_RATE_PERSISTED_MAP"] = round(len(names & set(persisted.team)) / len(names), 4) if names else None
-        pids = {str(f["rotowire_player_id"]) for f in fields}
-        unresolved = {str(x["rotowire_player_id"]) for x in would["review"] if x["kind"] == "PLAYER"}
-        out["PLAYER_MAPPING_RATE"] = round(1 - len(unresolved) / len(pids), 4) if pids else None
-        out["UNMAPPED_TEAMS"] = sorted(n for n in names if n not in exact_teams and n not in persisted.team)
-        out["PLAYER_REVIEW_REASONS"] = pd.Series([x["reason"] for x in would["review"] if x["kind"] == "PLAYER"]
-                                                 ).value_counts().to_dict()
+        out.update(identity_report(rep, ctx, map_root, aliases))
     else:
         out["TEAM_MAPPING_RATE"] = "NO_IDENTITY_CONTEXT"
     # one example per observed classification type, for the manual inspection (directive §17): short excerpts only
@@ -956,7 +1135,8 @@ def acceptance_summary(rep: dict, ctx: RW.IdentityContext | None, map_root: Path
                      "displayed_date": i["provider_displayed_date"]}
     out["NEWS_EXAMPLES_BY_RULE"] = ex
     ok = (out["ROTOWIRE_WEB_AUTH"] == "PASS" and out["SNAPSHOT_HTTP"] == 200 and out["NEWS_HTTP"] == 200
-          and out["SNAPSHOT_ROWS"] > 0 and out["NEWS_ROWS"] > 0 and not rep.get("reasons"))
+          and out["SNAPSHOT_ROWS"] > 0 and out["NEWS_ROWS"] > 0 and not rep.get("reasons")
+          and out["TEAM_MAPPING_RATE"] == 1.0)                # every observed team resolves (maps or curated alias)
     out["ROTOWIRE_WEB_LIVE_ACCEPTANCE"] = "PASS" if ok else "FAIL"
     return out
 
@@ -983,17 +1163,33 @@ def main(argv=None) -> None:
                       {"status": summ["ROTOWIRE_WEB_LIVE_ACCEPTANCE"], "acquisition_id": rep["acquisition_id"],
                        "at": rep.get("finished_at"), "parser_version": PARSER_VERSION,
                        **{k: summ.get(k) for k in ("SNAPSHOT_ROWS", "NEWS_ROWS", "PLAYER_ID_EXTRACTION_RATE",
-                                                   "TEAM_MAPPING_RATE", "REASONS")}})
+                                                   "TEAM_MAPPING_RATE", "TEAM_MAPPING_RATE_PERSISTED_MAP",
+                                                   "PLAYER_MAPPING_RATE", "PLAYER_MAPPING_RATE_PERSISTED_MAP",
+                                                   "NEWS_COVERAGE_COMPLETE", "REASONS")},
+                       "unresolved_teams": len(summ.get("UNRESOLVED_TEAMS") or []),
+                       "unresolved_players": len(summ.get("UNRESOLVED_PLAYERS") or []),
+                       "position_discrepancies": len(summ.get("POSITION_DISCREPANCIES") or [])})
         print(json.dumps(summ, indent=1, default=str))
         return
     if ctx is None:
         raise SystemExit("no identity context: refusing to map or ingest")
     if a.cmd == "build-maps":
         rep = acquire(client, ctx, ingest=False, stage="build-maps")
-        fields = (rep.get("_snapshot_fields") or []) + [x for x in rep.get("_news_fields") or []
-                                                        if x["rotowire_player_id"] and x["normalized_status"] != "NO_STATUS"]
-        res = extend_maps(ctx, fields) if not rep["reasons"] else {"refused": rep["reasons"]}
-        print(json.dumps({k: (v if k != "review" else len(v)) for k, v in res.items()}, indent=1, default=str))
+        fields = (rep.get("_snapshot_fields") or []) + [x for x in rep.get("_news_fields") or [] if x["rotowire_player_id"]]
+        if rep["reasons"]:
+            print(json.dumps({"refused": rep["reasons"]}))
+            return
+        res = extend_maps(ctx, fields)
+        art = {"acquisition_id": rep["acquisition_id"], "at": rep.get("finished_at"), "parser_version": PARSER_VERSION,
+               "team_rows_added": res["team_rows"], "player_rows_added": res["player_rows"],
+               "position_discrepancies": res["discrepancies"],
+               "unresolved": sorted(res["review"], key=lambda x: (x["kind"], x["reason"], str(x.get("rotowire_player_id"))))}
+        OS.write_once(PC.ROTOWIRE_MAP_ROOT / "build_maps" / f"{rep['acquisition_id']}.json", art)   # immutable audit record
+        print(json.dumps({"acquisition_id": rep["acquisition_id"], "teams_added": res["teams_added"],
+                          "players_added": res["players_added"], "position_discrepancies": len(res["discrepancies"]),
+                          "unresolved_teams": sum(1 for x in res["review"] if x["kind"] == "TEAM"),
+                          "unresolved_players": sum(1 for x in res["review"] if x["kind"] == "PLAYER"),
+                          "audit": str(PC.ROTOWIRE_MAP_ROOT / "build_maps" / f"{rep['acquisition_id']}.json")}, indent=1))
         return
     rep = acquire(client, ctx, store=RW.EventStore(), stage="manual-acquire")
     print(json.dumps({k: v for k, v in rep.items() if not k.startswith("_")}, indent=1, default=str))

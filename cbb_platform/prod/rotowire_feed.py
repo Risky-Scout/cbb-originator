@@ -472,16 +472,37 @@ def freshness_bound_minutes(minutes_to_tip: float) -> int:
     return PC.AVAILABILITY_FRESHNESS_BOUNDS_MINUTES[-1][1]
 
 
+NEWS_COVERAGE_GAP = "ROTOWIRE_WEB_NEWS_COVERAGE_GAP"   # a news window that does not overlap the previous one
+NEWS_GAP_STATUS = "COVERAGE_GAP"                       # request-ledger status of such a news acquisition
+
+
+def news_gap_open(entries: list[dict], as_of) -> datetime | None:
+    """collected_at of the latest news COVERAGE_GAP at or before as_of that no later PROCESSED news acquisition has
+    closed, else None. While a gap is open, items may have been missed: every game fails closed (never assume none)."""
+    lim = RA._utc(pd.Timestamp(as_of).to_pydatetime())
+    gaps = [RA._utc(e["collected_at"]) for e in entries if e.get("endpoint") == "news_injuries"
+            and e.get("status") == NEWS_GAP_STATUS and e.get("collected_at") and RA._utc(e["collected_at"]) <= lim]
+    if not gaps:
+        return None
+    g, ok = max(gaps), RA.last_success(entries, "news_injuries", lim)
+    return g if ok is None or ok <= g else None
+
+
 def freshness(entries: list[dict], games: pd.DataFrame, as_of) -> dict:
-    """{game_id: [reasons]} + detail. Both the news feed and the snapshot must have a PROCESSED acquisition."""
+    """{game_id: [reasons]} + detail. Both the news feed and the snapshot must have a PROCESSED acquisition, and no
+    news coverage gap may be open (news_gap_open)."""
     aso = RA._utc(pd.Timestamp(as_of).to_pydatetime())
     last = {ep: RA.last_success(entries, ep, aso) for ep in ("news_injuries", "snapshot")}
+    gap = news_gap_open(entries, aso)
     out, detail = {}, {}
     for g in games.itertuples(index=False):
         tip = RA._utc(pd.Timestamp(g.start_time).to_pydatetime())
         mtt = (tip - aso).total_seconds() / 60.0
         bound = freshness_bound_minutes(mtt)
-        if any(v is None for v in last.values()):
+        if gap is not None:
+            out[g.canonical_game_id] = [NEWS_COVERAGE_GAP]
+            age = None
+        elif any(v is None for v in last.values()):
             out[g.canonical_game_id] = ["AVAILABILITY_FEED_UNAVAILABLE"]
             age = None
         else:
@@ -489,7 +510,7 @@ def freshness(entries: list[dict], games: pd.DataFrame, as_of) -> dict:
             out[g.canonical_game_id] = ["AVAILABILITY_STALE"] if age > bound else []
         detail[g.canonical_game_id] = {"minutes_to_tip": round(mtt, 1), "bound_minutes": bound,
                                        "acquisition_age_minutes": None if age is None else round(age, 1)}
-    return {"game_reasons": out, "detail": detail,
+    return {"game_reasons": out, "detail": detail, "news_coverage_gap_since": gap.isoformat() if gap else None,
             "last_success": {k: (v.isoformat() if v else None) for k, v in last.items()}}
 
 
