@@ -148,3 +148,27 @@ ROTOWIRE_CRITICAL_WINDOW_HOURS = 3.0                         # inside this windo
 # Changed only by a recorded G4B evidence review, never to launch.
 AVAILABILITY_G4B_STATUS = "ACCUMULATING"
 REAL_MONEY_ACTIONABILITY = "ENABLED" if AVAILABILITY_G4B_STATUS == "PASS" else "DISABLED_BY_AVAILABILITY_VALIDATION"
+
+# ------------------------------------------------------------------ RotoWire acquisition SOURCE (prod/rotowire_web_acquire.py)
+# ROTOWIRE_SOURCE = DISABLED | API | WEB selects only HOW availability evidence is acquired; reconciliation
+# (prod/rotowire_feed) and conditioning (prod/inputs.apply_availability) are the same for every source.
+#   DISABLED  no acquisition, nothing conditioned on RotoWire
+#   API       the official RotoWire B2B API adapter (prod/rotowire_acquire.py; needs ROTOWIRE_API_KEY)
+#   WEB       the authenticated RotoWire subscriber web adapter (prod/rotowire_web_acquire.py; never ROTOWIRE_API_KEY)
+# Unset: the legacy rule (prod/lifecycle.rotowire_state: API key + smoke marker), so existing deployments are unchanged.
+ROTOWIRE_SOURCE_ENV = "ROTOWIRE_SOURCE"
+ROTOWIRE_SOURCES = ("DISABLED", "API", "WEB")
+ROTOWIRE_WEB_COOKIE_ENV = "ROTOWIRE_WEB_COOKIE_FILE"         # protected subscriber session file (never in the repo)
+ROTOWIRE_WEB_ROOT = PROD_ROOT / "availability" / "rotowire_web"   # immutable raw evidence + acquisition / news logs
+ROTOWIRE_WEB_FEED_VERSION = "cbb-prod-rotowire-web-1.0.0"
+
+
+def rotowire_source() -> str | None:
+    """The configured RotoWire acquisition source, or None when ROTOWIRE_SOURCE is unset (legacy rule). Any other
+    value raises: an unrecognized source never silently means 'enabled'."""
+    v = (_os.environ.get(ROTOWIRE_SOURCE_ENV) or "").strip().upper()
+    if not v:
+        return None
+    if v not in ROTOWIRE_SOURCES:
+        raise ValueError(f"{ROTOWIRE_SOURCE_ENV} must be one of {ROTOWIRE_SOURCES}")
+    return v

@@ -289,6 +289,7 @@ def load_identity_context(state_root: Path = PC.STATE_ROOT, history_db: Path = P
                                   any_value(mascot) AS mascot FROM core.teams GROUP BY 1""").df()
     con.close()
     teams = pd.concat([teams, inc_teams[~inc_teams["canonical_team_id"].isin(teams["canonical_team_id"])]], ignore_index=True)
+    teams["mascot"] = teams["mascot"].astype(object).where(teams["mascot"].notna(), None)   # pd.NA is not a truth value
     rd = lambda n: pd.read_csv(Path(map_root) / n, dtype=str) if (Path(map_root) / n).exists() else None
     return IdentityContext(teams, roster, rd("rotowire_team_map.csv"), rd("rotowire_player_map.csv"))
 
@@ -502,7 +503,6 @@ def ingest(fetch: dict, endpoint: str, ctx: IdentityContext, store: EventStore, 
     except MalformedResponse as e:
         session._log({**base, "status": "MALFORMED_RESPONSE", "error": str(e)})
         return {"endpoint": endpoint, "status": "MALFORMED_RESPONSE", "records": 0}
-    kind = KIND_OF[endpoint]
     parsed, malformed = [], 0
     for r in recs:
         f = extract(r, endpoint)
@@ -510,6 +510,19 @@ def ingest(fetch: dict, endpoint: str, ctx: IdentityContext, store: EventStore, 
             malformed += 1
             continue
         parsed.append(f)
+    return ingest_parsed(parsed, len(recs), malformed, fetch, endpoint, ctx, store, session)
+
+
+def ingest_parsed(parsed: list[dict], n_records: int, malformed: int, fetch: dict, endpoint: str, ctx, store: EventStore,
+                  session, extra: dict | None = None) -> dict:
+    """Already-extracted records (extract() field layout) -> new events (idempotent) + a PROCESSED ledger entry.
+    The one reconciliation path for every acquisition source: the API adapter (ingest above) and the authenticated web
+    adapter (prod/rotowire_web_acquire.py) both land here. `extra` adds provenance fields to every event (e.g. the
+    web source path); it never changes a status, an ordering key or a semantic key field."""
+    extra = dict(extra or {})
+    collected = fetch["collected_at"]
+    base = {"endpoint": endpoint, "collected_at": collected, "raw_payload_sha256": fetch["raw_payload_sha256"]}
+    kind = KIND_OF[endpoint]
     events = []
     if endpoint == "snapshot":
         prior = store.frame()
@@ -531,7 +544,7 @@ def ingest(fetch: dict, endpoint: str, ctx: IdentityContext, store: EventStore, 
                 continue
             rec = "MATCHES_LATEST_NEWS" if last_news.get(pid) == f["normalized_status"] else "NO_MATCHING_NEWS_UPDATE"
             e = _event({**f, "source_datetime": None}, ctx.resolve(f), kind, endpoint, collected, fetch["raw_payload_sha256"],
-                       reconciliation=rec)
+                       reconciliation=rec, **extra)
             e["semantic_key"] = semantic_key({**e, "source_datetime": collected})   # a snapshot change is a new observation
             e["event_id"] = "RW-" + e["semantic_key"][:20]
             events.append(e)
@@ -542,18 +555,19 @@ def ingest(fetch: dict, endpoint: str, ctx: IdentityContext, store: EventStore, 
                 f.update(rotowire_player_id=pid, raw_status=None, normalized_status=NOT_LISTED, record_sha256=None)
                 ident = {k: prev.get(k) for k in ("canonical_player_id", "canonical_team_id", "identity_resolution_status",
                                                   "identity_method", "team_resolution")}
-                e = _event(f, ident, kind, endpoint, collected, fetch["raw_payload_sha256"], reconciliation="LEFT_CURRENT_LIST")
+                e = _event(f, ident, kind, endpoint, collected, fetch["raw_payload_sha256"], reconciliation="LEFT_CURRENT_LIST",
+                           **extra)
                 e["semantic_key"] = semantic_key({**e, "source_datetime": collected})
                 e["event_id"] = "RW-" + e["semantic_key"][:20]
                 events.append(e)
     else:
-        events = [_event(f, ctx.resolve(f), kind, endpoint, collected, fetch["raw_payload_sha256"]) for f in parsed]
+        events = [_event(f, ctx.resolve(f), kind, endpoint, collected, fetch["raw_payload_sha256"], **extra) for f in parsed]
     written = store.append(events)
     status = pd.Series([e["normalized_status"] for e in events]).value_counts().to_dict() if events else {}
     ident = pd.Series([e["identity_resolution_status"] for e in events]).value_counts().to_dict() if events else {}
-    session._log({**base, "status": "PROCESSED", "records": len(recs), "malformed_records": malformed,
+    session._log({**base, "status": "PROCESSED", "records": n_records, "malformed_records": malformed,
                   "events_new": written})
-    return {"endpoint": endpoint, "status": "PROCESSED", "records": len(recs), "malformed_records": malformed,
+    return {"endpoint": endpoint, "status": "PROCESSED", "records": n_records, "malformed_records": malformed,
             "events_considered": len(events), "events_new": written, "status_counts": status, "identity_counts": ident,
             "timestamp_status": pd.Series([f["source_datetime_status"] for f in parsed]).value_counts().to_dict()}
 

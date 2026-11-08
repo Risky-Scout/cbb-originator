@@ -52,10 +52,25 @@ case "$CMD" in preflight|lifecycle-morning|refit-retry|tick) ;;
 # ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
 [ "${CBB_MODEL_SOURCE:-ACTIVE_DAILY}" = "ACTIVE_DAILY" ] || [ "${CBB_MODEL_SOURCE}" = "FROZEN_OPENING_BASELINE" ] \
   || refuse "CBB_MODEL_SOURCE=${CBB_MODEL_SOURCE} (ACTIVE_DAILY | FROZEN_OPENING_BASELINE)"
-case "${ROTOWIRE_ENABLED:-false}" in
-  false) ;;
-  true) refuse "ROTOWIRE_ENABLED=true: RotoWire is HARD_DISABLED_NO_KEY on this deployment" ;;
-  *) refuse "ROTOWIRE_ENABLED must be true|false" ;;
+# RotoWire: ROTOWIRE_SOURCE selects the acquisition source (DISABLED | API | WEB); ROTOWIRE_ENABLED must agree with it.
+# Unset source = legacy: ROTOWIRE_ENABLED must be false. WEB never needs ROTOWIRE_API_KEY; its subscriber session lives
+# in a protected file (ROTOWIRE_WEB_COOKIE_FILE: inside the CBB state root or /etc/sports-models, not world-readable).
+case "${ROTOWIRE_ENABLED:-false}" in true|false) ;; *) refuse "ROTOWIRE_ENABLED must be true|false" ;; esac
+case "${ROTOWIRE_SOURCE:-}" in
+  ""|DISABLED)
+    [ "${ROTOWIRE_ENABLED:-false}" = "false" ] || refuse "ROTOWIRE_ENABLED=true needs ROTOWIRE_SOURCE=WEB|API (RotoWire is disabled on this deployment)" ;;
+  API)
+    [ "${ROTOWIRE_ENABLED:-false}" = "true" ] || refuse "ROTOWIRE_SOURCE=API needs ROTOWIRE_ENABLED=true"
+    [ -n "${ROTOWIRE_API_KEY:-}" ] || refuse "ROTOWIRE_SOURCE=API: ROTOWIRE_API_KEY is not set (no RotoWire API key on this deployment)" ;;
+  WEB)
+    [ "${ROTOWIRE_ENABLED:-false}" = "true" ] || refuse "ROTOWIRE_SOURCE=WEB needs ROTOWIRE_ENABLED=true"
+    CK="${ROTOWIRE_WEB_COOKIE_FILE:-}"
+    [ -n "$CK" ] || refuse "ROTOWIRE_SOURCE=WEB: ROTOWIRE_WEB_COOKIE_FILE is not set"
+    case "$CK" in "$STATE"/*|/etc/sports-models/*) ;; *) refuse "ROTOWIRE_WEB_COOKIE_FILE must be inside $STATE or /etc/sports-models" ;; esac
+    [ -f "$CK" ] && [ -r "$CK" ] || refuse "ROTOWIRE_WEB_COOKIE_FILE is not a readable file"
+    PERM="$(stat -c '%a' "$CK" 2>/dev/null || stat -f '%Lp' "$CK")"
+    case "$PERM" in 600|640|400|440) ;; *) refuse "ROTOWIRE_WEB_COOKIE_FILE mode $PERM (must be 0600/0640/0400/0440)" ;; esac ;;
+  *) refuse "ROTOWIRE_SOURCE must be DISABLED|API|WEB" ;;
 esac
 [ "${WIZARDOFODDS_PUBLICATION:-disabled}" = "disabled" ] || refuse "WIZARDOFODDS_PUBLICATION must be disabled"
 [ "${AUTOMATIC_WAGERING:-disabled}" = "disabled" ] || refuse "AUTOMATIC_WAGERING must be disabled"
@@ -104,7 +119,7 @@ OPS="$CBB_PROD_ROOT/ops"
 mem_available_mb() { awk '/^MemAvailable:/ {printf "%.0f", $2 / 1024}' "${CBB_MEMINFO:-/proc/meminfo}"; }
 
 if [ "$CMD" = "preflight" ]; then
-  log "PREFLIGHT OK: commit $HEAD_SHA; prod root $CBB_PROD_ROOT; MemAvailable $(mem_available_mb) MB; history ${CBB_HISTORY_SOURCE:-CONTROL}; rotowire/publication/wagering disabled"
+  log "PREFLIGHT OK: commit $HEAD_SHA; prod root $CBB_PROD_ROOT; MemAvailable $(mem_available_mb) MB; history ${CBB_HISTORY_SOURCE:-CONTROL}; rotowire source ${ROTOWIRE_SOURCE:-DISABLED}; publication/wagering disabled"
   exit 0
 fi
 

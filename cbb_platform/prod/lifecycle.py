@@ -78,6 +78,7 @@ class Life:
     sims: int = PC.SIMS
     artifact_paths: dict | None = None
     rotowire_enabled: bool | None = None     # None -> enabled iff ROTOWIRE_API_KEY is set and the smoke PASSED
+    rotowire_web_client: object = None       # injectable prod.rotowire_web_acquire.WebClient (tests); None -> env session
 
     def now(self) -> pd.Timestamp:
         return SH._utc(self.clock()) if self.clock else pd.Timestamp.now(tz="UTC")
@@ -147,8 +148,19 @@ def _model(life: Life, now: pd.Timestamp):
 
 # ============================================================================ RotoWire availability refresh
 def rotowire_state(life: Life) -> str:
+    """ROTOWIRE_SOURCE (prod/config.rotowire_source) selects the acquisition source; unset keeps the legacy rule.
+    WEB is ENABLED only with a configured subscriber session AND a PASS live-acceptance marker."""
     if life.rotowire_enabled is not None:
         return "ENABLED" if life.rotowire_enabled else "DISABLED"
+    src = PC.rotowire_source()
+    if src == "DISABLED":
+        return "DISABLED"
+    if src == "WEB":
+        if not os.environ.get(PC.ROTOWIRE_WEB_COOKIE_ENV):
+            return "BLOCKED_NO_WEB_SESSION"
+        from cbb_platform.prod import rotowire_web_acquire as RWW
+        acc = OS.read_json(Path(life.ops_root) / "markers" / RWW.ACCEPTANCE_MARKER, {}) or {}
+        return "ENABLED" if acc.get("status") == "PASS" else "DISABLED_WEB_ACCEPTANCE_NOT_PASSED"
     if not os.environ.get(ROTOWIRE_KEY_ENV):
         return "BLOCKED_NO_KEY"
     smoke = OS.read_json(Path(life.ops_root) / "markers" / "ROTOWIRE_SMOKE.json", {})
@@ -377,8 +389,7 @@ def health(life: Life, day: date, **sections) -> dict:
     p = health_path(life, day)
     h = OS.read_json(p, {}) or {}
     h.update({"et_date": day.isoformat(), "code_sha": os.environ.get("CBB_CODE_COMMIT") or SH.source_commit(),
-              "updated_at": life.now().isoformat(), "rotowire_mode": "HARD_DISABLED_NO_KEY"
-              if not os.environ.get(ROTOWIRE_KEY_ENV) else "KEY_PRESENT",
+              "updated_at": life.now().isoformat(), "rotowire_mode": _rotowire_mode(),
               "automatic_wagering": "DISABLED", "wizardofodds_publication": "DISABLED"})
     for k, v in sections.items():
         h[k] = v
@@ -394,6 +405,13 @@ def health(life: Life, day: date, **sections) -> dict:
     tmp.write_text(json.dumps(h, indent=1, default=str))
     os.replace(tmp, p)
     return h
+
+
+def _rotowire_mode() -> str:
+    src = PC.rotowire_source()
+    if src is not None:
+        return f"SOURCE_{src}"
+    return "HARD_DISABLED_NO_KEY" if not os.environ.get(ROTOWIRE_KEY_ENV) else "KEY_PRESENT"
 
 
 def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None) -> dict:
@@ -414,12 +432,36 @@ def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None)
     return out
 
 
+def web_acquire(life: Life) -> dict:
+    """ROTOWIRE_SOURCE=WEB: one authenticated web acquisition (snapshot + injury news) into the existing event store,
+    right before the refresh forecast. Provider failures are recorded with reason codes, never raised: the existing
+    freshness gate then fails the affected games closed."""
+    from cbb_platform.prod import rotowire_feed as RW, rotowire_web_acquire as RWW
+    client = life.rotowire_web_client or RWW.WebClient()
+    try:
+        if life.history_db is None:
+            life.history_db = HX.resolve()
+        ctx = RW.load_identity_context(life.state_root, life.history_db)
+    except Exception as e:                               # noqa: BLE001 -- no roster: nothing can be resolved
+        return {"status": "BLOCKED", "reason": f"NO_IDENTITY_CONTEXT ({type(e).__name__})"}
+    # the same event store / request ledger forecast() and prod.run.daily read (PC paths follow CBB_PROD_ROOT)
+    rep = RWW.acquire(client, ctx, store=RW.EventStore(PC.ROTOWIRE_ROOT), root=PC.ROTOWIRE_WEB_ROOT,
+                      ledger_path=PC.ROTOWIRE_REQUEST_LEDGER, map_root=PC.ROTOWIRE_MAP_ROOT)
+    return {k: rep.get(k) for k in ("acquisition_id", "auth", "news_status", "snapshot_status", "news_rows",
+                                    "snapshot_rows", "news_new_items", "news_events_new", "snapshot_events_new",
+                                    "reasons", "warnings")}
+
+
 def refresh(life: Life, window: str) -> dict:
+    acq = None
+    if PC.rotowire_source() == "WEB" and rotowire_state(life) == "ENABLED":
+        acq = web_acquire(life)
     rec = forecast(life, window)
     out = {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
-    health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": {
-        "rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note")}},
-        exports=out["exports"])
+    sec = {"rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note")}
+    if acq is not None:
+        out["rotowire_web_acquisition"] = sec["rotowire_web_acquisition"] = acq
+    health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": sec}, exports=out["exports"])
     return out
 
 
