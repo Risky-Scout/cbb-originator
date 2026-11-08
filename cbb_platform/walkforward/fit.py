@@ -164,7 +164,12 @@ class _Inputs:
                 else:
                     self._ready[kk] = pd.concat([h.pop(kk), new["oos" if kk == "store" else kk]], ignore_index=True)
             del h
-        return self._ready.pop(k)
+        from cbb_platform import duckdb_limits as DLM
+        out = self._ready.pop(k)
+        if k == "frame":                             # marginal.fit_v0 copies it (frame[mask].copy()): hold the
+            out = DLM.spill_frame(out)               # caller's copy file-backed (identical frame; no-op off-Droplet)
+            DLM.release()
+        return out
 
 
 def inputs(cfg: dict, new: dict | None) -> _Inputs:

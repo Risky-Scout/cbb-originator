@@ -281,6 +281,37 @@ def low_memory_fetch(spool_dir: Path | str | None = None):
         release()
 
 
+SPILL_MIN_BYTES = 64 * 2**20
+
+
+def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """The same DataFrame (same columns, index, dtypes, values and block layout) with each large NumPy block held in a
+    memory-mapped file of this process's CBB spill directory instead of anonymous memory: its pages are file-backed and
+    reclaimable by the kernel under the cgroup ceiling, while a frozen fit copies what it needs (e.g. marginal.fit_v0's
+    frame[mask].copy()) into ordinary memory. The file is unlinked at once (the mapping keeps it until the frame is
+    freed). No-op unless CBB_DUCKDB_TEMP_DIR is configured (Droplet) or the frame is small."""
+    tmp = settings().get("temp_directory")
+    blocks = df._mgr.blocks
+    if not tmp or sum(b.values.nbytes for b in blocks if isinstance(b.values, np.ndarray)) < SPILL_MIN_BYTES:
+        return df
+    out = []
+    for i, b in enumerate(blocks):
+        v = b.values
+        if isinstance(v, np.ndarray) and v.dtype != object and v.nbytes >= 2**20:
+            path = Path(tmp) / f"frame-{id(df)}-{i}.npy"
+            mm = np.lib.format.open_memmap(path, mode="w+", dtype=v.dtype, shape=v.shape,
+                                           fortran_order=bool(v.flags["F_CONTIGUOUS"] and not v.flags["C_CONTIGUOUS"]))
+            mm[...] = v
+            mm.flush()
+            path.unlink()
+            v = mm.view(np.ndarray)                  # a plain ndarray (as before); the mapping is its base
+        out.append((v, b.mgr_locs.as_array))
+    res = create_dataframe_from_blocks(out, index=df.index, columns=df.columns)
+    if not res.dtypes.equals(df.dtypes):
+        raise DuckDBLimitError("spilled frame dtypes differ")
+    return res
+
+
 def release() -> None:
     """Return freed memory to the OS (Arrow pool + glibc arenas). No effect on any value."""
     gc.collect()

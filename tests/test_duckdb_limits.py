@@ -249,3 +249,31 @@ def test_stage3_connect_untouched_without_configuration(monkeypatch):
     before = S3B.connect
     DLM.install()
     assert S3B.connect is before
+
+
+def test_spill_frame_identical_values_dtypes_and_layout(monkeypatch, tmp_path):
+    n = 300_000
+    rng = np.random.default_rng(1)
+    df = pd.DataFrame({"a": rng.normal(size=n), "s": pd.array([f"x{i % 7}" for i in range(n)], dtype="str"),
+                       "b": rng.normal(size=n), "i": rng.integers(0, 9, n).astype("int32"),
+                       "t": pd.date_range("2025-01-01", periods=n, freq="s", tz="America/New_York"), "c": rng.normal(size=n)})
+    df = df.copy()                                            # consolidated blocks, as a loader / concat returns
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    got = DLM.spill_frame(df)
+    pd.testing.assert_frame_equal(got, df, check_exact=True)
+    assert _layout(got) == _layout(df)
+    fl = [b for b in got._mgr.blocks if str(b.dtype) == "float64"][0]
+    assert type(fl.values) is np.ndarray and isinstance(fl.values.base, np.memmap)
+    assert not [p for p in (tmp_path / "t").rglob("frame-*")]           # unlinked; mapping keeps the data
+    tr = got[got["i"] <= 8].copy()                                       # the frozen fit's access pattern
+    tr["_w"] = 1.0
+    pd.testing.assert_frame_equal(tr.drop(columns="_w"), df, check_exact=True)
+    a = got[["a", "b", "c"]].to_numpy()
+    assert np.array_equal(a, df[["a", "b", "c"]].to_numpy())
+
+
+def test_spill_frame_noop_without_configuration(monkeypatch):
+    monkeypatch.delenv(DLM.TMP_ENV, raising=False)
+    df = pd.DataFrame({"a": np.arange(10.0)})
+    assert DLM.spill_frame(df) is df
