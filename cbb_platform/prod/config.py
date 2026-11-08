@@ -161,6 +161,7 @@ ROTOWIRE_SOURCES = ("DISABLED", "API", "WEB")
 ROTOWIRE_WEB_COOKIE_ENV = "ROTOWIRE_WEB_COOKIE_FILE"         # protected subscriber session file (never in the repo)
 ROTOWIRE_WEB_ROOT = PROD_ROOT / "availability" / "rotowire_web"   # immutable raw evidence + acquisition / news logs
 ROTOWIRE_WEB_TEAM_ALIASES = Path(__file__).with_name("rotowire_web_team_aliases.csv")   # curated, committed
+ROTOWIRE_WEB_PLAYER_ALIASES = Path(__file__).with_name("rotowire_web_player_aliases.csv")  # curated, committed
 ROTOWIRE_WEB_FEED_VERSION = "cbb-prod-rotowire-web-1.0.0"
 
 

@@ -795,3 +795,60 @@ def test_coverage_gap_code_is_known_blocking_and_unpublishable():
     c = RW.NEWS_COVERAGE_GAP
     assert c in RD.AVAILABILITY_GAME_REASONS and RD.evaluate((), (c,))["readiness_state"] == "BLOCKED"
     assert PB.CODE_CONDITION[c] == "MISSING_STATE" and PB.condition_of(c)[:3] == (False, False, False)
+
+
+# ============================================================================ curated player aliases (2026-11-08 review)
+def paliases(*rows):
+    return pd.DataFrame([dict(zip(W.PLAYER_ALIAS_COLS, (*r, "DOCUMENTED_NICKNAME", "2026-11-08", "test"))) for r in rows],
+                        columns=W.PLAYER_ALIAS_COLS)
+
+
+def test_committed_player_alias_file_is_exactly_the_three_reviewed_rows_and_valid(tmp_path):
+    m = W.player_aliases()
+    assert m[["rotowire_player_id", "rotowire_player_name", "canonical_player_name", "alias_type"]].values.tolist() == [
+        ["23638", "Matthew Hodge", "Matt Hodge", "SHORT_FORM_FIRST_NAME"],
+        ["25862", "Jason Drake", "Deuce Drake", "DOCUMENTED_NICKNAME"],
+        ["28030", "Mathias Vazquez", "Mathias Alessanco", "DOCUMENTED_FULL_NAME_FORM"]]
+    assert m["canonical_player_id"].str.fullmatch(r"P-[0-9a-f]{16}").all()
+    assert m["evidence"].str.len().min() > 100                      # every nontrivial alias carries its audit note
+    bad = tmp_path / "p.csv"
+    for broken, msg in ((pd.concat([m, m.iloc[:1]]), "duplicate"), (m.assign(evidence=""), "required"),
+                        (m.assign(alias_type="GUESS"), "alias_type"), (m.drop(columns="evidence"), "columns")):
+        broken.to_csv(bad, index=False)
+        with pytest.raises(ValueError, match=msg):
+            W.player_aliases(bad)
+    two = m.copy()
+    two.loc[1, "canonical_player_id"] = two.loc[0, "canonical_player_id"]
+    two.to_csv(bad, index=False)
+    with pytest.raises(ValueError, match="duplicate canonical_player_id"):
+        W.player_aliases(bad)
+
+
+def test_player_alias_maps_only_the_exact_reviewed_id_name_and_team(ctx, tmp_path):
+    al = paliases(("401", "Annie Lee", "Home U", "P2", "Ann Lee", "T1"))
+    res = W.extend_maps(ctx, [_f("401", "Annie", "Lee", "Home U", pos="F")], tmp_path, aliases=aliases(), player_alias=al)
+    pm = pd.read_csv(tmp_path / W.PLAYER_MAP_FILE, dtype=str)
+    assert pm[["rotowire_player_id", "canonical_player_id", "method"]].values.tolist() == [["401", "P2", W.M_PLAYER_ALIAS]]
+    assert not res["review"]
+    assert W.WebIdentity(ctx, tmp_path).resolve({"team_name": "Home U", "rotowire_player_id": "401"}
+                                                 )["canonical_player_id"] == "P2"
+
+
+def test_player_alias_is_refused_on_any_mismatch_or_conflict(ctx, tmp_path):
+    cases = {"402": (("402", "Annie Lee", "Home U", "P2", "Ann Lee", "T1"), _f("402", "Anne", "Lee", "Home U")),   # name differs
+             "403": (("403", "Annie Lee", "Home U", "P2", "Ann Lee", "T1"), _f("403", "Annie", "Lee", "Away St")),  # team differs
+             "404": (("404", "Zed Q", "Home U", "P5", "Kai Ito", "T1"), _f("404", "Zed", "Q", "Home U"))}           # not on T1
+    for pid, (row, f) in cases.items():
+        res = W.extend_maps(ctx, [f], tmp_path / pid, aliases=aliases(), player_alias=paliases(row))
+        assert [x["reason"] for x in res["review"] if x["kind"] == "PLAYER"] == ["CURATED_PLAYER_ALIAS_MISMATCH"], pid
+        assert not (tmp_path / pid / W.PLAYER_MAP_FILE).exists()
+    # the alias names a canonical player another RotoWire ID already holds -> neither silently doubles up
+    W.extend_maps(ctx, [_f("101", "Jon", "Doe", "Home U")], tmp_path / "dup", aliases=aliases(), player_alias=paliases())
+    res = W.extend_maps(ctx, [_f("405", "Jonny", "Doe", "Home U")], tmp_path / "dup", aliases=aliases(),
+                        player_alias=paliases(("405", "Jonny Doe", "Home U", "P1", "Jon Doe", "T1")))
+    assert [x["reason"] for x in res["review"]] == ["CANONICAL_PLAYER_ALREADY_MAPPED"]
+    # an alias that disagrees with an exact-name resolution is never applied
+    res = W.extend_maps(ctx, [_f("406", "Ann", "Lee", "Home U", pos="F")], tmp_path / "x", aliases=aliases(),
+                        player_alias=paliases(("406", "Ann Lee", "Home U", "P1", "Jon Doe", "T1")))
+    assert [x["reason"] for x in res["review"]] == ["CURATED_PLAYER_ALIAS_CONFLICTS_WITH_EXACT_NAME"]
+    assert not (tmp_path / "x" / W.PLAYER_MAP_FILE).exists()

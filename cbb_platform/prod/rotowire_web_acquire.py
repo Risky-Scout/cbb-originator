@@ -586,6 +586,10 @@ M_TEAM_EXACT = "EXACT_NORMALIZED_TEAM_NAME"
 M_TEAM_ALIAS = "CURATED_EXACT_ALIAS"
 M_PLAYER_EXACT = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER"
 M_PLAYER_POS = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER_POSITION_DISCREPANCY"
+M_PLAYER_ALIAS = "CURATED_PLAYER_ALIAS"
+PLAYER_ALIAS_COLS = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "canonical_player_id",
+                     "canonical_player_name", "canonical_team_id", "alias_type", "verified_on", "evidence"]
+PLAYER_ALIAS_TYPES = ("SHORT_FORM_FIRST_NAME", "PUNCTUATION_OR_SUFFIX", "DOCUMENTED_NICKNAME", "DOCUMENTED_FULL_NAME_FORM")
 
 
 def team_aliases(path: Path | None = None) -> pd.DataFrame:
@@ -600,6 +604,25 @@ def team_aliases(path: Path | None = None) -> pd.DataFrame:
     dup = m[m["rotowire_team_name"].duplicated(keep=False)]
     if len(dup):
         raise ValueError(f"rotowire web team aliases: duplicate names {sorted(dup['rotowire_team_name'])}")
+    return m
+
+
+def player_aliases(path: Path | None = None) -> pd.DataFrame:
+    """The curated, committed RotoWire-web player aliases (prod/rotowire_web_player_aliases.csv), keyed by the
+    provider-native RotoWire player ID. Each row was verified by a human with written evidence (alias_type says which
+    permitted variant). Applied only when the observed RotoWire name AND team equal the row exactly, the canonical
+    player is on that team's current roster, and no other RotoWire ID holds him. Never inferred at run time."""
+    m = pd.read_csv(path or PC.ROTOWIRE_WEB_PLAYER_ALIASES, dtype=str, keep_default_na=False)
+    if list(m.columns) != PLAYER_ALIAS_COLS:
+        raise ValueError(f"rotowire web player aliases: columns must be {PLAYER_ALIAS_COLS}")
+    if (m[PLAYER_ALIAS_COLS] == "").any().any():
+        raise ValueError("rotowire web player aliases: every field (incl. verified_on, evidence) is required")
+    if not m["alias_type"].isin(PLAYER_ALIAS_TYPES).all():
+        raise ValueError(f"rotowire web player aliases: alias_type must be one of {PLAYER_ALIAS_TYPES}")
+    for c in ("rotowire_player_id", "canonical_player_id"):
+        dup = m[m[c].duplicated(keep=False)]
+        if len(dup):
+            raise ValueError(f"rotowire web player aliases: duplicate {c} {sorted(dup[c])}")
     return m
 
 
@@ -631,7 +654,8 @@ def _review_player(ctx: RW.IdentityContext, f: dict, r: dict) -> dict:
 
 
 def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC.ROTOWIRE_MAP_ROOT, now=None,
-                write: bool = True, aliases: pd.DataFrame | None = None) -> dict:
+                write: bool = True, aliases: pd.DataFrame | None = None,
+                player_alias: pd.DataFrame | None = None) -> dict:
     """Add persisted map rows; never overwrite or remove a row. Teams: exact normalized canonical name, else the curated
     exact alias (team_aliases). Players: exact normalized full name on the mapped team's current roster, unique; a
     position disagreement does NOT reject a unique exact team + name match but is recorded as an audited discrepancy.
@@ -641,6 +665,8 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
     root = Path(map_root)
     aliases = team_aliases() if aliases is None else aliases
     alias = dict(zip(aliases["rotowire_team_name"], aliases["canonical_team_id"]))
+    palias = {r["rotowire_player_id"]: r for r in (player_aliases() if player_alias is None else player_alias
+                                                    ).to_dict("records")}
     tm, pm = _read_map(root / TEAM_MAP_FILE, TEAM_MAP_COLS), _read_map(root / PLAYER_MAP_FILE, PLAYER_MAP_COLS)
     have_t, have_p = set(tm["rotowire_team_name"]), set(pm["rotowire_player_id"].astype(str))
     roster_teams = set(ctx._roster["canonical_team_id"])
@@ -683,6 +709,20 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
         name = " ".join(x for x in (f.get("first_name"), f.get("last_name")) if x)
         row = {"rotowire_player_id": pid, "canonical_team_id": r["canonical_team_id"], "rotowire_player_name": name,
                "rotowire_team_name": f.get("team_name"), "added_at": now, "parser_version": PARSER_VERSION}
+        pa = palias.get(pid)
+        if pa is not None and r["team_resolution"] == "EXPLICIT_MAP" and r["identity_resolution_status"] != "RESOLVED":
+            ok = (pa["rotowire_player_name"] == name and pa["rotowire_team_name"] == f.get("team_name")
+                  and pa["canonical_team_id"] == r["canonical_team_id"]
+                  and (pa["canonical_player_id"], pa["canonical_team_id"]) in set(
+                      zip(ctx._roster["canonical_player_id"], ctx._roster["canonical_team_id"])))
+            if ok:
+                cand.append(({**row, "canonical_player_id": pa["canonical_player_id"], "method": M_PLAYER_ALIAS}, None, f))
+            else:
+                review.append(_review_player(ctx, f, {**r, "identity_method": "CURATED_PLAYER_ALIAS_MISMATCH"}))
+            continue
+        if pa is not None and r["identity_resolution_status"] == "RESOLVED" and r["canonical_player_id"] != pa["canonical_player_id"]:
+            review.append(_review_player(ctx, f, {**r, "identity_method": "CURATED_PLAYER_ALIAS_CONFLICTS_WITH_EXACT_NAME"}))
+            continue
         if r["team_resolution"] != "EXPLICIT_MAP":
             review.append(_review_player(ctx, f, {**r, "identity_method": "TEAM_UNMATCHED"}))
         elif r["identity_resolution_status"] == "RESOLVED":
@@ -1069,13 +1109,13 @@ NEWS_COVERAGE_FINDING = "UNPROVEN_25_ITEM_WINDOW"   # latest-N page, no paginati
 
 
 def identity_report(rep: dict, ctx: RW.IdentityContext, map_root: Path = PC.ROTOWIRE_MAP_ROOT,
-                    aliases: pd.DataFrame | None = None) -> dict:
+                    aliases: pd.DataFrame | None = None, player_alias: pd.DataFrame | None = None) -> dict:
     """Team / player resolution of every row this acquisition observed: through the PERSISTED maps (what production
     resolves with) and after the deterministic additions extend_maps would make (write=False)."""
     fields = (rep.get("_snapshot_fields") or []) + [x for x in rep.get("_news_fields") or [] if x["rotowire_player_id"]]
     names = sorted({f["team_name"] for f in fields if f.get("team_name")})
     persisted = WebIdentity(ctx, map_root)
-    would = extend_maps(ctx, fields, map_root, write=False, aliases=aliases)
+    would = extend_maps(ctx, fields, map_root, write=False, aliases=aliases, player_alias=player_alias)
     bad_t = {x["rotowire_team_name"] for x in would["review"] if x["kind"] == "TEAM"}
     first = {}
     for f in fields:
