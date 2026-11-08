@@ -409,6 +409,8 @@ def status(root: Path = WC.STORE_ROOT) -> dict:
 
 
 def main(argv=None) -> None:
+    from cbb_platform import duckdb_limits as DLM
+    DLM.install()                                    # resource limits only (memory cap + spill); results unchanged
     ap = argparse.ArgumentParser(prog="cbb_platform.walkforward.daily")
     sub = ap.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("morning")

@@ -766,6 +766,11 @@ def step_settle(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
             n_pred += 1
         qs = pd.read_parquet(src / "quote_sides.parquet") if (src / "quote_sides.parquet").exists() else pd.DataFrame()
         qs = qs[qs["game_id"] == gid] if len(qs) else qs
+        from cbb_platform.prod import quote_refresh as QR         # lazy: quote_refresh imports this module
+        qr = QR.receipts_for_game(ctx.ops_root, gid)             # tiered-refresh repricings of this game's PMFs
+        n_refresh = int(len(qr))
+        if n_refresh:
+            qs = pd.concat([x for x in (qs, qr) if len(x)], ignore_index=True)
         for r in qs.itertuples(index=False):
             pa, row = part(r.player_id)
             y = _stat(row, r.market) if pa == "PLAYED" else None
@@ -784,6 +789,7 @@ def step_settle(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                               "closing_decimal_odds": None, "clv": None})
         summ.append({"game_id": gid, "kind": kind, "settled_at": now.isoformat(), "tick_id": tick["tick_id"],
                      "prediction_tick_id": reg[gid]["tick_id"], "quoted_predictions": n_pred, "quote_sides": int(len(qs)),
+                     "refresh_quote_sides": n_refresh,
                      "players": int(len(proj))})
     if chain:
         tmp = tdir / "settlements.jsonl"
@@ -942,6 +948,8 @@ def main(argv=None) -> None:
     ap.add_argument("--allow-revalidation", action="store_true",
                     help="architect action: allow one more quote validation after a recorded FAIL")
     a = ap.parse_args(argv)
+    from cbb_platform import duckdb_limits as DLM
+    DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
     assets = commit = None
     if a.restore or a.persist or a.commit or a.push:          # off-machine I/O lives outside the production layer
         from cbb_platform import ops_persistence as OP

@@ -36,7 +36,7 @@ import duckdb
 import pandas as pd
 import pyarrow as pa
 
-from cbb_platform import config as C
+from cbb_platform import config as C, duckdb_limits as DLM
 from cbb_platform.prod import config as PC, history_extract as HX
 
 VERSION = "cbb-production-history-minimal-1.0.0"
@@ -273,8 +273,13 @@ def load_store_candidate(seasons) -> pd.DataFrame:
            for r, b in con.execute("SELECT relation, arrow_schema_b64 FROM meta.oos_arrow_schema").fetchall()}
 
     def part(rel: str, where: str) -> pd.DataFrame:
-        t = con.execute(f"SELECT {_q(P3.STORE_COLS)} FROM {rel} WHERE {where}").to_arrow_table()
-        return t.cast(sch[rel]).to_pandas()
+        t = con.execute(f"SELECT {_q(P3.STORE_COLS)} FROM {rel} WHERE {where}").to_arrow_table().cast(sch[rel])
+        df = t.to_pandas(self_destruct=True)         # same frame; the Arrow buffers are released while converting
+        del t
+        for c in [c for c in df.columns if isinstance(df[c].array, pd.arrays.ArrowStringArray)]:
+            df[c] = DLM._owned(df[c].array)          # zero-copy strings would keep DuckDB's whole batches alive
+        DLM.release()
+        return df
     parts = []
     main = [s for s in seasons if s in D.OOS_SEASONS]
     if main:

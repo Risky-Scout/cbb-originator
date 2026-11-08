@@ -267,6 +267,26 @@ def receipts(ops_root: Path, games: pd.DataFrame, labels=LIVE_LABELS) -> pd.Data
     return pd.concat(out, ignore_index=True).drop_duplicates("record_id", keep="first").reset_index(drop=True)
 
 
+REFRESH_RECEIPTS = "reprice_side_monitor.jsonl"        # = prod.quote_refresh.REFRESH_FILE (tested)
+
+
+def refresh_receipts(ops_root: Path, date: str, labels=LIVE_LABELS) -> pd.DataFrame:
+    """QUOTE_SIDE receipts of the tiered quote refresh (prod.quote_refresh) for ET slate date `date`: the persisted PMF
+    of the game repriced at a later real quote (no refit, no simulation). Each carries its own tip and cutoff."""
+    src = Path(ops_root) / "quotes" / date / REFRESH_RECEIPTS
+    recs = _jsonl(src)
+    if not recs:
+        return pd.DataFrame()
+    _verify_chain(recs, src)
+    df = pd.DataFrame([r["body"] for r in recs if r.get("record_type") == "QUOTE_SIDE"])
+    if not len(df):
+        return df
+    df = df[df["data_label"].isin(labels)].copy()
+    df["tip_utc"] = df["tip_utc"].map(_utc)
+    df["tick_id"] = None
+    return df.drop_duplicates("record_id", keep="first").reset_index(drop=True)
+
+
 def side_settlements(ops_root: Path) -> pd.DataFrame:
     parts = [pd.read_parquet(p) for p in sorted(Path(ops_root, "ticks").glob("*/side_settlements.parquet"))]
     if not parts:
@@ -362,7 +382,6 @@ def offers(rc: pd.DataFrame, settlements: pd.DataFrame, names: dict) -> tuple[pd
 OFFICIAL_KEY = ("game_id", "player_id", "prop")              # Board / Grade grain: GAME x PLAYER x PROP (BOOK, LINE not)
 SELECTION_VERSION = "cbb-best-offer-selection-2.0.0"
 PROVISIONAL, FROZEN = "PROVISIONAL", "OFFICIAL_FROZEN"
-TIE_DECIMALS = 12               # EV / MODEL% compared after rounding to 1e-12 (prod.pricing probability epsilon)
 TIE_ORDER = ("MAX_EV", "MODEL%", "BETTOR_FAVORABLE_LINE_WHEN_SAME_SIDE", "DECIMAL_ODDS", "EDGE", "OVER_BEFORE_UNDER",
              "BOOK_ALPHA")
 CONTENT_FIELDS = ("selection_version", "record_id", "game_id", "player_id", "team_id", "stat", "pick", "line", "book",
@@ -401,16 +420,29 @@ def eligible_offers(of: pd.DataFrame, cutoffs: dict | None = None, at=None) -> p
     ok = of["pick"].isin(SIDES) & of["odds"].map(valid_american) & of["model_p"].map(lambda v: _f(v) is not None) & \
         of["ev"].map(lambda v: _f(v) is not None) & of["line"].map(lambda v: _f(v) is not None) & \
         of.apply(timely, axis=1)
-    return of[ok]
+    return latest_observation(of[ok])
+
+
+def latest_observation(el: pd.DataFrame) -> pd.DataFrame:
+    """Per game, only the offers of its LATEST quote observation (the receipts of one pricing run: the official tick
+    or one tiered quote refresh): an earlier observation superseded by a newer quote of the same game is no longer an
+    executable offer. Latest = max capture instant, then max prediction_as_of, then run_id. One observation per game
+    (the official-tick-only case) is unchanged."""
+    if not len(el):
+        return el
+    k = el.assign(_cap=el["capture_utc"].map(_utc), _aso=el["prediction_as_of"].map(_utc))
+    b = k.groupby(["game_id", "run_id"], sort=True).agg(_cap=("_cap", "max"), _aso=("_aso", "max")).reset_index()
+    b = b.sort_values(["game_id", "_cap", "_aso", "run_id"], kind="mergesort").drop_duplicates("game_id", keep="last")
+    keep = set(zip(b["game_id"], b["run_id"]))
+    return el[[(g, r) in keep for g, r in zip(el["game_id"], el["run_id"])]]
 
 
 def select_best(g: pd.DataFrame) -> pd.Series:
     """The single official offer of one GAME x PLAYER x PROP: MAXIMUM model EV across every book, line and side.
-    Exact ties only (EV within 1e-12) are broken, in this order, by: higher MODEL%; the bettor-favorable line when every
+    EXACT EV comparison (no rounding, no tolerance); exact ties only are broken, in this order, by: higher MODEL%; the bettor-favorable line when every
     remaining candidate has the same PICK (OVER lower, UNDER higher; skipped when PICKs differ); higher decimal odds;
     higher EDGE; OVER before UNDER; normalized BOOK ascending. Sequential filtering: input-order independent."""
-    c = g.assign(_ev=g["ev"].map(lambda v: round(float(v), TIE_DECIMALS)),
-                 _mp=g["model_p"].map(lambda v: round(float(v), TIE_DECIMALS)),
+    c = g.assign(_ev=g["ev"].map(float), _mp=g["model_p"].map(float),
                  _dec=g["odds"].map(decimal_odds), _edge=g["edge"].map(lambda v: -math.inf if _f(v) is None else float(v)),
                  _book=g["book"].map(norm_book))
     c = c[c["_ev"] == c["_ev"].max()]
@@ -1087,18 +1119,23 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         rep["distributions"] = {"status": "MISSING_EVIDENCE",
                                 "missing": f"no durable PMF evidence (official tick pmfs.parquet or pre-cutoff forecast "
                                            f"snapshot) for ET slate date {date}", "games": missing[:20]}
-    if not len(games):
+    rr = refresh_receipts(ops_root, date, labels)
+    rep["refresh_receipts"] = int(len(rr))
+    if not len(games) and not len(rr):
         for k in ("boards", "grades"):
             rep[k] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game with ET slate date {date} "
                                                                f"in {Path(ops_root) / 'registry' / 'games.jsonl'}"}
         return rep
-    rc = receipts(ops_root, games, labels)
+    rc = receipts(ops_root, games, labels) if len(games) else pd.DataFrame()
+    parts = [x for x in (rc, rr) if len(x)]
+    rc = pd.concat(parts, ignore_index=True).drop_duplicates("record_id", keep="first") if parts else pd.DataFrame()
     of, leak = offers(rc, side_settlements(ops_root), names)
     rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
     rep["raw_quote_rows"] = int(len(of))
     board, graded = of.iloc[0:0], of.iloc[0:0]
     if len(of):
-        cutoffs = dict(zip(games["game_id"], games["cutoff_utc"]))
+        cutoffs = {**(dict(zip(rr["game_id"], rr["cutoff_utc"].map(_utc))) if len(rr) else {}),
+                   **dict(zip(games["game_id"], games["cutoff_utc"]))}       # the registry cutoff wins
         board, graded, rep["official_selection"] = official(of, selections_path(ops_root, date), cutoffs, now)
         rep["official_rows"] = int(len(board))
         rep["official_frozen_rows"] = int(len(graded))

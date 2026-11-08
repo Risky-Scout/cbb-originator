@@ -9,8 +9,9 @@
 #                                               exports, health report. CBB writer lock for the whole job.
 #   cbb-originator-run refit-retry              08:00 ET: no-op unless 07:00 recorded DEFERRED_SHARED_LOCK (writer lock)
 #   cbb-originator-run lifecycle-refresh HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET availability refresh (writer lock)
-#   cbb-originator-run tick                     quote / official-prediction due check (every 10 min; writer lock;
-#                                               the cheap due gate runs first, nothing is requested when nothing is due)
+#   cbb-originator-run tick                     every 10 min (writer lock): official shadow tick only when its cheap due
+#                                               gate says due; then the tiered quote refresh (per-game tier spacing;
+#                                               nothing requested when no game is due; reprice only, never a refit)
 #   CBB_DRY_RUN=1 ...                           run every check, print the command that would run, run nothing
 #
 # Layout (immutable code, mutable state elsewhere):
@@ -64,6 +65,10 @@ for v in OMP_NUM_THREADS OPENBLAS_NUM_THREADS MKL_NUM_THREADS VECLIB_MAXIMUM_THR
 done
 [ "${CBB_DUCKDB_THREADS:-1}" = "1" ] || refuse "CBB_DUCKDB_THREADS must be 1 on the shared Droplet"
 export CBB_DUCKDB_THREADS=1
+# DuckDB memory cap + spill (cbb_platform/duckdb_limits.py): resource settings only; the spill dir must be CBB state
+export CBB_DUCKDB_MEMORY_LIMIT="${CBB_DUCKDB_MEMORY_LIMIT:-700MB}"
+export CBB_DUCKDB_TEMP_DIR="${CBB_DUCKDB_TEMP_DIR:-$STATE/staging/tmp/duckdb}"
+case "$CBB_DUCKDB_TEMP_DIR/" in "$STATE"/*) ;; *) refuse "CBB_DUCKDB_TEMP_DIR must be inside $STATE" ;; esac
 
 # ------------------------------------------------------------------ 2. exact verified code identity
 [ -n "${CBB_EXPECTED_COMMIT:-}" ] || refuse "CBB_EXPECTED_COMMIT is not set"
@@ -109,7 +114,8 @@ case "$CMD" in
   tick)              RUN=("$PY" -m cbb_platform.prod.shadow_tick --ops-root "$OPS") ;;
 esac
 if [ "$DRY" = "1" ]; then
-  log "DRY RUN: would take $WRITER_LOCK (heavy lock $CBB_HEAVY_LOCK only inside the walk-forward step), run: ${RUN[*]}"
+  EXTRA=""; [ "$CMD" = "tick" ] && EXTRA=" (only when due_check says due); then: $PY -m cbb_platform.prod.lifecycle quotes (tiered quote refresh + exports)"
+  log "DRY RUN: would take $WRITER_LOCK (heavy lock $CBB_HEAVY_LOCK only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT spill $CBB_DUCKDB_TEMP_DIR"
   exit 0
 fi
 mkdir -p "$LOCK_DIR"
@@ -119,11 +125,15 @@ flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC
 if [ "$CMD" = "tick" ]; then
   DUE_OUT="$("$PY" cbb_platform/prod/due_check.py "$OPS")"
   log "$(echo "$DUE_OUT" | tr '\n' ' ')"
-  echo "$DUE_OUT" | grep -qx 'due=true' || exit 0
-  set +e; "${RUN[@]}"; RC=$?; set -e
-  # post-tick export (same writer lock): provisional Board from the new priced receipts; frozen at cutoff. No fit.
-  "$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" exports >/dev/null \
-    || log "post-tick exports failed (tick rc=$RC)"
-  exit $RC
+  RC=0
+  if echo "$DUE_OUT" | grep -qx 'due=true'; then
+    set +e; "${RUN[@]}"; RC=$?; set -e       # official tick: sync / settlement / the single T-60 official prediction
+  fi
+  # tiered quote refresh (same writer lock; prod/quote_refresh.py): requests ONLY games due by their tier, reprices the
+  # latest persisted PMF (never fits, never simulates), then rebuilds today's Boards (provisional; frozen at the cutoff)
+  set +e; "$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" quotes >/dev/null; QRC=$?; set -e
+  [ "$QRC" -eq 0 ] || log "quote refresh / exports failed (rc=$QRC, tick rc=$RC)"
+  [ "$RC" -ne 0 ] && exit "$RC"
+  exit "$QRC"
 fi
 exec "${RUN[@]}"

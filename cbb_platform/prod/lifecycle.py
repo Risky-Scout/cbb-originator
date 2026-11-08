@@ -431,6 +431,28 @@ def exports_now(life: Life) -> dict:
     return out
 
 
+def quotes(life: Life, dry_run: bool = False) -> dict:
+    """10-minute quote scheduler wake (prod.quote_refresh): request only due games (tiered by time to cutoff), reprice
+    the latest persisted PMF, rebuild today's Boards (provisional; frozen at the cutoff). Never fits or simulates."""
+    from cbb_platform.prod import quote_refresh as QR
+    ctx = SH.Ctx(ops_root=Path(life.ops_root), prod_root=Path(life.prod_root), history_db=life.history_db or HX.resolve(),
+                 clock=life.clock)
+    life.history_db = ctx.history_db
+    rep = QR.run(ctx, dry_run=dry_run)
+    out = {"lifecycle": "QUOTES", "quote_refresh": rep}
+    day = et_date(life.now())
+    if not dry_run:
+        out["exports"] = _brief(exports_for(life, day))
+    h = OS.read_json(health_path(life, day), {}) or {}
+    tot = h.get("quote_refresh_totals") or {"wakes": 0, "requests": 0, "credits": 0, "receipts": 0}
+    tot = {"wakes": tot["wakes"] + 1, "requests": tot["requests"] + int(rep.get("requests", 0)),
+           "credits": tot["credits"] + int(rep.get("credits", 0)), "receipts": tot["receipts"] + int(rep.get("receipts", 0) or 0)}
+    health(life, day, quote_refresh={k: rep.get(k) for k in ("refresh_id", "now", "status", "reason", "due_games",
+                                                             "requests", "credits", "receipts", "refits_triggered")},
+           quote_refresh_totals=tot, **({"exports": out["exports"]} if "exports" in out else {}))
+    return out
+
+
 def _brief(rep: dict) -> dict:
     return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing")} if isinstance(v, dict) else v
             for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "predicted_games",
@@ -451,9 +473,13 @@ def main(argv=None) -> None:
     f.add_argument("--window", default=INITIAL, choices=(INITIAL,) + ROTOWIRE_REFRESH_TIMES_ET)
     sub.add_parser("schedule")
     sub.add_parser("exports")
+    qp = sub.add_parser("quotes")
+    qp.add_argument("--dry-run", action="store_true")
     rr = sub.add_parser("refit-retry")
     rr.add_argument("--date", default=None)
     a = ap.parse_args(argv)
+    from cbb_platform import duckdb_limits as DLM
+    DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
     life = Life(ops_root=a.ops_root, prod_root=a.prod_root, model_root=a.model_root)
     if a.cmd == "morning":
         out = morning(life, date.fromisoformat(a.date) if a.date else None)
@@ -463,6 +489,8 @@ def main(argv=None) -> None:
         out = forecast(life, a.window)
     elif a.cmd == "exports":
         out = exports_now(life)
+    elif a.cmd == "quotes":
+        out = quotes(life, dry_run=a.dry_run)
     elif a.cmd == "refit-retry":
         out = refit_retry(life, date.fromisoformat(a.date) if a.date else None)
     else:

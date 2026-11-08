@@ -90,31 +90,85 @@ def _sort_team(tf: pd.DataFrame) -> pd.DataFrame:
     return tf.sort_values(["season", "game_id", "team_id"], kind="mergesort").reset_index(drop=True)
 
 
+GROUPS = {"frames": ("frame", "finals"), "part": ("part",), "team": ("team",), "store": ("store",)}
+
+
+def _load(cfg: dict, group: str) -> dict:
+    """One group of the frozen through-2025-26 training inputs, read by the FROZEN loaders (unedited, never mutated).
+    low_memory_fetch only changes how a result reaches pandas (byte-identical frames, duckdb_limits module doc) and is a
+    no-op unless CBB_DUCKDB_TEMP_DIR is configured (Droplet). The loaders are independent pure reads."""
+    from cbb_platform import duckdb_limits as DLM
+    DLM.install()                                    # resource limits only (memory cap + spill); results unchanged
+    fdb, ldb = HS.stage3_paths()                     # CONTROL: the frozen defaults (provenance.LB_FEATURES / LB_LABELS)
+    if group not in GROUPS:
+        raise WalkForwardFitError(f"unknown history group {group}")
+    if group == "store":                             # parquet (CONTROL) / Arrow tables (CANDIDATE): no DuckDB .df()
+        out = {"store": P3.load_store(range(WC.GLM_FIRST_SEASON, WC.OPENING_THROUGH + 1))}
+    else:
+        with DLM.low_memory_fetch():
+            if group == "frames":
+                frame, finals = M.load_frames(cfg, range(WC.MARGINAL_FIRST_SEASON, WC.OPENING_THROUGH + 1),
+                                              features_db=fdb, labels_db=ldb)
+                out = {"frame": frame, "finals": finals}
+            elif group == "part":
+                out = {"part": M.load_participation(range(WC.PARTICIPATION_FIRST_SEASON, WC.OPENING_THROUGH + 1),
+                                                    features_db=fdb, labels_db=ldb)}
+            else:
+                out = {"team": _sort_team(S.load_team_frame(range(WC.TEAM_FIRST_SEASON, WC.OPENING_THROUGH + 1),
+                                                            labels=True))}
+    DLM.release()
+    return out
+
+
 def history(cfg: dict) -> dict:
-    """The frozen through-2025-26 training inputs, read once per process by the FROZEN loaders (never mutated)."""
+    """All five frozen training inputs, read once and kept (equivalence harnesses / inspection). The daily fit does NOT
+    use this cache: it reads each group when its component is fitted and frees it afterwards (inputs())."""
     if not _HIST:
-        fdb, ldb = HS.stage3_paths()                 # CONTROL: the frozen defaults (provenance.LB_FEATURES / LB_LABELS)
-        frame, finals = M.load_frames(cfg, range(WC.MARGINAL_FIRST_SEASON, WC.OPENING_THROUGH + 1), features_db=fdb,
-                                      labels_db=ldb)
-        _HIST.update(frame=frame, finals=finals, source=HS.selected(),
-                     part=M.load_participation(range(WC.PARTICIPATION_FIRST_SEASON, WC.OPENING_THROUGH + 1),
-                                               features_db=fdb, labels_db=ldb),
-                     team=_sort_team(S.load_team_frame(range(WC.TEAM_FIRST_SEASON, WC.OPENING_THROUGH + 1), labels=True)),
-                     store=P3.load_store(range(WC.GLM_FIRST_SEASON, WC.OPENING_THROUGH + 1)))
+        for g in GROUPS:
+            _HIST.update(_load(cfg, g))
+        _HIST["source"] = HS.selected()
     return _HIST
 
 
-def inputs(cfg: dict, new: dict | None) -> dict:
-    """Historical rows + the 2026-27 rows (appended; the frozen frames are never re-sorted)."""
-    h = history(cfg)
-    has_new = new is not None and len(new["frame"]) > 0
-    cat = lambda k: pd.concat([h[k], new[k]], ignore_index=True) if has_new else h[k]
-    out = {"T": WC.PRODUCTION_SEASON if has_new else WC.OPENING_THROUGH, "frame": cat("frame"), "finals": cat("finals"),
-           "part": cat("part"), "team": _sort_team(cat("team")) if has_new else h["team"],
-           "store": pd.concat([h["store"], new["oos"]], ignore_index=True) if has_new else h["store"]}
-    if has_new and (new["frame"]["season"] != WC.PRODUCTION_SEASON).any():
-        raise WalkForwardFitError("a non-production-season row reached the current-season training rows")
-    return out
+class _Inputs:
+    """Historical rows + the 2026-27 rows (appended; the frozen frames are never re-sorted), one component group at a
+    time: pop(k) reads the group's frozen history (or takes it from the history() cache when that was filled), appends
+    the new rows and hands the frame over; nothing is kept, so the walk-forward holds one component's inputs at once
+    (Droplet MemoryMax). The frames are exactly those of the former all-at-once inputs()."""
+
+    def __init__(self, cfg: dict, new: dict | None):
+        self._cfg, self._new = cfg, new
+        self.has_new = new is not None and len(new["frame"]) > 0
+        if self.has_new and (new["frame"]["season"] != WC.PRODUCTION_SEASON).any():
+            raise WalkForwardFitError("a non-production-season row reached the current-season training rows")
+        self.T = WC.PRODUCTION_SEASON if self.has_new else WC.OPENING_THROUGH
+        self._ready: dict = {}
+
+    def __getitem__(self, k):
+        if k == "T":
+            return self.T
+        raise KeyError(f"{k}: use pop() (each input frame is handed over once)")
+
+    def _hist(self, g: str) -> dict:
+        return {k: _HIST[k] for k in GROUPS[g]} if all(k in _HIST for k in GROUPS[g]) else _load(self._cfg, g)
+
+    def pop(self, k: str):
+        if k not in self._ready:
+            g = next(g for g, ks in GROUPS.items() if k in ks)
+            h, new = self._hist(g), self._new
+            for kk in GROUPS[g]:
+                if not self.has_new:
+                    self._ready[kk] = h.pop(kk)
+                elif kk == "team":
+                    self._ready[kk] = _sort_team(pd.concat([h.pop(kk), new[kk]], ignore_index=True))
+                else:
+                    self._ready[kk] = pd.concat([h.pop(kk), new["oos" if kk == "store" else kk]], ignore_index=True)
+            del h
+        return self._ready.pop(k)
+
+
+def inputs(cfg: dict, new: dict | None) -> _Inputs:
+    return _Inputs(cfg, new)
 
 
 # ============================================================================ phase3 composition on supplied frames
@@ -165,20 +219,42 @@ def fit_procedure(T: int, tf: pd.DataFrame, store: pd.DataFrame, log=print) -> d
 
 def fit(cfg: dict, new: dict | None, log=print) -> dict:
     """One complete daily fit: marginal + structural + conditional dispersion + residual dependence."""
+    from cbb_platform import duckdb_limits as DLM
     x = inputs(cfg, new)
-    T = x["T"]
+    T, rows = x["T"], {}
+    # one component at a time (the same frozen calls, in the same order, on the same frames): its inputs are read
+    # outside the season guard exactly as before and released once the component is fitted
+    frame, finals = x.pop("frame"), x.pop("finals")
     with production_season_guard():
-        if S.MAX_SEASON != WC.PRODUCTION_SEASON:
-            raise SeasonGuardViolation("guard did not admit the production season")
-        v0 = M.stl_policy(M.fit_v0(x["frame"], x["finals"], cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
-        pst = M.fit_participation(x["part"], range(WC.PARTICIPATION_FIRST_SEASON, T + 1), B.POLICY, "WALK_FORWARD")
-        params = fit_procedure(T, x["team"], x["store"], log)
+        _admitted()
+        v0 = M.stl_policy(M.fit_v0(frame, finals, cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
+    rows["frame"] = int(len(frame))
+    del frame, finals
+    DLM.release()
+    part = x.pop("part")
+    with production_season_guard():
+        _admitted()
+        pst = M.fit_participation(part, range(WC.PARTICIPATION_FIRST_SEASON, T + 1), B.POLICY, "WALK_FORWARD")
+    rows["part"] = int(len(part))
+    del part
+    DLM.release()
+    team, store = x.pop("team"), x.pop("store")
+    with production_season_guard():
+        _admitted()
+        params = fit_procedure(T, team, store, log)
+    rows["team"], rows["store"] = int(len(team)), int(len(store))
+    del team, store
+    DLM.release()
     if not guard_state()["RESTORED"]:
         raise SeasonGuardViolation(f"season guard not restored after the fit: {guard_state()}")
-    return {"T": T, "v0": v0, "pst": pst, "params": params,
-            "rows": {"frame": int(len(x["frame"])), "part": int(len(x["part"])), "team": int(len(x["team"])),
-                     "store": int(len(x["store"])), "resid": params["resid_rows"]},
+    rows["resid"] = params["resid_rows"]
+    return {"T": T, "v0": v0, "pst": pst, "params": params, "rows": rows,
             "weight_by_season": v0["v2"]["weight_by_season"]}
+
+
+def _admitted() -> None:
+    if S.MAX_SEASON != WC.PRODUCTION_SEASON:
+        raise SeasonGuardViolation("guard did not admit the production season")
 
 
 # ============================================================================ artifacts (deterministic content)

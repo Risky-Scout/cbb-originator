@@ -288,3 +288,11 @@ def test_23_24_25_quote_refresh_no_refit_no_network_no_artifacts(tmp_path, monke
     out = L.exports_now(life)
     assert out["lifecycle"] == "EXPORTS" and out["exports"]["distributions"]["status"] in ("WRITTEN", "MISSING_EVIDENCE")
     assert frozen() == snap
+
+
+def test_ev_comparison_is_exact_no_rounding_or_tolerance():
+    """A larger EV wins however small the difference (no EV rounding / tolerance), even against a higher MODEL%."""
+    lo, hi = 0.05, 0.05 + 2e-15
+    assert hi > lo and round(hi, 12) == round(lo, 12)          # a 1e-12 rounding would have called this a tie
+    sel = _select([_q("a", 17.5, "OVER", "booka", 0.70, -110, lo), _q("b", 17.5, "OVER", "bookb", 0.55, -110, hi)])
+    assert len(sel) == 1 and sel.iloc[0]["book"] == "bookb"

@@ -299,3 +299,38 @@ def test_transfer_manifest_hashes_match_the_frozen_pins():
     assert by["rotowire_event_store"]["required"].startswith("NOT_REQUIRED")
     assert "data/prod/state" in by["ops_working_set"]["notes"] and "release" in by["ops_working_set"]["source"]
     assert not re.search(r"(?i)(api[_-]?key|token|password)\s*[:=]\s*\S{8,}", json.dumps(man))
+
+
+def _fake_venv(app, due: str) -> Path:
+    """A stand-in interpreter that records each invocation (argv) and answers the cheap due check."""
+    log = app["tmp"] / "calls.log"
+    py = app["tmp"] / "venv" / "bin" / "python"
+    py.parent.mkdir(parents=True, exist_ok=True)
+    py.write_text(f"""#!/bin/bash
+echo "$*" >> {log}
+case "$1" in *due_check.py) echo "due={due}"; echo "reason=test" ;; esac
+exit 0
+""")
+    py.chmod(0o755)
+    return log
+
+
+@needs_flock
+@pytest.mark.parametrize("due", ["false", "true"])
+def test_tick_runs_tiered_quote_refresh_every_wake(app, due):
+    log = _fake_venv(app, due)
+    r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")
+    assert r.returncode == 0, r.stderr
+    calls = log.read_text().splitlines()
+    assert "due_check.py" in calls[0]
+    shadow = [c for c in calls if "cbb_platform.prod.shadow_tick" in c]
+    quotes = [c for c in calls if "cbb_platform.prod.lifecycle" in c and c.endswith(" quotes")]
+    assert len(quotes) == 1 and len(shadow) == (1 if due == "true" else 0)
+    assert calls[-1] == quotes[0]                                       # the refresh runs after the official tick
+
+
+def test_duckdb_spill_dir_must_be_cbb_state(app):
+    r = _run(app, "preflight", CBB_DUCKDB_TEMP_DIR="/opt/sports-models/cbb-originator/current/tmp")
+    assert r.returncode == 3 and "CBB_DUCKDB_TEMP_DIR" in r.stderr
+    d = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    assert "lifecycle quotes" in d.stderr and f"spill {app['state']}/staging/tmp/duckdb" in d.stderr
