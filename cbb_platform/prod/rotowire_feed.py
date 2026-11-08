@@ -432,9 +432,16 @@ def player_state(events: pd.DataFrame, as_of) -> pd.DataFrame:
     return pd.DataFrame(out, columns=cols)
 
 
-def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of) -> tuple[pd.DataFrame, dict]:
+def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states: pd.DataFrame | None = None
+                       ) -> tuple[pd.DataFrame, dict]:
     """games: canonical_game_id, home_team_id, away_team_id, feature_cutoff. Returns (the inputs.apply_availability
-    frame, {game_id: [reasons]}). Each game uses the state at min(as_of, its feature cutoff)."""
+    frame, {game_id: [reasons]}). Each game uses the state at min(as_of, its feature cutoff).
+    An unresolved non-ACTIVE player fails his team's games closed UNLESS a curated operational class in force at that
+    instant marks him a KNOWN inactive / stale case at that team (prod/rotowire_player_states: known inactive or stale
+    identity != unresolved identity). Such a player never enters the frame (no projection is conditioned on him).
+    states: the curated table (None -> the committed file)."""
+    from cbb_platform.prod import rotowire_player_states as PS
+    states = PS.load() if states is None else states
     rows, reasons = [], {}
     aso = pd.Timestamp(as_of)
     aso = aso.tz_localize("UTC") if aso.tzinfo is None else aso.tz_convert("UTC")
@@ -446,6 +453,10 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of) -> tupl
         bad = stt[(stt["identity_resolution_status"] != "RESOLVED")
                   & ~stt["effective_status"].isin(("ACTIVE", NOT_LISTED))
                   & (stt["canonical_team_id"].isna() | stt["canonical_team_id"].isin(teams))]
+        if len(bad) and len(states):
+            known = [PS.non_blocking(states, p, t, T) if isinstance(t, str) else False
+                     for p, t in zip(bad["rotowire_player_id"], bad["canonical_team_id"])]
+            bad = bad[[not k for k in known]]
         if len(bad):
             reasons[g.canonical_game_id].append("AVAILABILITY_IDENTITY_UNRESOLVED")
         ok = stt[(stt["identity_resolution_status"] == "RESOLVED") & stt["canonical_team_id"].isin(teams)]

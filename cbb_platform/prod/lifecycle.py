@@ -52,6 +52,7 @@ LIFECYCLE_VERSION = "cbb-prod-daily-lifecycle-1.0.0"
 TZ = "America/New_York"
 MORNING_TIME_ET = "07:00"
 ROTOWIRE_REFRESH_TIMES_ET = ("10:00", "13:00", "16:00", "18:00")       # exactly four; no other fixed refresh time
+ROTOWIRE_LIGHT_POLL_TIMES_ET = ("08:30",)   # acquisition ONLY (no forecast / fit / simulation / PMF); writer lock only
 SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") for t in ROTOWIRE_REFRESH_TIMES_ET)
 INITIAL = "INITIAL"
 # ---- shared cross-model heavy-job lock (operational only; nothing here reaches a forecast). Only the walk-forward step
@@ -103,6 +104,9 @@ def schedule_spec() -> dict:
             "RotoWire availability refresh (BLOCKED_NO_KEY without ROTOWIRE_API_KEY)",
             "re-forecast only games with an availability change and a future cutoff", "PMFs persisted",
             "Boards / Distributions regenerated"]},
+        "rotowire_light_poll": {"at": list(ROTOWIRE_LIGHT_POLL_TIMES_ET), "steps": [
+            "RotoWire WEB acquisition only (snapshot + injury news into the event store; narrows the overnight news gap)",
+            "no forecast, no refit, no simulation, no PMF; CBB writer lock only, never the shared heavy lock"]},
         "official_prediction": "per game, the shadow tick's single run inside [cutoff - SCORE_LEAD_MINUTES, cutoff) "
                                f"(cutoff {PC.VALIDATED_PREDICTION_CUTOFF}); a refresh after the cutoff never changes it",
         "other_fixed_rotowire_refresh_times": []}
@@ -452,6 +456,23 @@ def web_acquire(life: Life) -> dict:
                                     "reasons", "warnings")}
 
 
+def availability_poll(life: Life, window: str = ROTOWIRE_LIGHT_POLL_TIMES_ET[0]) -> dict:
+    """Light RotoWire availability poll: ONE web acquisition into the event store and nothing else -- never a
+    forecast, fit, simulation, PMF or export (the next refresh / official tick consumes the events). Records itself in
+    the health file. Inert unless ROTOWIRE_SOURCE=WEB is ENABLED (session + PASS acceptance marker)."""
+    if window not in ROTOWIRE_LIGHT_POLL_TIMES_ET:
+        raise ValueError(f"light poll window {window!r} is not one of {ROTOWIRE_LIGHT_POLL_TIMES_ET}")
+    st = rotowire_state(life)
+    rec = {"lifecycle": "AVAILABILITY_POLL", "window": window, "rotowire_source": PC.rotowire_source(),
+           "rotowire_refresh": st, "forecast": None}
+    if PC.rotowire_source() == "WEB" and st == "ENABLED":
+        rec["rotowire_web_acquisition"] = web_acquire(life)
+    else:
+        rec["note"] = "no availability source enabled: nothing requested"
+    health(life, et_date(life.now()), **{f"availability_poll_{window.replace(':', '')}": rec})
+    return rec
+
+
 def refresh(life: Life, window: str) -> dict:
     acq = None
     if PC.rotowire_source() == "WEB" and rotowire_state(life) == "ENABLED":
@@ -511,6 +532,8 @@ def main(argv=None) -> None:
     m.add_argument("--date", default=None)
     r = sub.add_parser("refresh")
     r.add_argument("--window", required=True, choices=ROTOWIRE_REFRESH_TIMES_ET)
+    ap_ = sub.add_parser("availability-poll")
+    ap_.add_argument("--window", required=True, choices=ROTOWIRE_LIGHT_POLL_TIMES_ET)
     f = sub.add_parser("forecast")
     f.add_argument("--window", default=INITIAL, choices=(INITIAL,) + ROTOWIRE_REFRESH_TIMES_ET)
     sub.add_parser("schedule")
@@ -527,6 +550,8 @@ def main(argv=None) -> None:
         out = morning(life, date.fromisoformat(a.date) if a.date else None)
     elif a.cmd == "refresh":
         out = refresh(life, a.window)
+    elif a.cmd == "availability-poll":
+        out = availability_poll(life, a.window)
     elif a.cmd == "forecast":
         out = forecast(life, a.window)
     elif a.cmd == "exports":

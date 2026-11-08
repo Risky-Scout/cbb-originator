@@ -1,0 +1,51 @@
+# CBB Originator: 08:30 ET LIGHT RotoWire availability poll -- acquisition only (no forecast / refit / simulation / PMF).
+# CBB writer lock only; NEVER the shared heavy lock (no heavy group, no heavy lock path, nothing under /run/lock).
+# Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
+[Unit]
+Description=CBB Originator 08:30 ET light RotoWire availability poll
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/sports-models/cbb-originator.env
+
+[Service]
+Type=oneshot
+User=cbb-originator
+Group=cbb-originator
+WorkingDirectory=/opt/sports-models/cbb-originator/current
+EnvironmentFile=/etc/sports-models/cbb-originator.env
+Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Environment=CBB_DUCKDB_THREADS=1
+Environment=CBB_APP_ROOT=/opt/sports-models/cbb-originator/current
+Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod
+Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
+Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
+Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
+Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run availability-poll 08:30
+Restart=no
+TimeoutStartSec=35min
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cbb-originator-availability-poll
+MemoryHigh=1000M
+MemoryMax=1400M
+MemorySwapMax=0
+Nice=5
+CPUQuota=100%
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+ReadOnlyPaths=/opt/sports-models/cbb-originator
+ReadWritePaths=/var/lib/sports-models/cbb-originator
+InaccessiblePaths=-/opt/nba-prop-runtime -/srv/nba-production -/var/lib/nba-prop -/etc/nba-prop-quant

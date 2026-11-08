@@ -49,3 +49,49 @@ Persisted: `cbb_platform/prod/rotowire_web_player_aliases.csv` (rows 1-3, keyed 
 4-9 map automatically by the exact-name rule once CBBD's `teams/roster` lists them (re-sync) — no RotoWire-only player
 is created. Rows 10-26 stay unresolved; their non-ACTIVE statuses keep failing their teams' games closed
 (`AVAILABILITY_IDENTITY_UNRESOLVED`).
+
+## Final reconciliation — operational player states (2026-11-08, later)
+
+Live CBBD `teams/roster` season=2027 (one request, 2026-11-08T22:37Z, HTTP 200, 1544 teams / 5541 players, sha256
+`ee575c8d…`, byte-identical to the payload behind the production canonical roster): **none of the 23 players present**
+(no exact name match anywhere, no same-team surname match) → `CANONICAL_SYNC_LAG_COUNT = 0`. Rows 4-9 above therefore are
+not repairable by re-sync today; their evidence is retained, no roster row is invented.
+
+School-site evidence (official 2026-27 roster pages, fetched 2026-11-08) and dated news were then gathered per player.
+Classes are recorded in `cbb_platform/prod/rotowire_player_states.csv` (adapter metadata only; see
+`rotowire_player_states.py`). Specialist hypotheses rejected by the evidence: Tae Davis (not current: awaiting medical
+and legal clearance), Chaze Harris (current but CBBD omits him -> still blocks), Robbie Avila (injunction 2026-11-05:
+eligible now -> still blocks), Akoldah Gak / Chris Nwuli (stale, not affiliated), Drew Carter (conflict resolved by the
+official roster: practicing, seeking eligibility), DJ Stickman (with the program, no roster slot), Reggie Ward (no
+2026 evidence of any kind -> stays unresolved), Brandon Maclin (RotoWire vs Wikipedia -> SOURCE_CONFLICT).
+
+| Player | RotoWire team | CBBD 2027 | Canonical (current) | Class | Blocks game | Review by |
+|---|---|---|---|---|---|---|
+| Tae Davis | Oklahoma | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| Derek Simpson | Providence | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-10 (hearing) |
+| Joseph Pinion | Providence | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-10 (hearing) |
+| Dillon Hunter | Clemson | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| Cade Tyson | Minnesota | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| KyeRon Lindsay-Martin | UAB | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| Drew Carter | Oregon | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| NJ Benson | Georgetown | no | history only | AFFILIATED_INACTIVE_ELIGIBILITY | no | 2026-11-22 |
+| RJ Luis | Louisiana State | no | history only | AFFILIATED_ROSTER_LIMIT | no | 2026-11-13 (hearing) |
+| DJ Stickman | Fresno State | no | history only | AFFILIATED_ROSTER_LIMIT | no | 2026-11-22 |
+| Moe Odum | San Jose State | no | none | DELAYED_ELIGIBILITY (eligible_from 2026-12-18) | no | 2026-11-22 |
+| Simeon Cottle | Kennesaw State | no | history only | STALE_NONCURRENT | no | 2026-11-22 |
+| CJ Hines | Temple | no | history only | STALE_NONCURRENT | no | 2026-11-22 |
+| Akoldah Gak | Oklahoma | no | none | STALE_NONCURRENT | no | 2026-11-22 |
+| Chris Nwuli | Seton Hall | no | history only | STALE_NONCURRENT | no | 2026-11-22 |
+| Brandon Maclin | DePaul | no | history only | SOURCE_CONFLICT | **yes** | 2026-11-22 |
+| Robbie Avila | Saint Louis | no | history only | IDENTITY_UNRESOLVED (eligible now; CBBD omits) | **yes** | — |
+| Chaze Harris | UNC-Charlotte | no | history only | IDENTITY_UNRESOLVED (on school roster; CBBD omits) | **yes** | — |
+| Jonathan Griman | Arizona State | no | history only | IDENTITY_UNRESOLVED (eligible, debut 2026-11-10; CBBD omits) | **yes** | — |
+| John Mattingly | Nevada | no | none | IDENTITY_UNRESOLVED (on school roster; CBBD omits) | **yes** | — |
+| Jaxon Edwards | Wisconsin-Green Bay | no | history only | IDENTITY_UNRESOLVED (on school roster, out for season; CBBD omits) | **yes** | — |
+| Jalen Overway | Wisconsin-Green Bay | no | none | IDENTITY_UNRESOLVED (on school roster, out for season; CBBD omits) | **yes** | — |
+| Reggie Ward | Bethune-Cookman | no | history only | IDENTITY_UNRESOLVED (no 2026 evidence) | **yes** | — |
+
+Players who are on a school's active roster but missing from CBBD (Avila, Harris, Griman, Mattingly, Edwards, Overway)
+are *not* exempted: none of the curated classes describes them, and for the four who can play, the model would project
+the team without a real rotation player. They clear only when CBBD rosters them (normal sync). Full per-row evidence is
+in the CSV; every row lapses at `review_by` and fails closed again until re-verified.

@@ -9,6 +9,8 @@
 #                                               exports, health report. CBB writer lock for the whole job.
 #   cbb-originator-run refit-retry              08:00 ET: no-op unless 07:00 recorded DEFERRED_SHARED_LOCK (writer lock)
 #   cbb-originator-run lifecycle-refresh HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET availability refresh (writer lock)
+#   cbb-originator-run availability-poll HH:MM  08:30 ET light RotoWire poll: acquisition only (writer lock; NEVER the
+#                                               heavy lock; no forecast / refit / simulation / PMF)
 #   cbb-originator-run tick                     every 10 min (writer lock): official shadow tick only when its cheap due
 #                                               gate says due; then the tiered quote refresh (per-game tier spacing;
 #                                               nothing requested when no game is due; reprice only, never a refit)
@@ -47,7 +49,8 @@ refuse() { log "REFUSED: $*"; exit 3; }
 
 case "$CMD" in preflight|lifecycle-morning|refit-retry|tick) ;;
   lifecycle-refresh) case "${2:-}" in 10:00|13:00|16:00|18:00) ;; *) echo "lifecycle-refresh needs one of 10:00 13:00 16:00 18:00" >&2; exit 3 ;; esac ;;
-  *) echo "usage: cbb-originator-run preflight|lifecycle-morning|refit-retry|lifecycle-refresh HH:MM|tick" >&2; exit 3 ;; esac
+  availability-poll) case "${2:-}" in 08:30) ;; *) echo "availability-poll needs 08:30" >&2; exit 3 ;; esac ;;
+  *) echo "usage: cbb-originator-run preflight|lifecycle-morning|refit-retry|lifecycle-refresh HH:MM|availability-poll HH:MM|tick" >&2; exit 3 ;; esac
 
 # ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
 [ "${CBB_MODEL_SOURCE:-ACTIVE_DAILY}" = "ACTIVE_DAILY" ] || [ "${CBB_MODEL_SOURCE}" = "FROZEN_OPENING_BASELINE" ] \
@@ -127,11 +130,14 @@ case "$CMD" in
   lifecycle-morning) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" morning) ;;
   refit-retry)       RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" refit-retry) ;;
   lifecycle-refresh) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" refresh --window "$2") ;;
+  availability-poll) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" availability-poll --window "$2")
+                     unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC            # structurally never the shared heavy lock
+                     WRITER_WAIT_SEC="${CBB_POLL_WRITER_LOCK_WAIT_SEC:-1500}" ;;  # waits out a quote run / a long morning
   tick)              RUN=("$PY" -m cbb_platform.prod.shadow_tick --ops-root "$OPS") ;;
 esac
 if [ "$DRY" = "1" ]; then
   EXTRA=""; [ "$CMD" = "tick" ] && EXTRA=" (only when due_check says due); then: $PY -m cbb_platform.prod.lifecycle quotes (tiered quote refresh + exports)"
-  log "DRY RUN: would take $WRITER_LOCK (heavy lock $CBB_HEAVY_LOCK only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT (history $CBB_DUCKDB_HISTORY_MEMORY_LIMIT) spill $CBB_DUCKDB_TEMP_DIR"
+  log "DRY RUN: would take $WRITER_LOCK (heavy lock ${CBB_HEAVY_LOCK:-NONE} only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT (history $CBB_DUCKDB_HISTORY_MEMORY_LIMIT) spill $CBB_DUCKDB_TEMP_DIR"
   exit 0
 fi
 mkdir -p "$LOCK_DIR"

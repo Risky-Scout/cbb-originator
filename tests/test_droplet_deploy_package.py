@@ -209,6 +209,7 @@ def test_prod_root_env_relocates_every_mutable_production_path(tmp_path):
 # ------------------------------------------------------------------ systemd units
 HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.service")
 LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
+POLL_UNIT = "cbb-originator-availability-poll.service"      # 08:30 light poll: writer lock only, NEVER the heavy lock
 
 
 def _mem(s: str, key: str) -> int:
@@ -217,8 +218,9 @@ def _mem(s: str, key: str) -> int:
 
 
 def test_units_are_isolated_and_hold_no_secrets():
-    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, "cbb-originator-morning.timer",
+    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, "cbb-originator-morning.timer",
                                        "cbb-originator-refit-retry.timer", "cbb-originator-quotes.timer",
+                                       "cbb-originator-availability-0830.timer",
                                        *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
     for u in UNITS:
         s = u.read_text()
@@ -229,19 +231,19 @@ def test_units_are_isolated_and_hold_no_secrets():
     for u in (D / "systemd").glob("*.service"):
         s = u.read_text()
         lines = s.splitlines()
-        for line in ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
-                     "SupplementaryGroups=sports-models-heavy",
+        heavy = () if u.name == POLL_UNIT else ("SupplementaryGroups=sports-models-heavy",
+                                                 "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
+                                                 "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models")
+        for line in heavy + ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
                      "EnvironmentFile=/etc/sports-models/cbb-originator.env",
                      "WorkingDirectory=/opt/sports-models/cbb-originator/current",
                      "Environment=CBB_APP_ROOT=/opt/sports-models/cbb-originator/current",
                      "Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod",
                      "Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward",
                      "Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports",
-                     "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
                      "Environment=CBB_DUCKDB_THREADS=1",
                      "ProtectSystem=strict", "PrivateTmp=yes", "NoNewPrivileges=yes", "StandardOutput=journal",
-                     "MemorySwapMax=0", "ReadOnlyPaths=/opt/sports-models/cbb-originator",
-                     "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models"):
+                     "MemorySwapMax=0", "ReadOnlyPaths=/opt/sports-models/cbb-originator"):
             assert line in lines, (u.name, line)
         assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run " in s
         inacc = [ln for ln in lines if ln.startswith("InaccessiblePaths=")]
@@ -264,6 +266,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
     assert cal == {"cbb-originator-morning.timer": ["OnCalendar=*-*-* 07:00:00 America/New_York"],
                    "cbb-originator-refit-retry.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
+                   "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
     for p in (D / "systemd").glob("*.timer"):
@@ -334,3 +337,21 @@ def test_duckdb_spill_dir_must_be_cbb_state(app):
     assert r.returncode == 3 and "CBB_DUCKDB_TEMP_DIR" in r.stderr
     d = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
     assert "lifecycle quotes" in d.stderr and f"spill {app['state']}/staging/tmp/duckdb" in d.stderr
+
+
+def test_0830_light_poll_unit_never_touches_the_heavy_lock_and_only_acquires(app):
+    s = (D / "systemd" / POLL_UNIT).read_text()
+    active = [ln for ln in s.splitlines() if ln.strip() and not ln.startswith("#")]
+    assert not [ln for ln in active if "heavy" in ln.lower() or "/run/lock" in ln], active
+    assert "ReadWritePaths=/var/lib/sports-models/cbb-originator" in active
+    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run availability-poll 08:30" in active
+    t = (D / "systemd" / "cbb-originator-availability-0830.timer").read_text()
+    assert "Unit=cbb-originator-availability-poll.service" in t and "Persistent=false" in t
+    r = _run(app, "availability-poll", "08:30", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    assert r.returncode == 0, r.stderr
+    assert "cbb_platform.prod.lifecycle" in r.stderr and "availability-poll --window 08:30" in r.stderr
+    assert "heavy lock NONE" in r.stderr and "heavy.lock" not in r.stderr.split("run:", 1)[1]
+    assert f"{app['state']}/locks/cbb-originator.writer.lock" in r.stderr
+    for bad in (["availability-poll"], ["availability-poll", "10:00"], ["availability-poll", "07:00"]):
+        assert _run(app, *bad, CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1").returncode == 3
+    assert _run(app, "availability-poll", "08:30").returncode == 4          # no writer role -> nothing runs

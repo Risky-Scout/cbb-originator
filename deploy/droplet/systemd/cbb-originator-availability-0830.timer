@@ -1,0 +1,15 @@
+# CBB Originator 08:30 ET light RotoWire availability poll timer (installed, NOT enabled until deployment approval).
+# 08:30: after the 07:00 morning lifecycle (observed to run past 07:30) and the 08:00 refit-retry; the poll takes only
+# the CBB writer lock (waits up to 25 min behind a quote run / a long morning run) and never the shared heavy lock.
+[Unit]
+Description=CBB Originator 08:30 ET light RotoWire availability poll timer
+
+[Timer]
+OnCalendar=*-*-* 08:30:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-availability-poll.service
+
+[Install]
+WantedBy=timers.target

@@ -852,3 +852,144 @@ def test_player_alias_is_refused_on_any_mismatch_or_conflict(ctx, tmp_path):
                         player_alias=paliases(("406", "Ann Lee", "Home U", "P1", "Jon Doe", "T1")))
     assert [x["reason"] for x in res["review"]] == ["CURATED_PLAYER_ALIAS_CONFLICTS_WITH_EXACT_NAME"]
     assert not (tmp_path / "x" / W.PLAYER_MAP_FILE).exists()
+
+
+# ============================================================================ operational player states (2026-11-08)
+from cbb_platform.prod import rotowire_player_states as PS  # noqa: E402
+
+
+def states(*rows):
+    out = []
+    for r in rows:
+        d = {"rotowire_player_id": "999", "rotowire_player_name": "Ghost Player", "rotowire_team_name": "Home U",
+             "affiliated_team_id": "T1", "canonical_player_id": "", "operational_class": PS.AFFILIATED_INACTIVE_ELIGIBILITY,
+             "eligible_from": "", "verified_on": "2026-11-08", "review_by": "2026-11-22", "evidence": "test evidence"}
+        d.update(r)
+        out.append(d)
+    return pd.DataFrame(out, columns=PS.COLS)
+
+
+GHOST = news_page(item("999", "Ghost Player", "Home U", "G", "Knee", "Ruled out", "Player is out Tuesday."),
+                  item("101", "Jon Doe", "Home U", "G", "Knee", "Ruled out", "Doe is out Tuesday."))
+GHOST_ROWS = DEFAULT_ROWS + [row("999", "Ghost", "Player", "Home U", "G", "Not Injury Related", "Out")]
+
+
+def _frame(env, st, at=None):
+    return RW.availability_frame(env["store"].frame(), GAMES, at or (env["clock"].t + timedelta(minutes=1)), states=st)
+
+
+@pytest.mark.parametrize("cls", [PS.AFFILIATED_INACTIVE_ELIGIBILITY, PS.AFFILIATED_ROSTER_LIMIT, PS.STALE_NONCURRENT])
+def test_known_inactive_or_stale_player_does_not_block_the_whole_game(env, cls):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    fr, reasons = _frame(env, states())                                    # an empty table: unresolved -> fails closed
+    assert reasons["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    fr2, reasons = _frame(env, states({"operational_class": cls}))
+    assert reasons["G1"] == []                                             # known inactive / stale != unresolved
+    assert "999" not in set(fr2["rotowire_player_id"])                     # never conditions any projection
+    assert fr2.drop(columns=[]).equals(fr)                                 # the resolved players' rows are unchanged
+
+
+def test_delayed_eligibility_is_suppressed_identity_known_and_fails_closed_after_the_date(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    st = states({"operational_class": PS.DELAYED_ELIGIBILITY, "canonical_player_id": "P-known", "eligible_from": "2026-12-18"})
+    fr, reasons = _frame(env, st)
+    assert reasons["G1"] == [] and "999" not in set(fr["rotowire_player_id"])
+    assert PS.classify(st, "999", "T1", env["clock"].t) == PS.DELAYED_ELIGIBILITY
+    assert PS.in_force(st, env["clock"].t)["canonical_player_id"].tolist() == ["P-known"]   # identity stays known
+    later = pd.Timestamp("2026-12-18T15:00:00Z")                           # eligible from today: no longer exempt
+    assert PS.classify(st, "999", "T1", later) is None
+    assert RW.availability_frame(env["store"].frame(), GAMES.assign(feature_cutoff=[later + pd.Timedelta(hours=2)]),
+                                 later, states=st)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+
+
+def test_source_conflict_and_true_unresolved_still_block(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _frame(env, states({"operational_class": PS.SOURCE_CONFLICT}))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _frame(env, states({"rotowire_player_id": "998"}))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    # the row applies only while RotoWire places him at the affiliated team, and only inside its validity window
+    assert _frame(env, states({"affiliated_team_id": "T2"}))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _frame(env, states({"verified_on": "2026-11-20", "review_by": "2026-12-01"}))[1]["G1"] == \
+        ["AVAILABILITY_IDENTITY_UNRESOLVED"]                               # point in time: not yet verified
+    assert _frame(env, states({"verified_on": "2026-10-01", "review_by": "2026-11-09"}))[1]["G1"] == \
+        ["AVAILABILITY_IDENTITY_UNRESOLVED"]                               # lapsed review_by -> fails closed again
+
+
+def test_active_current_players_and_p_play_are_untouched_by_operational_states(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    fr, _ = _frame(env, states({"operational_class": PS.STALE_NONCURRENT}))
+    assert dict(zip(fr["player_id"], fr["status"])) == {"P1": "OUT", "P5": "GTD"}   # resolved players: normal handling
+    rows = pd.DataFrame({"game_id": ["G1"] * 4, "team_id": ["T1", "T1", "T2", "T2"], "player_id": ["P1", "P2", "P5", "P6"],
+                         "p_play": [0.91, 0.8, 0.77, 0.6], "min_mu": [30.0, 10.0, 12.0, 8.0], "min_sigma": [5.0] * 4,
+                         "role_diagnostic": ["TOP5_MINUTES", "BENCH", "BENCH", "BENCH"]})
+    for s_ in IN.L.STATS:
+        rows[f"{s_}_mu"] = 1.0
+    out, _ = IN.apply_availability(rows, fr)
+    assert np.allclose(out.set_index("player_id").loc[["P1", "P2", "P5", "P6"], "p_play"].to_numpy(), [0.91, 0.8, 0.77, 0.6])
+
+
+def test_operational_states_never_touch_roster_maps_or_model_code(env, tmp_path):
+    src = Path(PS.__file__).read_text()
+    for forbidden in ("flagship.rosters", "duckdb", "to_csv", "write_text", "append_jsonl", "open("):
+        assert forbidden not in src, forbidden                             # read-only metadata: no roster edits
+    prod = Path(PS.__file__).parent
+    for m in ("inputs.py", "features.py", "universe.py", "simulate.py", "pricing.py", "walkforward.py", "run.py"):
+        p = prod / m
+        if p.exists():
+            assert "rotowire_player_states" not in p.read_text() and "operational_class" not in p.read_text(), m
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))                          # a classified player never gets a map row
+    assert "999" not in set(pd.read_csv(env["maps"] / W.PLAYER_MAP_FILE, dtype=str)["rotowire_player_id"])
+    assert W.player_aliases()["rotowire_player_id"].tolist() == ["23638", "25862", "28030"]   # alias protections intact
+
+
+def test_player_states_table_validation(tmp_path):
+    p = tmp_path / "s.csv"
+    good = states({"rotowire_player_id": "1"}, {"rotowire_player_id": "2", "operational_class": PS.STALE_NONCURRENT})
+    good.to_csv(p, index=False)
+    assert len(PS.load(p)) == 2
+    for broken, msg in ((pd.concat([good, good.iloc[:1]]), "duplicate"), (good.assign(evidence=""), "required"),
+                        (good.assign(operational_class="ACTIVE_CURRENT"), "operational_class"),
+                        (good.assign(operational_class=PS.DELAYED_ELIGIBILITY), "eligible_from"),
+                        (good.assign(review_by="2026-11-01"), "review_by"), (good.drop(columns="evidence"), "columns")):
+        broken.to_csv(p, index=False)
+        with pytest.raises(ValueError, match=msg):
+            PS.load(p)
+    assert PS.load(tmp_path / "missing.csv").empty                         # no table -> nothing exempt (fail closed)
+
+
+# ============================================================================ 08:30 light poll
+def test_light_poll_only_acquires_never_forecasts_fits_or_simulates(monkeypatch, tmp_path):
+    calls = []
+    for name in ("forecast", "morning", "refresh", "walk_forward", "exports_for", "exports_now", "quotes"):
+        if hasattr(L, name):
+            monkeypatch.setattr(L, name, lambda *a, _n=name, **k: (_ for _ in ()).throw(AssertionError(f"poll called {_n}")))
+    monkeypatch.setattr(L, "web_acquire", lambda life: calls.append(1) or {"auth": "PASS", "news_continuity": "CONTINUOUS"})
+    life = L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", clock=lambda: T0)
+    monkeypatch.delenv("ROTOWIRE_SOURCE", raising=False)
+    assert L.availability_poll(life)["note"].startswith("no availability source") and calls == []
+    monkeypatch.setenv("ROTOWIRE_SOURCE", "WEB")
+    monkeypatch.setenv(PC.ROTOWIRE_WEB_COOKIE_ENV, str(tmp_path / "ck"))
+    assert L.availability_poll(life)["rotowire_refresh"] == "DISABLED_WEB_ACCEPTANCE_NOT_PASSED" and calls == []
+    W.OS.write_json(tmp_path / "ops" / "markers" / W.ACCEPTANCE_MARKER, {"status": "PASS"})
+    out = L.availability_poll(life)
+    assert calls == [1] and out["forecast"] is None and out["rotowire_web_acquisition"]["auth"] == "PASS"
+    h = json.loads((tmp_path / "prod" / "health" / f"{L.et_date(T0).isoformat()}.json").read_text())
+    assert h["availability_poll_0830"]["lifecycle"] == "AVAILABILITY_POLL"
+    with pytest.raises(ValueError):
+        L.availability_poll(life, "10:00")
+    assert L.ROTOWIRE_REFRESH_TIMES_ET == ("10:00", "13:00", "16:00", "18:00") and L.ROTOWIRE_LIGHT_POLL_TIMES_ET == ("08:30",)
+    assert L.schedule_spec()["rotowire_light_poll"]["at"] == ["08:30"]
+
+
+def test_shipped_player_states_table_is_valid_and_exempts_only_documented_players():
+    s = PS.load()                                                          # the production table validates
+    assert set(s["operational_class"]) <= set(PS.CURATED) and (s["evidence"].str.len() > 40).all()
+    at = pd.Timestamp("2026-11-08T23:00Z")
+    exempt = {p for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]) if PS.non_blocking(s, p, t, at)}
+    assert exempt == {"20532", "20395", "20354", "20474", "20936", "20575", "20923", "21195", "20703", "26727", "20593",
+                      "21070", "25207", "27904", "26154"}
+    assert PS.classify(s, "23921", "T-7dd7b1683d08fb35", at) == PS.SOURCE_CONFLICT          # Maclin keeps blocking
+    for still_blocking in ("21059", "21227", "22964", "23073", "27385", "27852", "28337"):  # eligible / rostered / unverified
+        assert still_blocking not in set(s["rotowire_player_id"])
+    assert not PS.non_blocking(s, "20593", "T-0d7c299d41bf5c14", pd.Timestamp("2026-12-18T15:00Z"))  # Odum: eligible
+    assert not any(PS.non_blocking(s, p, t, pd.Timestamp("2026-11-22T15:00Z"))                     # all lapse -> re-verify
+                   for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]))

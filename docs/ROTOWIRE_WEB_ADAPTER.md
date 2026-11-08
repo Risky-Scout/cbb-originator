@@ -81,3 +81,23 @@ disabled until the marker is PASS.
 * Raw evidence: `availability/rotowire_web/raw/YYYY-MM-DD/` (gzip payload per sha256 + one metadata JSON per fetch),
   `acquisitions.jsonl`, `news_items.jsonl` (every item, append-only). Local only: not in the ops git tree or the
   working-set upload.
+
+## Operational player states (known inactive / stale != unresolved)
+
+`cbb_platform/prod/rotowire_player_states.csv` (loader `rotowire_player_states.py`) lists RotoWire players who are not
+on the canonical CBBD roster but whose status a human verified with dated evidence. AFFILIATED_INACTIVE_ELIGIBILITY,
+AFFILIATED_ROSTER_LIMIT, DELAYED_ELIGIBILITY (until `eligible_from`) and STALE_NONCURRENT do not raise
+AVAILABILITY_IDENTITY_UNRESOLVED; SOURCE_CONFLICT and anything unlisted still fail the game closed. A row applies only to the
+exact RotoWire ID at the listed canonical team, from `verified_on` to (excluding) `review_by`. It never creates a map
+row, a roster row or a projection input, and it is not a model feature. To re-verify, update the evidence and dates in a
+reviewed commit; never extend `review_by` without new evidence.
+
+## 08:30 ET light poll (implemented, NOT enabled)
+
+`cbb-originator-availability-0830.timer` -> `cbb-originator-availability-poll.service` -> `cbb-originator-run
+availability-poll 08:30` -> `lifecycle availability-poll`: RotoWire web acquisition only (same WEB + ENABLED + acceptance
+gates as the refreshes). Writer lock only (`CBB_POLL_WRITER_LOCK_WAIT_SEC`, default 1500 s); it never takes heavy.lock
+and never refits, simulates, regenerates PMFs or forecasts. Collision check: morning 07:00 (observed end ~07:38) and
+refit-retry 08:00 (end ~08:02) are done before 08:30; the quotes job (every 10 min, 2-10 min under the writer lock) can
+overlap, and the poll waits for the lock. Enable only after deployment approval:
+`systemctl enable --now cbb-originator-availability-0830.timer`. Eventual cadence: 08:30 / 10:00 / 13:00 / 16:00 / 18:00.
