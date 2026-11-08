@@ -858,7 +858,11 @@ def _tick(ctx: Ctx) -> dict:
         OS.chain_append(ctx.ops_root, tid)
         _finish(ctx, t, persist_ws=False)
         return t
-    if ctx.restore:
+    if ctx.restore or ctx.assets is None:
+        # fresh runner: restore the working set, then mirror the evidence ledgers in. Persistent host (Droplet, no
+        # release assets): the same idempotent mirror_in on every tick (evidence -> working when the working copy is
+        # absent or shorter; a longer working copy is kept; diverged ledgers raise), so a state imported or restored
+        # as an evidence tree never starts a fresh working ledger beside it
         _restore(ctx, t)
     if ctx.history_db is None:
         ctx.history_db = HX.resolve()

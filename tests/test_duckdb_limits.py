@@ -277,3 +277,24 @@ def test_spill_frame_noop_without_configuration(monkeypatch):
     monkeypatch.delenv(DLM.TMP_ENV, raising=False)
     df = pd.DataFrame({"a": np.arange(10.0)})
     assert DLM.spill_frame(df) is df
+
+
+def test_history_scope_cap(monkeypatch, tmp_path):
+    from cbb_platform.stage3 import build as S3B
+    monkeypatch.setenv(DLM.MEM_ENV, "512MB")
+    monkeypatch.setenv(DLM.HIST_MEM_ENV, "128MB")
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    q = "SELECT current_setting('memory_limit')"
+    try:
+        DLM.install()
+        general = duckdb.connect().execute(q).fetchone()[0]
+        with DLM.low_memory_fetch():
+            con = duckdb.connect()
+            hist = con.execute(q).fetchone()[0]
+            con.close()
+        after = duckdb.connect().execute(q).fetchone()[0]
+        s3 = S3B.connect(tmp_path / "s3.duckdb").execute(q).fetchone()[0]
+    finally:
+        DLM.uninstall()
+    assert general.startswith(("488", "512")) and after == general
+    assert hist.startswith(("122", "128")) and s3.startswith(("122", "128"))

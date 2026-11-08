@@ -840,3 +840,22 @@ def test_scheduler_workflow_enabled_with_the_approved_cadence():
     assert PC.SCORE_LEAD_MINUTES == 50
     for banned in ("ssh", "scp", "rsync", "deploy", "wizardofodds", "public_ready"):
         assert banned not in live.lower(), banned
+
+
+def test_persistent_host_tick_mirrors_evidence_ledgers_in(tmp_path):
+    # Droplet: no release assets, restore=False. A state imported as an evidence tree (ops/ledgers present, working
+    # copy absent) must be mirrored in before the tick appends, or mirror_out refuses the fresh working ledger.
+    prod, ops = tmp_path / "prod", tmp_path / "ops"
+    ev = ops / "ledgers" / "cbbd_production_requests.jsonl"
+    ev.parent.mkdir(parents=True)
+    ev.write_text('{"r": 1}\n{"r": 2}\n')
+    ctx = TK.Ctx(ops_root=ops, prod_root=prod)
+    assert ctx.assets is None and ctx.restore is False
+    TK._restore(ctx, {})
+    work = OS.ledger_mirror(prod)["ledgers/cbbd_production_requests.jsonl"]
+    assert work.read_text() == ev.read_text()
+    with work.open("a") as f:
+        f.write('{"r": 3}\n')
+    TK._restore(ctx, {})                                           # idempotent: the longer working copy is kept
+    assert work.read_text().endswith('{"r": 3}\n')
+    assert OS.mirror_out(ops, prod) == ["ledgers/cbbd_production_requests.jsonl"]

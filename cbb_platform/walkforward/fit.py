@@ -103,7 +103,8 @@ def _load(cfg: dict, group: str) -> dict:
     if group not in GROUPS:
         raise WalkForwardFitError(f"unknown history group {group}")
     if group == "store":                             # parquet (CONTROL) / Arrow tables (CANDIDATE): no DuckDB .df()
-        out = {"store": P3.load_store(range(WC.GLM_FIRST_SEASON, WC.OPENING_THROUGH + 1))}
+        with DLM.history_scope():
+            out = {"store": P3.load_store(range(WC.GLM_FIRST_SEASON, WC.OPENING_THROUGH + 1))}
     else:
         with DLM.low_memory_fetch():
             if group == "frames":

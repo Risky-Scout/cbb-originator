@@ -1,6 +1,8 @@
 """Process-wide DuckDB RESOURCE limits for the shared Droplet (memory cap + disk spill). Resource settings only.
 
     CBB_DUCKDB_MEMORY_LIMIT   e.g. "1GB": DuckDB buffer-manager cap per connection (operators beyond it spill to disk)
+    CBB_DUCKDB_HISTORY_MEMORY_LIMIT  optional, e.g. "700MB": the cap inside low_memory_fetch (frozen history loaders) and
+                              for the Stage 3 feature build, where a large pandas result sits next to the engine
     CBB_DUCKDB_TEMP_DIR       spill directory; must be a CBB-owned mutable path (never the immutable release tree);
                               each process spills to its own pid-<pid>/ subdirectory, removed at exit
 
@@ -46,6 +48,8 @@ import pyarrow as pa
 from pandas.api.internals import create_dataframe_from_blocks
 
 MEM_ENV, TMP_ENV = "CBB_DUCKDB_MEMORY_LIMIT", "CBB_DUCKDB_TEMP_DIR"
+HIST_MEM_ENV = "CBB_DUCKDB_HISTORY_MEMORY_LIMIT"     # the history loaders + Stage 3 feature builds (large pandas results)
+_SCOPE: list = []
 _ORIG = duckdb.connect
 _FORBIDDEN_ROOTS = ("/opt/sports-models",)
 
@@ -54,9 +58,14 @@ class DuckDBLimitError(RuntimeError):
     pass
 
 
-def settings() -> dict:
+def settings(scope: str | None = None) -> dict:
+    """scope "history" (inside low_memory_fetch / the Stage 3 feature build): CBB_DUCKDB_HISTORY_MEMORY_LIMIT when set,
+    so the engine leaves room for the large pandas result held next to it; otherwise CBB_DUCKDB_MEMORY_LIMIT."""
     out = {}
+    scope = scope or (_SCOPE[-1] if _SCOPE else None)
     m = (os.environ.get(MEM_ENV) or "").strip()
+    if scope == "history":
+        m = (os.environ.get(HIST_MEM_ENV) or "").strip() or m
     t = (os.environ.get(TMP_ENV) or "").strip()
     if m:
         out["memory_limit"] = m
@@ -116,7 +125,7 @@ def _patch_stage3() -> None:
         S3B._cbb_frozen_connect = S3B.connect
 
     def connect(path, threads: int | None = None):
-        lim = settings()
+        lim = settings("history")
         con = _ORIG(str(path))
         con.execute("SET TimeZone = 'UTC'")
         con.execute("SET enable_progress_bar = false")
@@ -259,6 +268,16 @@ class _Conn:
 
 
 @contextlib.contextmanager
+def history_scope():
+    """Connections opened inside get the history cap (settings scope "history"); nothing else changes."""
+    _SCOPE.append("history")
+    try:
+        yield
+    finally:
+        _SCOPE.pop()
+
+
+@contextlib.contextmanager
 def low_memory_fetch(spool_dir: Path | str | None = None):
     """Inside: every new connection's SELECT / WITH .df() is streamed and converted column by column (module doc).
     Active only when spool_dir or CBB_DUCKDB_TEMP_DIR is configured (the Droplet); otherwise a no-op."""
@@ -274,9 +293,11 @@ def low_memory_fetch(spool_dir: Path | str | None = None):
     def connect(*a, **k):
         return _Conn(prev(*a, **k), spool)
     duckdb.connect = connect
+    _SCOPE.append("history")
     try:
         yield True
     finally:
+        _SCOPE.pop()
         duckdb.connect = prev
         release()
 

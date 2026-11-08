@@ -66,7 +66,8 @@ done
 [ "${CBB_DUCKDB_THREADS:-1}" = "1" ] || refuse "CBB_DUCKDB_THREADS must be 1 on the shared Droplet"
 export CBB_DUCKDB_THREADS=1
 # DuckDB memory cap + spill (cbb_platform/duckdb_limits.py): resource settings only; the spill dir must be CBB state
-export CBB_DUCKDB_MEMORY_LIMIT="${CBB_DUCKDB_MEMORY_LIMIT:-700MB}"
+export CBB_DUCKDB_MEMORY_LIMIT="${CBB_DUCKDB_MEMORY_LIMIT:-2000MB}"                 # CBBD sync / event build (no large pandas result)
+export CBB_DUCKDB_HISTORY_MEMORY_LIMIT="${CBB_DUCKDB_HISTORY_MEMORY_LIMIT:-700MB}"  # history loaders + Stage 3 feature build
 export CBB_DUCKDB_TEMP_DIR="${CBB_DUCKDB_TEMP_DIR:-$STATE/staging/tmp/duckdb}"
 case "$CBB_DUCKDB_TEMP_DIR/" in "$STATE"/*) ;; *) refuse "CBB_DUCKDB_TEMP_DIR must be inside $STATE" ;; esac
 
@@ -115,7 +116,7 @@ case "$CMD" in
 esac
 if [ "$DRY" = "1" ]; then
   EXTRA=""; [ "$CMD" = "tick" ] && EXTRA=" (only when due_check says due); then: $PY -m cbb_platform.prod.lifecycle quotes (tiered quote refresh + exports)"
-  log "DRY RUN: would take $WRITER_LOCK (heavy lock $CBB_HEAVY_LOCK only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT spill $CBB_DUCKDB_TEMP_DIR"
+  log "DRY RUN: would take $WRITER_LOCK (heavy lock $CBB_HEAVY_LOCK only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT (history $CBB_DUCKDB_HISTORY_MEMORY_LIMIT) spill $CBB_DUCKDB_TEMP_DIR"
   exit 0
 fi
 mkdir -p "$LOCK_DIR"
