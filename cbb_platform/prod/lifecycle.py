@@ -51,6 +51,7 @@ from cbb_platform.prod import (config as PC, history_extract as HX, loader as LD
 LIFECYCLE_VERSION = "cbb-prod-daily-lifecycle-1.0.0"
 TZ = "America/New_York"
 MORNING_TIME_ET = "07:00"
+FEATURES_WARMUP_TIME_ET = "01:30"     # ends (budget 150 min) before NBA daily 04:37 ET and the 07:00 morning
 ROTOWIRE_REFRESH_TIMES_ET = ("10:00", "13:00", "16:00", "18:00")       # exactly four; no other fixed refresh time
 ROTOWIRE_LIGHT_POLL_TIMES_ET = ("08:30",)   # acquisition ONLY (no forecast / fit / simulation / PMF); writer lock only
 SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") for t in ROTOWIRE_REFRESH_TIMES_ET)
@@ -104,6 +105,9 @@ def schedule_spec() -> dict:
             "RotoWire availability refresh (BLOCKED_NO_KEY without ROTOWIRE_API_KEY)",
             "re-forecast only games with an availability change and a future cutoff", "PMFs persisted",
             "Boards / Distributions regenerated"]},
+        "features_warmup": {"at": [FEATURES_WARMUP_TIME_ET], "steps": [
+            "pre-build the immutable per-game pregame feature cache the next 07:00 walk-forward reads (same code path)",
+            "shared heavy lock, hard time budget; no refit / promotion / forecast / simulation / PMF; no writer lock"]},
         "rotowire_light_poll": {"at": list(ROTOWIRE_LIGHT_POLL_TIMES_ET), "steps": [
             "RotoWire WEB acquisition only (snapshot + injury news into the event store; narrows the overnight news gap)",
             "no forecast, no refit, no simulation, no PMF; CBB writer lock only, never the shared heavy lock"]},
@@ -317,6 +321,52 @@ def acquire_heavy_lock(path: str, wait_s: float, sleep=time.sleep, clock=time.mo
             sleep(max(0.0, min(5.0, deadline - clock())))
 
 
+WARMUP_BUDGET_ENV, WARMUP_WAIT_ENV = "CBB_WARMUP_BUDGET_MIN", "CBB_WARMUP_HEAVY_LOCK_WAIT_SEC"
+
+
+def warmup_day(now) -> date:
+    """The morning a warmup serves: today's if it runs before the 07:00 ET morning, else tomorrow's."""
+    t = SH._utc(now).tz_convert(TZ)
+    return t.date() if t.strftime("%H:%M") < MORNING_TIME_ET else (t + pd.Timedelta(days=1)).date()
+
+
+def features_warmup(life: Life, budget_min: float | None = None, runner=None) -> dict:
+    """Overnight pregame-feature warmup (walkforward.daily.warm_features): fills the immutable per-game feature cache the
+    next morning's walk-forward reads, under the shared heavy lock, inside a hard time budget. Scheduling only: no
+    refit, no promotion, no forecast, no simulation, no PMF, no ops-state write (CBB writer lock not taken)."""
+    budget = float(budget_min if budget_min is not None else os.environ.get(WARMUP_BUDGET_ENV, "150")) * 60.0
+    lock, wait = os.environ.get(HEAVY_LOCK_ENV), float(os.environ.get(WARMUP_WAIT_ENV, "900"))
+    day = warmup_day(life.now())
+    rec = {"lifecycle": "FEATURES_WARMUP", "serves_morning": day.isoformat(), "started_at": life.now().isoformat(),
+           "heavy_lock": lock, "budget_s": budget}
+    fd, t0 = None, time.monotonic()
+    if lock:
+        fd = acquire_heavy_lock(lock, wait)
+        rec["lock_wait_s"] = round(time.monotonic() - t0, 1)
+        rec["lock_result"] = "ACQUIRED" if fd is not None else "NOT_ACQUIRED"
+        if fd is None:
+            rec["status"] = "DEFERRED_SHARED_LOCK"
+            OS.append_jsonl(Path(life.prod_root) / "walkforward_attempts" / f"warmup-{day.isoformat()}.jsonl", [rec])
+            return rec
+    else:
+        rec["lock_result"] = "NOT_CONFIGURED"
+    try:
+        from cbb_platform.walkforward import config as WC, daily as WD
+        run = runner or WD.warm_features
+        try:
+            rec["warmup"] = run(day, root=Path(life.model_root or WC.STORE_ROOT), state_root=life.state_root,
+                                budget_s=max(0.0, budget - (time.monotonic() - t0)))
+            rec["status"] = rec["warmup"].get("status")
+        except Exception as e:                           # noqa: BLE001 -- the cache is append-only; nothing to undo
+            rec.update(status="FAIL", reason=f"{type(e).__name__}: {e}"[:400])
+    finally:
+        if fd is not None:
+            os.close(fd)
+    rec["finished_at"] = life.now().isoformat()
+    OS.append_jsonl(Path(life.prod_root) / "walkforward_attempts" / f"warmup-{day.isoformat()}.jsonl", [rec])
+    return rec
+
+
 def wf_attempts_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "walkforward_attempts" / f"{day.isoformat()}.jsonl"
 
@@ -404,11 +454,56 @@ def health(life: Life, day: date, **sections) -> dict:
     ex = sections.get("exports")
     if isinstance(ex, dict):
         h["export_paths"] = {k: (v or {}).get("path") for k, v in ex.items() if isinstance(v, dict)}
+    h["receipt"] = receipt(h)
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(h, indent=1, default=str))
     os.replace(tmp, p)
     return h
+
+
+def receipt(h: dict) -> dict:
+    """The machine-readable daily production receipt: a pure summary of the health sections already recorded today
+    (derived on every health write; it computes nothing new and never reads model state)."""
+    wf = h.get("walk_forward") or {}
+    lf = h.get("latest_forecast") or {}
+    fc = h.get("forecast") or {}
+    ex = h.get("exports") or {}
+    qr = h.get("quote_refresh") or {}
+    acqs = sorted([v["rotowire_web_acquisition"] for k, v in h.items() if k.startswith("availability_")
+                   and isinstance(v, dict) and isinstance(v.get("rotowire_web_acquisition"), dict)],
+                  key=lambda a: str(a.get("at") or a.get("acquisition_id") or ""))
+    last = acqs[-1] if acqs else {}
+    ok = [a for a in acqs if a.get("auth") == "PASS" and a.get("news_status") == "PROCESSED"
+          and a.get("snapshot_status") == "PROCESSED"]
+    st = lambda k: (ex.get(k) or {}).get("status") if isinstance(ex.get(k), dict) else None
+    errors, warnings = [], []
+    if wf.get("DAILY_REFIT_STATUS") == "FAIL":
+        errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
+    if wf.get("DAILY_REFIT_STATUS") == DEFERRED_SHARED_LOCK:
+        warnings.append("WALK_FORWARD_DEFERRED_SHARED_LOCK")
+    if fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"):
+        warnings.append(f"FORECAST_{fc.get('status')}")
+    if last and last.get("auth") not in (None, "PASS"):
+        errors.append(f"ROTOWIRE_AUTH_{last.get('auth')}")
+    if last.get("news_status") == "COVERAGE_GAP":
+        warnings.append("ROTOWIRE_WEB_NEWS_COVERAGE_GAP")
+    return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
+            "MODEL_VERSION": lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION"),
+            "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS"), "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION"),
+            "FORECAST_STATUS": fc.get("status"), "FORECAST_GAME_COUNT": lf.get("games_forecast"),
+            "FORECAST_PLAYER_COUNT": lf.get("players_forecast"), "PMF_COUNT": lf.get("pmfs_persisted"),
+            "ROTOWIRE_MODE": h.get("rotowire_mode"), "ROTOWIRE_AUTH": last.get("auth"),
+            "ROTOWIRE_LAST_SUCCESS": (ok[-1].get("at") or ok[-1].get("acquisition_id")) if ok else None,
+            "ROTOWIRE_NEWS_OVERLAP": last.get("news_continuity"),
+            "QUOTE_REFRESH_STATUS": qr.get("status"),
+            "REAL_QUOTES": bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0),
+            "BOARD_STATUS": st("boards"), "DISTRIBUTIONS_STATUS": st("distributions"), "GRADES_STATUS": st("grades"),
+            "IDENTITY_BLOCKED_GAMES": sum(1 for r in (fc.get("games_not_scored") or {}).values()
+                                          if r and "AVAILABILITY_IDENTITY_UNRESOLVED" in r),
+            "WRITER_COUNT": 1 if os.environ.get("CBB_SCHEDULER_ROLE") == "PRIMARY_WRITER" else 0,
+            "HEAVY_LOCK_STATUS": wf.get("lock_result"),
+            "ERRORS": errors, "WARNINGS": warnings, "FINAL_STATUS": "FAIL" if errors else ("DEGRADED" if warnings else "OK")}
 
 
 def _rotowire_mode() -> str:
@@ -451,9 +546,11 @@ def web_acquire(life: Life) -> dict:
     # the same event store / request ledger forecast() and prod.run.daily read (PC paths follow CBB_PROD_ROOT)
     rep = RWW.acquire(client, ctx, store=RW.EventStore(PC.ROTOWIRE_ROOT), root=PC.ROTOWIRE_WEB_ROOT,
                       ledger_path=PC.ROTOWIRE_REQUEST_LEDGER, map_root=PC.ROTOWIRE_MAP_ROOT)
-    return {k: rep.get(k) for k in ("acquisition_id", "auth", "news_status", "snapshot_status", "news_rows",
-                                    "snapshot_rows", "news_new_items", "news_events_new", "snapshot_events_new",
-                                    "reasons", "warnings")}
+    out = {k: rep.get(k) for k in ("acquisition_id", "auth", "news_status", "snapshot_status", "news_rows",
+                                   "snapshot_rows", "news_new_items", "news_events_new", "snapshot_events_new",
+                                   "news_continuity", "news_window_overlap", "reasons", "warnings")}
+    out["at"] = life.now().isoformat()
+    return out
 
 
 def availability_poll(life: Life, window: str = ROTOWIRE_LIGHT_POLL_TIMES_ET[0]) -> dict:
@@ -542,6 +639,8 @@ def main(argv=None) -> None:
     qp.add_argument("--dry-run", action="store_true")
     rr = sub.add_parser("refit-retry")
     rr.add_argument("--date", default=None)
+    fw = sub.add_parser("features-warmup")
+    fw.add_argument("--budget-min", type=float, default=None)
     a = ap.parse_args(argv)
     from cbb_platform import duckdb_limits as DLM
     DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
@@ -560,6 +659,8 @@ def main(argv=None) -> None:
         out = quotes(life, dry_run=a.dry_run)
     elif a.cmd == "refit-retry":
         out = refit_retry(life, date.fromisoformat(a.date) if a.date else None)
+    elif a.cmd == "features-warmup":
+        out = features_warmup(life, a.budget_min)
     else:
         out = schedule_spec()
     print(json.dumps(out, indent=1, default=str))

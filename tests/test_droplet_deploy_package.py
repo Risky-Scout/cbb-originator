@@ -207,7 +207,8 @@ def test_prod_root_env_relocates_every_mutable_production_path(tmp_path):
 
 
 # ------------------------------------------------------------------ systemd units
-HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.service")
+HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.service",
+               "cbb-originator-features-warmup.service")
 LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
 POLL_UNIT = "cbb-originator-availability-poll.service"      # 08:30 light poll: writer lock only, NEVER the heavy lock
 
@@ -220,7 +221,7 @@ def _mem(s: str, key: str) -> int:
 def test_units_are_isolated_and_hold_no_secrets():
     assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, "cbb-originator-morning.timer",
                                        "cbb-originator-refit-retry.timer", "cbb-originator-quotes.timer",
-                                       "cbb-originator-availability-0830.timer",
+                                       "cbb-originator-availability-0830.timer", "cbb-originator-features-warmup.timer",
                                        *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
     for u in UNITS:
         s = u.read_text()
@@ -267,6 +268,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
                    "cbb-originator-refit-retry.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
+                   "cbb-originator-features-warmup.timer": ["OnCalendar=*-*-* 01:30:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
     for p in (D / "systemd").glob("*.timer"):
@@ -355,3 +357,17 @@ def test_0830_light_poll_unit_never_touches_the_heavy_lock_and_only_acquires(app
     for bad in (["availability-poll"], ["availability-poll", "10:00"], ["availability-poll", "07:00"]):
         assert _run(app, *bad, CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1").returncode == 3
     assert _run(app, "availability-poll", "08:30").returncode == 4          # no writer role -> nothing runs
+
+
+def test_features_warmup_is_heavy_locked_writer_lock_free_and_bounded(app):
+    s = (D / "systemd" / "cbb-originator-features-warmup.service").read_text()
+    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run features-warmup" in s
+    t = (D / "systemd" / "cbb-originator-features-warmup.timer").read_text()
+    assert "Unit=cbb-originator-features-warmup.service" in t and "Persistent=false" in t
+    timeout = int(re.search(r"^TimeoutStartSec=(\d+)min$", s, re.M).group(1))
+    assert 150 < timeout <= 180                        # budget 150 min + one cutoff group; ends before NBA 04:37 ET
+    r = _run(app, "features-warmup", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    assert r.returncode == 0, r.stderr
+    assert "no CBB writer lock" in r.stderr and "lifecycle --ops-root" in r.stderr and "features-warmup" in r.stderr
+    assert "writer.lock" not in r.stderr and str(app["env"]["CBB_HEAVY_LOCK"]) in r.stderr
+    assert _run(app, "features-warmup").returncode == 4                    # no writer role -> nothing runs

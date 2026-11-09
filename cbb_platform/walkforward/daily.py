@@ -402,6 +402,54 @@ def predict(as_of, root: Path = WC.STORE_ROOT, quotes_paths=(), availability=Non
     return r
 
 
+def warm_features(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_ROOT,
+                  history_db: Path | None = None, budget_s: float = 9000.0, log=print, clock=time.monotonic) -> dict:
+    """SCHEDULING ONLY (no fit, no promotion, no manifest write, no model change): pre-build the immutable per-game
+    pregame feature cache (training_rows.feature_rows -- the identical code path, each row built at its own game's
+    validated cutoff over the state version as-of that cutoff) for the games the `day` morning would include, so the
+    07:00 job only fits. Cutoffs are built oldest first; no new cutoff starts after budget_s. Never takes the morning
+    store lock (the morning must never find it held): the caller serializes heavy work with the shared heavy lock, and
+    the cache itself is concurrency-safe (first complete writer wins; rows are byte-identical either way)."""
+    t0 = clock()
+    history_db = HS.history_db() if history_db is None else history_db
+    cfg = P.load_config()
+    cut = WC.refit_cutoff(day)
+    mp = SO.paths(root)["manifests"] / "outcome_available_at.json"
+    avail = EL.outcome_available_at(state_root, cut, json.loads(mp.read_text()) if mp.exists() else None)  # read-only
+    st = EL.state_asof(state_root, cut)
+    out = {"day": day.isoformat(), "training_cutoff": pd.Timestamp(cut).isoformat(), "state_version": None,
+           "included_games": 0, "cached_before": 0, "cutoffs_todo": 0, "cutoffs_built": 0, "games_built": 0,
+           "budget_s": budget_s, "status": "NO_STATE"}
+    if st is None:
+        return out
+    out["state_version"] = st["state_version"]
+    el = EL.evaluate(st, cut, avail)
+    inc = el.loc[el["decision"] == "INCLUDED", "game_id"].tolist()
+    out["included_games"] = len(inc)
+    if not inc:
+        out["status"] = "NOTHING_TO_BUILD"
+        return out
+    gc = TR.game_cutoffs(st["increment_db"], inc)
+    cache = SO.paths(root)["training"] / "features"
+    have = {d.name for d in cache.iterdir() if d.is_dir() and not d.name.startswith(".")} if cache.exists() else set()
+    todo = gc[~gc["canonical_game_id"].isin(have)]
+    out["cached_before"] = int(gc["canonical_game_id"].isin(have).sum())
+    cuts = sorted(todo["prediction_cutoff_utc"].unique())
+    out["cutoffs_todo"] = len(cuts)
+    for c in cuts:
+        if clock() - t0 > budget_s:
+            out["status"] = "BUDGET_EXHAUSTED"
+            break
+        part = todo[todo["prediction_cutoff_utc"] == c]
+        res = TR.feature_rows(SO.paths(root)["training"], state_root, part, history_db, cfg, log=log)
+        out["cutoffs_built"] += 1
+        out["games_built"] += sum(1 for g in part["canonical_game_id"] if res["meta"].get(g, {}).get("status"))
+    else:
+        out["status"] = "COMPLETE"
+    out["elapsed_s"] = round(clock() - t0, 1)
+    return out
+
+
 def status(root: Path = WC.STORE_ROOT) -> dict:
     a = SO.active(root)
     return {"ACTIVE": a, "ROLLBACK": SO.rollback_pointer(root), "versions": SO.versions(root),
