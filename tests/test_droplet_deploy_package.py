@@ -257,8 +257,14 @@ def test_units_are_isolated_and_hold_no_secrets():
     for n in HEAVY_UNITS:
         s = (D / "systemd" / n).read_text()
         assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200        # 8 GB host: 4 GiB reserve kept
+    # quotes / availability refreshes build the full-state pregame features before scoring (2026-11-09: a 1800M/2200M
+    # quotes cgroup throttled then OOM-killed after the season state grew), so they carry the same 2800M/3200M ceiling;
+    # they hold the CBB writer lock (never concurrent with morning / refit-retry) and the 01:30 ET warmup window has no
+    # scoring cutoffs, so at most two 3200M CBB cgroups coexist on the 8 GB host
     for n in LIGHT_UNITS:
-        assert _mem((D / "systemd" / n).read_text(), "MemoryMax") < 3200
+        s = (D / "systemd" / n).read_text()
+        assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200
+    assert _mem((D / "systemd" / POLL_UNIT).read_text(), "MemoryMax") < 3200     # acquisition only: no feature build
 
 
 def test_timers_are_dst_correct_and_match_the_approved_schedule():
