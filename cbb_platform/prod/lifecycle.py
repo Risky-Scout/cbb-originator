@@ -181,6 +181,8 @@ def availability_changes(life: Life, games: pd.DataFrame, now: pd.Timestamp) -> 
     from cbb_platform.prod import rotowire_feed as RW
     ev = RW.EventStore(PC.ROTOWIRE_ROOT).frame()
     sg = games.rename(columns={"scheduled_tip_utc": "start_time"}) if "start_time" not in games else games
+    if "feature_cutoff" not in sg:                 # the slate's validated production cutoff IS the feature cutoff
+        sg = sg.assign(feature_cutoff=sg["cutoff"])  # (run.daily: feature_cutoff != prediction cutoff -> FUTURE_LEAKAGE)
     av, _ = RW.availability_frame(ev, sg, now)
     cur = {(r.game_id, r.player_id): r.status for r in av.itertuples(index=False)} if len(av) else {}
     affected, changed = [], {}
