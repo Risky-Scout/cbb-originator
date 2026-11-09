@@ -13,7 +13,10 @@ non-active case. Known inactive or stale identity != unresolved identity:
     ROSTERED_LONG_TERM_OUT            on the team's current official roster, definitively out long term (season-ending)
     STALE_NONCURRENT                  RotoWire still lists him at this team, but he is not with it in 2026-27
     PROFESSIONAL_NONCURRENT           no longer an NCAA player: professional career, newer than any college listing
-    SOURCE_CONFLICT                   credible sources disagree -> still fails closed (recorded, never exempted)
+    SOURCE_CONFLICT                   credible sources disagree about a material identity / team / eligibility fact.
+                                      Recorded, never resolved here. Blocks UNLESS current-game participation is
+                                      deterministically impossible (see conflict_blocks): current_game_available FALSE
+                                      blocks only while the live evidence keeps proving it; UNKNOWN / POSSIBLY_ACTIVE block
     IDENTITY_UNRESOLVED               derived, not curated: everything else -> fails closed
 
 The NON_BLOCKING classes do not block the whole game; the player is never put into the availability frame (he is
@@ -45,7 +48,9 @@ NON_BLOCKING = (AFFILIATED_INACTIVE_ELIGIBILITY, AFFILIATED_ROSTER_LIMIT, DELAYE
                 ROSTERED_LONG_TERM_OUT, PROFESSIONAL_NONCURRENT)
 CURATED = NON_BLOCKING + (SOURCE_CONFLICT,)
 COLS = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "affiliated_team_id", "canonical_player_id",
-        "operational_class", "eligible_from", "verified_on", "review_by", "evidence"]
+        "operational_class", "eligible_from", "verified_on", "review_by", "current_game_available",
+        "evidence_checked_at", "evidence"]
+CONFLICT_AVAILABILITY = ("FALSE", "UNKNOWN", "POSSIBLY_ACTIVE")   # SOURCE_CONFLICT rows only
 REQUIRED = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "affiliated_team_id", "operational_class",
             "verified_on", "review_by", "evidence"]
 
@@ -71,6 +76,14 @@ def load(path: Path | None = None) -> pd.DataFrame:
     pd.to_datetime(d["eligible_from"], format="%Y-%m-%d")
     if (pd.to_datetime(m["review_by"]) <= pd.to_datetime(m["verified_on"])).any():
         raise ValueError("rotowire player states: review_by must be after verified_on")
+    c = m["operational_class"] == SOURCE_CONFLICT
+    if not m.loc[c, "current_game_available"].isin(CONFLICT_AVAILABILITY).all():
+        raise ValueError(f"rotowire player states: SOURCE_CONFLICT needs current_game_available in {CONFLICT_AVAILABILITY}")
+    if (m.loc[c, "evidence_checked_at"] == "").any():
+        raise ValueError("rotowire player states: SOURCE_CONFLICT needs evidence_checked_at (UTC instant)")
+    pd.to_datetime(m.loc[c, "evidence_checked_at"], utc=True, format="ISO8601")
+    if (m.loc[~c, ["current_game_available", "evidence_checked_at"]] != "").any().any():
+        raise ValueError("rotowire player states: current_game_available / evidence_checked_at are SOURCE_CONFLICT-only")
     return m
 
 
@@ -101,3 +114,36 @@ def classify(states: pd.DataFrame, rotowire_player_id, canonical_team_id, as_of)
 
 def non_blocking(states: pd.DataFrame, rotowire_player_id, canonical_team_id, as_of) -> bool:
     return classify(states, rotowire_player_id, canonical_team_id, as_of) in NON_BLOCKING
+
+
+def conflicts(states: pd.DataFrame, teams, as_of) -> pd.DataFrame:
+    """SOURCE_CONFLICT rows in force at as_of for these canonical teams."""
+    f = in_force(states, as_of)
+    return f[(f["operational_class"] == SOURCE_CONFLICT) & f["affiliated_team_id"].isin(set(teams))]
+
+
+def conflict_blocks(row: dict, state: dict | None, last_news_at, participated: bool | None) -> tuple[bool, str]:
+    """(blocks, why) for one SOURCE_CONFLICT row at one game instant. The conflict itself is never resolved here; the
+    game is blocked unless current-game participation is DETERMINISTICALLY impossible on the LIVE evidence:
+      * the row says current_game_available FALSE (UNKNOWN / POSSIBLY_ACTIVE always block);
+      * RotoWire has a current status for him, identity still unresolved, effective status OUT-like, no gate
+        (ACTIVE / NOT_LISTED / GTD / QUESTIONABLE / UNKNOWN / conflicting news vs snapshot -> possibly active);
+      * no RotoWire news item knowable after evidence_checked_at (a new item = possible activation -> re-verify);
+      * no 2026-27 box-score participation for him (participated None = not checkable -> block).
+    state: player_state row (None = no current RotoWire record). Re-evaluated at every acquisition / game instant."""
+    from cbb_platform.prod import rotowire_feed as RW
+    if row.get("current_game_available") != "FALSE":
+        return True, f"CONFLICT_AVAILABILITY_{row.get('current_game_available') or 'UNKNOWN'}"
+    if state is None:
+        return True, "CONFLICT_NO_CURRENT_STATUS"
+    if state.get("identity_resolution_status") == "RESOLVED":
+        return False, "RESOLVED_NORMAL_HANDLING"
+    if state.get("effective_status") not in RW.OUT_LIKE or state.get("gate"):
+        return True, f"CONFLICT_POSSIBLY_ACTIVE_{state.get('effective_status')}"
+    if last_news_at is not None and pd.Timestamp(last_news_at) > pd.to_datetime(row["evidence_checked_at"], utc=True):
+        return True, "CONFLICT_NEW_NEWS_SINCE_EVIDENCE_CHECK"
+    if participated is None:
+        return True, "CONFLICT_PARTICIPATION_UNCHECKED"
+    if participated:
+        return True, "CONFLICT_CURRENT_SEASON_PARTICIPATION"
+    return False, "CONFLICT_DETERMINISTICALLY_UNAVAILABLE"

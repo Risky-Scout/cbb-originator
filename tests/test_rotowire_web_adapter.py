@@ -863,7 +863,8 @@ def states(*rows):
     for r in rows:
         d = {"rotowire_player_id": "999", "rotowire_player_name": "Ghost Player", "rotowire_team_name": "Home U",
              "affiliated_team_id": "T1", "canonical_player_id": "", "operational_class": PS.AFFILIATED_INACTIVE_ELIGIBILITY,
-             "eligible_from": "", "verified_on": "2026-11-08", "review_by": "2026-11-22", "evidence": "test evidence"}
+             "eligible_from": "", "verified_on": "2026-11-08", "review_by": "2026-11-22", "current_game_available": "",
+             "evidence_checked_at": "", "evidence": "test evidence"}
         d.update(r)
         out.append(d)
     return pd.DataFrame(out, columns=PS.COLS)
@@ -1123,3 +1124,115 @@ def test_omissions_never_touch_cbbd_raw_rosters_or_model_code():
             assert "roster_omissions" not in f.read_text(), f
     shipped = RO.load()
     assert set(shipped["evidence_source"]) <= set(RO.SOURCES)
+
+
+# ============================================================================ SOURCE_CONFLICT vs current-game participation (2026-11-09)
+def conflict(**kv):
+    d = {"rotowire_player_id": "999", "rotowire_player_name": "Ghost Player", "affiliated_team_id": "T1",
+         "canonical_player_id": "P-mac", "operational_class": PS.SOURCE_CONFLICT, "current_game_available": "FALSE",
+         "evidence_checked_at": (T0 + timedelta(minutes=5)).isoformat()}
+    d.update(kv)
+    return states(d)
+
+
+def _cframe(env, st, participation=frozenset(), games=GAMES, at=None):
+    return RW.availability_frame(env["store"].frame(), games, at or (env["clock"].t + timedelta(minutes=10)), states=st,
+                                 omissions=NO_OMIT, participation=None if participation is None else set(participation))
+
+
+def test_maclin_like_conflict_deterministically_out_does_not_block_and_stays_recorded(env):
+    # TEST 1 + 9: SOURCE_CONFLICT + RotoWire Out + not on the active roster + no participation -> no block
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    st = conflict()
+    fr, reasons = _cframe(env, st)
+    assert reasons["G1"] == []
+    assert PS.classify(st, "999", "T1", env["clock"].t) == PS.SOURCE_CONFLICT        # the conflict is retained
+    assert "999" not in set(fr["rotowire_player_id"]) and "P-mac" not in set(fr["player_id"])  # no lineup/minutes/sim
+    base, _ = _cframe(env, states())                                                 # teammates' rows unchanged
+    assert fr.equals(base)
+
+
+@pytest.mark.parametrize("avail", ["UNKNOWN", "POSSIBLY_ACTIVE"])
+def test_conflict_with_unknown_or_possibly_active_availability_blocks(env, avail):
+    # TEST 2 + 3
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _cframe(env, conflict(current_game_available=avail))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+
+
+def test_conflict_returns_to_blocking_on_any_new_evidence_without_code_change(env):
+    # TEST 10: status change, new news, participation, unverifiable participation, lapse, no current status
+    site = Site(news=GHOST, rows=GHOST_ROWS)
+    env["run"](site)
+    st = conflict()
+    assert _cframe(env, st)[1]["G1"] == []
+    assert _cframe(env, st, participation={("N", "T1", "ghost player")})[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _cframe(env, st, participation={("C", "P-mac")})[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _cframe(env, st, participation=None)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _cframe(env, conflict(review_by="2026-11-10"))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]  # lapsed
+    assert RW.availability_frame(env["store"].frame().iloc[0:0], GAMES, env["clock"].t, states=st, omissions=NO_OMIT,
+                                 participation=set())[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]   # no status
+    env["clock"].t = T0 + timedelta(hours=1)                                         # a later acquisition: GTD
+    site.set(rows=DEFAULT_ROWS + [row("999", "Ghost", "Player", "Home U", "G", "Not Injury Related", "Game Time Decision")],
+             news=news_page(item("101", "Jon Doe", "Home U", "G", "Knee", "Ruled out", "Doe is out Tuesday.")))
+    env["run"](site)
+    assert _cframe(env, st)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    env["clock"].t = T0 + timedelta(hours=2)                                         # RotoWire now lists him ACTIVE-ish
+    site.set(rows=DEFAULT_ROWS)
+    env["run"](site)
+    assert _cframe(env, st)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]         # dropped off the list: possibly active
+
+
+def test_conflict_new_news_after_the_evidence_check_blocks_until_reverified(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    late = conflict(evidence_checked_at=(T0 - timedelta(days=1)).isoformat())       # the Out news is newer than the check
+    assert _cframe(env, late)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+
+
+def test_other_conflict_player_with_unresolved_availability_blocks(env):
+    # TEST 4: a different SOURCE_CONFLICT player, RotoWire GTD
+    rows = GHOST_ROWS + [row("997", "Other", "Guy", "Away St", "F", "Ankle", "Game Time Decision")]
+    news = news_page(item("101", "Jon Doe", "Home U", "G", "Knee", "Ruled out", "Doe is out Tuesday."))
+    env["run"](Site(news=news, rows=rows))
+    st = pd.concat([conflict(), conflict(rotowire_player_id="997", rotowire_player_name="Other Guy",
+                                         affiliated_team_id="T2", canonical_player_id="P-oth")], ignore_index=True)
+    assert _cframe(env, st)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    assert _cframe(env, st.iloc[:1])[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]   # 997 unresolved, uncurated
+
+
+def test_identity_unresolved_still_blocks_and_known_classes_do_not(env):
+    # TEST 5-8
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _cframe(env, states({"rotowire_player_id": "555"}))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    for cls in (PS.ROSTERED_LONG_TERM_OUT, PS.STALE_NONCURRENT, PS.AFFILIATED_INACTIVE_ELIGIBILITY):
+        assert _cframe(env, states({"operational_class": cls}))[1]["G1"] == [], cls
+
+
+def test_conflict_row_never_changes_an_unrelated_game(env):
+    # TEST 11
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    g2 = pd.DataFrame({"canonical_game_id": ["G2"], "home_team_id": ["T3"], "away_team_id": ["T4"],
+                       "feature_cutoff": [CUT], "start_time": [TIP]})
+    for st in (states(), conflict(), conflict(current_game_available="UNKNOWN")):
+        assert _cframe(env, st, games=g2)[1]["G2"] == []
+    assert _cframe(env, conflict(current_game_available="UNKNOWN", affiliated_team_id="T9"))[1]["G1"] == \
+        ["AVAILABILITY_IDENTITY_UNRESOLVED"]                                         # 999 itself still unresolved
+
+
+def test_conflict_availability_table_validation_and_model_isolation(tmp_path):
+    # TEST 12 (+ the shipped Maclin row)
+    p = tmp_path / "s.csv"
+    for broken, msg in ((conflict(current_game_available=""), "current_game_available"),
+                        (conflict(current_game_available="NO"), "current_game_available"),
+                        (conflict(evidence_checked_at=""), "evidence_checked_at"),
+                        (states({"current_game_available": "FALSE"}), "SOURCE_CONFLICT-only")):
+        broken.fillna("").to_csv(p, index=False)
+        with pytest.raises(ValueError, match=msg):
+            PS.load(p)
+    s = PS.load()
+    mac = s[s["rotowire_player_id"] == "23921"].iloc[0]
+    assert (mac["operational_class"], mac["current_game_available"]) == (PS.SOURCE_CONFLICT, "FALSE")
+    assert mac["review_by"] == "2026-11-16" and "SOURCE_CONFLICT retained" in mac["evidence"]
+    prod = Path(PS.__file__).parent
+    for m in ("inputs.py", "features.py", "universe.py", "simulate.py", "pricing.py"):
+        txt = (prod / m).read_text()
+        assert "conflict_blocks" not in txt and "current_game_available" not in txt, m

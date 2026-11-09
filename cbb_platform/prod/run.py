@@ -158,7 +158,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     if rotowire_root is not None and availability is None:       # RotoWire availability, point in time at each game
         sg = slate[slate["canonical_game_id"].isin(score_ids)]
         ev = RW.EventStore(rotowire_root).frame()
-        availability, areasons = RW.availability_frame(ev, sg, aso)
+        availability, areasons = RW.availability_frame(ev, sg, aso, participation=RW.participation_keys(
+            st["increment_db"], aso) if not fixture else None)
         fresh = RW.freshness(RA.ledger(rotowire_ledger), sg, aso)
         for g in score_ids:
             game_reasons[g] += areasons.get(g, []) + fresh["game_reasons"].get(g, [])

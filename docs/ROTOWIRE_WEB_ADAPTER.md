@@ -114,3 +114,15 @@ review_by); otherwise it is rejected and the player keeps failing closed. Applie
 (map method `EXACT_NAME_ON_VERIFIED_CBBD_ROSTER_OMISSION`) and the pregame universe (`ON_CURRENT_ROSTER_CBBD_OMISSION`);
 CBBD payloads, the raw cache and `flagship.rosters` are never edited, and a row becomes MOOT once CBBD lists the player.
 Only SOURCE_CONFLICT and IDENTITY_UNRESOLVED block whole games.
+
+## SOURCE_CONFLICT vs current-game participation (2026-11-09)
+
+SOURCE_CONFLICT still means credible sources disagree about a material identity / team / eligibility fact, and it is
+always recorded. It blocks a game only while current-game participation is uncertain
+(`rotowire_player_states.conflict_blocks`, evaluated at every acquisition and game instant). A row with
+`current_game_available=FALSE` and an `evidence_checked_at` instant is non-blocking only while ALL hold: RotoWire has a
+current status for him, his identity is still unresolved, the status is OUT-like with no uncertainty/conflict gate, no
+RotoWire news item is newer than `evidence_checked_at`, the production state shows no 2026-27 box-score participation,
+and the row is within verified_on .. review_by. Anything else (UNKNOWN / POSSIBLY_ACTIVE, GTD/ACTIVE/NOT_LISTED, new
+news, participation, participation not checkable, lapse) blocks again with no code change. Re-verify by editing the
+row's evidence and dates in a reviewed commit.

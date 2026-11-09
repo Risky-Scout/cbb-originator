@@ -455,7 +455,8 @@ def player_state(events: pd.DataFrame, as_of) -> pd.DataFrame:
 
 
 def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states: pd.DataFrame | None = None,
-                       omissions: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
+                       omissions: pd.DataFrame | None = None, participation: set | None = None
+                       ) -> tuple[pd.DataFrame, dict]:
     """games: canonical_game_id, home_team_id, away_team_id, feature_cutoff. Returns (the inputs.apply_availability
     frame, {game_id: [reasons]}). Each game uses the state at min(as_of, its feature cutoff).
     An unresolved non-ACTIVE player fails his team's games closed UNLESS a curated operational class in force at that
@@ -463,7 +464,11 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states:
     identity != unresolved identity). Such a player never enters the frame (no projection is conditioned on him).
     A verified CBBD roster omission anchored only to a CBBD recruit record (prod/roster_omissions: identity
     deterministic, no model identity -- like any unlinked 2026 recruit) is exempt the same way.
-    states / omissions: the curated tables (None -> the committed files)."""
+    A curated SOURCE_CONFLICT player blocks his team's games unless current-game participation is deterministically
+    impossible on the live evidence (rotowire_player_states.conflict_blocks; this also covers a conflict player RotoWire
+    now lists ACTIVE / NOT_LISTED = possibly active). The conflict stays recorded either way.
+    states / omissions: the curated tables (None -> the committed files); participation: participation_keys() of the
+    production state (None -> not checkable -> a FALSE-availability conflict still blocks)."""
     from cbb_platform.prod import rotowire_player_states as PS
     states = PS.load() if states is None else states
     omissions = RO.load() if omissions is None else omissions
@@ -483,7 +488,23 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states:
             known = [isinstance(t, str) and (PS.non_blocking(states, p, t, T) or RO.recruit_anchored(om, p, t))
                      for p, t in zip(bad["rotowire_player_id"], bad["canonical_team_id"])]
             bad = bad[[not k for k in known]]
-        if len(bad):
+        conflict_block = False
+        for c in (PS.conflicts(states, teams, T).to_dict("records") if len(states) else []):
+            pid = c["rotowire_player_id"]
+            hit = stt[stt["rotowire_player_id"].astype(str) == pid]
+            sr = hit.iloc[0].to_dict() if len(hit) else None
+            if sr is not None and sr["canonical_team_id"] != c["affiliated_team_id"]:
+                continue                                 # RotoWire places him elsewhere: the row does not apply
+            news = _player_news_at(events, pid, T)
+            part = None if participation is None else bool(
+                ("C", c["canonical_player_id"]) in participation
+                or ("N", c["affiliated_team_id"], MT.norm(c["rotowire_player_name"])) in participation)
+            blocks, _why = PS.conflict_blocks(c, sr, news, part)
+            if blocks:
+                conflict_block = True
+            else:
+                bad = bad[bad["rotowire_player_id"].astype(str) != pid]   # recorded conflict, deterministically out
+        if len(bad) or conflict_block:
             reasons[g.canonical_game_id].append("AVAILABILITY_IDENTITY_UNRESOLVED")
         ok = stt[(stt["identity_resolution_status"] == "RESOLVED") & stt["canonical_team_id"].isin(teams)]
         for r in ok.itertuples(index=False):
@@ -499,6 +520,35 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states:
     if fr["status"].isin(POSTGAME).any():                # hard guard (interface_status already refuses)
         raise AvailabilityLeakage("POSTGAME_ONLY reached the pregame availability frame")
     return fr, reasons
+
+
+def _player_news_at(events: pd.DataFrame, rotowire_player_id, as_of):
+    """knowable_at of this player's latest RotoWire news item usable at as_of (None if none)."""
+    u = usable(events, as_of)
+    if u.empty:
+        return None
+    n = u[(u["rotowire_player_id"].astype(str) == str(rotowire_player_id)) & u["event_kind"].isin(NEWS_KINDS)]
+    return None if n.empty else max(_ts(x) for x in n["knowable_at"])
+
+
+def participation_keys(increment_db, as_of) -> set | None:
+    """{('C', canonical_player_id), ('N', team_id, normalized box name)} of every 2026-27 box-score line played before
+    as_of in the production state (read-only); None if the state has no player box table (not checkable)."""
+    import duckdb
+    con = duckdb.connect(str(increment_db), read_only=True)
+    try:
+        df = con.execute("""SELECT canonical_player_id, canonical_team_id, source_player_name, event_time
+                            FROM flagship.player_game_outcomes WHERE season = ?""", [PC.PRODUCTION_SEASON]).df()
+    except duckdb.CatalogException:
+        return None
+    finally:
+        con.close()
+    lim = pd.Timestamp(as_of)
+    lim = lim.tz_localize("UTC") if lim.tzinfo is None else lim.tz_convert("UTC")
+    df = df[pd.to_datetime(df["event_time"], utc=True) <= lim]
+    out = {("C", p) for p in df["canonical_player_id"].dropna()}
+    out |= {("N", t, MT.norm(n)) for t, n in zip(df["canonical_team_id"], df["source_player_name"]) if isinstance(n, str)}
+    return out
 
 
 # ============================================================================ freshness (policy §8 bounds)
