@@ -981,15 +981,145 @@ def test_light_poll_only_acquires_never_forecasts_fits_or_simulates(monkeypatch,
 
 
 def test_shipped_player_states_table_is_valid_and_exempts_only_documented_players():
+    from cbb_platform.prod import roster_omissions as RO
     s = PS.load()                                                          # the production table validates
     assert set(s["operational_class"]) <= set(PS.CURATED) and (s["evidence"].str.len() > 40).all()
-    at = pd.Timestamp("2026-11-08T23:00Z")
+    at = pd.Timestamp("2026-11-09T23:00Z")
     exempt = {p for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]) if PS.non_blocking(s, p, t, at)}
     assert exempt == {"20532", "20395", "20354", "20474", "20936", "20575", "20923", "21195", "20703", "26727", "20593",
-                      "21070", "25207", "27904", "26154"}
+                      "21070", "25207", "27904", "26154", "21059", "22964", "21227", "27852"}
     assert PS.classify(s, "23921", "T-7dd7b1683d08fb35", at) == PS.SOURCE_CONFLICT          # Maclin keeps blocking
-    for still_blocking in ("21059", "21227", "22964", "23073", "27385", "27852", "28337"):  # eligible / rostered / unverified
-        assert still_blocking not in set(s["rotowire_player_id"])
+    assert PS.classify(s, "21059", "T-84846d5112415644", at) == PS.AFFILIATED_ROSTER_LIMIT  # Avila: no pro contract
+    assert PS.classify(s, "21227", "T-46677ad8b399306a", at) == PS.ROSTERED_LONG_TERM_OUT
     assert not PS.non_blocking(s, "20593", "T-0d7c299d41bf5c14", pd.Timestamp("2026-12-18T15:00Z"))  # Odum: eligible
-    assert not any(PS.non_blocking(s, p, t, pd.Timestamp("2026-11-22T15:00Z"))                     # all lapse -> re-verify
+    assert not PS.non_blocking(s, "20395", "T-5b19c5328a174ffa", pd.Timestamp("2026-11-10T15:00Z"))  # hearing: re-verify
+    assert not any(PS.non_blocking(s, p, t, pd.Timestamp("2027-01-04T15:00Z"))                     # every row lapses
                    for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]))
+    om = RO.load()                                                         # verified CBBD roster omissions
+    assert dict(zip(om["rotowire_player_id"], om["canonical_player_id"])) == {
+        "27385": "P-e94354c3d235b354", "23073": "P-b8eadb49953f9937", "28337": ""}         # Mattingly: no id minted
+    assert set(om["rotowire_player_id"]).isdisjoint(s["rotowire_player_id"])               # one disposition per player
+
+# ============================================================================ source precedence: CBBD roster omissions (2026-11-09)
+from cbb_platform.prod import roster_omissions as RO  # noqa: E402
+
+NO_OMIT = pd.DataFrame(columns=RO.COLS)
+
+
+def omits(*rows):
+    out = []
+    for r in rows:
+        d = {"rotowire_player_id": "999", "rotowire_player_name": "Ghost Player", "rotowire_team_name": "Home U",
+             "canonical_team_id": "T1", "canonical_player_id": "P-ghost", "source_recruit_id": "",
+             "player_name": "Ghost Player", "first_name": "Ghost", "last_name": "Player", "position": "G",
+             "evidence_source": "OFFICIAL_SCHOOL_ROSTER", "evidence_url": "https://homeu.edu/roster",
+             "verified_on": "2026-11-09", "review_by": "2026-11-23", "evidence": "official 2026-27 roster lists him #2"}
+        d.update(r)
+        out.append(d)
+    return pd.DataFrame(out, columns=RO.COLS)
+
+
+def _with(env, om, pmap=None, known=None):
+    c = env["ctx"]
+    env["ctx"] = RW.IdentityContext(c.teams, RW.with_omissions(c.roster, om, env["clock"].t, pmap, known))
+    return env["ctx"]
+
+
+def _gframe(env, om=NO_OMIT, st=None):
+    return RW.availability_frame(env["store"].frame(), GAMES, env["clock"].t + timedelta(minutes=1),
+                                 states=PS.load(Path("/nonexistent")) if st is None else st, omissions=om)
+
+
+@pytest.mark.parametrize("source", ["OFFICIAL_SCHOOL_ROSTER", "CURRENT_SEASON_GAME_PARTICIPATION"])
+def test_rank1_or_rank2_evidence_overrides_a_missing_cbbd_roster_row(env, source):
+    # 1 + 2 + 6: missing CBBD alone no longer makes him IDENTITY_UNRESOLVED once a stronger source places him
+    _with(env, omits({"evidence_source": source}))
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    pm = pd.read_csv(env["maps"] / W.PLAYER_MAP_FILE, dtype=str)
+    row = pm[pm["rotowire_player_id"] == "999"]
+    assert row[["canonical_player_id", "method"]].values.tolist() == [["P-ghost", W.M_PLAYER_OMISSION]]
+    fr, reasons = _gframe(env)
+    assert reasons["G1"] == [] and fr.set_index("player_id").loc["P-ghost", "status"] == "OUT"   # normal availability
+
+
+def test_missing_cbbd_without_stronger_evidence_still_fails_closed(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _gframe(env)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    for bad in ("TRANSACTION_REPORTING", "ROTOWIRE_ROSTER", "CBBD"):     # ranks 3-5 can never create an omission row
+        with pytest.raises(ValueError, match="evidence_source"):
+            p = env["tmp"] / "o.csv"
+            omits({"evidence_source": bad}).to_csv(p, index=False)
+            RO.load(p)
+
+
+@pytest.mark.parametrize("cls", [PS.PROFESSIONAL_NONCURRENT, PS.ROSTERED_LONG_TERM_OUT])
+def test_professional_and_rostered_long_term_out_do_not_block(env, cls):
+    # 3 + 4
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    fr, reasons = _gframe(env, st=states({"operational_class": cls}))
+    assert reasons["G1"] == [] and "999" not in set(fr["rotowire_player_id"])       # never in lineup / simulation
+    assert cls in PS.NON_BLOCKING
+
+
+def test_recruit_anchored_cbbd_omission_does_not_block_and_creates_no_identity(env):
+    # 5: deterministic identity (official roster + CBBD recruit record + RotoWire agree), no canonical id exists
+    om = omits({"canonical_player_id": "", "source_recruit_id": "35172"})
+    before = env["ctx"].roster.copy()
+    _with(env, om)
+    assert env["ctx"].roster.drop(columns="roster_source").equals(before)            # no roster row, no new id
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert "999" not in set(pd.read_csv(env["maps"] / W.PLAYER_MAP_FILE, dtype=str)["rotowire_player_id"])
+    fr, reasons = _gframe(env, om)
+    assert reasons["G1"] == [] and "999" not in set(fr["rotowire_player_id"])
+    assert _gframe(env, om.assign(canonical_team_id="T9"))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+
+
+def test_source_conflict_and_true_ambiguity_still_block(env):
+    # 7 + 8
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _gframe(env, st=states({"operational_class": PS.SOURCE_CONFLICT}))[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+    c = env["ctx"]
+    dup = pd.concat([c.roster, pd.DataFrame([("P-twin", "T1", "Ghost", "Player", "Ghost Player", "Guard")],
+                                            columns=c.roster.columns)], ignore_index=True)
+    applied, dec = RO.effective(omits({}), dup, env["clock"].t)
+    assert applied.empty and dec[0]["decision"] == "REJECTED_COMPETING_CANONICAL_CANDIDATE"
+    on_other = pd.concat([c.roster, pd.DataFrame([("P-ghost", "T2", "Ghost", "Player", "Ghost Player", "Guard")],
+                                                 columns=c.roster.columns)], ignore_index=True)
+    assert RO.effective(omits({}), on_other, env["clock"].t)[1][0]["decision"] == "REJECTED_ON_OTHER_TEAM_CBBD_ROSTER"
+    assert RO.effective(omits({}), on_other.assign(canonical_team_id=on_other["canonical_team_id"].replace("T2", "T1")),
+                        env["clock"].t)[1][0]["decision"] == "MOOT_CBBD_LISTS_PLAYER"
+    _with(env, omits({}), known=set(c.roster["canonical_player_id"]))               # P-ghost unknown -> rejected
+    assert "P-ghost" not in set(env["ctx"].roster["canonical_player_id"])
+
+
+def test_no_duplicate_identities_and_no_mapping_overwrite(env, tmp_path):
+    # 9 + 10
+    p = tmp_path / "o.csv"
+    for broken, msg in ((omits({}, {"rotowire_player_id": "998"}), "duplicate canonical_player_id"),
+                        (omits({}, {"canonical_player_id": "P-other"}), "duplicate rotowire_player_id"),
+                        (omits({"source_recruit_id": "1"}), "exactly one identity anchor"),
+                        (omits({"review_by": "2026-11-01"}), "review_by")):
+        broken.to_csv(p, index=False)
+        with pytest.raises(ValueError, match=msg):
+            RO.load(p)
+    roster = env["ctx"].roster
+    held = pd.DataFrame({"rotowire_player_id": ["999"], "canonical_player_id": ["P1"]})
+    assert RO.effective(omits({}), roster, env["clock"].t, held)[1][0]["decision"] == "REJECTED_WOULD_OVERWRITE_ROTOWIRE_MAPPING"
+    held = pd.DataFrame({"rotowire_player_id": ["555"], "canonical_player_id": ["P-ghost"]})
+    assert RO.effective(omits({}), roster, env["clock"].t, held)[1][0]["decision"] == "REJECTED_CANONICAL_HELD_BY_OTHER_ROTOWIRE_ID"
+    src = Path(RO.__file__).read_text()
+    for forbidden in ("cid(", "hashlib", "uuid", "to_csv", "write_text", "append_jsonl", "open(", "duckdb"):
+        assert forbidden not in src, forbidden                                     # never mints ids, never writes
+
+
+def test_omissions_never_touch_cbbd_raw_rosters_or_model_code():
+    # 11 + 12 (golden equivalence: tests/test_prod_golden_equivalence.py; universe identity: test_prod_live_feed)
+    prod = Path(RO.__file__).parent
+    for m in ("inputs.py", "features.py", "simulate.py", "pricing.py", "sync.py", "cbbd_feed.py", "cbbd_acquire.py",
+              "state.py"):
+        assert "roster_omissions" not in (prod / m).read_text(), m
+    for d in ("walkforward", "stage3", "v2"):
+        for f in (prod.parent / d).rglob("*.py"):
+            assert "roster_omissions" not in f.read_text(), f
+    shipped = RO.load()
+    assert set(shipped["evidence_source"]) <= set(RO.SOURCES)

@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
                                loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
-                               rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
+                               roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -182,7 +182,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         summary["feature_provenance"] = fr["provenance"]
         teams, players = _names(run_dir / "features" / "canonical_asof.duckdb")
         universe = UV.build(fr["features_db"], run_dir / "features" / "canonical_asof.duckdb", man.get("roster_as_of"),
-                            "FIXTURE" if fixture else "CBBD_API_PRODUCTION")
+                            "FIXTURE" if fixture else "CBBD_API_PRODUCTION",
+                            omissions=None if fixture else RO.load(), as_of=aso)
         universe.to_csv(run_dir / "player_universe.csv", index=False)
         roster_sup = UV.suppression_map(universe)
         summary["player_universe"] = UV.summary(universe)

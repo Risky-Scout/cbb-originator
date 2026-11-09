@@ -95,3 +95,30 @@ Players who are on a school's active roster but missing from CBBD (Avila, Harris
 are *not* exempted: none of the curated classes describes them, and for the four who can play, the model would project
 the team without a real rotation player. They clear only when CBBD rosters them (normal sync). Full per-row evidence is
 in the CSV; every row lapses at `review_by` and fails closed again until re-verified.
+
+## Final six + Green Bay — source-precedence resolution (2026-11-09)
+
+Precedence for current player / team: 1 official school roster / game notes, 2 actual 2026-27 participation, 3 current
+reputable transaction / eligibility reporting, 4 CBBD / canonical roster, 5 RotoWire. A missing CBBD row no longer
+rejects a player that rank 1-2 places on the team (`cbb_platform/prod/roster_omissions.csv`, override-safety checked);
+operational classes stay in `rotowire_player_states.csv`. Two directive expectations were NOT supported by the evidence
+and were not forced: Avila is not professional (AP 2026-11-05: "never signed a pro contract"), and no canonical identity
+could be created for Mattingly (CBBD has linked no athleteId; the project's P-2 recruit rule needs one; none is minted).
+
+| Player | Team | Final | Canonical | CBBD 2027 | Blocks | Basis |
+|---|---|---|---|---|---|---|
+| Brandon Maclin | DePaul | SOURCE_CONFLICT | P-ab089169e45cf23d | no | **yes** | RotoWire/SI tracker: with DePaul, eligibility TBD vs official roster omission + CBBD portal record out of DePaul + "Graduated" |
+| Robbie Avila | Saint Louis | AFFILIATED_ROSTER_LIMIT | P-5ce042f648e4fb1d | no | no | Injunction 11-05; College Sports Commission denied a 16th roster spot 11-06; not on roster / no box score |
+| Reggie Ward | Bethune-Cookman | PROFESSIONAL_NONCURRENT | P-303da6b7d95ecca4 | no | no | @BCUhoops (2026-09-13): signed with BC Wings (Georgia) [snippet]; off 2026-27 roster |
+| Chaze Harris | Charlotte | ACTIVE_CURRENT + CBBD_ROSTER_OMISSION | P-e94354c3d235b354 | no | no | Official box scores 11-02 (16 min), 11-05 (4 min); official roster #2 |
+| Jonathan Griman | Arizona State | ACTIVE_CURRENT + CBBD_ROSTER_OMISSION | P-b8eadb49953f9937 | no | no | Official roster #8; eligible (injunction); back soreness -> RotoWire status applies normally |
+| John Mattingly | Nevada | CBBD_ROSTER_OMISSION (recruit-anchored) | none (not created) | no | no | Official roster #35 + exhibition box scores; CBBD recruit 35172 -> Nevada |
+| Jaxon Edwards | Green Bay | ROSTERED_LONG_TERM_OUT | P-4d09d7c26bdff49d | no | no | Official bio "2026-27 Medical noncounter"; torn ACL |
+| Jalen Overway | Green Bay | ROSTERED_LONG_TERM_OUT | none | no | no | Official bio "2026-27 Medical noncounter"; torn ACL |
+
+Model effect (inputs only; model code unchanged): Griman is in ASU's frozen pool (CBBD portal Cal Baptist -> ASU) and was
+suppressed as NOT_ON_CURRENT_ROSTER; he is now scoreable as the frozen model defines, with his RotoWire status applied.
+Harris has no frozen membership evidence at Charlotte (portal record without destination), so he is listed
+NO_FROZEN_MEMBERSHIP_EVIDENCE and not predicted -- exactly as a CBBD listing would have produced. Mattingly, like every
+unlinked 2026 recruit, is not predicted. Production check (2026-11-09, read-only): all 3 omission rows APPLIED against
+the live state, no persisted RotoWire mapping conflicts, 1 of 23 reviewed players still blocks (Maclin).

@@ -331,6 +331,9 @@ def test_other_sports_models_untouched(tl):
     untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"], cwd=C.PROJECT_ROOT,
                                capture_output=True, text=True, check=True).stdout.split()
     for p in changed + untracked:
-        assert p.startswith(("cbb_platform/", "tests/", "docs/")) or p in (
+        # deploy/droplet/: this project's own CBB Droplet package, added after the baseline by the approved production
+        # release commits a0cf513..5417dd8 (cbb-originator units / runner / env example / heavy-lock tmpfiles only);
+        # the other-sport name guard below still applies to every path, including these.
+        assert p.startswith(("cbb_platform/", "tests/", "docs/", "deploy/droplet/")) or p in (
             "data/qa/game_identity_questionable_only.csv", ".github/workflows/cbb-production-ci.yml"), p
         assert not any(x in p.lower() for x in ("massey", "nba", "nfl", "ncaaf")), p

@@ -101,3 +101,16 @@ and never refits, simulates, regenerates PMFs or forecasts. Collision check: mor
 refit-retry 08:00 (end ~08:02) are done before 08:30; the quotes job (every 10 min, 2-10 min under the writer lock) can
 overlap, and the poll waits for the lock. Enable only after deployment approval:
 `systemctl enable --now cbb-originator-availability-0830.timer`. Eventual cadence: 08:30 / 10:00 / 13:00 / 16:00 / 18:00.
+
+## Source precedence and verified CBBD roster omissions
+
+For current player / team membership: official school roster or game notes > actual 2026-27 participation > current
+reputable reporting > CBBD / canonical roster > RotoWire. `cbb_platform/prod/roster_omissions.csv` (loader
+`roster_omissions.py`) records players a rank-1/2 source places on a team that CBBD's `teams/roster` omits
+(CBBD_ROSTER_OMISSION -- diagnostic/identity metadata, not an availability state). A row applies only when it passes
+every override-safety check (existing canonical id or CBBD recruit anchor; on no other CBBD roster; no same-name
+candidate on the team; RotoWire ID and canonical id unique; no persisted mapping overwritten; within verified_on ..
+review_by); otherwise it is rejected and the player keeps failing closed. Applied rows supplement the identity roster
+(map method `EXACT_NAME_ON_VERIFIED_CBBD_ROSTER_OMISSION`) and the pregame universe (`ON_CURRENT_ROSTER_CBBD_OMISSION`);
+CBBD payloads, the raw cache and `flagship.rosters` are never edited, and a row becomes MOOT once CBBD lists the player.
+Only SOURCE_CONFLICT and IDENTITY_UNRESOLVED block whole games.

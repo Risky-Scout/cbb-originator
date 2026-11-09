@@ -544,3 +544,44 @@ def test_odds_validation_then_live_quote_states(world, tmp_path):
                      odds_record=rec, game_ids=[a])
     assert "QUOTE_STALE" in later["game_reasons"][a]                    # 40 min after the market update
     assert not [x for x in OA.ledger(tmp_path / "odds.jsonl") if OX.DUMMY_ODDS_CREDENTIAL in json.dumps(x)]
+
+
+# ============================================================================ verified CBBD roster omissions (2026-11-09)
+def _omit(**kv):
+    from cbb_platform.prod import roster_omissions as RO
+    d = {"rotowire_player_id": "999", "rotowire_player_name": "X Y", "rotowire_team_name": "X", "canonical_team_id": "",
+         "canonical_player_id": "", "source_recruit_id": "", "player_name": "X Y", "first_name": "X", "last_name": "Y",
+         "position": "G", "evidence_source": "OFFICIAL_SCHOOL_ROSTER", "evidence_url": "https://example.edu/roster",
+         "verified_on": "2026-11-01", "review_by": "2026-12-01", "evidence": "official 2026-27 roster lists him"}
+    d.update(kv)
+    return pd.DataFrame([d], columns=RO.COLS)
+
+
+def test_official_roster_omission_unsuppresses_the_pool_player_and_nothing_else(world):
+    run = Path(world["daily"]["run_dir"])
+    fdb, cdb = run / "features" / "features.duckdb", run / "features" / "canonical_asof.duckdb"
+    if not fdb.exists():
+        fdb = next(p for p in (run / "features").glob("*.duckdb") if p.name != "canonical_asof.duckdb")
+    gone = FF.pid(0, 11)                                         # pool player CBBD does not list (NOT_ON_CURRENT_ROSTER)
+    base = UV.build(fdb, cdb, as_of=T_RUN)
+    team = base.loc[base["canonical_player_id"] == gone, "team_id"].iat[0]
+    from cbb_platform.prod import roster_omissions as RO
+    assert base.equals(UV.build(fdb, cdb, omissions=RO.load(Path("/nonexistent")), as_of=T_RUN))   # empty -> identical
+    om = _omit(canonical_player_id=gone, canonical_team_id=team)
+    u = UV.build(fdb, cdb, omissions=om, as_of=T_RUN)
+    g = u[(u["canonical_player_id"] == gone) & u["in_frozen_pool"]]
+    assert set(g["roster_status"]) == {UV.OMITTED} and set(g["scoreability"]) == {"SCOREABLE"}
+    assert g["suppression_reason"].isna().all() and not any(k[1] == gone for k in UV.suppression_map(u))
+    rest = lambda x: x[x["canonical_player_id"] != gone].reset_index(drop=True)
+    assert rest(u).equals(rest(base))                            # every other player byte-identical
+    # rank-2 evidence (current-season participation) works the same; outside its window it does not apply
+    u2 = UV.build(fdb, cdb, omissions=om.assign(evidence_source="CURRENT_SEASON_GAME_PARTICIPATION"), as_of=T_RUN)
+    assert set(u2.loc[(u2["canonical_player_id"] == gone) & u2["in_frozen_pool"], "roster_status"]) == {UV.OMITTED}
+    late = UV.build(fdb, cdb, omissions=om, as_of=pd.Timestamp("2026-12-02T15:00Z"))
+    assert late.equals(base)                                     # lapsed review_by -> suppressed again
+    # a player CBBD lists on ANOTHER team stays an identity conflict (never re-assigned by an omission row)
+    other = base[(base["roster_status"] == "ON_CURRENT_ROSTER") & base["in_frozen_pool"]].iloc[0]
+    wrong = [t for t in base["team_id"].unique() if t != other["team_id"]][0]
+    u3 = UV.build(fdb, cdb, omissions=_omit(canonical_player_id=other["canonical_player_id"], canonical_team_id=wrong),
+                  as_of=T_RUN)
+    assert u3.equals(base)

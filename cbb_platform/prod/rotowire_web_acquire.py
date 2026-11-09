@@ -587,6 +587,7 @@ M_TEAM_ALIAS = "CURATED_EXACT_ALIAS"
 M_PLAYER_EXACT = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER"
 M_PLAYER_POS = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER_POSITION_DISCREPANCY"
 M_PLAYER_ALIAS = "CURATED_PLAYER_ALIAS"
+M_PLAYER_OMISSION = "EXACT_NAME_ON_VERIFIED_CBBD_ROSTER_OMISSION"   # rank-1/2 evidence row (prod/roster_omissions)
 PLAYER_ALIAS_COLS = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "canonical_player_id",
                      "canonical_player_name", "canonical_team_id", "alias_type", "verified_on", "evidence"]
 PLAYER_ALIAS_TYPES = ("SHORT_FORM_FIRST_NAME", "PUNCTUATION_OR_SUFFIX", "DOCUMENTED_NICKNAME", "DOCUMENTED_FULL_NAME_FORM")
@@ -670,6 +671,9 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
     tm, pm = _read_map(root / TEAM_MAP_FILE, TEAM_MAP_COLS), _read_map(root / PLAYER_MAP_FILE, PLAYER_MAP_COLS)
     have_t, have_p = set(tm["rotowire_team_name"]), set(pm["rotowire_player_id"].astype(str))
     roster_teams = set(ctx._roster["canonical_team_id"])
+    src = ctx._roster["roster_source"] if "roster_source" in ctx._roster else pd.Series("CBBD", index=ctx._roster.index)
+    om = ctx._roster[src != "CBBD"]
+    omitted = set(zip(om["canonical_player_id"], om["canonical_team_id"]))
     new_t, review = [], []
     names = {f["team_name"] for f in fields if f.get("team_name")}
     for name in sorted(names & have_t):                    # a persisted row is never overwritten: disagreement -> review
@@ -726,7 +730,8 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
         if r["team_resolution"] != "EXPLICIT_MAP":
             review.append(_review_player(ctx, f, {**r, "identity_method": "TEAM_UNMATCHED"}))
         elif r["identity_resolution_status"] == "RESOLVED":
-            cand.append(({**row, "canonical_player_id": r["canonical_player_id"], "method": M_PLAYER_EXACT}, None, f))
+            how = M_PLAYER_OMISSION if (r["canonical_player_id"], r["canonical_team_id"]) in omitted else M_PLAYER_EXACT
+            cand.append(({**row, "canonical_player_id": r["canonical_player_id"], "method": how}, None, f))
         elif r["identity_method"] == "EXACT_NAME_POSITION_CONFLICT":
             team = exact._by_team[r["canonical_team_id"]]
             hit = team[team["_n"] == MT.norm(name)]

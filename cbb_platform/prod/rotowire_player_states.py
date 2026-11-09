@@ -10,11 +10,13 @@ non-active case. Known inactive or stale identity != unresolved identity:
     AFFILIATED_INACTIVE_ELIGIBILITY   with the program (enrolled / practicing / litigating / awaiting NCAA) but ineligible
     AFFILIATED_ROSTER_LIMIT           with the program but holding no active roster slot
     DELAYED_ELIGIBILITY               with the program; eligible from a documented date (eligible_from)
+    ROSTERED_LONG_TERM_OUT            on the team's current official roster, definitively out long term (season-ending)
     STALE_NONCURRENT                  RotoWire still lists him at this team, but he is not with it in 2026-27
+    PROFESSIONAL_NONCURRENT           no longer an NCAA player: professional career, newer than any college listing
     SOURCE_CONFLICT                   credible sources disagree -> still fails closed (recorded, never exempted)
     IDENTITY_UNRESOLVED               derived, not curated: everything else -> fails closed
 
-The four NON_BLOCKING classes do not block the whole game; the player is never put into the availability frame (he is
+The NON_BLOCKING classes do not block the whole game; the player is never put into the availability frame (he is
 not in the active universe, so no projection is conditioned on him). A row applies only:
   * to the exact RotoWire provider ID, while RotoWire places him at the row's canonical team (team re-resolved per event);
   * from verified_on (point in time: earlier game states are untouched) up to -- not including -- review_by;
@@ -35,9 +37,12 @@ AFFILIATED_INACTIVE_ELIGIBILITY = "AFFILIATED_INACTIVE_ELIGIBILITY"
 AFFILIATED_ROSTER_LIMIT = "AFFILIATED_ROSTER_LIMIT"
 DELAYED_ELIGIBILITY = "DELAYED_ELIGIBILITY"
 STALE_NONCURRENT = "STALE_NONCURRENT"
+ROSTERED_LONG_TERM_OUT = "ROSTERED_LONG_TERM_OUT"
+PROFESSIONAL_NONCURRENT = "PROFESSIONAL_NONCURRENT"
 SOURCE_CONFLICT = "SOURCE_CONFLICT"
 IDENTITY_UNRESOLVED = "IDENTITY_UNRESOLVED"
-NON_BLOCKING = (AFFILIATED_INACTIVE_ELIGIBILITY, AFFILIATED_ROSTER_LIMIT, DELAYED_ELIGIBILITY, STALE_NONCURRENT)
+NON_BLOCKING = (AFFILIATED_INACTIVE_ELIGIBILITY, AFFILIATED_ROSTER_LIMIT, DELAYED_ELIGIBILITY, STALE_NONCURRENT,
+                ROSTERED_LONG_TERM_OUT, PROFESSIONAL_NONCURRENT)
 CURATED = NON_BLOCKING + (SOURCE_CONFLICT,)
 COLS = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "affiliated_team_id", "canonical_player_id",
         "operational_class", "eligible_from", "verified_on", "review_by", "evidence"]

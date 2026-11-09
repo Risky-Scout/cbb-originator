@@ -41,7 +41,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import config as PC, matching as MT, rotowire_acquire as RA
+from cbb_platform.prod import config as PC, matching as MT, roster_omissions as RO, rotowire_acquire as RA
 
 PROVIDER = "ROTOWIRE"
 SCHEMA_VERIFIED = False
@@ -291,7 +291,29 @@ def load_identity_context(state_root: Path = PC.STATE_ROOT, history_db: Path = P
     teams = pd.concat([teams, inc_teams[~inc_teams["canonical_team_id"].isin(teams["canonical_team_id"])]], ignore_index=True)
     teams["mascot"] = teams["mascot"].astype(object).where(teams["mascot"].notna(), None)   # pd.NA is not a truth value
     rd = lambda n: pd.read_csv(Path(map_root) / n, dtype=str) if (Path(map_root) / n).exists() else None
-    return IdentityContext(teams, roster, rd("rotowire_team_map.csv"), rd("rotowire_player_map.csv"))
+    pmap = rd("rotowire_player_map.csv")
+    om = RO.load()
+    if len(om):                                      # an omission row may only name an EXISTING canonical identity
+        known = set()
+        for db in (history_db, st["increment_db"]):
+            con = duckdb.connect(str(db), read_only=True)
+            try:
+                known |= set(con.execute("SELECT canonical_player_id FROM core.players").df()["canonical_player_id"])
+            except duckdb.CatalogException:
+                pass
+            finally:
+                con.close()
+        roster = with_omissions(roster, om, datetime.now(timezone.utc), pmap, known)
+    return IdentityContext(teams, roster, rd("rotowire_team_map.csv"), pmap)
+
+
+def with_omissions(roster: pd.DataFrame, omissions: pd.DataFrame, as_of, player_map=None, known_ids=None) -> pd.DataFrame:
+    """The CBBD 2026-27 identity roster plus the APPLIED verified CBBD roster omissions (prod/roster_omissions:
+    rank-1/2 evidence, override-safety checked). roster_source says which; nothing is written anywhere."""
+    base = roster.assign(roster_source="CBBD")
+    applied, _ = RO.effective(omissions, roster, as_of, player_map, known_ids)
+    extra = RO.roster_rows(applied).assign(roster_source=RO.CBBD_ROSTER_OMISSION)
+    return pd.concat([base, extra], ignore_index=True) if len(extra) else base
 
 
 # ============================================================================ append-only event store
@@ -432,16 +454,19 @@ def player_state(events: pd.DataFrame, as_of) -> pd.DataFrame:
     return pd.DataFrame(out, columns=cols)
 
 
-def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states: pd.DataFrame | None = None
-                       ) -> tuple[pd.DataFrame, dict]:
+def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states: pd.DataFrame | None = None,
+                       omissions: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
     """games: canonical_game_id, home_team_id, away_team_id, feature_cutoff. Returns (the inputs.apply_availability
     frame, {game_id: [reasons]}). Each game uses the state at min(as_of, its feature cutoff).
     An unresolved non-ACTIVE player fails his team's games closed UNLESS a curated operational class in force at that
     instant marks him a KNOWN inactive / stale case at that team (prod/rotowire_player_states: known inactive or stale
     identity != unresolved identity). Such a player never enters the frame (no projection is conditioned on him).
-    states: the curated table (None -> the committed file)."""
+    A verified CBBD roster omission anchored only to a CBBD recruit record (prod/roster_omissions: identity
+    deterministic, no model identity -- like any unlinked 2026 recruit) is exempt the same way.
+    states / omissions: the curated tables (None -> the committed files)."""
     from cbb_platform.prod import rotowire_player_states as PS
     states = PS.load() if states is None else states
+    omissions = RO.load() if omissions is None else omissions
     rows, reasons = [], {}
     aso = pd.Timestamp(as_of)
     aso = aso.tz_localize("UTC") if aso.tzinfo is None else aso.tz_convert("UTC")
@@ -453,8 +478,9 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states:
         bad = stt[(stt["identity_resolution_status"] != "RESOLVED")
                   & ~stt["effective_status"].isin(("ACTIVE", NOT_LISTED))
                   & (stt["canonical_team_id"].isna() | stt["canonical_team_id"].isin(teams))]
-        if len(bad) and len(states):
-            known = [PS.non_blocking(states, p, t, T) if isinstance(t, str) else False
+        if len(bad) and (len(states) or len(omissions)):
+            om = RO.in_force(omissions, T)
+            known = [isinstance(t, str) and (PS.non_blocking(states, p, t, T) or RO.recruit_anchored(om, p, t))
                      for p, t in zip(bad["rotowire_player_id"], bad["canonical_team_id"])]
             bad = bad[[not k for k in known]]
         if len(bad):

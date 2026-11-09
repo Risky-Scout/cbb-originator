@@ -21,6 +21,12 @@ roster players NOT in the pool (roster awareness, never predicted)
     NO_FROZEN_MEMBERSHIP_EVIDENCE JUCO / international / walk-on / non-D-I transfer / other newcomer: no frozen evidence
 committed 2026 recruits with no identity (not on the committed roster; CBBD athleteId not yet linked)
     RECRUIT_IDENTITY_UNAVAILABLE
+
+Verified CBBD roster omissions (prod/roster_omissions: rank-1/2 source evidence, override-safety checked, only when
+omissions are passed) are read as current-roster rows of their team -- exactly what a CBBD listing would do, nothing
+more: a pool player NOT_ON_CURRENT_ROSTER becomes ON_CURRENT_ROSTER_CBBD_OMISSION (scoreable as the frozen model
+defines); a verified player outside the frozen pool is listed NO_FROZEN_MEMBERSHIP_EVIDENCE (never predicted). The
+frozen pool, its membership evidence and every feature are unchanged; omissions=None -> the output is byte-identical.
 """
 from __future__ import annotations
 
@@ -114,8 +120,13 @@ def _has(con, db: str, rel: str) -> bool:
                                    AND view_name = '{t}'""").fetchone()[0])
 
 
-def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str = "CBBD_API_PRODUCTION") -> pd.DataFrame:
-    """The universe table for the run's target games (features_db / canonical_db of prod/features.build)."""
+OMITTED = "ON_CURRENT_ROSTER_CBBD_OMISSION"
+
+
+def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str = "CBBD_API_PRODUCTION",
+          omissions: pd.DataFrame | None = None, as_of=None) -> pd.DataFrame:
+    """The universe table for the run's target games (features_db / canonical_db of prod/features.build).
+    omissions / as_of: the verified CBBD roster omission table and the run instant (None -> not applied)."""
     con = duckdb.connect()
     con.execute(f"ATTACH '{features_db}' AS fx (READ_ONLY)")
     con.execute(f"ATTACH '{canonical_db}' AS cx (READ_ONLY)")
@@ -134,6 +145,8 @@ def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str 
             if not _has(con, "cx", rel):
                 raise RuntimeError(f"universe: {rel} missing from the canonical input")
         df = con.execute(SQL.format(season=PC.PRODUCTION_SEASON, cls=PC.PRESEASON_CLASS_YEAR)).df()
+        if omissions is not None and len(omissions):
+            df = _apply_omissions(con, df, omissions, as_of)
     con.close()
     df["suppression_reason"] = df["suppression_reason"].astype(object)
     pool = df["in_frozen_pool"].astype(bool)
@@ -145,6 +158,36 @@ def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str 
     df["source_timestamp"] = roster_as_of
     return df[COLUMNS].sort_values(["game_id", "team_id", "in_frozen_pool", "canonical_player_id"],
                                    ascending=[True, True, False, True], kind="mergesort").reset_index(drop=True)
+
+
+def _apply_omissions(con, df: pd.DataFrame, omissions: pd.DataFrame, as_of) -> pd.DataFrame:
+    from cbb_platform.prod import roster_omissions as RO
+    if as_of is None:
+        raise ValueError("universe: omissions need the run instant (as_of)")
+    ros = con.execute(f"""SELECT canonical_player_id, canonical_team_id, player_name, first_name, last_name
+                          FROM cx.flagship.rosters WHERE season = {PC.PRODUCTION_SEASON}""").df()
+    applied, _ = RO.effective(omissions, ros, as_of)
+    rr = RO.roster_rows(applied)
+    if not len(rr):
+        return df
+    key = set(zip(rr["canonical_player_id"], rr["canonical_team_id"]))
+    pool = df["in_frozen_pool"].astype(bool)
+    hit = pool & (df["roster_status"] == "NOT_ON_CURRENT_ROSTER") & pd.Series(
+        [(p, t) in key for p, t in zip(df["canonical_player_id"], df["team_id"])], index=df.index)
+    df = df.copy()
+    df.loc[hit, "roster_status"] = OMITTED
+    games = df[["game_id", "team_id"]].drop_duplicates()
+    in_pool = set(zip(df.loc[pool, "game_id"], df.loc[pool, "team_id"], df.loc[pool, "canonical_player_id"]))
+    extra = []
+    for r in rr.itertuples(index=False):
+        for g in games[games["team_id"] == r.canonical_team_id]["game_id"]:
+            if (g, r.canonical_team_id, r.canonical_player_id) not in in_pool:
+                extra.append({"game_id": g, "team_id": r.canonical_team_id, "canonical_player_id": r.canonical_player_id,
+                              "provider_player_id": None, "name": r.player_name, "roster_status": OMITTED,
+                              "newcomer_class": "OTHER_NEWCOMER", "in_frozen_pool": False, "pool_evidence": None,
+                              "cold_start_class": None, "cold_start": None,
+                              "suppression_reason": "NO_FROZEN_MEMBERSHIP_EVIDENCE"})
+    return pd.concat([df, pd.DataFrame(extra)], ignore_index=True) if extra else df
 
 
 def suppression_map(universe: pd.DataFrame) -> dict:

@@ -162,7 +162,8 @@ ROTOWIRE_WEB_COOKIE_ENV = "ROTOWIRE_WEB_COOKIE_FILE"         # protected subscri
 ROTOWIRE_WEB_ROOT = PROD_ROOT / "availability" / "rotowire_web"   # immutable raw evidence + acquisition / news logs
 ROTOWIRE_WEB_TEAM_ALIASES = Path(__file__).with_name("rotowire_web_team_aliases.csv")   # curated, committed
 ROTOWIRE_WEB_PLAYER_ALIASES = Path(__file__).with_name("rotowire_web_player_aliases.csv")  # curated, committed
-ROTOWIRE_PLAYER_STATES = Path(__file__).with_name("rotowire_player_states.csv")  # curated operational classes
+ROTOWIRE_PLAYER_STATES = Path(__file__).with_name("rotowire_player_states.csv")
+ROSTER_OMISSIONS = Path(__file__).with_name("roster_omissions.csv")  # curated operational classes
 ROTOWIRE_WEB_FEED_VERSION = "cbb-prod-rotowire-web-1.0.0"
 
 
