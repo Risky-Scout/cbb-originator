@@ -440,6 +440,9 @@ def health_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
 
 
+FORECAST_SUMMARY = ("snapshot_id", "window", "model_version", "games_forecast", "players_forecast", "stat_predictions", "pmfs_persisted", "games_not_scored")
+
+
 def health(life: Life, day: date, **sections) -> dict:
     """Merge this step's machine-readable summary into <prod_root>/health/<D>.json (one file per ET date)."""
     p = health_path(life, day)
@@ -449,10 +452,9 @@ def health(life: Life, day: date, **sections) -> dict:
               "automatic_wagering": "DISABLED", "wizardofodds_publication": "DISABLED"})
     for k, v in sections.items():
         h[k] = v
-    fc = sections.get("forecast")
-    if isinstance(fc, dict) and fc.get("status") == "FORECAST":
-        h["latest_forecast"] = {k: fc.get(k) for k in ("snapshot_id", "window", "model_version", "games_forecast",
-                                                        "players_forecast", "stat_predictions", "pmfs_persisted")}
+    for k, v in sections.items():                  # the newest forecast of the day (morning, retry or refresh)
+        if isinstance(v, dict) and v.get("status") == "FORECAST" and (k == "forecast" or v.get("snapshot_id")):
+            h["latest_forecast"] = {k: v.get(k) for k in FORECAST_SUMMARY}
     ex = sections.get("exports")
     if isinstance(ex, dict):
         h["export_paths"] = {k: (v or {}).get("path") for k, v in ex.items() if isinstance(v, dict)}
@@ -480,6 +482,8 @@ def receipt(h: dict) -> dict:
           and a.get("snapshot_status") == "PROCESSED"]
     st = lambda k: (ex.get(k) or {}).get("status") if isinstance(ex.get(k), dict) else None
     errors, warnings = [], []
+    if not wf:                                     # no morning walk-forward recorded for this ET date (yet / killed)
+        warnings.append("MORNING_NOT_RECORDED")
     if wf.get("DAILY_REFIT_STATUS") == "FAIL":
         errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
     if wf.get("DAILY_REFIT_STATUS") == DEFERRED_SHARED_LOCK:
@@ -493,7 +497,8 @@ def receipt(h: dict) -> dict:
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
             "MODEL_VERSION": lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION"),
             "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS"), "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION"),
-            "FORECAST_STATUS": fc.get("status"), "FORECAST_GAME_COUNT": lf.get("games_forecast"),
+            "FORECAST_STATUS": fc.get("status") or ("FORECAST" if lf else None),
+            "FORECAST_WINDOW": lf.get("window"), "FORECAST_GAME_COUNT": lf.get("games_forecast"),
             "FORECAST_PLAYER_COUNT": lf.get("players_forecast"), "PMF_COUNT": lf.get("pmfs_persisted"),
             "ROTOWIRE_MODE": h.get("rotowire_mode"), "ROTOWIRE_AUTH": last.get("auth"),
             "ROTOWIRE_LAST_SUCCESS": (ok[-1].get("at") or ok[-1].get("acquisition_id")) if ok else None,
@@ -501,7 +506,8 @@ def receipt(h: dict) -> dict:
             "QUOTE_REFRESH_STATUS": qr.get("status"),
             "REAL_QUOTES": bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0),
             "BOARD_STATUS": st("boards"), "DISTRIBUTIONS_STATUS": st("distributions"), "GRADES_STATUS": st("grades"),
-            "IDENTITY_BLOCKED_GAMES": sum(1 for r in (fc.get("games_not_scored") or {}).values()
+            "IDENTITY_BLOCKED_GAMES": sum(1 for r in ((lf.get("games_not_scored") if lf else None)
+                                                      or fc.get("games_not_scored") or {}).values()
                                           if r and "AVAILABILITY_IDENTITY_UNRESOLVED" in r),
             "WRITER_COUNT": 1 if os.environ.get("CBB_SCHEDULER_ROLE") == "PRIMARY_WRITER" else 0,
             "HEAVY_LOCK_STATUS": wf.get("lock_result"),
@@ -578,7 +584,8 @@ def refresh(life: Life, window: str) -> dict:
         acq = web_acquire(life)
     rec = forecast(life, window)
     out = {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
-    sec = {"rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note")}
+    sec = {"rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note"),
+           **({k: rec.get(k) for k in FORECAST_SUMMARY} if rec.get("status") == "FORECAST" else {})}
     if acq is not None:
         out["rotowire_web_acquisition"] = sec["rotowire_web_acquisition"] = acq
     health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": sec}, exports=out["exports"])

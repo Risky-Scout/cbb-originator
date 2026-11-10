@@ -98,3 +98,23 @@ def test_daily_receipt_summarizes_recorded_sections_only(monkeypatch, tmp_path):
     assert r["WRITER_COUNT"] == 1 and r["FINAL_STATUS"] == "OK" and r["HEAVY_LOCK_STATUS"] == "ACQUIRED"
     h = L.health(life, day, walk_forward={"DAILY_REFIT_STATUS": "FAIL", "reason": "x"})
     assert h["receipt"]["FINAL_STATUS"] == "FAIL" and h["receipt"]["ERRORS"]
+
+
+def test_receipt_uses_the_refresh_forecast_and_flags_a_missing_morning(monkeypatch, tmp_path):
+    """2026-11-09: the morning was killed (no walk_forward section) and the 18:00 refresh forecast the slate; the receipt
+    must report that forecast and must not claim OK."""
+    monkeypatch.setenv("CBB_SCHEDULER_ROLE", "PRIMARY_WRITER")
+    now = pd.Timestamp("2026-11-09T23:56:00Z")
+    life = L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", clock=lambda: now.to_pydatetime())
+    day = date(2026, 11, 9)
+    sec = {"rotowire_refresh": "ENABLED", "status": "FORECAST", "note": None, "snapshot_id": "F1", "window": "ROTOWIRE_1800",
+           "model_version": "m1", "games_forecast": 7, "players_forecast": 313, "pmfs_persisted": 2100,
+           "games_not_scored": {}, "rotowire_web_acquisition": {"auth": "PASS", "news_status": "PROCESSED",
+                                                                "snapshot_status": "PROCESSED", "news_continuity": "CONTINUOUS",
+                                                                "at": now.isoformat()}}
+    r = L.health(life, day, availability_1800=sec)["receipt"]
+    assert (r["FORECAST_STATUS"], r["FORECAST_WINDOW"], r["MODEL_VERSION"]) == ("FORECAST", "ROTOWIRE_1800", "m1")
+    assert (r["FORECAST_GAME_COUNT"], r["FORECAST_PLAYER_COUNT"], r["PMF_COUNT"], r["IDENTITY_BLOCKED_GAMES"]) == (7, 313, 2100, 0)
+    assert r["MORNING_REFIT_STATUS"] is None and "MORNING_NOT_RECORDED" in r["WARNINGS"] and r["FINAL_STATUS"] == "DEGRADED"
+    blocked = {**sec, "snapshot_id": "F2", "games_not_scored": {"G1": ["AVAILABILITY_IDENTITY_UNRESOLVED"], "G2": []}}
+    assert L.health(life, day, availability_1800=blocked)["receipt"]["IDENTITY_BLOCKED_GAMES"] == 1
