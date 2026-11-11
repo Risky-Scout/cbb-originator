@@ -39,11 +39,20 @@ are out of scope. CBB units list them under `InaccessiblePaths=` and never touch
 | `cbb-originator-availability-poll` (`-0830` timer) | 08:30 | writer lock; RotoWire acquisition only | 1000M / 1400M |
 | `cbb-originator-availability@1000/1300/1600/1800` | 10:00, 13:00, 16:00, 18:00 | writer lock, never heavy | 2800M / 3200M |
 | `cbb-originator-quotes` | every 10 min | writer lock; official tick + reprice of persisted PMFs, never fits | 2800M / 3200M |
+| `cbb-originator-retention` | 05:45 | writer lock, never heavy; run-scratch retention (below) | 500M / 800M |
 
 Availability refreshes re-forecast only pre-cutoff games whose availability changed (the targeted reforecast path).
 They never retrain. The quotes tick and the availability refreshes build full-state pregame features before scoring. They
 carry the heavy-unit memory ceiling (2026-11-09: a 1800M/2200M quotes cgroup throttled, then OOM-killed after the
 season state grew). Writer-lock holders never overlap one another. The 01:30 warmup window has no scoring cutoffs.
+
+Run-scratch retention (`cbb_platform/prod/retention.py`, `cbb-originator-run prune-scratch [--apply]`): deletes ONLY
+`prod/runs/<run>/features/*.duckdb` (~530 MB per run) of runs that completed (valid `run_summary.json`) and whose PMFs
+are in durable evidence (`ops/ticks/*/pmfs.parquet` or `ops/forecasts/*/*/pmfs.parquet`; or 0 predictions). The latest
+2 completed runs and every completed run of the last 48 h are kept, whichever keeps more. Incomplete / unverified runs and
+every other file (summaries, PMFs, inputs, universe, boards, bundles, ops evidence, state, models, exports, health,
+audit evidence) are never deleted. A dry-run report (`ops/retention/reports/<ts>.json`) is written before any deletion;
+each deleted file and the reclaimed total go to `ops/retention/scratch_prune.jsonl`. Without `--apply`: report only.
 
 ## 3. Deploy a release (atomic)
 

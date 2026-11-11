@@ -14,6 +14,9 @@
 #   cbb-originator-run features-warmup         01:30 ET: pre-build the per-game pregame feature cache for the next 07:00
 #                                               walk-forward (shared heavy lock, budget CBB_WARMUP_BUDGET_MIN; NO writer
 #                                               lock: writes only the immutable walk-forward feature cache; no fit/forecast)
+#   cbb-originator-run prune-scratch [--apply]  05:45 ET run-scratch retention (prod/retention.py): dry-run report, then
+#                                               (--apply) delete ONLY prod/runs/*/features/*.duckdb of completed, verified
+#                                               runs outside the keep window (writer lock; NEVER the heavy lock)
 #   cbb-originator-run tick                     every 10 min (writer lock): official shadow tick only when its cheap due
 #                                               gate says due; then the tiered quote refresh (per-game tier spacing;
 #                                               nothing requested when no game is due; reprice only, never a refit)
@@ -53,7 +56,8 @@ refuse() { log "REFUSED: $*"; exit 3; }
 case "$CMD" in preflight|lifecycle-morning|refit-retry|features-warmup|tick) ;;
   lifecycle-refresh) case "${2:-}" in 10:00|13:00|16:00|18:00) ;; *) echo "lifecycle-refresh needs one of 10:00 13:00 16:00 18:00" >&2; exit 3 ;; esac ;;
   availability-poll) case "${2:-}" in 08:30) ;; *) echo "availability-poll needs 08:30" >&2; exit 3 ;; esac ;;
-  *) echo "usage: cbb-originator-run preflight|lifecycle-morning|refit-retry|features-warmup|lifecycle-refresh HH:MM|availability-poll HH:MM|tick" >&2; exit 3 ;; esac
+  prune-scratch) case "${2:-}" in ""|--apply) ;; *) echo "prune-scratch takes only --apply" >&2; exit 3 ;; esac ;;
+  *) echo "usage: cbb-originator-run preflight|lifecycle-morning|refit-retry|features-warmup|lifecycle-refresh HH:MM|availability-poll HH:MM|prune-scratch [--apply]|tick" >&2; exit 3 ;; esac
 
 # ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
 [ "${CBB_MODEL_SOURCE:-ACTIVE_DAILY}" = "ACTIVE_DAILY" ] || [ "${CBB_MODEL_SOURCE}" = "FROZEN_OPENING_BASELINE" ] \
@@ -137,6 +141,8 @@ case "$CMD" in
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC            # structurally never the shared heavy lock
                      WRITER_WAIT_SEC="${CBB_POLL_WRITER_LOCK_WAIT_SEC:-1500}" ;;  # waits out a quote run / a long morning
   features-warmup)   RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" features-warmup) ;;
+  prune-scratch)     RUN=("$PY" -m cbb_platform.prod.retention --runs-root "$CBB_PROD_ROOT/runs" --ops-root "$OPS" ${2:+"$2"})
+                     unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;           # structurally never the shared heavy lock
   tick)              RUN=("$PY" -m cbb_platform.prod.shadow_tick --ops-root "$OPS") ;;
 esac
 if [ "$DRY" = "1" ] && [ "$CMD" = "features-warmup" ]; then

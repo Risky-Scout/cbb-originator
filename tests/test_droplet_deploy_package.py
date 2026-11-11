@@ -211,6 +211,7 @@ HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.ser
                "cbb-originator-features-warmup.service")
 LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
 POLL_UNIT = "cbb-originator-availability-poll.service"      # 08:30 light poll: writer lock only, NEVER the heavy lock
+RETENTION_UNIT = "cbb-originator-retention.service"          # 05:45 run-scratch retention: writer lock only, NEVER heavy
 
 
 def _mem(s: str, key: str) -> int:
@@ -219,7 +220,8 @@ def _mem(s: str, key: str) -> int:
 
 
 def test_units_are_isolated_and_hold_no_secrets():
-    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, "cbb-originator-morning.timer",
+    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, RETENTION_UNIT,
+                                       "cbb-originator-retention.timer", "cbb-originator-morning.timer",
                                        "cbb-originator-refit-retry.timer", "cbb-originator-quotes.timer",
                                        "cbb-originator-availability-0830.timer", "cbb-originator-features-warmup.timer",
                                        *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
@@ -232,7 +234,7 @@ def test_units_are_isolated_and_hold_no_secrets():
     for u in (D / "systemd").glob("*.service"):
         s = u.read_text()
         lines = s.splitlines()
-        heavy = () if u.name == POLL_UNIT else ("SupplementaryGroups=sports-models-heavy",
+        heavy = () if u.name in (POLL_UNIT, RETENTION_UNIT) else ("SupplementaryGroups=sports-models-heavy",
                                                  "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
                                                  "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models")
         for line in heavy + ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
@@ -275,6 +277,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
                    "cbb-originator-features-warmup.timer": ["OnCalendar=*-*-* 01:30:00 America/New_York"],
+                   "cbb-originator-retention.timer": ["OnCalendar=*-*-* 05:45:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
     for p in (D / "systemd").glob("*.timer"):
@@ -377,3 +380,15 @@ def test_features_warmup_is_heavy_locked_writer_lock_free_and_bounded(app):
     assert "no CBB writer lock" in r.stderr and "lifecycle --ops-root" in r.stderr and "features-warmup" in r.stderr
     assert "writer.lock" not in r.stderr and str(app["env"]["CBB_HEAVY_LOCK"]) in r.stderr
     assert _run(app, "features-warmup").returncode == 4                    # no writer role -> nothing runs
+
+
+def test_retention_unit_never_takes_the_heavy_lock_and_only_prunes():
+    u = (D / "systemd" / RETENTION_UNIT).read_text()
+    body = "\n".join(l for l in u.splitlines() if not l.lstrip().startswith("#"))
+    assert "SupplementaryGroups" not in body and "/run/lock" not in body and "CBB_HEAVY_LOCK" not in body
+    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run prune-scratch --apply" in u
+    assert _mem(u, "MemoryMax") <= 800
+    r = (D / "bin" / "cbb-originator-run").read_text()
+    assert "prune-scratch)     RUN=(\"$PY\" -m cbb_platform.prod.retention" in r
+    blk = r[r.index("prune-scratch)     RUN="):r.index("tick)              RUN=")]
+    assert "unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC" in blk

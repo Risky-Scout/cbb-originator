@@ -73,7 +73,7 @@ jobs:
       - name: Excel-valid workbooks (worksheet row limit, defined names, non-finite cells; openpyxl reads every part)
         run: python -m pytest -q -rs tests/test_exports_xlsx_validity.py tests/test_exports_distributions_rebuild.py
       - name: Droplet deployment package (safe defaults, refusals, locks / memory gate, units, transfer manifest; no server)
-        run: python -m pytest -q -rs tests/test_droplet_deploy_package.py
+        run: python -m pytest -q -rs tests/test_droplet_deploy_package.py tests/test_prod_retention.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke

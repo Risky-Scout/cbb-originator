@@ -1,0 +1,14 @@
+# CBB Originator 05:45 ET run-scratch retention timer (after the 01:30 warmup, before the 07:00 morning; no scoring
+# cutoffs in the window). systemd evaluates the zone itself (DST-correct).
+[Unit]
+Description=CBB Originator 05:45 ET run-scratch retention timer
+
+[Timer]
+OnCalendar=*-*-* 05:45:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-retention.service
+
+[Install]
+WantedBy=timers.target
