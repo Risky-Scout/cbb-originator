@@ -367,3 +367,67 @@ def test_refit_retry_runs_once_after_deferral_and_reforecasts_on_promotion(tmp_p
     assert again["status"] == "NO_OP" and fc == [L.REFIT_RETRY]          # exactly one retry per day
     h = json.loads(L.health_path(life, day).read_text())
     assert not any(k in json.dumps(h) for k in ("API_KEY=", "ENCRYPTION_KEY="))
+
+
+# ============================================================================ bounded 07:00 feature catch-up (2026-11-11)
+def _warm(status, todo=72, built=27):
+    calls = []
+
+    def warm(day, root, state_root, budget_s):
+        calls.append(budget_s)
+        return {"status": status, "included_games": 360, "cached_before": 171, "cutoffs_todo": todo,
+                "cutoffs_built": built, "games_built": 70}
+    return warm, calls
+
+
+def test_feature_backlog_beyond_the_morning_budget_defers_the_refit_and_keeps_last_good(tmp_path, monkeypatch):
+    """2026-11-11: an unbounded catch-up ran the morning into its 2 h timeout (SIGTERM, no 07:00 forecast). Now the
+    catch-up is bounded; an unfinished backlog defers the refit -- nothing is fitted or promoted, ACTIVE stays."""
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    monkeypatch.setenv(L.MORNING_FEATURE_BUDGET_ENV, "45")
+    life = _wf_life(tmp_path)
+    warm, wcalls = _warm("BUDGET_EXHAUSTED")
+    fits = []
+    r = L.walk_forward(life, L.et_date(life.now()), runner=lambda *a, **k: fits.append(1) or {}, warm_runner=warm)
+    assert r["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG and r["DAILY_MODEL_PROMOTION"] == "NOT_ATTEMPTED"
+    assert fits == [] and wcalls == [45 * 60.0]
+    assert r["feature_catchup"]["status"] == "BUDGET_EXHAUSTED" and r["feature_catchup"]["cutoffs_built"] == 27
+    recs = OS.read_jsonl(L.wf_attempts_path(life, L.et_date(life.now())))
+    assert recs[-1]["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG
+
+
+def test_complete_feature_cache_runs_the_unchanged_refit(tmp_path, monkeypatch):
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    life = _wf_life(tmp_path)
+    for status in ("COMPLETE", "NOTHING_TO_BUILD"):
+        warm, _ = _warm(status, todo=3, built=3)
+        r = L.walk_forward(life, L.et_date(life.now()), warm_runner=warm,
+                           runner=lambda *a, **k: {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED"})
+        assert r["DAILY_REFIT_STATUS"] == "PASS" and r["feature_catchup"]["status"] == status
+
+
+def test_deferred_backlog_morning_still_forecasts_with_the_incumbent_and_retry_runs_once(tmp_path, monkeypatch):
+    """Fail safe, not fail silent: the 07:00 forecast is made with the last-known-good ACTIVE model; the 08:00 retry
+    (NO_OP after a morning that ran) retries a deferred backlog exactly once."""
+    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
+    life = _wf_life(tmp_path)
+    day = L.et_date(life.now())
+    fc = []
+    monkeypatch.setattr(L.SH, "tick", lambda ctx: {"tick_id": "K", "status": "OK"})
+    monkeypatch.setattr(L, "exports_for", lambda lf, d: {})
+    monkeypatch.setattr(L, "forecast", lambda lf, w=L.INITIAL, **k: fc.append(w) or {"status": "FORECAST", "window": w})
+    warm, _ = _warm("BUDGET_EXHAUSTED")
+    real = L.walk_forward
+    monkeypatch.setattr(L, "walk_forward", lambda lf, d, a="MORNING_0700", **k: real(lf, d, a, runner=lambda *x, **y: {},
+                                                                                    warm_runner=warm))
+    out = L.morning(life, day, tick_ctx=type("C", (), {"history_db": None})())
+    assert out["walk_forward"]["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG and fc == [L.INITIAL]
+    h = json.loads(L.health_path(life, day).read_text())
+    assert h["walk_forward"]["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG
+    monkeypatch.setattr(L, "walk_forward", real)
+    warm2, _ = _warm("COMPLETE", todo=2, built=2)
+    r = L.refit_retry(life, day, warm_runner=warm2,
+                      runner=lambda *a, **k: {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED"})
+    assert r["status"] == "RAN" and r["walk_forward"]["feature_catchup"]["status"] == "COMPLETE"
+    assert fc == [L.INITIAL, L.REFIT_RETRY]
+    assert L.refit_retry(life, day, warm_runner=warm2, runner=lambda *a, **k: {})["status"] == "NO_OP"

@@ -62,6 +62,14 @@ INITIAL = "INITIAL"
 REFIT_RETRY = "REFIT_RETRY"
 REFIT_RETRY_TIME_ET = "08:00"
 DEFERRED_SHARED_LOCK = "DEFERRED_SHARED_LOCK"
+# 07:00 feature catch-up bound (2026-11-11: an unbounded catch-up of ~190 newly eligible games ran the morning into its
+# 2 h systemd timeout and SIGTERM, so no 07:00 forecast was made). The morning first fills the pregame feature cache
+# with the warmup's own builder inside this budget; an unfinished backlog DEFERS the refit (ACTIVE kept, the day is
+# forecast with it) and the 08:00 retry / next warmup continue from the persisted cache. Fits and gates are unchanged.
+DEFERRED_FEATURE_BACKLOG = "DEFERRED_FEATURE_BACKLOG"
+RETRYABLE_DEFERRALS = (DEFERRED_SHARED_LOCK, DEFERRED_FEATURE_BACKLOG)
+MORNING_FEATURE_BUDGET_ENV = "CBB_MORNING_FEATURE_BUDGET_MIN"
+MORNING_FEATURE_BUDGET_MIN = 30.0     # worst case 07:00 total ~80 min (tick + 30 + refit ~35 + forecast)
 HEAVY_LOCK_ENV, HEAVY_WAIT_ENV, MIN_MEM_ENV = "CBB_HEAVY_LOCK", "CBB_HEAVY_LOCK_WAIT_SEC", "CBB_MIN_MEMAVAILABLE_MB"
 WF_KEYS = ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION", "CANDIDATE_MODEL_VERSION", "note", "reason")
 ROTOWIRE_KEY_ENV = "ROTOWIRE_API_KEY"
@@ -373,7 +381,7 @@ def wf_attempts_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "walkforward_attempts" / f"{day.isoformat()}.jsonl"
 
 
-def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=None) -> dict:
+def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=None, warm_runner=None) -> dict:
     """One authorized walk-forward attempt (walkforward.daily.morning: existing gates, atomic promotion, last-known-good
     kept on any failure). The shared heavy lock (env CBB_HEAVY_LOCK) is held for exactly this step."""
     lock, wait = os.environ.get(HEAVY_LOCK_ENV), float(os.environ.get(HEAVY_WAIT_ENV, "1800"))
@@ -401,9 +409,24 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
         else:
             from cbb_platform.walkforward import config as WC, daily as WD
             run = runner or WD.morning
+            warm = warm_runner or (WD.warm_features if runner is None else None)
+            root = Path(life.model_root or WC.STORE_ROOT)
             try:
-                wf = run(day, root=Path(life.model_root or WC.STORE_ROOT), state_root=life.state_root, now=life.now())
-                rec.update({k: wf.get(k) for k in WF_KEYS})
+                if warm is not None:                     # bounded catch-up first: the refit then only fits
+                    budget = float(os.environ.get(MORNING_FEATURE_BUDGET_ENV, MORNING_FEATURE_BUDGET_MIN)) * 60.0
+                    t1 = time.monotonic()
+                    fw = warm(day, root=root, state_root=life.state_root, budget_s=budget)
+                    rec["feature_catchup"] = {**{k: fw.get(k) for k in ("status", "included_games", "cached_before",
+                                                                         "cutoffs_todo", "cutoffs_built", "games_built")},
+                                              "budget_s": budget, "elapsed_s": round(time.monotonic() - t1, 1)}
+                    if fw.get("status") == "BUDGET_EXHAUSTED":
+                        rec.update(DAILY_REFIT_STATUS=DEFERRED_FEATURE_BACKLOG, DAILY_MODEL_PROMOTION="NOT_ATTEMPTED",
+                                   note=f"pregame feature backlog {fw.get('cutoffs_todo')} cutoffs > the morning budget "
+                                        f"({fw.get('cutoffs_built')} built and kept); last-known-good ACTIVE model "
+                                        "retained and used for today's forecast")
+                if rec.get("DAILY_REFIT_STATUS") != DEFERRED_FEATURE_BACKLOG:
+                    wf = run(day, root=root, state_root=life.state_root, now=life.now())
+                    rec.update({k: wf.get(k) for k in WF_KEYS})
             except Exception as e:                       # noqa: BLE001 -- promotion is atomic: ACTIVE is unchanged
                 rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_PROMOTED",
                            reason=f"{type(e).__name__}: {e}"[:400])
@@ -415,18 +438,19 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
     return rec
 
 
-def refit_retry(life: Life, day: date | None = None, runner=None) -> dict:
-    """08:00 ET: one retry, ONLY when the 07:00 attempt of the day was DEFERRED_SHARED_LOCK. A retry that promotes a
+def refit_retry(life: Life, day: date | None = None, runner=None, warm_runner=None) -> dict:
+    """08:00 ET: one retry, ONLY when the 07:00 attempt of the day was deferred (DEFERRED_SHARED_LOCK or
+    DEFERRED_FEATURE_BACKLOG); a 07:00 that ran (PASS / FAIL / NO_NEW_DATA) is a NO_OP. A retry that promotes a
     new model re-forecasts the still-pre-cutoff games (new immutable snapshot; earlier snapshots stand)."""
     day = day or et_date(life.now())
     recs = OS.read_jsonl(wf_attempts_path(life, day))
     out = {"lifecycle": REFIT_RETRY, "day": day.isoformat()}
-    if not recs or recs[-1].get("DAILY_REFIT_STATUS") != DEFERRED_SHARED_LOCK \
+    if not recs or recs[-1].get("DAILY_REFIT_STATUS") not in RETRYABLE_DEFERRALS \
             or any(r.get("attempt") == "RETRY_0800" for r in recs):
-        out.update(status="NO_OP", reason="the 07:00 walk-forward was not DEFERRED_SHARED_LOCK (or already retried)")
+        out.update(status="NO_OP", reason="the 07:00 walk-forward was not deferred (or already retried)")
         health(life, day, refit_retry=out)
         return out
-    wf = walk_forward(life, day, "RETRY_0800", runner=runner)
+    wf = walk_forward(life, day, "RETRY_0800", runner=runner, warm_runner=warm_runner)
     out.update(status="RAN", walk_forward=wf)
     if wf.get("DAILY_MODEL_PROMOTION") == "PROMOTED":
         out["forecast"] = forecast(life, REFIT_RETRY)

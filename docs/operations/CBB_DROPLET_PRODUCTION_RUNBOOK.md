@@ -132,3 +132,12 @@ defect behind a FAIL is fixed and deployed, the architect records ONE authorizat
 It appends to `prod/ops/markers/quote_revalidation_authorizations.jsonl`, lifts only the FAILs recorded before it,
 and is refused when nothing is blocked or after a PASS. The next due scheduled tick then validates on its first due
 game under the same checks; a FAIL after the authorization blocks again. The FAIL attempts are never edited.
+
+## 9. Bounded 07:00 feature catch-up (DEFERRED_FEATURE_BACKLOG)
+
+The 01:30 ET warmup fills the immutable per-game pregame feature cache (150 min budget). The 07:00 walk-forward first
+runs the same builder inside `CBB_MORNING_FEATURE_BUDGET_MIN` (default 30). If the backlog is not finished the refit is
+DEFERRED_FEATURE_BACKLOG: nothing is fitted or promoted, the ACTIVE model is kept and today's 07:00 forecast is made
+with it; every cutoff already built stays cached. The 08:00 retry retries a deferred morning once (NO_OP after a
+morning that ran). 2026-11-11: ~190 games newly eligible at once (cutoffs from 11-02) ran an unbounded catch-up into
+the 2 h systemd timeout (SIGTERM at 09:00 ET, no 07:00 forecast; the 08:00 retry found the writer lock still held).
