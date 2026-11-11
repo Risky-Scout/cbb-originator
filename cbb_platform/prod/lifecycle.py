@@ -490,6 +490,19 @@ def health(life: Life, day: date, **sections) -> dict:
     return h
 
 
+def board_status(export_status: str | None, quote_refresh: dict, real_quotes: bool) -> str | None:
+    """Why there is (no) Board today, explicitly -- never a silent absence: WRITTEN; NONE_QUOTE_INTEGRATION_NOT_VALIDATED
+    (quotes not acquired: the gate is closed); NONE_NO_REAL_QUOTES (acquired, no sportsbook player-prop quote);
+    NONE_NO_VALID_OFFER (real quotes, none executable / matched)."""
+    if export_status is None:
+        return None
+    if export_status == "WRITTEN":
+        return "WRITTEN"
+    if not real_quotes and str(quote_refresh.get("reason") or "").startswith("QUOTE_INTEGRATION_NOT_VALIDATED"):
+        return "NONE_QUOTE_INTEGRATION_NOT_VALIDATED"
+    return "NONE_NO_REAL_QUOTES" if not real_quotes else "NONE_NO_VALID_OFFER"
+
+
 def receipt(h: dict) -> dict:
     """The machine-readable daily production receipt: a pure summary of the health sections already recorded today
     (derived on every health write; it computes nothing new and never reads model state)."""
@@ -510,8 +523,10 @@ def receipt(h: dict) -> dict:
         warnings.append("MORNING_NOT_RECORDED")
     if wf.get("DAILY_REFIT_STATUS") == "FAIL":
         errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
-    if wf.get("DAILY_REFIT_STATUS") == DEFERRED_SHARED_LOCK:
-        warnings.append("WALK_FORWARD_DEFERRED_SHARED_LOCK")
+    if wf.get("DAILY_REFIT_STATUS") in RETRYABLE_DEFERRALS:
+        warnings.append(f"WALK_FORWARD_{wf.get('DAILY_REFIT_STATUS')}")
+    real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
+    board = board_status(st("boards"), qr, real)
     if fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"):
         warnings.append(f"FORECAST_{fc.get('status')}")
     if last and last.get("auth") not in (None, "PASS"):
@@ -528,8 +543,12 @@ def receipt(h: dict) -> dict:
             "ROTOWIRE_LAST_SUCCESS": (ok[-1].get("at") or ok[-1].get("acquisition_id")) if ok else None,
             "ROTOWIRE_NEWS_OVERLAP": last.get("news_continuity"),
             "QUOTE_REFRESH_STATUS": qr.get("status"),
-            "REAL_QUOTES": bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0),
-            "BOARD_STATUS": st("boards"), "DISTRIBUTIONS_STATUS": st("distributions"), "GRADES_STATUS": st("grades"),
+            "REAL_QUOTES": real, "BOARD_STATUS": board, "BOARD_EXPORT_STATUS": st("boards"),
+            "MODEL_FALLBACK_USED": bool(wf) and wf.get("DAILY_MODEL_PROMOTION") != "PROMOTED"
+                                   and wf.get("DAILY_REFIT_STATUS") not in ("PASS", "NO_NEW_DATA"),
+            "FALLBACK_REASON": (wf.get("note") or wf.get("reason") or wf.get("DAILY_REFIT_STATUS"))
+                               if wf and wf.get("DAILY_REFIT_STATUS") not in ("PASS", "NO_NEW_DATA") else None,
+            "DISTRIBUTIONS_STATUS": st("distributions"), "GRADES_STATUS": st("grades"),
             "IDENTITY_BLOCKED_GAMES": sum(1 for r in ((lf.get("games_not_scored") if lf else None)
                                                       or fc.get("games_not_scored") or {}).values()
                                           if r and "AVAILABILITY_IDENTITY_UNRESOLVED" in r),

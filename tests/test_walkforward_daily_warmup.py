@@ -94,10 +94,20 @@ def test_daily_receipt_summarizes_recorded_sections_only(monkeypatch, tmp_path):
     assert (r["MORNING_REFIT_STATUS"], r["MODEL_PROMOTION"], r["MODEL_VERSION"]) == ("PASS", "PROMOTED", "v1")
     assert (r["FORECAST_GAME_COUNT"], r["FORECAST_PLAYER_COUNT"], r["PMF_COUNT"]) == (3, 60, 720)
     assert (r["ROTOWIRE_AUTH"], r["ROTOWIRE_NEWS_OVERLAP"], r["ROTOWIRE_LAST_SUCCESS"]) == ("PASS", "CONTINUOUS", now.isoformat())
-    assert r["BOARD_STATUS"] == "MISSING_EVIDENCE" and r["REAL_QUOTES"] is False and r["IDENTITY_BLOCKED_GAMES"] == 1
+    assert r["BOARD_STATUS"] == "NONE_NO_REAL_QUOTES" and r["BOARD_EXPORT_STATUS"] == "MISSING_EVIDENCE"
+    assert r["REAL_QUOTES"] is False and r["IDENTITY_BLOCKED_GAMES"] == 1 and r["MODEL_FALLBACK_USED"] is False
     assert r["WRITER_COUNT"] == 1 and r["FINAL_STATUS"] == "OK" and r["HEAVY_LOCK_STATUS"] == "ACQUIRED"
     h = L.health(life, day, walk_forward={"DAILY_REFIT_STATUS": "FAIL", "reason": "x"})
     assert h["receipt"]["FINAL_STATUS"] == "FAIL" and h["receipt"]["ERRORS"]
+    h = L.health(life, day, quote_refresh={"status": "SKIPPED", "reason": "QUOTE_INTEGRATION_NOT_VALIDATED (x)"},
+                 walk_forward={"DAILY_REFIT_STATUS": L.DEFERRED_FEATURE_BACKLOG, "DAILY_MODEL_PROMOTION": "NOT_ATTEMPTED",
+                               "note": "backlog"})
+    r = h["receipt"]
+    assert r["BOARD_STATUS"] == "NONE_QUOTE_INTEGRATION_NOT_VALIDATED"          # explicit, never a silent absence
+    assert r["MODEL_FALLBACK_USED"] is True and r["FALLBACK_REASON"] == "backlog"
+    assert "WALK_FORWARD_DEFERRED_FEATURE_BACKLOG" in r["WARNINGS"] and r["FINAL_STATUS"] == "DEGRADED"
+    assert L.board_status("WRITTEN", {}, True) == "WRITTEN"
+    assert L.board_status("MISSING_EVIDENCE", {"status": "REPRICED"}, True) == "NONE_NO_VALID_OFFER"
 
 
 def test_receipt_uses_the_refresh_forecast_and_flags_a_missing_morning(monkeypatch, tmp_path):
