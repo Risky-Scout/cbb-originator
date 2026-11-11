@@ -137,3 +137,12 @@ def test_apply_never_overwrites_a_conflicting_identity():
     assert rep["applied"] == [] and rep["skipped_conflict"][0]["relations"] == ["flagship.player_game_outcomes"]
     assert con.execute("SELECT count(*) FROM flagship.player_game_outcomes WHERE canonical_player_id = ?", [N]).fetchone()[0] == 1
     assert con.execute("SELECT canonical_player_id FROM core.transfers").fetchone()[0] is None
+
+
+def test_history_without_the_evidence_columns_links_nothing(tmp_path):
+    db = tmp_path / "bare.duckdb"
+    con = duckdb.connect(str(db))
+    con.execute("CREATE SCHEMA flagship")
+    con.execute("CREATE TABLE flagship.rosters AS SELECT 'P-x' AS canonical_player_id, 2026 AS season")
+    con.close()
+    assert F.reissued_athlete_links(db, _rosters(), _transfers()).empty     # fail closed, never raises into the sync

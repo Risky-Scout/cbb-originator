@@ -325,6 +325,12 @@ def reissued_athlete_links(history_db: Path, rosters: pd.DataFrame, transfers: p
     con = duckdb.connect()
     try:
         con.execute(f"ATTACH '{history_db}' AS h (READ_ONLY)")
+        have = {(s, t, c) for s, t, c in con.execute("""SELECT schema_name, table_name, column_name FROM duckdb_columns()
+                                                         WHERE database_name = 'h'""").fetchall()}
+        need_h = {("flagship", "rosters", c) for c in need_r} | {("core", "players", "canonical_player_id")} | \
+                 {("metadata", "player_id_map", c) for c in ("provider", "provider_player_key")}
+        if not need_h <= have:                                  # evidence the rule needs is absent: no link (fail closed)
+            return pd.DataFrame(columns=P3_COLS)
         con.register("p3_r", rosters[sorted(need_r)])
         con.register("p3_t", transfers[sorted(need_t)])
         df = con.execute(P3_SQL.format(cls=PC.PRESEASON_CLASS_YEAR, season=PC.PRODUCTION_SEASON)).df()
