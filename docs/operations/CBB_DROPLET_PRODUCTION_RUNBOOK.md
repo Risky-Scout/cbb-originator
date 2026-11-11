@@ -116,3 +116,19 @@ Every run does the following:
 
 Nothing is merged, re-keyed or deleted. When deterministic evidence later allows a conflict-safe merge, remove the
 entry in the same release as the merge.
+
+## 8. Quote-integration re-validation after a FAIL
+
+Quotes stay blocked (`QUOTE_INTEGRATION_NOT_VALIDATED`) until the scheduled tick's one-event validation
+(`odds_feed.validate`, all seven checks) writes the immutable `prod/ops/markers/QUOTE_INTEGRATION_VALIDATED.json`.
+A recorded FAIL stops further paid attempts. The scheduled unit cannot take `--allow-revalidation`, so after the
+defect behind a FAIL is fixed and deployed, the architect records ONE authorization (no tick runs, no provider call):
+
+    runuser -u cbb-originator -- env $(grep -v '^#' /etc/sports-models/cbb-originator.env | xargs) \
+      /opt/sports-models/cbb-originator/venv/bin/python -m cbb_platform.prod.shadow_tick \
+      --ops-root /var/lib/sports-models/cbb-originator/prod/ops \
+      --authorize-revalidation "<what was fixed>" --fix-commit <sha>
+
+It appends to `prod/ops/markers/quote_revalidation_authorizations.jsonl`, lifts only the FAILs recorded before it,
+and is refused when nothing is blocked or after a PASS. The next due scheduled tick then validates on its first due
+game under the same checks; a FAIL after the authorization blocks again. The FAIL attempts are never edited.

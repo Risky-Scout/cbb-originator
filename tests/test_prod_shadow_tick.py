@@ -568,6 +568,52 @@ def test_validation_fail_blocks_and_inconclusive_retries(tmp_path, monkeypatch):
     assert not TK.validation_eligible(TK._validation_state(ctx, ctx.now()), ctx)    # never repeated after PASS
 
 
+def test_revalidation_authorization_is_one_shot_and_evidence_based(tmp_path, monkeypatch):
+    """The scheduled tick cannot take --allow-revalidation: an architect authorization recorded after a FAIL lifts only
+    the FAILs before it (one more attempt under the same checks); a FAIL after it blocks again; refused when nothing is
+    blocked or after PASS; the FAIL attempts are never edited."""
+    from cbb_platform.prod import odds_feed as OF
+    clk = Clock("2026-11-10T23:00Z")
+    ctx = _ctx(tmp_path, None, clk, None, None)
+    (tmp_path / "ops").mkdir()
+
+    def fake(status):
+        return lambda *a, **k: {"status": status, "requests": [{"endpoint": "event_odds", "cost": 5}],
+                                "checks": {"expected_markets_returned": {"pass": True, "per_market": {"player_points": "RETURNED"}},
+                                           "best_price_selection": {"pass": status == "PASS"}},
+                                "validated_at": clk().isoformat(), "event_id": "e", "canonical_game_id": "g",
+                                "feed_version": "v"}
+    with pytest.raises(ValueError):
+        TK.authorize_revalidation(ctx, "nothing failed", "abc")                     # nothing is blocked
+    monkeypatch.setattr(OF, "validate", fake("FAIL"))
+    assert TK.step_validate(ctx, None, "e1", "g1", {}) == "FAIL"
+    assert not TK.validation_eligible(TK._validation_state(ctx, ctx.now()), ctx)
+    with pytest.raises(ValueError):
+        TK.authorize_revalidation(ctx, "", "abc")                                   # reason + fix commit required
+    attempts = (tmp_path / "ops" / "markers" / "quote_validation_attempts.jsonl").read_text()
+    clk.t += pd.Timedelta(minutes=10)
+    row = TK.authorize_revalidation(ctx, "as-of fix", "abc123")
+    assert row["lifts_fail_attempts"] == ["2026-11-10T23:00:00+00:00"] and row["fix_commit"] == "abc123"
+    v = TK._validation_state(ctx, ctx.now())
+    assert not v["failed"] and v["fails_recorded"] == 1 and TK.validation_eligible(v, ctx)   # exactly one more try
+    assert not ctx.allow_revalidation
+    clk.t += pd.Timedelta(minutes=10)
+    assert TK.step_validate(ctx, None, "e2", "g2", {}) == "FAIL"                    # the new attempt fails again
+    v = TK._validation_state(ctx, ctx.now())
+    assert v["failed"] and not TK.validation_eligible(v, ctx)                        # blocked again: one-shot
+    assert (tmp_path / "ops" / "markers" / "quote_validation_attempts.jsonl").read_text().startswith(attempts)
+    clk.t += pd.Timedelta(minutes=10)
+    TK.authorize_revalidation(ctx, "second fix", "def456")
+    monkeypatch.setattr(OF, "validate", fake("PASS"))
+    clk.t += pd.Timedelta(minutes=10)
+    assert TK.step_validate(ctx, None, "e3", "g3", {}) == "PASS"
+    v = TK._validation_state(ctx, ctx.now())
+    assert v["passed"] and not TK.validation_eligible(v, ctx)
+    assert (tmp_path / "ops" / "markers" / "QUOTE_INTEGRATION_VALIDATED.json").exists()
+    with pytest.raises(ValueError):
+        TK.authorize_revalidation(ctx, "after pass", "x")                           # never after PASS
+
+
 # ============================================================================ evidence store primitives
 def test_chain_detects_tampering(tmp_path):
     ops = tmp_path / "ops"

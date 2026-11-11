@@ -585,3 +585,39 @@ def test_official_roster_omission_unsuppresses_the_pool_player_and_nothing_else(
     u3 = UV.build(fdb, cdb, omissions=_omit(canonical_player_id=other["canonical_player_id"], canonical_team_id=wrong),
                   as_of=T_RUN)
     assert u3.equals(base)
+
+
+def test_odds_validation_prices_quotes_received_after_start(world, tmp_path):
+    """Regression (2026-11-09 live attempt): the provider's receipt time is later than the instant validation starts.
+    Scoring at the start time made every freshly received quote POST_CUTOFF_QUOTE (10 valid quotes, 0 priced ->
+    best_price_selection FAIL). The validation now predicts as of the collected quote's receipt: quotes are priced, none
+    received after the prediction as-of is used, and the check standard is unchanged."""
+    from cbb_platform.prod import odds_acquire as OA, odds_feed as OF, odds_fixtures as OX, slate as SL
+    st = ST.current(world["w"] / "state")
+    slate = SL.build(st["increment_db"], T_RUN, st["manifest"]["schedule_as_of"], 36).set_index("canonical_game_id")
+    teams, _ = RN._names(world["hist"])
+    tn = teams.set_index("canonical_team_id")["display_name"]
+    u = world["universe"]
+    a = FF.gid("A")
+    p0 = u[(u["game_id"] == a) & u["in_frozen_pool"].astype(bool) & u["suppression_reason"].isna()].iloc[0]
+    ev_a = OX.event("evt-A", tn[slate.loc[a, "home_team_id"]], tn[slate.loc[a, "away_team_id"]], "2026-11-11T00:30:00Z")
+    odds_a = OX.event_odds(ev_a, [OX.book("draftkings", "DraftKings", [
+        OX.market("player_points", OX.ou(p0["name"], 10.5, -110, -110), "2026-11-10T15:50:00Z")])])
+    fake = OX.FakeOdds([ev_a], {"evt-A": odds_a})
+    t0 = pd.Timestamp(T_RUN) + pd.Timedelta(minutes=1)                   # off the hour: one listing window
+    wall = {"t": t0}
+    sess = OA.Session("odds-validate", cache_root=tmp_path / "oc", ledger_path=tmp_path / "odds.jsonl", http_get=fake,
+                      credential=lambda: OX.DUMMY_ODDS_CREDENTIAL, clock=lambda: wall["t"], sleep=lambda s: None)
+    OF.fetch_events(sess, t0, t0 + pd.Timedelta(hours=36))               # the tick's own listing, before validation
+    start = t0 + pd.Timedelta(seconds=2)                                 # validation starts ...
+    wall["t"] = t0 + pd.Timedelta(seconds=5)                             # ... the paid response arrives later
+    v = OF.validate("evt-A", now=start, session=sess, run_root=tmp_path / "vr", record=tmp_path / "rec.json",
+                    state_root=world["w"] / "state", history_db=world["hist"], collections_dir=tmp_path / "coll",
+                    sims=500, sync_log=world["w"] / "sync.jsonl")
+    got = [e for e in v["requests"] if e["endpoint"] == "event_odds"][0]
+    assert pd.Timestamp(got["received_at"]) > start                         # the live condition that failed on 2026-11-09
+    assert v["checks"]["best_price_selection"]["priced_rows"] > 0, v["checks"]
+    assert v["status"] == "PASS", v["checks"]
+    assert pd.Timestamp(v["prediction_as_of"]) >= pd.Timestamp(got["received_at"])
+    q = pd.read_csv(Path(v["run_dir"]) / "quotes_normalized.csv")
+    assert not (q["suppression_reason"] == "POST_CUTOFF_QUOTE").any()

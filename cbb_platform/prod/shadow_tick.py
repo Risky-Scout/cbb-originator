@@ -420,14 +420,41 @@ def team_names(ctx: Ctx, st: dict) -> pd.DataFrame:
     return out.astype(object).where(out.notna(), None)
 
 
+REVALIDATION_LOG = "quote_revalidation_authorizations.jsonl"
+
+
 def _validation_state(ctx: Ctx, now: pd.Timestamp) -> dict:
+    """A FAIL blocks quotes until an architect re-validation authorization recorded AFTER it (authorize_revalidation):
+    that lifts only the FAILs before it, so a FAIL after the authorization blocks again (one attempt per authorization)."""
     att = OS.read_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"))
+    auth = OS.read_jsonl(ctx.ops("markers", REVALIDATION_LOG))
+    since = max((_utc(a["authorized_at"]) for a in auth), default=None)
     passed = ctx.ops("markers", "QUOTE_INTEGRATION_VALIDATED.json").exists()
-    failed = any(a["status"] == "FAIL" for a in att)
+    fails = [a for a in att if a["status"] == "FAIL"]
+    failed = any(since is None or _utc(a["attempted_at"]) > since for a in fails)
     day = now.tz_convert("America/New_York").date()
     inconcl = sum(1 for a in att if a["status"] != "PASS" and a["status"] != "FAIL"
                   and _utc(a["attempted_at"]).tz_convert("America/New_York").date() == day)
-    return {"passed": passed, "failed": failed, "inconclusive_today": inconcl, "attempts": len(att)}
+    return {"passed": passed, "failed": failed, "inconclusive_today": inconcl, "attempts": len(att),
+            "fails_recorded": len(fails), "revalidation_authorized_at": since.isoformat() if since is not None else None}
+
+
+def authorize_revalidation(ctx: Ctx, reason: str, fix_commit: str) -> dict:
+    """Architect action: allow ONE more paid validation after a recorded FAIL (the scheduled tick then validates on its
+    own first due game, under the same checks). Refused unless quotes are currently blocked by a FAIL. Append-only;
+    the FAIL attempts themselves are never edited or removed."""
+    now = ctx.now()
+    v = _validation_state(ctx, now)
+    if v["passed"] or not v["failed"]:
+        raise ValueError(f"re-validation not needed: passed={v['passed']} failed={v['failed']}")
+    if not reason.strip() or not fix_commit.strip():
+        raise ValueError("re-validation needs a reason and the commit that fixes the recorded FAIL")
+    att = [a for a in OS.read_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl")) if a["status"] == "FAIL"]
+    row = {"authorized_at": now.isoformat(), "reason": reason, "fix_commit": fix_commit,
+           "release_commit": os.environ.get("CBB_EXPECTED_COMMIT"),
+           "lifts_fail_attempts": [a["attempted_at"] for a in att]}
+    OS.append_jsonl(ctx.ops("markers", REVALIDATION_LOG), [row])
+    return row
 
 
 def validation_eligible(vstate: dict, ctx: Ctx) -> bool:
@@ -951,7 +978,15 @@ def main(argv=None) -> None:
     ap.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", "Risky-Scout/cbb-originator"))
     ap.add_argument("--allow-revalidation", action="store_true",
                     help="architect action: allow one more quote validation after a recorded FAIL")
+    ap.add_argument("--authorize-revalidation", metavar="REASON",
+                    help="architect action, no tick: record ONE re-validation authorization after a recorded FAIL "
+                         "(the next scheduled tick validates); needs --fix-commit")
+    ap.add_argument("--fix-commit", default="", help="the commit that fixes the recorded FAIL")
     a = ap.parse_args(argv)
+    if a.authorize_revalidation is not None:
+        print(json.dumps(authorize_revalidation(Ctx(ops_root=a.ops_root), a.authorize_revalidation, a.fix_commit),
+                         indent=1, default=str))
+        return
     from cbb_platform import duckdb_limits as DLM
     DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
     assets = commit = None

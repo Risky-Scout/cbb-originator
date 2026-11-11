@@ -300,13 +300,18 @@ def validate(event_id: str, *, now=None, session: OA.Session | None = None, run_
                            f"({hit['match_reason'].iat[0] if len(hit) else 'NOT_LISTED'}): not validated")
     gid = hit["canonical_game_id"].iat[0]
     paths = collect(session, [event_id], collections_dir)
+    # the prediction is made once the quote is in hand (as the scheduled tick does: as-of taken after collection).
+    # Scoring at t, the instant BEFORE the request, made every freshly received quote POST_CUTOFF_QUOTE, so nothing
+    # could ever be priced and best_price_selection could never pass (2026-11-09 attempt: 10 valid quotes, 0 priced).
+    aso = max([t] + [_utc(json.loads(Path(p).read_text())["collector_received_at"]) for p in paths])
     run_dir = run_root / ("V" + t.strftime("%Y%m%dT%H%M%SZ"))
-    s = RN.daily(t, quotes_paths=paths, state_root=state_root, history_db=history_db,
+    s = RN.daily(aso, quotes_paths=paths, state_root=state_root, history_db=history_db,
                  ledger_path=run_dir / "validation_ledger.jsonl", run_root=run_dir, game_ids=[gid],
                  horizon_hours=PC.ODDS_PROP_WINDOW_HOURS, sims=sims, sync_log=sync_log, odds_cache_root=session.cache_root,
                  odds_collections=None, odds_ledger=session.ledger_path, odds_record=record)
     res = validation_checks(paths, Path(s["run_dir"]), run_dir / "validation_ledger.jsonl")
-    out = {"status": res["status"], "validated_at": t.isoformat(), "event_id": event_id, "canonical_game_id": gid,
+    out = {"status": res["status"], "validated_at": aso.isoformat(), "prediction_as_of": aso.isoformat(),
+           "validation_started_at": t.isoformat(), "event_id": event_id, "canonical_game_id": gid,
            "feed_version": PC.ODDS_FEED_VERSION, "collections": [str(p) for p in paths], "run_dir": s["run_dir"],
            "acquisition": session.summary(), "requests": [{k: v for k, v in e.items() if k != "body"} for e in session.entries],
            **res}
