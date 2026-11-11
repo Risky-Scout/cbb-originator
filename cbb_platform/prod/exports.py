@@ -69,7 +69,9 @@ BOARD_SHEETS = ("Full Board", "60 Percent Plus", "65 Percent Plus")
 BOARD_THRESHOLDS = {"Full Board": None, "60 Percent Plus": 0.60, "65 Percent Plus": 0.65}
 BOARD_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PROJ", "ΔLINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK",
               "ODDS", "EV", "WINDOW", "CAPTURE_UTC")
-DIST_SHEET = "Distributions"
+DIST_SHEET = "Distributions"            # further sheets "Distributions 2", "Distributions 3", ... (EXCEL_MAX_ROWS)
+EXCEL_MAX_ROWS = 1_048_576               # SpreadsheetML worksheet limits (ECMA-376 / Excel): a row or column ref
+EXCEL_MAX_COLS = 16_384                  # beyond them is invalid content (Excel "repairs" by deleting the cells)
 DIST_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "MEAN", "OUTCOME", "PROBABILITY")
 GRADE_SHEETS = ("Graded Bets", "Performance Summary")
 GRADE_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK", "ODDS", "RESULT",
@@ -847,8 +849,8 @@ class _Styles:
 
 def _cell(ref: str, v, style: int) -> str:
     s = f' s="{style}"' if style else ""
-    if v is None or (isinstance(v, float) and not math.isfinite(v)):
-        return f'<c r="{ref}"{s}/>' if style else ""
+    if v is None or (isinstance(v, (float, np.floating)) and not math.isfinite(v)):
+        return f'<c r="{ref}"{s}/>' if style else ""            # export contract: non-finite -> blank cell
     if isinstance(v, (bool, np.bool_)):
         v = str(bool(v)).upper()
     if isinstance(v, (int, np.integer)):
@@ -900,6 +902,9 @@ def write_xlsx(path: Path, sheets: list[dict]) -> Path:
                                                            for i, v in enumerate(row)) + "</row>")
                 for i, v in enumerate(row):
                     widths[i] = max(widths.get(i, 0), _width(v))
+            if r > EXCEL_MAX_ROWS or len(cols) > EXCEL_MAX_COLS:
+                raise ExportIntegrityError(f"sheet {sh['name']!r}: {r} rows x {len(cols)} columns exceeds the Excel "
+                                           f"worksheet limit {EXCEL_MAX_ROWS} x {EXCEL_MAX_COLS}")
             last = f"{_col(len(cols) - 1)}{r}"
             if freeze is None:
                 freeze = hdr
@@ -1062,8 +1067,28 @@ def boards_workbook(of: pd.DataFrame, path: Path) -> Path:
                              for s in BOARD_SHEETS])
 
 
+def distribution_sheets(rows: list, max_rows: int | None = None) -> list[list]:
+    """Split the Distributions rows into consecutive sheets of at most `max_rows` data rows (plus the header) without
+    ever splitting one (GAME, PLAYER, PROP) distribution; row order and every value are unchanged."""
+    max_rows = EXCEL_MAX_ROWS - 1 if max_rows is None else max_rows      # header row + data rows <= EXCEL_MAX_ROWS
+    sheets, cur, start = [], [], 0
+    for i, row in enumerate(rows):
+        if i and (row[0], row[2], row[3]) != (rows[i - 1][0], rows[i - 1][2], rows[i - 1][3]):
+            start = len(cur)                                     # index of the current distribution's first row
+        cur.append(row)
+        if len(cur) > max_rows:
+            if start == 0:
+                raise ExportIntegrityError(f"one distribution has more than {max_rows} outcomes")
+            sheets.append(cur[:start])
+            cur, start = cur[start:], 0
+    return sheets + [cur] if cur or not sheets else sheets
+
+
 def distributions_workbook(rows: list, path: Path) -> Path:
-    return write_xlsx(path, [{"name": DIST_SHEET, "blocks": [{"title": None, "columns": DIST_COLS, "rows": rows}]}])
+    parts = distribution_sheets(rows)
+    return write_xlsx(path, [{"name": DIST_SHEET if k == 0 else f"{DIST_SHEET} {k + 1}",
+                              "blocks": [{"title": None, "columns": DIST_COLS, "rows": part}]}
+                             for k, part in enumerate(parts)])
 
 
 def grades_workbook(of: pd.DataFrame, night: str, path: Path) -> Path:
