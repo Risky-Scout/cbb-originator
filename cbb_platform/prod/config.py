@@ -164,6 +164,7 @@ ROTOWIRE_WEB_TEAM_ALIASES = Path(__file__).with_name("rotowire_web_team_aliases.
 ROTOWIRE_WEB_PLAYER_ALIASES = Path(__file__).with_name("rotowire_web_player_aliases.csv")  # curated, committed
 ROTOWIRE_PLAYER_STATES = Path(__file__).with_name("rotowire_player_states.csv")
 ROSTER_OMISSIONS = Path(__file__).with_name("roster_omissions.csv")  # curated operational classes
+IDENTITY_CONFLICTS = Path(__file__).with_name("identity_conflicts.json")  # IDENTITY_CONFLICT_SUPPRESSED (identity_conflicts.py)
 ROTOWIRE_WEB_FEED_VERSION = "cbb-prod-rotowire-web-1.0.0"
 
 

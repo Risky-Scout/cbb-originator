@@ -98,3 +98,21 @@ HEAVY_LOCK_STATUS, ERRORS, WARNINGS, FINAL_STATUS. No board is fabricated: witho
 * `journalctl -u cbb-originator-<unit>`: per-unit logs (journald retention).
 * `journalctl -k | grep -i "killed process"`: OOM events must be 0.
 * `gh api repos/Risky-Scout/cbb-originator/actions/workflows` → CBB shadow tick `disabled_manually` (WRITER_COUNT = 1).
+
+## 7. Identity conflicts (IDENTITY_CONFLICT_SUPPRESSED)
+
+`cbb_platform/prod/identity_conflicts.json` is the curated registry, committed and released like code. Each entry
+covers one real player who has two canonical identities that cannot be merged without overwriting an existing identity.
+The first entry is Khoi Thurmon (Old Dominion), added 2026-11-11.
+
+Every run does the following:
+* The suppressed id never enters the model frame: zero model inputs, simulation draws, PMFs and priced rows.
+* The suppressed id's availability report goes to the primary.
+* The run re-verifies the entry's evidence: portal move, destination roster, exact name, height and hometown.
+* If the evidence no longer holds, the primary is simulated but `NOT_PRICED` (`IDENTITY_CONFLICT_UNVERIFIED`).
+* If both ids ever reach one game's distributions, both are `NOT_PRICED` (`IDENTITY_CONFLICT_DOUBLE_COUNT`).
+* The audit and per-layer appearance counts are written to `prod/runs/<run>/identity_conflicts.json` and to the run
+  summary's `identity_conflicts`.
+
+Nothing is merged, re-keyed or deleted. When deterministic evidence later allows a conflict-safe merge, remove the
+entry in the same release as the merge.

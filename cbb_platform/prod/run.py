@@ -20,8 +20,8 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, inputs as IN, ledger as LG,
-                               loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
+from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC,
+                               inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
                                roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
@@ -99,11 +99,13 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
           odds_collections: Path | None = PC.ODDS_COLLECTIONS, odds_ledger: Path = PC.ODDS_REQUEST_LEDGER,
           odds_record: Path = PC.ODDS_VALIDATION_RECORD, side_monitor_path: Path | None = None,
           model: LD.FrozenModel | None = None, rotowire_root: Path | None = None,
-          rotowire_ledger: Path = PC.ROTOWIRE_REQUEST_LEDGER) -> dict:
+          rotowire_ledger: Path = PC.ROTOWIRE_REQUEST_LEDGER, identity_conflicts: Path | None = None) -> dict:
     """model: an already verified model (the walk-forward ACTIVE daily version, cbb_platform/walkforward/store.py:
     load_version); None = the frozen opening artifacts through LD.load. Nothing here fits or refits.
     rotowire_root: the RotoWire availability event store (prod/rotowire_feed.py); None (default) = the `availability`
-    frame as given. Availability conditions the priced set and the gates only, never a model parameter."""
+    frame as given. Availability conditions the priced set and the gates only, never a model parameter.
+    identity_conflicts: the IDENTITY_CONFLICT_SUPPRESSED registry (prod/identity_conflicts.py; None = the production
+    registry): a registered duplicate identity never enters the model frame."""
     aso = _utc(as_of)
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
@@ -175,6 +177,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                "slate_games": int(len(slate)), "scored_games": 0, "model_identity": ident, "notes": notes,
                "availability": avail_summary}
     banks, dists, diag, cand_names = {}, [], [], []
+    conflicts = IC.load(identity_conflicts)
     rows, tgames = pd.DataFrame(), None
     teams = players = pd.DataFrame()
     if score_ids:
@@ -185,10 +188,15 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         universe = UV.build(fr["features_db"], run_dir / "features" / "canonical_asof.duckdb", man.get("roster_as_of"),
                             "FIXTURE" if fixture else "CBBD_API_PRODUCTION",
                             omissions=None if fixture else RO.load(), as_of=aso)
+        universe = IC.mark_universe(universe, conflicts)
         universe.to_csv(run_dir / "player_universe.csv", index=False)
         roster_sup = UV.suppression_map(universe)
         summary["player_universe"] = UV.summary(universe)
-        cand = fr["cand"]
+        cand, availability, ic_block, ic_rep = IC.apply(fr["cand"], availability,
+                                                        run_dir / "features" / "canonical_asof.duckdb", conflicts, aso)
+        roster_sup.update(ic_block)                              # unverified conflict: primary simulated, never priced
+        if ic_rep["conflicts"]:
+            summary["identity_conflicts"] = ic_rep
         try:                                                     # monitoring stratum only (never a model input)
             tgames = SD.pregame_team_games(fr["features_db"], score_ids)
         except Exception as e:                                   # noqa: BLE001 -- diagnostics never block a run
@@ -293,7 +301,16 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             "run_reasons": run_reasons}
     if no_quote_reason is not None:
         meta["no_quote_reason"] = no_quote_reason
+    dist, dbl = IC.guard(dist, conflicts)
+    if dbl:                                                      # never reached while apply() holds: recorded, not priced
+        notes.append(f"identity conflict double count blocked: {dbl}")
     board, priced = BO.build(dist, quotes, meta) if len(dist) else (pd.DataFrame(columns=BO.BOARD_COLS), [])
+    if summary.get("identity_conflicts"):
+        summary["identity_conflicts"]["appearances"] = {
+            "model_inputs": IC.counts(rows, conflicts), "distributions": IC.counts(dist[dist["method"] != "NOT_PRICED"], conflicts),
+            "priced_rows": IC.counts(pd.DataFrame(priced), conflicts),
+            "double_count_blocked": dbl}
+        (run_dir / "identity_conflicts.json").write_text(json.dumps(summary["identity_conflicts"], indent=1, default=str))
     sl = slate.set_index("canonical_game_id")
     recs = [{"record_type": "RUN", "body": {"run_id": run_id, "prediction_as_of": aso, "model_identity": ident,
                                             "state_version": man["state_version"], "state_source_cutoff": man["source_cutoff"],

@@ -1,0 +1,39 @@
+{
+ "about": "IDENTITY_CONFLICT_SUPPRESSED registry (cbb_platform/prod/identity_conflicts.py). One real player, two canonical identities that cannot be merged safely: the suppressed duplicate never enters the model frame; nothing is merged, re-keyed or deleted. Evidence read 2026-11-11 from the frozen history (history_extract) and production state S20261111T023404Z-2465b4130e27.",
+ "conflicts": [
+  {
+   "conflict_id": "IC-20261111-KHOI-THURMON",
+   "status": "IDENTITY_CONFLICT_SUPPRESSED",
+   "player_name": "Khoi Thurmon",
+   "first_name": "Khoi",
+   "last_name": "Thurmon",
+   "team_id": "T-f96156a09400fe48",
+   "team_name": "Old Dominion",
+   "primary_canonical_player_id": "P-ba2979a21dc89cc5",
+   "suppressed_canonical_player_id": "P-f998d97f4c162849",
+   "source_athlete_ids": {
+    "P-ba2979a21dc89cc5": ["CBBD:201219"],
+    "P-f998d97f4c162849": ["CBBD:17440"]
+   },
+   "identity_evidence": {
+    "P-ba2979a21dc89cc5": "frozen history: core.players first/last season 2026, metadata.player_id_map CBBD 201219 ANCHOR (confidence 1.0); flagship.rosters 2025-26 Oakland T-1d85ec897e1b7f7d; 32 box games 2025-26 at Oakland",
+    "P-f998d97f4c162849": "frozen history: core.players first/last season 2024, metadata.player_id_map CBBD 17440 ANCHOR (confidence 1.0); flagship.rosters 2023-24 Purdue Fort Wayne T-b27d02462ec91f89; 11 box games 2023-24. Production state: 2026-27 Old Dominion roster row (CBBD re-used athleteId 17440) and 3 Old Dominion box games 2026-27 (11-02, 11-04, 11-07)"
+   },
+   "portal_person_source_id": "46115572",
+   "portal_records": [
+    {"source_transfer_id": "452", "transfer_year": 2024, "origin": "Purdue Fort Wayne T-b27d02462ec91f89", "destination": null, "candidate_canonical_player_id": "P-f998d97f4c162849", "identity_method": "CANDIDATE_ORIGIN_ROSTER_NAME", "source": "frozen history core.transfers"},
+    {"source_transfer_id": "3457", "transfer_year": 2026, "origin": "Oakland T-1d85ec897e1b7f7d", "destination": "Old Dominion T-f96156a09400fe48", "candidate_canonical_player_id": "P-ba2979a21dc89cc5", "identity_method": "CANDIDATE_ORIGIN_ROSTER_NAME", "source": "production state core.transfers (CBBD recruiting/portal 2026-10-30)"}
+   ],
+   "destination_roster_evidence": "production flagship.rosters season 2027: Old Dominion T-f96156a09400fe48 lists Khoi Thurmon under P-f998d97f4c162849 (source_athlete_id 17440), 73 in / 205 lb, Chicago IL; the only Khoi Thurmon on any 2026-27 roster",
+   "attribute_match": {"exact_name": "Khoi Thurmon (first/last identical in every record)", "height_inches": 73, "weight_lbs": 205, "hometown": "Chicago, IL", "portal_person_source_id_shared": "46115572 on both portal records (2024 and 2026)"},
+   "primary_selection": "P-ba2979a21dc89cc5 carries the most recent and largest college career history (2025-26, 32 games, the season immediately before 2026-27) and is the candidate of the verified 2026 portal move Oakland -> Old Dominion whose origin is its own last history roster team; exact name, height and hometown match; it is on no 2026-27 roster (no conflicting current-team assignment). P-f998d97f4c162849 matches the current destination roster only because CBBD re-used the 2023-24 athleteId. Selected by continuity evidence, not id ordering.",
+   "known_limitation": "the 3 Old Dominion 2026-27 box games are recorded under the suppressed id, so the primary's in-season features do not see them until a conflict-safe merge; no model or feature definition is changed for this",
+   "merge_not_performed_reason": "both canonical ids are ANCHOR identities in the frozen history (distinct CBBD athleteIds 17440 and 201219, each with its own box history); merging either into the other overwrites an existing identity, which identity P-3 and the directive prohibit. A merge needs later deterministic lineage evidence and a conflict-safe path.",
+   "suppression_reason": "both identities are in Old Dominion's frozen pregame pool (current-roster id via 2026-27 appearances; history id via the 2026 portal record) and would be simulated and priced twice in one game; the duplicate is excluded from features, simulation, PMFs and pricing",
+   "canonical_merge_performed": false,
+   "historical_records_preserved": true,
+   "recorded_at": "2026-11-11T04:05:08Z",
+   "directive": "CBB ORIGINATOR - KHOI THURMON IDENTITY CONFLICT: PREVENT DOUBLE-SCORING NOW (2026-11-11)"
+  }
+ ]
+}

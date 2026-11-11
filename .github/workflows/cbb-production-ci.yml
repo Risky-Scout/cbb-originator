@@ -66,8 +66,8 @@ jobs:
         run: python -m pytest -q tests/test_rotowire_web_adapter.py
       - name: Daily exports + live daily lifecycle (Boards / Distributions / Grades, durable PMF evidence, forecast snapshots, odds team map, ingestion keys; fixtures, sockets refused, no credential)
         run: python -m pytest -q -rs tests/test_prod_exports.py tests/test_prod_best_offer.py tests/test_prod_daily_lifecycle.py tests/test_prod_footprint_minimization.py tests/test_quote_refresh.py tests/test_duckdb_limits.py
-      - name: Season-state increment column typing + identity adaptation P-3 (re-issued CBBD athlete ids; deterministic, never overwrites)
-        run: python -m pytest -q -rs tests/test_prod_state_column_types.py tests/test_prod_identity_p3.py
+      - name: Season-state increment column typing + identity adaptation P-3 + IDENTITY_CONFLICT_SUPPRESSED (deterministic, never overwrites, never double-scores)
+        run: python -m pytest -q -rs tests/test_prod_state_column_types.py tests/test_prod_identity_p3.py tests/test_prod_identity_conflicts.py
       - name: Install the test-only workbook reader (openpyxl; never in the production environment)
         run: python -m pip install --require-hashes --no-deps -r requirements-test.lock.txt
       - name: Excel-valid workbooks (worksheet row limit, defined names, non-finite cells; openpyxl reads every part)
