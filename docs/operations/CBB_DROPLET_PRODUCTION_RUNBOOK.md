@@ -10,8 +10,9 @@ are out of scope. CBB units list them under `InaccessiblePaths=` and never touch
 ```
 /opt/sports-models/cbb-originator/            code (root-owned)
   current -> releases/<sha>                   the active release (atomic symlink swap)
-  releases/<sha>/                             immutable `git archive` of <sha>, dr-xr-xr-x root:cbb-originator
-  releases/<sha>.sha256sums                   root-owned manifest "<sha256>  ./path"; the runner re-verifies the
+  releases/<sha>/                             immutable `git archive` of <sha>, root:cbb-originator: directories 0555
+                                              (dr-xr-xr-x), files 0444 (-r--r--r--), deploy/droplet/bin/cbb-originator-run 0555
+  releases/<sha>.sha256sums                   root:cbb-originator 0444 manifest "<sha256>  ./path"; the runner re-verifies the
                                               hashes and the file count before every job
   venv/                                       shared Python env (reused while requirements are unchanged)
 /etc/sports-models/cbb-originator.env         root:cbb-originator 0640, never world-readable
@@ -52,8 +53,10 @@ R=/opt/sports-models/cbb-originator
 git archive $sha | (mkdir $R/releases/$sha.tmp && tar -x -C $R/releases/$sha.tmp)
 (cd $R/releases/$sha.tmp && find . -type f -print0 | sort -z | xargs -0 sha256sum) > $R/releases/$sha.sha256sums
 mv $R/releases/$sha.tmp $R/releases/$sha
-chown -R root:cbb-originator $R/releases/$sha
-chmod -R a-w,g+rX,o-rwx $R/releases/$sha
+chown -R root:cbb-originator $R/releases/$sha $R/releases/$sha.sha256sums
+chmod -R a-w,a+rX $R/releases/$sha            # dirs 0555, files 0444, the executable runner 0555
+chmod 0444 $R/releases/$sha.sha256sums
+find $R/releases/$sha -printf '%M %y\n' | sort | uniq -c   # expect only dr-xr-xr-x d, -r--r--r-- f, -r-xr-xr-x f (runner)
 cp -p /etc/sports-models/cbb-originator.env /etc/sports-models/cbb-originator.env.bak-<date>-pre-<sha8>
 set CBB_EXPECTED_COMMIT=$sha in the env file
 ln -sfn releases/$sha $R/current.new && mv -T $R/current.new $R/current
