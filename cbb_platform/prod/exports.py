@@ -695,7 +695,21 @@ def _check_pmf(pmf: np.ndarray, what: str) -> None:
         raise ExportIntegrityError(f"PMF mass {pmf.sum()} {what}")
 
 
-def _official_pmfs(ops_root: Path, runs_root: Path, g) -> tuple[pd.DataFrame | None, str | None, list]:
+def _dists_of(path: Path, gid: str, cache: dict | None) -> list[dict]:
+    """PE.distributions of one durable PMF file restricted to one game. cache (one export run): path -> {game_id: [...]}
+    so each evidence file is read and parsed once, not once per game it covers (same rows, same order)."""
+    if cache is None:
+        return [x for x in PE.distributions(PE.read(path)) if x["game_id"] == gid]
+    k = str(path)
+    if k not in cache:
+        by: dict = {}
+        for x in PE.distributions(PE.read(path)):
+            by.setdefault(x["game_id"], []).append(x)
+        cache[k] = by
+    return list(cache[k].get(gid, []))
+
+
+def _official_pmfs(ops_root: Path, runs_root: Path, g, cache: dict | None = None) -> tuple[pd.DataFrame | None, str | None, list]:
     """The PMFs of one official (shadow-tick) prediction: the durable tick evidence ticks/<tick>/pmfs.parquet
     (prod.pmf_evidence), else the legacy run-directory market_pmfs.parquet. Returns (frame with game_label / player_label
     / team_id / stat / mean / pmf, source path, paths looked in)."""
@@ -703,8 +717,7 @@ def _official_pmfs(ops_root: Path, runs_root: Path, g) -> tuple[pd.DataFrame | N
     durable = tick / PE.FILE
     cand = [durable, tick / "market_pmfs.parquet", Path(runs_root) / str(g.run_id) / "market_pmfs.parquet"]
     if durable.exists():
-        d = [x for x in PE.distributions(PE.read(durable)) if x["game_id"] == g.game_id]
-        return pd.DataFrame(d), str(durable), cand
+        return pd.DataFrame(_dists_of(durable, g.game_id, cache)), str(durable), cand
     src = next((p for p in cand[1:] if p.exists()), None)
     if src is None:
         return None, None, cand
@@ -742,12 +755,13 @@ def forecast_sources(ops_root: Path, date: str) -> dict:
 
 
 def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, names: dict,
-                      date: str | None = None) -> tuple[list, list]:
+                      date: str | None = None, audit: dict | None = None) -> tuple[list, list]:
     """(rows, missing): the complete PMFs of every eligible (game, player, stat) prediction of the slate. Per game the
     LATEST valid pre-cutoff prediction is used (directive §8): the official shadow-tick prediction when it exists (it
     is made inside [cutoff - lead, cutoff)), else the latest forecast snapshot made before the game's cutoff. PMFs are
     read from the durable evidence exactly as persisted (never recomputed). games: the PREDICTED registry rows."""
     rows, missing, recs = [], [], []
+    cache: dict = {}
     fsrc = forecast_sources(ops_root, date) if date else {}
     official = {g.game_id: g for g in games.itertuples(index=False)}
     order = {g.game_id: g.tip_utc for g in games.itertuples(index=False)}
@@ -755,7 +769,7 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
         best = None
         if gid in official:
             g = official[gid]
-            df, src, looked = _official_pmfs(ops_root, runs_root, g)
+            df, src, looked = _official_pmfs(ops_root, runs_root, g, cache)
             aso = _utc(getattr(g, "prediction_as_of", None))
             cut = _utc(getattr(g, "cutoff_utc", None))
             if df is not None and aso is not None and cut is not None and aso > cut:
@@ -770,8 +784,7 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
                 continue
         for aso, cut, p in fsrc.get(gid, []):
             if best is None or (aso > best[0] and aso <= cut):
-                d = [x for x in PE.distributions(PE.read(p)) if x["game_id"] == gid]
-                best = (aso, pd.DataFrame(d), str(p))
+                best = (aso, pd.DataFrame(_dists_of(p, gid, cache)), str(p))
         if best is None or not len(best[1]):
             continue
         df = best[1]
@@ -784,22 +797,78 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
             nz = np.flatnonzero(pmf)
             last = int(nz[-1]) if len(nz) else 0                 # trailing zeros only; the folded tail point stays
             recs.append((tip, r.game_label, r.player_label, r.stat, names.get(r.team_id, r.team_id), _f(r.mean),
-                         pmf[: last + 1]))
+                         pmf[: last + 1], (gid, r.player_id, r.stat)))
+    if audit is not None:                                        # identity keys are canonical ids, never display labels
+        canon: dict = {}
+        label: dict = {}
+        for x in recs:
+            canon[x[7]] = canon.get(x[7], 0) + 1
+            label.setdefault((x[1], x[2], x[3]), set()).add(x[7])
+        audit["canonical_duplicate_keys"] = sorted(list(k) for k, n in canon.items() if n > 1)
+        audit["display_label_collisions"] = sorted([list(k), sorted(list(x) for x in v)] for k, v in label.items() if len(v) > 1)
     recs.sort(key=lambda x: (x[0] or pd.Timestamp.max.tz_localize("UTC"), x[1], x[2], x[3]))
-    for _, game, player, market, team, mean, pmf in recs:
+    for _, game, player, market, team, mean, pmf, _ in recs:
         rows += [[game, team, player, market, mean, int(o), float(p)] for o, p in enumerate(pmf)]
     return rows, missing
 
 
 def pmf_mass_check(rows: list) -> dict:
-    agg: dict = {}
+    """Mass of every exported distribution. A distribution is the run of rows opened by OUTCOME 0 (distribution_rows
+    writes each canonical (game, player_id, stat) PMF as outcomes 0..k): two players sharing a display name are two
+    distributions, never one summed key."""
+    sums: list = []
     neg = 0
-    for game, _, player, prop, _, _, p in rows:
-        agg[(game, player, prop)] = agg.get((game, player, prop), 0.0) + p
+    for _, _, _, _, _, outcome, p in rows:
+        if outcome == 0 or not sums:
+            sums.append(0.0)
+        sums[-1] += p
         neg += p < 0
-    worst = max((abs(v - 1) for v in agg.values()), default=0.0)
-    return {"distributions": len(agg), "max_abs_mass_error": worst, "negative": int(neg),
+    worst = max((abs(v - 1) for v in sums), default=0.0)
+    return {"distributions": len(sums), "max_abs_mass_error": worst, "negative": int(neg),
             "PMF_RECONCILIATION": "PASS" if worst <= PMF_TOL and neg == 0 else "FAIL"}
+
+
+DIST_RECEIPT = "distributions_receipt.json"
+
+
+def _rows_sha(rows: list) -> str:
+    h = hashlib.sha256()
+    for r in rows:
+        h.update(repr(r).encode())
+        h.update(b"\n")
+    return h.hexdigest()
+
+
+def _writer_sha() -> str:
+    """The workbook bytes are a pure function of the rows and this module (write_xlsx is deterministic)."""
+    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _file_sha(p: Path) -> str:
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for b in iter(lambda: f.read(1 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def distributions_if_changed(rows: list, path: Path) -> tuple[Path, bool]:
+    """Write the Distributions workbook unless the existing file was written from exactly these rows by this writer
+    (its receipt records rows / writer / file sha256 and the file still hashes to it). Returns (path, written)."""
+    path = Path(path)
+    rec_p = path.with_name(DIST_RECEIPT)
+    want = {"file": path.name, "rows_sha256": _rows_sha(rows), "writer_sha256": _writer_sha(), "rows": len(rows)}
+    try:
+        rec = json.loads(rec_p.read_text())
+    except (OSError, ValueError):
+        rec = None
+    if rec and all(rec.get(k) == v for k, v in want.items()) and path.exists() and _file_sha(path) == rec.get("xlsx_sha256"):
+        return path, False
+    p = distributions_workbook(rows, path)
+    tmp = rec_p.with_name(rec_p.name + ".tmp")
+    tmp.write_text(json.dumps({**want, "xlsx_sha256": _file_sha(p)}, sort_keys=True, indent=1) + "\n")
+    os.replace(tmp, rec_p)
+    return p, True
 
 
 # ============================================================================ minimal deterministic XLSX (stdlib)
@@ -1133,10 +1202,16 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     games = slate_games(ops_root, date)
     rep["predicted_games"] = int(len(games))
     names = team_names(history_db, state_root)
-    rows, missing = distribution_rows(ops_root, runs_root, games, names, date)
+    audit: dict = {}
+    rows, missing = distribution_rows(ops_root, runs_root, games, names, date, audit=audit)
     if rows and not missing:
-        p = distributions_workbook(rows, out_dir / names_["distributions"])
-        rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), **pmf_mass_check(rows)}
+        p, written = distributions_if_changed(rows, out_dir / names_["distributions"])
+        mass = pmf_mass_check(rows)
+        if audit["canonical_duplicate_keys"]:
+            mass["PMF_RECONCILIATION"] = "FAIL"                  # one canonical prediction exported twice
+        rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), "rewritten": written, **mass,
+                                "canonical_duplicate_keys": len(audit["canonical_duplicate_keys"]),
+                                "display_label_collisions": audit["display_label_collisions"][:20]}
     elif rows:
         rep["distributions"] = {"status": "MISSING_EVIDENCE",
                                 "missing": f"durable PMFs absent for {len(missing)} predicted game(s)", "games": missing[:20]}
