@@ -180,6 +180,61 @@ def _upsert(con, rel: str, df: pd.DataFrame, replace: bool = False) -> None:
     con.unregister("new_rows")
 
 
+def apply_identity_links(con, links: pd.DataFrame | None, method: str = "PROD_P3_REISSUED_ATHLETE_ID") -> dict:
+    """Re-key a provider-re-issued canonical player onto its history-bearing canonical id in EVERY increment relation
+    (links: new_player_id -> hist_player_id, prod.cbbd_feed.reissued_athlete_links). Applied to the candidate before
+    validation, so rows ingested by earlier syncs under the new id are re-keyed too. A link is skipped (never forced)
+    when re-keying would collide with an existing row of the history id. The new id's increment core.players row is
+    dropped (the history id's player row is the frozen history's); the portal record carries the resolved id."""
+    rep = {"applied": [], "skipped_conflict": []}
+    if links is None or not len(links):
+        return rep
+    rels = [(f"{s}.{t}", [c for c in cols]) for s, t, cols in con.execute(
+        """SELECT schema_name, table_name, list(column_name) FROM duckdb_columns()
+           WHERE schema_name IN ('flagship', 'core', 'metadata') GROUP BY ALL""").fetchall()]
+    for rel, cols in rels:                      # an id / method column created all-NULL is INTEGER: re-type (lossless)
+        for c in ("canonical_player_id", "identity_method"):
+            if c in cols and con.execute(f"SELECT data_type FROM duckdb_columns() WHERE schema_name || '.' || table_name = ? "
+                                         f"AND column_name = ?", [rel, c]).fetchone()[0] != "VARCHAR" \
+                    and con.execute(f"SELECT count({c}) FROM {rel}").fetchone()[0] == 0:
+                con.execute(f"ALTER TABLE {rel} ALTER COLUMN {c} SET DATA TYPE VARCHAR")
+    for lk in links.to_dict(orient="records"):
+        n, h = lk["new_player_id"], lk["hist_player_id"]
+        clash = []
+        for rel, cols in rels:
+            if "canonical_player_id" not in cols or rel == "core.players":
+                continue
+            others = [k for k in KEYS.get(rel, ()) if k != "canonical_player_id"]
+            if "canonical_player_id" not in KEYS.get(rel, ()):
+                continue
+            on = " AND ".join([f"a.{k} IS NOT DISTINCT FROM b.{k}" for k in others] or ["TRUE"])
+            if con.execute(f"""SELECT count(*) FROM {rel} a JOIN {rel} b ON {on}
+                               WHERE a.canonical_player_id = ? AND b.canonical_player_id = ?""", [n, h]).fetchone()[0]:
+                clash.append(rel)
+        if clash:
+            rep["skipped_conflict"].append({**lk, "relations": clash})
+            continue
+        moved = {}
+        for rel, cols in rels:
+            if rel == "core.players" or "canonical_player_id" not in cols:
+                continue
+            k = con.execute(f"UPDATE {rel} SET canonical_player_id = ? WHERE canonical_player_id = ?", [h, n]).fetchone()[0]
+            if k:
+                moved[rel] = int(k)
+        if "core.players" in {r for r, _ in rels}:
+            moved["core.players_dropped"] = int(con.execute("DELETE FROM core.players WHERE canonical_player_id = ?",
+                                                            [n]).fetchone()[0])
+        tcols = dict(rels).get("core.transfers", [])
+        if lk.get("source_transfer_id") is not None and {"source_transfer_id", "identity_method"} <= set(tcols):
+            sets = ["canonical_player_id = ?", "identity_method = ?"] + \
+                   (["needs_manual_review = FALSE"] if "needs_manual_review" in tcols else [])
+            moved["core.transfers"] = int(con.execute(
+                f"UPDATE core.transfers SET {', '.join(sets)} WHERE CAST(source_transfer_id AS VARCHAR) = ?",
+                [h, method, str(lk["source_transfer_id"])]).fetchone()[0])
+        rep["applied"].append({**lk, "rows": moved})
+    return rep
+
+
 def validate(db: Path, source_cutoff) -> dict:
     """Whole-increment validation. Returns coverage; raises StateUpdateFailed on any contract violation."""
     cut = _utc(source_cutoff)
@@ -275,7 +330,7 @@ def _write_pointer(root: Path, body: dict) -> None:
 
 
 def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: dict, root: Path = PC.STATE_ROOT,
-           created_at=None, replace=(), manifest_extra: dict | None = None) -> dict:
+           created_at=None, replace=(), manifest_extra: dict | None = None, identity_links: pd.DataFrame | None = None) -> dict:
     """last-known-good increment + new legally available rows = candidate; validate the WHOLE candidate; only then
     promote it atomically. `replace`: snapshot relations whose previous contents are dropped first.
     preseason_evidence: {"portal_2026_complete": bool, "recruits_2026_complete": bool, "source": str, ...} declared by
@@ -304,7 +359,10 @@ def update(new_rows: dict, source_cutoff, provider: dict, preseason_evidence: di
         _empty_tables(con)
         for rel in sorted(set(new_rows) | set(replace)):
             _upsert(con, rel, new_rows.get(rel, pd.DataFrame()), replace=rel in replace)
+        links_rep = apply_identity_links(con, identity_links)
         con.close()
+        if identity_links is not None:
+            manifest_extra = {**(manifest_extra or {}), "identity_p3": json.loads(json.dumps(links_rep, default=str))}
         cov = validate(db, cut)
         if prev is not None and cov["relation_sha256"] == prev["manifest"]["coverage"]["relation_sha256"] \
                 and preseason_evidence == prev["manifest"].get("preseason_evidence"):

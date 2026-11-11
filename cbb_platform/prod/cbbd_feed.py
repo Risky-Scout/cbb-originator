@@ -42,6 +42,9 @@ from cbb_platform.prod import cbbd_acquire as A, config as PC
 
 SRC = "CBBD_API_PRODUCTION"
 P2 = "PROD_P2_COMMITTED_ROSTER_NAME_UNIQUE"
+P3 = "PROD_P3_REISSUED_ATHLETE_ID"
+P3_COLS = ["new_player_id", "hist_player_id", "source_transfer_id", "new_athlete_id", "hist_athlete_id", "name",
+           "origin_team_id", "destination_team_id", "height_inches", "hometown_city"]
 
 
 class FeedUnavailable(RuntimeError):
@@ -263,6 +266,72 @@ def preseason_identity(history_db: Path, snap_root: Path, work_db: Path, proc) -
     }
     con.close()
     return rel, rep
+
+
+# ============================================================================ P-3: re-issued CBBD athlete id
+P3_SQL = """
+WITH t AS (SELECT * FROM p3_t WHERE transfer_year = {cls} AND canonical_player_id IS NULL
+                                AND candidate_canonical_player_id IS NOT NULL
+                                AND origin_team_id IS NOT NULL AND destination_team_id IS NOT NULL),
+hr AS (SELECT canonical_player_id, canonical_team_id, CAST(source_athlete_id AS VARCHAR) AS athlete_id, first_name,
+              last_name, player_name, height_inches, hometown_city FROM h.flagship.rosters WHERE season = {cls}),
+nr AS (SELECT canonical_player_id, canonical_team_id, CAST(source_athlete_id AS VARCHAR) AS athlete_id, first_name,
+              last_name, player_name, height_inches, hometown_city FROM p3_r WHERE season = {season}),
+c AS (SELECT n.canonical_player_id AS new_player_id, hr.canonical_player_id AS hist_player_id,
+             CAST(t.source_transfer_id AS VARCHAR) AS source_transfer_id, n.athlete_id AS new_athlete_id,
+             hr.athlete_id AS hist_athlete_id, n.player_name AS name, t.origin_team_id, t.destination_team_id,
+             n.height_inches, n.hometown_city, t.first_name, t.last_name
+      FROM t
+      JOIN hr ON hr.canonical_player_id = t.candidate_canonical_player_id AND hr.canonical_team_id = t.origin_team_id
+      JOIN nr n ON n.canonical_team_id = t.destination_team_id
+      WHERE hr.first_name = t.first_name AND hr.last_name = t.last_name           -- exact name: portal = origin roster
+        AND n.first_name = t.first_name AND n.last_name = t.last_name             --   = destination roster
+        AND hr.player_name = n.player_name
+        AND hr.height_inches IS NOT NULL AND hr.height_inches = n.height_inches
+        AND hr.hometown_city IS NOT NULL AND hr.hometown_city = n.hometown_city
+        AND n.canonical_player_id <> hr.canonical_player_id AND n.athlete_id <> hr.athlete_id)
+SELECT * FROM c
+WHERE (SELECT count(*) FROM nr x WHERE x.canonical_team_id = c.destination_team_id
+          AND x.first_name = c.first_name AND x.last_name = c.last_name) = 1           -- unique on the destination roster
+  AND (SELECT count(*) FROM hr x WHERE x.canonical_team_id = c.origin_team_id
+          AND x.first_name = c.first_name AND x.last_name = c.last_name) = 1           -- unique on the origin roster
+  AND (SELECT count(*) FROM p3_t x WHERE x.transfer_year = {cls}
+          AND x.first_name = c.first_name AND x.last_name = c.last_name) = 1           -- one portal record of that name
+  AND NOT EXISTS (SELECT 1 FROM nr x WHERE x.canonical_player_id = c.hist_player_id)   -- history id on no current roster
+  AND NOT EXISTS (SELECT 1 FROM h.core.players x WHERE x.canonical_player_id = c.new_player_id)   -- new id truly new
+  AND NOT EXISTS (SELECT 1 FROM h.metadata.player_id_map x WHERE x.provider = 'CBBD'
+                     AND x.provider_player_key = c.new_athlete_id)                       -- athlete id unknown to history
+"""
+
+
+def reissued_athlete_links(history_db: Path, rosters: pd.DataFrame, transfers: pd.DataFrame) -> pd.DataFrame:
+    """Production identity adaptation P-3. CBBD occasionally issues a transferring player a NEW athleteId (2026 portal:
+    4 of 1,585 records), so the frozen roster rule (cid of the athlete id) creates a second canonical player and the
+    frozen portal rule leaves the link as CANDIDATE_ORIGIN_ROSTER_NAME (the destination roster cannot corroborate a
+    different athlete id). The new id is linked back to the history-bearing canonical player only when EVERY
+    deterministic check holds: the CBBD portal record names the player at the origin team (the history player's 2025-26
+    roster) and the destination team; the exact first / last / full name agrees on the portal record and both rosters;
+    height and hometown agree (non-null); the name is unique on the origin roster, the destination roster and the
+    portal; the history id is on no 2026-27 roster; the new id and athlete id are unknown to the frozen history; and the
+    pair is one-to-one. No fuzzy matching; anything else stays unlinked. Returns P3_COLS rows (new -> history)."""
+    if rosters is None or transfers is None or not len(rosters) or not len(transfers):
+        return pd.DataFrame(columns=P3_COLS)
+    need_r = {"canonical_player_id", "canonical_team_id", "season", "source_athlete_id", "first_name", "last_name",
+              "player_name", "height_inches", "hometown_city"}
+    need_t = {"source_transfer_id", "transfer_year", "first_name", "last_name", "canonical_player_id",
+              "candidate_canonical_player_id", "origin_team_id", "destination_team_id"}
+    if not need_r <= set(rosters.columns) or not need_t <= set(transfers.columns):
+        return pd.DataFrame(columns=P3_COLS)
+    con = duckdb.connect()
+    try:
+        con.execute(f"ATTACH '{history_db}' AS h (READ_ONLY)")
+        con.register("p3_r", rosters[sorted(need_r)])
+        con.register("p3_t", transfers[sorted(need_t)])
+        df = con.execute(P3_SQL.format(cls=PC.PRESEASON_CLASS_YEAR, season=PC.PRODUCTION_SEASON)).df()
+    finally:
+        con.close()
+    one = ~df["new_player_id"].duplicated(keep=False) & ~df["hist_player_id"].duplicated(keep=False)   # one-to-one
+    return df.loc[one, P3_COLS].sort_values("new_player_id").reset_index(drop=True)
 
 
 # ============================================================================ completed games (frozen canonical build)

@@ -363,8 +363,13 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
                  "division_one_2026_27": {"teams": int(sum(v["di"] for v in teams.values())),
                                           "method": "NON_EMPTY_CBBD_ROSTER_2026_27"}}
         provider = {"kind": provider_kind, "name": "CBBD_API_PRODUCTION", "feed_version": PC.FEED_VERSION}
+        # P-3: a transfer CBBD re-issued an athlete id to is re-keyed onto his history-bearing canonical player
+        links = F.reissued_athlete_links(history_db, new_rows.get("flagship.rosters"), new_rows.get("core.transfers"))
+        rec["identity_p3_links"] = links[["new_player_id", "hist_player_id", "name"]].to_dict(orient="records")
         man = ST.update(new_rows, cut, provider, evidence, root=state_root, created_at=max(cut, _now()) if provider_kind == "LIVE" else cut,
-                        replace=replace, manifest_extra=extra)
+                        replace=replace, manifest_extra=extra, identity_links=links)
+        rec["identity_p3"] = {k: len(v) for k, v in ((man.get("identity_p3") or (man.get("pointer") or {}).get(
+            "last_sync_extra", {}).get("identity_p3") or {}).items())}
         rec.update({"status": "UNCHANGED" if man.get("idempotent_no_change") else "PROMOTED",
                     "state_version": man["state_version"], "coverage": {k: v for k, v in man["coverage"].items()
                                                                          if k != "relation_sha256"}})
