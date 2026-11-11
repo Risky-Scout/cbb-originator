@@ -141,6 +141,26 @@ def _empty_tables(con) -> None:
         con.execute(f"CREATE SCHEMA IF NOT EXISTS {s}")
 
 
+def _adopt_types(con, rel: str, df: pd.DataFrame) -> list:
+    """A column CREATE TABLE AS inferred from an all-NULL first batch is typed INTEGER by DuckDB (2026-11-10: every
+    accounting_issues of the first 2026-27 boxes was NULL, so the first 'PTS_IDENTITY' flag failed to cast and every
+    sync after it raised STATE_UPDATE_FAILED). Such a column holds no value yet, so it takes the incoming column's type
+    as soon as the new rows carry a value: lossless (only NULLs are re-typed); a column that holds values is never
+    altered."""
+    ttype = {r[0]: r[1] for r in con.execute(f"DESCRIBE {rel}").fetchall()}
+    con.register("adopt_rows", df)
+    ntype = {r[0]: r[1] for r in con.execute("DESCRIBE SELECT * FROM adopt_rows").fetchall()}
+    con.unregister("adopt_rows")
+    changed = []
+    for c, t in ttype.items():
+        if c not in ntype or ntype[c] == t or not df[c].notna().any():
+            continue
+        if con.execute(f'SELECT count("{c}") FROM {rel}').fetchone()[0] == 0:
+            con.execute(f'ALTER TABLE {rel} ALTER COLUMN "{c}" SET DATA TYPE {ntype[c]}')
+            changed.append((c, t, ntype[c]))
+    return changed
+
+
 def _upsert(con, rel: str, df: pd.DataFrame, replace: bool = False) -> None:
     exists = con.execute(f"SELECT count(*) FROM duckdb_tables() WHERE schema_name || '.' || table_name = '{rel}'").fetchone()[0]
     if exists and replace:
@@ -152,6 +172,7 @@ def _upsert(con, rel: str, df: pd.DataFrame, replace: bool = False) -> None:
     if not exists:
         con.execute(f"CREATE TABLE {rel} AS SELECT * FROM new_rows")
     else:
+        _adopt_types(con, rel, df)
         tcols = {r[0] for r in con.execute(f"DESCRIBE {rel}").fetchall()} & set(df.columns)
         key = " AND ".join(f"{t} IS NOT DISTINCT FROM {n}" for t, n in zip(key_exprs(rel, "t", tcols), key_exprs(rel, "n", tcols)))
         con.execute(f"DELETE FROM {rel} t WHERE EXISTS (SELECT 1 FROM new_rows n WHERE {key})")
