@@ -49,7 +49,7 @@ jobs:
       - name: Focused directional-bias audit + prospective side-monitor tests (synthetic; diagnostics only)
         run: python -m pytest tests/test_prod_directional_audit.py tests/test_prod_side_monitor.py -q
       - name: Focused prospective shadow-tick tests (fixtures, fake HTTP, temporary roots, dummy encryption key)
-        run: python -m pytest tests/test_prod_shadow_tick.py tests/test_prod_overnight_completeness.py -q
+        run: python -m pytest tests/test_prod_shadow_tick.py tests/test_prod_overnight_completeness.py tests/test_prod_morning_reliability.py -q
       - name: Stabilization gates (golden production equivalence, model registry / artifact hashes)
         run: python -m pytest tests/test_prod_golden_equivalence.py tests/test_model_registry.py -q
       - name: Production readiness gates (schedule freshness, monitor semantics, checkpoint invariance, boards / contract / publication)

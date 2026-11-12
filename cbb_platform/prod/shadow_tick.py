@@ -213,6 +213,33 @@ def _window_of(tip: pd.Timestamp) -> str | None:
 
 
 # ============================================================================ plan (what is due now)
+def pre_refit_due(now: pd.Timestamp, last_ok: pd.Timestamp | None, last_try: pd.Timestamp | None) -> dict:
+    """The pre-refit refresh of the NEXT walk-forward training cutoff (a tick late on ET day D-1 already schedules day
+    D's). Required until a sync succeeds inside the lead window [cutoff - PRE_REFIT_REFRESH_LEAD_MINUTES, cutoff)
+    (state age at the cutoff then <= the lead <= MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES). First attempt: the window
+    start. After an attempt in the window that left no successful sync (last_try >= window start > last_ok): a retry at
+    min(last attempt + PRE_REFIT_RETRY_MINUTES, cutoff - PRE_REFIT_LATEST_ATTEMPT_MINUTES); none once that instant is
+    not after the last attempt (no time left), and none at or after the cutoff (the next cutoff's window takes over)."""
+    today = now.tz_convert(WC.TZ).date()
+    cut = WC.refit_cutoff(today)
+    if now >= cut:
+        cut = WC.refit_cutoff(today + timedelta(days=1))
+    start = cut - pd.Timedelta(minutes=PC.PRE_REFIT_REFRESH_LEAD_MINUTES)
+    latest = cut - pd.Timedelta(minutes=PC.PRE_REFIT_LATEST_ATTEMPT_MINUTES)
+    out = {"cutoff": cut, "window_start": start, "latest_attempt": latest, "due_at": None}
+    if last_ok is not None and last_ok >= start:
+        out["status"] = "REFRESHED"                      # stop A: a successful sync inside the window
+    elif last_try is None or last_try < start:
+        out.update(status="FIRST_ATTEMPT", due_at=start)
+    else:                                                # an attempt inside the window left no successful sync
+        t = min(last_try + pd.Timedelta(minutes=PC.PRE_REFIT_RETRY_MINUTES), latest)
+        if t > last_try:
+            out.update(status="RETRY", due_at=t)
+        else:
+            out["status"] = "RETRIES_EXHAUSTED"         # stop C: no authorized attempt left before the cutoff
+    return out
+
+
 def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
     op = OS.read_json(ctx.ops("OPERATION.json"), {})
     started = _utc(op["operation_started_at"]) if op.get("operation_started_at") else now
@@ -258,22 +285,22 @@ def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
     # team / player box missing) is re-requested every SYNC_RETRY_MINUTES while within RESULT_LAG_RETRY_HOURS of
     # becoming knowable. The sync requests only games not yet complete (sync._complete_in_state); an unchanged result
     # writes no new state. A game not (yet) final is never polled here: the routine / pre-refit refreshes re-check it.
-    backlog = recent[(recent["game_universe"] == "DI_VS_DI") & final]
+    # a game whose exact request failed NON-retryably (recorded by the sync, sync.nonretryable_failures) leaves the loop
+    # for RESULT_LAG_RETRY_HOURS; it stays incomplete (FINAL_DATA_INCOMPLETE_AT_CUTOFF), never silently complete
+    _, nonretry = Y.nonretryable_failures(log, now)
+    backlog = recent[(recent["game_universe"] == "DI_VS_DI") & final & ~recent["canonical_game_id"].isin(nonretry)]
     if len(backlog) and not halted and retry_ok:
         why.append("COMPLETION_BACKLOG")
-    # pre-refit refresh: one sync inside the lead window before today's walk-forward training cutoff
-    # the NEXT refit cutoff: a tick late on ET day D-1 must already schedule day D's lead-window wake-up
-    today = now.tz_convert(WC.TZ).date()
-    rcut = WC.refit_cutoff(today)
-    if now >= rcut:
-        rcut = WC.refit_cutoff(today + timedelta(days=1))
-    rlead = rcut - pd.Timedelta(minutes=PC.PRE_REFIT_REFRESH_LEAD_MINUTES)
-    if rlead <= now < rcut and (last_ok is None or last_ok < rlead) and retry_ok:
-        why.append("PRE_REFIT_REFRESH")
+    # pre-refit refresh (pre_refit_due): first attempt at the lead-window start, bounded retries after a failed attempt;
+    # every pending attempt is a "sync" entry of `next` (DUE.json), so the due check wakes for it on its own
+    pr = pre_refit_due(now, last_ok, last_try)
+    if pr["due_at"] is not None:
+        if pr["window_start"] <= now < pr["cutoff"] and now >= pr["due_at"]:
+            why.append("PRE_REFIT_REFRESH")
+        else:
+            nxt.append(("sync", pr["due_at"]))
     if last_ok is not None:
         nxt.append(("sync", last_ok + pd.Timedelta(hours=PC.SYNC_INTERVAL_HOURS)))
-        if last_ok < rlead and now < rlead:
-            nxt.append(("sync", rlead))
     if (len(blocking) or len(backlog)) and not halted and last_try is not None:
         nxt.append(("sync", last_try + pd.Timedelta(minutes=PC.SYNC_RETRY_MINUTES)))
     # ------------------------------------------------------------ events listing (free)
@@ -306,6 +333,7 @@ def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
     return {"now": now, "score": score, "missed": missed, "sync_due": bool(why), "sync_why": why,
             "refresh_windows": sorted(windows), "events_due": events_due, "settle": settle, "report_due": rep_due,
             "next": sorted((k, _utc(t)) for k, t in nxt if pd.notna(t)), "operation_started_at": started,
+            "pre_refit": pr,
             "schedule": sch}
 
 
@@ -322,7 +350,9 @@ def due_document(p: dict, st: dict | None, ctx: Ctx) -> dict:
             "next_due_at": (p["now"].isoformat() if immediate else (min(nxt.values()).isoformat() if nxt else None)),
             "next_by_kind": {k: v.isoformat() for k, v in sorted(nxt.items())},
             "heartbeat_hours": PC.SYNC_INTERVAL_HOURS, "state_version": ((st or {}).get("manifest") or {}).get("state_version"),
-            "chain_head": head, "score_lead_minutes": PC.SCORE_LEAD_MINUTES}
+            "chain_head": head, "score_lead_minutes": PC.SCORE_LEAD_MINUTES,
+            "pre_refit_refresh": {k: (v.isoformat() if isinstance(v, pd.Timestamp) else v)
+                                  for k, v in (p.get("pre_refit") or {}).items()}}
 
 
 # ============================================================================ steps
@@ -341,7 +371,8 @@ def step_sync(ctx: Ctx, p: dict, tick: dict) -> dict:
                 refresh_schedule_windows=p["refresh_windows"])
     tick["sync"] = {k: rec.get(k) for k in ("sync_id", "status", "reason", "error", "state_version", "requests",
                                             "completed_games_new", "completed_games_ingested", "completed_budget_exhausted",
-                                            "completed_requests_deferred", "results_deferred_not_yet_knowable", "coverage")}
+                                            "completed_requests_deferred", "results_deferred_not_yet_knowable", "coverage",
+                                            "outcome", "completed_receipt", "completed_request_failures")}
     tick["sync"]["why"] = p["sync_why"]
     tick["sync"]["refresh_windows"] = p["refresh_windows"]
     after = ST.current(ctx.state_root)

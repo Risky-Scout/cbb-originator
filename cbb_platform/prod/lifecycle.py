@@ -392,11 +392,20 @@ def state_freshness(life: Life, day: date) -> dict:
     cut = WC.refit_cutoff(day)
     st = EL.state_asof(life.state_root, cut)
     out = {"training_cutoff": cut.isoformat(), "state_version": None, "confirmed_at": None, "STATE_AGE_MIN": None,
-           "max_age_min": PC.MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES, "STATE_FRESH": None}
+           "max_age_min": PC.MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES, "STATE_FRESH": None,
+           "FAILED_RETRYABLE_REQUESTS": 0, "FAILED_NONRETRYABLE_REQUESTS": 0, "last_sync_before_cutoff": None}
+    log = OS.read_jsonl(Path(life.prod_root) / "sync" / "sync_log.jsonl")
+    before = [r for r in log if r.get("finished_at") and SH._utc(r["finished_at"]) <= cut]
+    if before:                                  # the completed-stage request failures the refit's state still carries
+        last = before[-1]
+        fails = [f for f in last.get("completed_request_failures") or [] if f.get("ATTEMPT_TIME")]
+        out.update(FAILED_RETRYABLE_REQUESTS=sum(bool(f.get("RETRYABLE")) for f in fails),
+                   FAILED_NONRETRYABLE_REQUESTS=sum(not f.get("RETRYABLE") for f in fails),
+                   last_sync_before_cutoff={k: last.get(k) for k in ("sync_id", "status", "outcome", "finished_at")})
     if st is None:
         return out
     seen = [SH._utc(st["source_cutoff"])]
-    for r in OS.read_jsonl(Path(life.prod_root) / "sync" / "sync_log.jsonl"):
+    for r in log:
         if r.get("status") in ("PROMOTED", "UNCHANGED") and r.get("state_version") == st["state_version"] \
                 and r.get("source_cutoff") and r.get("finished_at") and SH._utc(r["finished_at"]) <= cut:
             seen.append(min(SH._utc(r["source_cutoff"]), cut))
@@ -571,6 +580,10 @@ def receipt(h: dict) -> dict:
     pdc = wf.get("prior_day_completeness") or {}
     if pdc.get("STATUS") not in (None, "COMPLETE"):
         warnings.append(f"{pdc['STATUS']}: {pdc.get('INCOMPLETE_FINAL')} of {pdc.get('FINAL_GAMES')} prior-day finals")
+    sf = wf.get("state_freshness") or {}
+    if sf.get("FAILED_RETRYABLE_REQUESTS") or sf.get("FAILED_NONRETRYABLE_REQUESTS"):
+        warnings.append(f"PRE_REFIT_REQUEST_FAILURES: {sf.get('FAILED_RETRYABLE_REQUESTS')} retryable, "
+                        f"{sf.get('FAILED_NONRETRYABLE_REQUESTS')} non-retryable completed-stage requests failed")
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
     bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}

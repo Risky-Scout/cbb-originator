@@ -130,7 +130,11 @@ RESULT_LAG_RETRY_HOURS = 24                         # how long a knowable game's
 #   PRE_REFIT_REFRESH   one sync inside the PRE_REFIT_REFRESH_LEAD_MINUTES before the daily refit cutoff
 #   the walk-forward refuses (DEFERRED_STATE_REFRESH_FAILED) a state last confirmed by a sync more than
 #   MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES before the cutoff. The cutoff itself and the PIT rules are unchanged.
+#   a pre-refit attempt that leaves no successful sync inside the lead window is retried at
+#   min(last attempt + PRE_REFIT_RETRY_MINUTES, cutoff - PRE_REFIT_LATEST_ATTEMPT_MINUTES), never after that instant
 PRE_REFIT_REFRESH_LEAD_MINUTES = 45
+PRE_REFIT_RETRY_MINUTES = 20
+PRE_REFIT_LATEST_ATTEMPT_MINUTES = 10               # last tick slot whose sync still finishes before the cutoff
 MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES = 60
 VOID_AFTER_HOURS = 48                               # a cancelled / unlisted game's predictions settle NO_ACTION after this
 DAILY_REPORT_HOUR_UTC = 12                          # the daily report of ET date D is written at/after D+1 12:00Z

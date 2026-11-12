@@ -1,8 +1,8 @@
 """Cheap scheduler gate for the shadow tick. Standard library only: no dependency install, no data, no network.
 
 Reads DUE.json from the ops-state checkout (written by every shadow tick) and prints `due=true|false` (GitHub Actions
-output format). Due when: no DUE.json yet (bootstrap), DUE.json says work is due now, its next_due_at has arrived, or
-the heartbeat (the routine refresh interval since the last recorded next sync) has lapsed. Only then does the
+output format). Due when: no DUE.json yet (bootstrap), DUE.json says work is due now, its next_due_at has arrived, a pending
+pre-refit refresh attempt (pre_refit_refresh.due_at, before its cutoff) has arrived, or the heartbeat (the routine refresh interval since the last recorded next sync) has lapsed. Only then does the
 workflow install the environment and run the full tick, so an idle scheduler check costs seconds.
 
     python cbb_platform/prod/due_check.py <ops_root> [--now ISO]
@@ -32,6 +32,9 @@ def check(ops_root: Path, now: datetime) -> tuple[bool, str]:
         return True, "NO_NEXT_DUE (refresh)"
     if now >= _t(nxt):
         return True, f"NEXT_DUE_REACHED {nxt}"
+    pre = (d.get("pre_refit_refresh") or {}).get("due_at")       # a pending pre-refit attempt / retry wakes on its own
+    if pre and now >= _t(pre) and ("cutoff" not in d["pre_refit_refresh"] or now < _t(d["pre_refit_refresh"]["cutoff"])):
+        return True, f"PRE_REFIT_REFRESH_DUE {pre}"
     sync = (d.get("next_by_kind") or {}).get("sync")
     if sync and now >= _t(sync):
         return True, "HEARTBEAT"

@@ -136,6 +136,59 @@ def completed_reuse_age(endpoint: str, params: dict, games: pd.DataFrame, sched:
 
 
 BOX_WINDOW_ENDPOINTS = ("games/teams", "games/players")
+SKIPPED_NONRETRYABLE = "SKIPPED_PRIOR_NONRETRYABLE"
+
+
+# ============================================================================ per-request failure isolation (completed)
+def classify_failure(exc) -> tuple[str, bool, str]:
+    """(ERROR_CLASSIFICATION, RETRYABLE, HTTP_STATUS_OR_EXCEPTION) of one failed completed-stage request. Transient as in
+    cbbd_acquire.Session (network error, HTTP 429, HTTP 5xx, an unparseable body: already retried in-session); a 404
+    for a game the provider reports final is a payload not yet posted (retryable). A guard refusal or another 4xx is
+    deterministic for that exact request (not retryable)."""
+    if isinstance(exc, A.ProductionGuardViolation):
+        return "GUARD_REFUSED", False, f"{type(exc).__name__}: {str(exc)[:200]}"
+    e = getattr(exc, "entry", None) or {}
+    st, err = e.get("http_status"), str(e.get("error") or exc)[:200]
+    if err == "invalid JSON":
+        return "INVALID_RESPONSE", True, err
+    if st is None:
+        return ("NETWORK" if err.startswith("network") else "PROVIDER_UNAVAILABLE"), True, err
+    if st == 429 or st >= 500:
+        return ("RATE_LIMITED" if st == 429 else "PROVIDER_5XX"), True, f"HTTP {st}"
+    if st == 404:
+        return "RESPONSE_UNAVAILABLE", True, f"HTTP {st}"
+    return "INVALID_REQUEST", False, f"HTTP {st}"
+
+
+def request_games(endpoint: str, params: dict, games: pd.DataFrame) -> list[str]:
+    """Canonical ids of the newly completed games one completed-stage request serves."""
+    if endpoint == "substitutions/game":
+        return [F.cid("G", "game", params["gameId"])]
+    if endpoint in BOX_WINDOW_ENDPOINTS:
+        a, b = date.fromisoformat(params["startDateRange"]), date.fromisoformat(params["endDateRange"])
+        return sorted(g for g, t in zip(games["canonical_game_id"], games["scheduled_tip_utc"])
+                      if pd.notna(t) and a <= _utc(t).date() < b)
+    return sorted(games["canonical_game_id"])
+
+
+def nonretryable_failures(log_rows: list[dict], now) -> tuple[set, set]:
+    """(request keys, canonical game ids) of completed-stage requests that ACTUALLY failed non-retryably within the
+    last RESULT_LAG_RETRY_HOURS (a skip does not renew it): skipped by the sync, excluded from COMPLETION_BACKLOG."""
+    since = _utc(now) - timedelta(hours=PC.RESULT_LAG_RETRY_HOURS)
+    keys, games = set(), set()
+    for r in log_rows or []:
+        if not r.get("finished_at") or _utc(r["finished_at"]) < since or _utc(r["finished_at"]) > _utc(now):
+            continue
+        for f in r.get("completed_request_failures") or []:
+            if not f.get("RETRYABLE") and f.get("ERROR_CLASSIFICATION") != SKIPPED_NONRETRYABLE:
+                keys.add(f["REQUEST_KEY"])
+                games |= set(f.get("GAME_IDS") or [])
+    return keys, games
+
+
+def _read_log(path: Path) -> list[dict]:
+    p = Path(path)
+    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
 
 
 def latest_receipt_per_game(payloads: list[tuple]) -> tuple[list[dict], int]:
@@ -191,13 +244,17 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
         state_root: Path = PC.STATE_ROOT, cache_root: Path | None = None, ledger_path: Path | None = None,
         sync_log: Path = PC.SYNC_LOG, work_root: Path | None = None, http_get=None, credential=None,
         max_live_requests: int = PC.MAX_LIVE_REQUESTS_PER_STAGE, completed_budget: int | None = None,
-        provider_kind: str = "LIVE", clock=None, refresh_schedule_windows=()) -> dict:
+        provider_kind: str = "LIVE", clock=None, refresh_schedule_windows=(), sleep=None) -> dict:
     """One sync. Returns the sync record (status PROMOTED | UNCHANGED | FAILED). `clock` (tests) drives every request /
     receipt timestamp; source_cutoff = as_of, else the clock AFTER acquisition (every payload used is <= it).
     refresh_schedule_windows: startDateRange values of schedule windows re-fetched regardless of their TTL (a window
     holding a game whose result has become knowable since the last sync); every other window keeps its TTL.
     Completed stage: when its live-request budget is exhausted, the games whose requests all completed are ingested and
-    the rest wait for a later sync (`completed_budget_exhausted`); the per-stage budget itself is unchanged."""
+    the rest wait for a later sync (`completed_budget_exhausted`); the per-stage budget itself is unchanged.
+    A failed completed-stage request (one game's substitutions, a box window, the season player file) is recorded in
+    `completed_request_failures` and the stage continues: every other game is ingested and promoted, the games that
+    request served stay incomplete (COMPLETION_BACKLOG retries them; outcome PARTIAL_SUCCESS). A request that failed
+    non-retryably within RESULT_LAG_RETRY_HOURS is not re-sent. `sleep` (tests) replaces the in-session backoff wait."""
     clock = clock or _now
     sync_id = "Y" + _utc(clock()).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     cut = _utc(as_of) if as_of is not None else None
@@ -206,6 +263,8 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
     work.mkdir(parents=True, exist_ok=True)
     rec = {"sync_id": sync_id, "stages": list(stages), "feed_version": PC.FEED_VERSION, "requests": {}}
     kw = dict(cache_root=cache_root, ledger_path=ledger_path, http_get=http_get, credential=credential, clock=clock)
+    if sleep is not None:
+        kw["sleep"] = sleep
     sessions: list = []
     try:
         prev = ST.current(state_root)
@@ -269,14 +328,35 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
             box = {"games": [g for g, _ in games], "games/teams": [], "games/players": [], "stats/player/season": []}
             subs_req, got_stats = [], False
             window_payloads = {ep: [] for ep in BOX_WINDOW_ENDPOINTS}
+            skip, _ = nonretryable_failures(_read_log(sync_log), clock())
+            failures, attempted, succeeded = [], 0, 0
             for n_done, (ep, p) in enumerate(plan):
+                key = A.request_key(ep, p)
+                if key in skip:                     # deterministic failure of this exact request: not re-sent
+                    failures.append({"GAME_IDS": request_games(ep, p, newly), "REQUEST_KIND": ep, "REQUEST_KEY": key,
+                                     "ATTEMPT_TIME": None, "HTTP_STATUS_OR_EXCEPTION": None, "RETRYABLE": False,
+                                     "NEXT_RETRY_AT": None, "ERROR_CLASSIFICATION": SKIPPED_NONRETRYABLE})
+                    continue
+                t_req = _utc(clock())
                 try:
+                    attempted += 1
                     e = s.get(ep, p, max_age_hours=completed_reuse_age(ep, p, newly, S, cache_root, clock()),
                               purpose="2026-27 completed games")
                 except A.BudgetExceeded:            # STOP before the call; finished requests are kept (cached)
+                    attempted -= 1
                     rec["completed_budget_exhausted"] = True
                     rec["completed_requests_deferred"] = len(plan) - n_done
                     break
+                except (A.ProviderFailure, A.ProductionGuardViolation) as exc:
+                    # isolate: this request's games stay incomplete; every other game is still acquired and ingested
+                    cls, retry, what = classify_failure(exc)
+                    failures.append({"GAME_IDS": request_games(ep, p, newly), "REQUEST_KIND": ep, "REQUEST_KEY": key,
+                                     "ATTEMPT_TIME": t_req.isoformat(), "HTTP_STATUS_OR_EXCEPTION": what,
+                                     "RETRYABLE": retry, "ERROR_CLASSIFICATION": cls,
+                                     "NEXT_RETRY_AT": (t_req + timedelta(minutes=PC.SYNC_RETRY_MINUTES)).isoformat()
+                                     if retry else None})
+                    continue
+                succeeded += 1
                 if ep == "substitutions/game":
                     subs_req.append((ep, p))
                 elif ep in BOX_WINDOW_ENDPOINTS:
@@ -288,6 +368,12 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
                 box[ep], rec.setdefault("box_window_games_superseded", {})[ep] = latest_receipt_per_game(got)
             subs_ok = {F.cid("G", "game", p["gameId"]) for _, p in subs_req}
             rec["requests"]["completed"] = s.summary()
+            rec["completed_request_failures"] = failures
+            rec["completed_receipt"] = {"REQUESTS_ATTEMPTED": attempted, "REQUESTS_SUCCEEDED": succeeded,
+                                        "REQUESTS_FAILED": sum(f["ERROR_CLASSIFICATION"] != SKIPPED_NONRETRYABLE
+                                                               for f in failures),
+                                        "REQUESTS_SKIPPED_NONRETRYABLE": sum(f["ERROR_CLASSIFICATION"] == SKIPPED_NONRETRYABLE
+                                                                             for f in failures)}
         if len(newly) and "completed" in stages and not got_stats:
             rec["completed_note"] = "budget exhausted before the season player file: results withheld this sync"
             rec["completed_games_ingested"] = 0
@@ -374,6 +460,10 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
                         replace=replace, manifest_extra=extra, identity_links=links)
         rec["identity_p3"] = {k: len(v) for k, v in ((man.get("identity_p3") or (man.get("pointer") or {}).get(
             "last_sync_extra", {}).get("identity_p3") or {}).items())}
+        if "completed_receipt" in rec:
+            ing = int(rec.get("completed_games_ingested") or 0)
+            rec["completed_receipt"].update(GAMES_COMPLETED=ing, GAMES_STILL_INCOMPLETE=int(rec["completed_games_new"]) - ing)
+        rec["outcome"] = "PARTIAL_SUCCESS" if rec.get("completed_request_failures") else "SUCCESS"
         rec.update({"status": "UNCHANGED" if man.get("idempotent_no_change") else "PROMOTED",
                     "state_version": man["state_version"], "coverage": {k: v for k, v in man["coverage"].items()
                                                                          if k != "relation_sha256"}})
@@ -381,6 +471,7 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
         reason = ("PROVIDER_FAILURE" if isinstance(e, (A.ProviderFailure, A.BudgetExceeded)) else
                   getattr(e, "reason", None) or ("STATE_UPDATE_FAILED" if isinstance(e, ST.StateUpdateFailed) else "PROVIDER_FAILURE"))
         rec.update({"status": "FAILED", "reason": reason, "error_type": type(e).__name__, "error": str(e)[:1500]})
+        rec["outcome"] = "FAILED"
     finally:
         shutil.rmtree(work, ignore_errors=True)
     rec["finished_at"] = max(_utc(clock()), _now() if clock is _now else _utc(clock())).isoformat()
