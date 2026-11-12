@@ -67,13 +67,26 @@ SIDES = ("OVER", "UNDER")
 
 BOARD_SHEETS = ("Full Board", "60 Percent Plus", "65 Percent Plus")
 BOARD_THRESHOLDS = {"Full Board": None, "60 Percent Plus": 0.60, "65 Percent Plus": 0.65}
-BOARD_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PROJ", "ΔLINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK",
-              "ODDS", "EV", "WINDOW", "CAPTURE_UTC")
+# the official best-offer selection (one offer per GAME x PLAYER x PROP; drives Grades), reported as rows in daily()
+SELECTION_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PROJ", "ΔLINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK",
+                  "ODDS", "EV", "WINDOW", "CAPTURE_UTC")
+# CBB_Boards: the forecast universe, EXACTLY one row per GAME x PLAYER x STAT (12 production stats), market consensus
+BOARD_KEY = ("Canonical Game ID", "Canonical Player ID", "Stat")
+BOARD_COLS = ("Game Date", "Canonical Game ID", "Game", "Tip Time ET", "Player", "Canonical Player ID", "Team",
+              "Opponent", "Stat", "Model Projection", "Consensus Line", "Model Over %", "Market Over %", "Over Edge",
+              "Consensus Over Odds", "Model Under %", "Market Under %", "Under Edge", "Consensus Under Odds",
+              "Preferred Side", "Preferred EV", "Best Book", "Best Odds", "Raw Book Count", "Consensus Book Count",
+              "Outlier Book Count", "Consensus Confidence", "Market Status", "Quote Freshness Seconds",
+              "Quote Captured UTC", "Forecast ID", "Model Version")
+BOARD_RECEIPT = "boards_receipt.json"
+BOARD_AUDIT = "board_quote_audit.jsonl.gz"
+GRADE_RECEIPT = "grades_receipt.json"
 DIST_SHEET = "Distributions"            # further sheets "Distributions 2", "Distributions 3", ... (EXCEL_MAX_ROWS)
 EXCEL_MAX_ROWS = 1_048_576               # SpreadsheetML worksheet limits (ECMA-376 / Excel): a row or column ref
 EXCEL_MAX_COLS = 16_384                  # beyond them is invalid content (Excel "repairs" by deleting the cells)
 DIST_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "MEAN", "OUTCOME", "PROBABILITY")
-GRADE_SHEETS = ("Graded Bets", "Performance Summary")
+GRADE_SHEETS = ("Graded Bets", "Performance Summary", "Status")
+GRADE_STATUS_COLS = ("GRADE_STATUS", "OFFICIAL_SELECTIONS", "SETTLED", "PENDING")
 GRADE_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK", "ODDS", "RESULT",
               "REALIZED", "PROFIT")
 RESULTS = ("WIN", "LOSS", "PUSH", "VOID", "PENDING", "UNSUPPORTED")
@@ -97,7 +110,11 @@ FORMATS = {"MODEL%": "0.0%", "MARKET%": "0.0%", "EDGE": "0.0%", "HIT_RATE": "0.0
            "AVG_MODEL%": "0.0%", "AVG_MARKET%": "0.0%", "AVG_EDGE": "0.0%", "REALIZED_WIN_RATE": "0.0%",
            "CALIBRATION_ERROR": "0.0%", "LINE": "0.0", "PROJ": "0.00", "ΔLINE": "0.00", "MEAN": "0.000",
            "PROBABILITY": "0.0000%", "EV": "0.000", "REALIZED": "0.0###", "PROFIT": "0.000", "ODDS": "0",
-           "OUTCOME": "0"}
+           "OUTCOME": "0",
+           "Model Projection": "0.00", "Consensus Line": "0.0", "Model Over %": "0.0%", "Market Over %": "0.0%",
+           "Over Edge": "0.0%", "Consensus Over Odds": "0", "Model Under %": "0.0%", "Market Under %": "0.0%",
+           "Under Edge": "0.0%", "Consensus Under Odds": "0", "Preferred EV": "0.000", "Best Odds": "0",
+           "Quote Freshness Seconds": "0"}
 
 
 class ExportIntegrityError(RuntimeError):
@@ -601,15 +618,11 @@ def official(of: pd.DataFrame, path: Path, cutoffs: dict | None = None, now=None
         "written": written, "frozen": len(frozen), "provisional": len(board) - len(frozen), "tie_order": list(TIE_ORDER)}
 
 
-def board_frames(of: pd.DataFrame) -> dict:
-    """Full Board = the official (deduplicated) rows; the threshold sheets are filters of Full Board only."""
+def selection_rows(of: pd.DataFrame) -> list[list]:
+    """The official best-offer selection rows (SELECTION_COLS order; one per GAME x PLAYER x PROP)."""
     assert_unique(of)
-    out = {}
-    for sheet, thr in BOARD_THRESHOLDS.items():
-        x = of if thr is None else of[of["model_p"].map(lambda p: p is not None and not pd.isna(p) and p >= thr)]
-        out[sheet] = [[r.game, r.team, r.player, r.prop, r.line, r.proj, r.dline, r.pick, r.model_p, r.market_p, r.edge,
-                       r.book, r.odds, r.ev, r.window, r.capture_utc] for r in x.itertuples(index=False)]
-    return out
+    return [[r.game, r.team, r.player, r.prop, r.line, r.proj, r.dline, r.pick, r.model_p, r.market_p, r.edge,
+             r.book, r.odds, r.ev, r.window, r.capture_utc] for r in of.itertuples(index=False)]
 
 
 def grade_rows(of: pd.DataFrame) -> list[list]:
@@ -755,7 +768,7 @@ def forecast_sources(ops_root: Path, date: str) -> dict:
 
 
 def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, names: dict,
-                      date: str | None = None, audit: dict | None = None) -> tuple[list, list]:
+                      date: str | None = None, audit: dict | None = None, pmf_out: list | None = None) -> tuple[list, list]:
     """(rows, missing): the complete PMFs of every eligible (game, player, stat) prediction of the slate. Per game the
     LATEST valid pre-cutoff prediction is used (directive §8): the official shadow-tick prediction when it exists (it
     is made inside [cutoff - lead, cutoff)), else the latest forecast snapshot made before the game's cutoff. PMFs are
@@ -767,6 +780,7 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
     order = {g.game_id: g.tip_utc for g in games.itertuples(index=False)}
     for gid in sorted(set(official) | set(fsrc)):
         best = None
+        best_src = None
         if gid in official:
             g = official[gid]
             df, src, looked = _official_pmfs(ops_root, runs_root, g, cache)
@@ -779,12 +793,14 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
                     continue
             if df is not None:
                 best = (aso or pd.Timestamp.max.tz_localize("UTC"), df, src)
+                best_src = ("OFFICIAL_TICK", str(g.tick_id), cut)
             elif gid not in fsrc:
                 missing.append({"game_id": gid, "run_id": g.run_id, "looked_in": [str(p) for p in looked]})
                 continue
         for aso, cut, p in fsrc.get(gid, []):
             if best is None or (aso > best[0] and aso <= cut):
                 best = (aso, pd.DataFrame(_dists_of(p, gid, cache)), str(p))
+                best_src = ("FORECAST_SNAPSHOT", Path(p).parent.name, cut)
         if best is None or not len(best[1]):
             continue
         df = best[1]
@@ -798,6 +814,11 @@ def distribution_rows(ops_root: Path, runs_root: Path, games: pd.DataFrame, name
             last = int(nz[-1]) if len(nz) else 0                 # trailing zeros only; the folded tail point stays
             recs.append((tip, r.game_label, r.player_label, r.stat, names.get(r.team_id, r.team_id), _f(r.mean),
                          pmf[: last + 1], (gid, r.player_id, r.stat)))
+            if pmf_out is not None and getattr(r, "method", None) != "NOT_PRICED":
+                pmf_out.append({"game_id": gid, "player_id": r.player_id, "team_id": r.team_id, "stat": r.stat,
+                                "mean": _f(r.mean), "pmf": pmf, "game_label": r.game_label, "player_label": r.player_label,
+                                "tip": tip, "cutoff": best_src[2], "source_kind": best_src[0], "forecast_id": best_src[1],
+                                "model_version": getattr(r, "model_version", None)})
     if audit is not None:                                        # identity keys are canonical ids, never display labels
         canon: dict = {}
         label: dict = {}
@@ -826,6 +847,145 @@ def pmf_mass_check(rows: list) -> dict:
     worst = max((abs(v - 1) for v in sums), default=0.0)
     return {"distributions": len(sums), "max_abs_mass_error": worst, "negative": int(neg),
             "PMF_RECONCILIATION": "PASS" if worst <= PMF_TOL and neg == 0 else "FAIL"}
+
+
+# ============================================================================ consensus Board (forecast universe)
+def snapshot_tips(ops_root: Path, date: str) -> dict:
+    """game_id -> scheduled tip of every forecast snapshot of ET date `date` (snapshot.json scheduled_tips)."""
+    out = {}
+    for f in sorted((Path(ops_root) / "forecasts" / date).glob("*/snapshot.json")):
+        try:
+            out.update({g: t for g, t in (json.loads(f.read_text()).get("scheduled_tips") or {}).items() if t})
+        except (OSError, ValueError):
+            continue
+    return out
+
+
+def _pval(v):
+    v = _f(v)
+    return None if v is None else v
+
+
+def board_rows(pmfs: list, observations: dict, names: dict) -> tuple[list[list], list[dict], dict]:
+    """(rows in BOARD_COLS order, audit rows, counts). One row per (game, player, stat) PMF; market fields from the
+    game's latest pre-cutoff quote observation (prod.consensus), blank when none is valid. Model probabilities at the
+    consensus line come from the persisted PMF exactly as stored (prod.pricing); EV = prod.pricing.expected_value at
+    the best executable price at the consensus line."""
+    from cbb_platform.prod import consensus as CN, pricing as PX
+    teams: dict = {}
+    for r in pmfs:
+        teams.setdefault(r["game_id"], set()).add(r["team_id"])
+    grouped: dict = {}
+    for gid, (meta, q) in observations.items():
+        if len(q):
+            q = q.assign(stat=q["stat"].astype(object))
+            for key, g in q[q["canonical_player_id"].map(lambda v: isinstance(v, str)) & q["stat"].map(lambda v: isinstance(v, str))
+                            & (q["canonical_game_id"] == gid)].groupby(["canonical_player_id", "stat"], sort=True):
+                grouped[(gid,) + key] = g
+    rows, audit = [], []
+    seen: dict = {}
+    for r in sorted(pmfs, key=lambda x: (x["tip"] or pd.Timestamp.max.tz_localize("UTC"), x["game_label"], x["player_label"],
+                                         x["stat"], x["player_id"])):
+        k = (r["game_id"], r["player_id"], r["stat"])
+        seen[k] = seen.get(k, 0) + 1
+        g = grouped.get(k)
+        m, aud = CN.consensus(g if g is not None else pd.DataFrame())
+        audit += aud
+        line = m["consensus_line"]
+        mo = mu = oe = ue = side = ev = book = bodds = None
+        if line is not None:
+            try:
+                pr = PX.price_line(r["pmf"], float(line))
+                mo, mu = pr["p_over_nonpush"], pr["p_under_nonpush"]
+            except PX.InvalidProbabilities:
+                pr = None
+            if pr is not None and m["market_status"] == "VALID_MARKET":
+                oe, ue = mo - m["market_over_prob"], mu - m["market_under_prob"]
+                evs = {"OVER": PX.expected_value(pr["p_over"], pr["p_under"], m["best_over"]["decimal"]),
+                       "UNDER": PX.expected_value(pr["p_under"], pr["p_over"], m["best_under"]["decimal"])}
+                edges = {"OVER": oe, "UNDER": ue}
+                ok = [s_ for s_ in ("OVER", "UNDER") if edges[s_] > 0 and evs[s_] > 0]
+                if ok:
+                    side = max(ok, key=lambda s_: (evs[s_], s_ == "OVER"))
+                    ev = evs[side]
+                    b = m["best_over"] if side == "OVER" else m["best_under"]
+                    book, bodds = b["book"], _f(b["american"])
+                else:
+                    side = "PASS"
+        tip = r["tip"]
+        opp = sorted(t for t in teams.get(r["game_id"], set()) if t != r["team_id"])
+        rows.append([str(_utc(tip).tz_convert(TZ).date()) if tip is not None else None, r["game_id"], r["game_label"],
+                     _utc(tip).tz_convert(TZ).strftime("%Y-%m-%d %H:%M") if tip is not None else None,
+                     r["player_label"], r["player_id"], names.get(r["team_id"], r["team_id"]),
+                     names.get(opp[0], opp[0]) if len(opp) == 1 else None, r["stat"], _pval(r["mean"]),
+                     _pval(line), _pval(mo), _pval(m["market_over_prob"]), _pval(oe), _pval(m["consensus_over_odds"]),
+                     _pval(mu), _pval(m["market_under_prob"]), _pval(ue), _pval(m["consensus_under_odds"]),
+                     side, _pval(ev), book, None if bodds is None else int(round(bodds)), m["raw_book_count"],
+                     m["consensus_book_count"], m["outlier_book_count"], m["consensus_confidence"], m["market_status"],
+                     None if m["quote_age_seconds"] is None else int(round(m["quote_age_seconds"])),
+                     m["quote_captured_utc"], r["forecast_id"], r["model_version"]])
+    # observations of quotes that never reached a Board key (unmatched / invalid rows, players without a PMF)
+    keys = set(seen)
+    for gid, (meta, q) in observations.items():
+        if not len(q):
+            continue
+        ok = q["canonical_player_id"].map(lambda v: isinstance(v, str)) & q["stat"].map(lambda v: isinstance(v, str)) & \
+            (q["canonical_game_id"] == gid)
+        rest = q[~ok | ~pd.Series([(gid, p, s_) in keys for p, s_ in zip(q["canonical_player_id"], q["stat"])], index=q.index)]
+        for x in rest.to_dict(orient="records"):
+            why = CN.row_exclusions(pd.DataFrame([x])).iat[0] or "NO_FORECAST_FOR_PLAYER_STAT"
+            audit.append({**{c: x.get(c) for c in CN.AUDIT_COLS if c in x}, "canonical_game_id": gid,
+                          "quote_age_seconds": None, "status": "EXCLUDED", "reason": why})
+    dup = sorted(list(k) for k, n in seen.items() if n > 1)
+    counts = {"rows": len(rows), "unique_keys": len(seen), "duplicate_keys": len(dup), "duplicates": dup[:20],
+              "valid_market": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "VALID_MARKET"),
+              "no_valid_market": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "NO_VALID_MARKET"),
+              "no_exact_line_price": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "NO_EXACT_LINE_PRICE"),
+              "audit_rows": len(audit), "audit_excluded": sum(1 for a in audit if a["status"] == "EXCLUDED")}
+    return rows, audit, counts
+
+
+def board_sheets(rows: list[list]) -> dict:
+    """Full Board = every row; the threshold sheets = rows whose PREFERRED side's model probability >= threshold."""
+    i_side, i_o, i_u = BOARD_COLS.index("Preferred Side"), BOARD_COLS.index("Model Over %"), BOARD_COLS.index("Model Under %")
+
+    def pref_p(r):
+        return r[i_o] if r[i_side] == "OVER" else r[i_u] if r[i_side] == "UNDER" else None
+    return {s: rows if thr is None else [r for r in rows if pref_p(r) is not None and pref_p(r) >= thr]
+            for s, thr in BOARD_THRESHOLDS.items()}
+
+
+def _writers_sha(*mods) -> str:
+    h = hashlib.sha256(Path(__file__).read_bytes())
+    for m in mods:
+        h.update(Path(m.__file__).read_bytes())
+    return h.hexdigest()
+
+
+def write_if_changed(path: Path, receipt_name: str, content, build, writer_sha: str, extra: dict | None = None) -> tuple[Path, bool]:
+    """Write `path` (build(path)) unless its receipt records exactly this content hash, this writer and the file's
+    current sha256. Returns (path, written)."""
+    path = Path(path)
+    rec_p = path.with_name(receipt_name)
+    want = {"file": path.name, "content_sha256": hashlib.sha256(json.dumps(content, default=str).encode()).hexdigest(),
+            "writer_sha256": writer_sha}
+    try:
+        rec = json.loads(rec_p.read_text())
+    except (OSError, ValueError):
+        rec = None
+    if rec and all(rec.get(k) == v for k, v in want.items()) and path.exists() and _file_sha(path) == rec.get("xlsx_sha256"):
+        return path, False
+    p = build(path)
+    tmp = rec_p.with_name(rec_p.name + ".tmp")
+    tmp.write_text(json.dumps({**want, **(extra or {}), "xlsx_sha256": _file_sha(p)}, sort_keys=True, indent=1) + "\n")
+    os.replace(tmp, rec_p)
+    return p, True
+
+
+def boards_workbook(rows: list[list], path: Path) -> Path:
+    sh = board_sheets(rows)
+    return write_xlsx(path, [{"name": s, "blocks": [{"title": None, "columns": BOARD_COLS, "rows": sh[s]}]}
+                             for s in BOARD_SHEETS])
 
 
 DIST_RECEIPT = "distributions_receipt.json"
@@ -1130,12 +1290,6 @@ def semantic(path: Path) -> list:
 
 
 # ============================================================================ workbooks
-def boards_workbook(of: pd.DataFrame, path: Path) -> Path:
-    bf = board_frames(of)
-    return write_xlsx(path, [{"name": s, "blocks": [{"title": None, "columns": BOARD_COLS, "rows": bf[s]}]}
-                             for s in BOARD_SHEETS])
-
-
 def distribution_sheets(rows: list, max_rows: int | None = None) -> list[list]:
     """Split the Distributions rows into consecutive sheets of at most `max_rows` data rows (plus the header) without
     ever splitting one (GAME, PLAYER, PROP) distribution; row order and every value are unchanged."""
@@ -1160,12 +1314,22 @@ def distributions_workbook(rows: list, path: Path) -> Path:
                              for k, part in enumerate(parts)])
 
 
+def grade_status(of: pd.DataFrame) -> list:
+    """[GRADE_STATUS, official selections, settled, pending]: NOTHING_SETTLED_YET until a frozen selection settles."""
+    res = of["result"].tolist() if len(of) else []
+    settled = sum(1 for r in res if r in ("WIN", "LOSS", "PUSH", "VOID"))
+    pending = sum(1 for r in res if r == "PENDING")
+    st = "NOTHING_SETTLED_YET" if not settled else ("PARTIALLY_SETTLED" if pending else "SETTLED")
+    return [st, len(res), settled, pending]
+
+
 def grades_workbook(of: pd.DataFrame, night: str, path: Path) -> Path:
     summ = summary(of, night)
     return write_xlsx(path, [
         {"name": GRADE_SHEETS[0], "blocks": [{"title": None, "columns": GRADE_COLS, "rows": grade_rows(of)}]},
         {"name": GRADE_SHEETS[1], "table_filters": True,
-         "blocks": [{"title": sec, "columns": summ[sec][0], "rows": summ[sec][1]} for sec in SECTIONS]}])
+         "blocks": [{"title": sec, "columns": summ[sec][0], "rows": summ[sec][1]} for sec in SECTIONS]},
+        {"name": GRADE_SHEETS[2], "blocks": [{"title": None, "columns": GRADE_STATUS_COLS, "rows": [grade_status(of)]}]}])
 
 
 def _immutable(of: pd.DataFrame) -> dict:
@@ -1192,18 +1356,27 @@ def check_receipts(sidecar: Path, of: pd.DataFrame) -> dict:
 def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROOT, out_root: Path = EXPORT_ROOT,
           history_db: Path | None = PC.HISTORY_CANONICAL, state_root: Path | None = PC.STATE_ROOT,
           labels=LIVE_LABELS, now=None) -> dict:
-    """Generate the three workbooks of slate date `date` (America/New_York) from persisted evidence only. A workbook
-    whose evidence is absent is NOT written (status MISSING_EVIDENCE + the missing dependency); nothing is fetched."""
+    """Generate the three workbooks of slate date `date` (America/New_York) from persisted evidence only; nothing is
+    fetched, fitted or simulated. Each workbook is rewritten only when its effective content changed (receipts).
+
+    Boards        the forecast universe: one row per (game, player, stat) persisted PMF (the same PMF Distributions
+                  exports), market consensus from the latest pre-cutoff quote observation (blank when none is valid)
+    Distributions the persisted PMFs
+    Grades        the official (frozen) best-offer selections and results; GRADE_STATUS NOTHING_SETTLED_YET until one
+                  settles"""
+    from cbb_platform.prod import consensus as CN, quote_obs as QO
     date = str(pd.Timestamp(date).date())
     out_dir = Path(out_root) / date
     names_ = file_names(date)
+    at = _utc(now) or pd.Timestamp.now(tz="UTC")
     rep = {"version": EXPORT_VERSION, "date": date, "timezone": TZ, "out_dir": str(out_dir), "network_calls": 0,
            "refits_triggered": 0}
     games = slate_games(ops_root, date)
     rep["predicted_games"] = int(len(games))
     names = team_names(history_db, state_root)
     audit: dict = {}
-    rows, missing = distribution_rows(ops_root, runs_root, games, names, date, audit=audit)
+    pmfs: list = []
+    rows, missing = distribution_rows(ops_root, runs_root, games, names, date, audit=audit, pmf_out=pmfs)
     if rows and not missing:
         p, written = distributions_if_changed(rows, out_dir / names_["distributions"])
         mass = pmf_mass_check(rows)
@@ -1219,51 +1392,88 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         rep["distributions"] = {"status": "MISSING_EVIDENCE",
                                 "missing": f"no durable PMF evidence (official tick pmfs.parquet or pre-cutoff forecast "
                                            f"snapshot) for ET slate date {date}", "games": missing[:20]}
+    # ---------------------------------------------------------------- Boards: forecast universe x market consensus
+    tips = {**snapshot_tips(ops_root, date), **(dict(zip(games["game_id"], games["tip_utc"])) if len(games) else {})}
+    cutoffs_all: dict = {}
+    for r in pmfs:
+        r["tip"] = _utc(tips.get(r["game_id"])) or r["tip"]
+        if r["cutoff"] is not None:
+            cutoffs_all[r["game_id"]] = r["cutoff"]
+    if len(games):
+        cutoffs_all.update({g: c for g, c in zip(games["game_id"], games["cutoff_utc"]) if c is not None})
+    obs = QO.latest(ops_root, date, cutoffs_all, at)
+    rep["quote_observations"] = {"games": len(obs), "rows": int(sum(len(q) for _, q in obs.values()))}
+    if pmfs:
+        brows, baudit, cnt = board_rows(pmfs, obs, names)
+        rep["board_keys"] = cnt
+        if cnt["duplicate_keys"]:
+            rep["boards"] = {"status": "ABORTED_DUPLICATE_BOARD_KEYS", "duplicate_keys": cnt["duplicate_keys"],
+                             "duplicates": cnt["duplicates"],
+                             "missing": "DUPLICATE_BOARD_KEYS > 0: export aborted (defect; never silently deduplicated)"}
+        else:
+            p, written = write_if_changed(out_dir / names_["boards"], BOARD_RECEIPT, brows,
+                                          lambda path: boards_workbook(brows, path), _writers_sha(CN, QO),
+                                          {k: cnt[k] for k in ("rows", "unique_keys", "duplicate_keys", "valid_market",
+                                                               "no_valid_market", "no_exact_line_price")})
+            if written:
+                tmp = out_dir / (BOARD_AUDIT + ".tmp")
+                with gzip.open(tmp, "wt") as f:
+                    for x in baudit:
+                        f.write(json.dumps(x, sort_keys=True, default=str) + "\n")
+                os.replace(tmp, out_dir / BOARD_AUDIT)
+            sh = board_sheets(brows)
+            rep["boards"] = {"status": "WRITTEN", "path": str(p), "rows": len(brows), "rewritten": written,
+                             "unique_player_stat_keys": cnt["unique_keys"], "duplicate_keys": 0,
+                             "rows_with_valid_market": cnt["valid_market"],
+                             "rows_with_no_valid_market": cnt["no_valid_market"],
+                             "rows_no_exact_line_price": cnt["no_exact_line_price"],
+                             "audit": str(out_dir / BOARD_AUDIT), "audit_rows": cnt["audit_rows"],
+                             **{sname: len(sh[sname]) for sname in BOARD_SHEETS}}
+    else:
+        rep["boards"] = {"status": "MISSING_EVIDENCE",
+                         "missing": f"no persisted PMF (forecast snapshot / official tick) for ET slate date {date}"}
+    # ---------------------------------------------------------------- official selections -> Grades
     rr = refresh_receipts(ops_root, date, labels)
     rep["refresh_receipts"] = int(len(rr))
-    if not len(games) and not len(rr):
-        for k in ("boards", "grades"):
-            rep[k] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game with ET slate date {date} "
-                                                               f"in {Path(ops_root) / 'registry' / 'games.jsonl'}"}
+    graded = None
+    if len(games) or len(rr):
+        rc = receipts(ops_root, games, labels) if len(games) else pd.DataFrame()
+        parts = [x for x in (rc, rr) if len(x)]
+        rc = pd.concat(parts, ignore_index=True).drop_duplicates("record_id", keep="first") if parts else pd.DataFrame()
+        of, leak = offers(rc, side_settlements(ops_root), names)
+        rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
+        rep["raw_quote_rows"] = int(len(of))
+        graded = of.iloc[0:0]
+        if len(of):
+            cutoffs = {**(dict(zip(rr["game_id"], rr["cutoff_utc"].map(_utc))) if len(rr) else {}),
+                       **dict(zip(games["game_id"], games["cutoff_utc"]))}       # the registry cutoff wins
+            board, graded, rep["official_selection"] = official(of, selections_path(ops_root, date), cutoffs, now)
+            rep["official_rows"] = int(len(board))
+            rep["official_frozen_rows"] = int(len(graded))
+            rep["duplicate_game_player_prop_rows"] = int(board.duplicated(list(OFFICIAL_KEY)).sum())
+            rep["official_selection_rows"] = selection_rows(board)
+    if graded is None and not pmfs:
+        rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game and no persisted PMF "
+                                                                  f"for ET slate date {date}"}
         return rep
-    rc = receipts(ops_root, games, labels) if len(games) else pd.DataFrame()
-    parts = [x for x in (rc, rr) if len(x)]
-    rc = pd.concat(parts, ignore_index=True).drop_duplicates("record_id", keep="first") if parts else pd.DataFrame()
-    of, leak = offers(rc, side_settlements(ops_root), names)
-    rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
-    rep["raw_quote_rows"] = int(len(of))
-    board, graded = of.iloc[0:0], of.iloc[0:0]
-    if len(of):
-        cutoffs = {**(dict(zip(rr["game_id"], rr["cutoff_utc"].map(_utc))) if len(rr) else {}),
-                   **dict(zip(games["game_id"], games["cutoff_utc"]))}       # the registry cutoff wins
-        board, graded, rep["official_selection"] = official(of, selections_path(ops_root, date), cutoffs, now)
-        rep["official_rows"] = int(len(board))
-        rep["official_frozen_rows"] = int(len(graded))
-        rep["duplicate_game_player_prop_rows"] = int(board.duplicated(list(OFFICIAL_KEY)).sum())
-    miss = (f"no QUOTE_SIDE receipt (priced pre-tip sportsbook offer) for the {len(games)} predicted game(s) of "
-            f"{date}; ticks: {sorted(set(games['tick_id']))}")
-    if len(board):
-        p = boards_workbook(board, out_dir / names_["boards"])
-        bf = board_frames(board)
-        rep["boards"] = {"status": "WRITTEN", "path": str(p), **{s: len(bf[s]) for s in BOARD_SHEETS}}
-    else:
-        rep["boards"] = {"status": "MISSING_EVIDENCE", "missing": miss if not len(of) else
-                         "no valid executable offer for any GAME x PLAYER x PROP"}
+    if graded is None:
+        graded = offers(pd.DataFrame(), pd.DataFrame(), names)[0]
+    if len(graded):
+        rep["receipt_immutability"] = check_receipts(out_dir / "grade_receipts.json", graded)
+    summ = summary(graded, date)
+    rec = reconcile(graded, summ) if len(graded) else {}
+    status = grade_status(graded)
+    p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
+                                  [grade_rows(graded), {k: v[1] for k, v in summ.items()}, status, date],
+                                  lambda path: grades_workbook(graded, date, path), _writer_sha())
+    rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": int(len(graded)), "rewritten": written,
+                     "GRADE_STATUS": status[0], "results": graded["result"].value_counts().to_dict() if len(graded) else {},
+                     "reconciliation": rec, "GRADE_RECONCILIATION": "PASS" if all(rec.values()) else "FAIL"}
     if len(graded):
         sidecar = out_dir / "grade_receipts.json"
-        rep["receipt_immutability"] = check_receipts(sidecar, graded)
-        p = grades_workbook(graded, date, out_dir / names_["grades"])
-        summ = summary(graded, date)
-        rec = reconcile(graded, summ)
-        rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": int(len(graded)),
-                         "results": graded["result"].value_counts().to_dict(), "reconciliation": rec,
-                         "GRADE_RECONCILIATION": "PASS" if all(rec.values()) else "FAIL"}
         tmp = sidecar.with_name(sidecar.name + ".tmp")
         tmp.write_text(json.dumps({"date": date, "receipts": _immutable(graded)}, sort_keys=True, indent=0, default=str))
         os.replace(tmp, sidecar)
-    else:
-        rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": miss if not len(of) else
-                         "no OFFICIAL_FROZEN selection (cutoff not yet passed or no valid offer at cutoff)"}
     return rep
 
 

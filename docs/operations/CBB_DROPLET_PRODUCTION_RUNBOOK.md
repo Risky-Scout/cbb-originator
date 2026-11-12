@@ -117,10 +117,42 @@ Every run does the following:
 Nothing is merged, re-keyed or deleted. When deterministic evidence later allows a conflict-safe merge, remove the
 entry in the same release as the merge.
 
-## 8. Quote-integration re-validation after a FAIL
+## 8. Quote integration: certification, invalidation, re-validation after a FAIL
 
-Quotes stay blocked (`QUOTE_INTEGRATION_NOT_VALIDATED`) until the scheduled tick's one-event validation
-(`odds_feed.validate`, all seven checks) writes the immutable `prod/ops/markers/QUOTE_INTEGRATION_VALIDATED.json`.
+The Odds API, sport `basketball_ncaab`, region `us` (no bookmaker allowlist, no weight table), odds `american`,
+dates `iso`, the 12 production player-prop keys (`quotes.REQUEST_MARKETS`; no `_alternate` key):
+
+    GET /v4/sports/basketball_ncaab/events                    0 credits   event ids (+ account quota)
+    GET /v4/sports/basketball_ncaab/events/{id}/markets       1 credit    ALWAYS first: advertised keys per book
+    GET /v4/sports/basketball_ncaab/events/{id}/odds          markets returned x 1 region; only the advertised subset
+                                                                          (none advertised: no odds call,
+                                                                          NO_SUPPORTED_PLAYER_PROP_MARKETS)
+
+Every live request's `x-requests-last / -used / -remaining` is in `prod/cache/odds_production_requests.jsonl` and in
+the collection file's `requests` receipt.
+
+**Certification** (`quote_refresh.certify`, run by a due scoring tick while not certified): market discovery on
+today's forecasted pre-tip games with a persisted PMF (at most 15), ranked by supported markets advertised, then
+bookmakers advertising them, then tip; ONE event-odds request on the top event (one more only if it returned no prop
+rows). Nine checks on those real quotes priced at the persisted PMF (no simulation): GAME_MATCH, PLAYER_MATCH,
+STAT_MATCH, LINE_VALIDATION, PRICE_VALIDATION, FRESHNESS_VALIDATION, PMF_LOOKUP, PRICING_VALIDATION,
+RAW_EVIDENCE_PERSISTENCE. Receipt: `prod/odds/validation_runs/<id>/certification.json`; a PASS is appended to
+`prod/ops/markers/quote_certifications.jsonl` (the first also writes the write-once `QUOTE_INTEGRATION_VALIDATED.json`)
+and the run gate `prod/odds/integration_validation.json`. At most 3 inconclusive attempts per ET day, 90 min apart.
+
+The certification is **persistent** (no daily re-certification). It closes only on a material event:
+`INVALIDATED_INTEGRATION_CHANGED` (automatic: endpoint / sport / market keys / fixed parameters or the source of
+`quotes.py`, `matching.py`, `pricing.py`, `props_v1_pricing.py` changed -> the next due tick re-certifies),
+`PROVIDER_SCHEMA_CHANGE` (response guard) or `CREDENTIAL_FAILURE` (HTTP 401/403), both automatic, or an architect
+invalidation (no tick runs):
+
+    runuser -u cbb-originator -- env $(grep -v '^#' /etc/sports-models/cbb-originator.env | xargs) \
+      /opt/sports-models/cbb-originator/venv/bin/python -m cbb_platform.prod.shadow_tick \
+      --ops-root /var/lib/sports-models/cbb-originator/prod/ops \
+      --invalidate-certification SYSTEMATIC_MATCH_FAILURE --detail "<evidence>"
+
+One rejected sportsbook quote never invalidates: it is excluded with its reason in the Board audit.
+
 A recorded FAIL stops further paid attempts. The scheduled unit cannot take `--allow-revalidation`, so after the
 defect behind a FAIL is fixed and deployed, the architect records ONE authorization (no tick runs, no provider call):
 
@@ -130,8 +162,20 @@ defect behind a FAIL is fixed and deployed, the architect records ONE authorizat
       --authorize-revalidation "<what was fixed>" --fix-commit <sha>
 
 It appends to `prod/ops/markers/quote_revalidation_authorizations.jsonl`, lifts only the FAILs recorded before it,
-and is refused when nothing is blocked or after a PASS. The next due scheduled tick then validates on its first due
-game under the same checks; a FAIL after the authorization blocks again. The FAIL attempts are never edited.
+and is refused when nothing is blocked or after a PASS. A FAIL after the authorization blocks again.
+
+## 8a. CBB_Boards (consensus Board)
+
+`exports/<D>/CBB_Boards_MM_DD_YYYY.xlsx` is rebuilt by every quote tick (no manual trigger) from persisted evidence
+only, and rewritten only when its content changes (`boards_receipt.json`). One row per GAME x PLAYER x STAT of the
+persisted PMFs Distributions exports (12 stats); `DUPLICATE_BOARD_KEYS > 0` aborts the export
+(`ABORTED_DUPLICATE_BOARD_KEYS`). Market fields come from the game's latest pre-cutoff quote observation
+(`ops/quotes/<D>/observations.jsonl`, written by the official tick and the tiered refresh) via `prod/consensus.py`:
+ordinary median line; MAD screening only with >= 5 books; zero-MAD cluster rule; stale-move protection; consensus
+price from books at exactly the consensus line, de-vigged with `exports.no_vig` (proportional), median of fair
+probabilities. No valid market: the row stays with blank market fields, `MARKET_STATUS = NO_VALID_MARKET`. Every
+included / excluded sportsbook observation with its reason: `exports/<D>/board_quote_audit.jsonl.gz`.
+Grades = the official frozen best-offer selections; `GRADE_STATUS = NOTHING_SETTLED_YET` until one settles.
 
 ## 9. Bounded 07:00 feature catch-up (DEFERRED_FEATURE_BACKLOG)
 

@@ -36,7 +36,8 @@ def _tree(tmp_path, offers, name="t", settlements=None):
 
 
 def _full(rep):
-    return EX.read_xlsx(Path(rep["boards"]["path"]))["Full Board"]["rows"][1:]
+    """The official best-offer selection rows (SELECTION_COLS): provisional + frozen, one per GAME x PLAYER x PROP."""
+    return rep["official_selection_rows"]
 
 
 def _pick(offers, tmp_path, name="t"):
@@ -141,19 +142,21 @@ def test_11_no_input_order_dependence(tmp_path):
 
 
 # ---------------------------------------------------------------- 12-13 threshold sheets
-def test_12_13_threshold_sheets_pure_full_board_filters(tmp_path):
-    offers = [_q("a", 17.5, "OVER", "booka", 0.66, -110, 0.03), _q("b", 17.5, "OVER", "bookb", 0.66, -102, 0.05),
-              _q("c", 5.5, "UNDER", "booka", 0.61, -105, 0.02, player="Q", stat="REB"),
-              _q("d", 6.5, "UNDER", "bookb", 0.61, -130, 0.01, player="Q", stat="REB"),
-              _q("e", 2.5, "OVER", "booka", 0.55, 100, 0.01, player="R", stat="AST")]
-    wb = EX.read_xlsx(Path(_daily(_tree(tmp_path, offers))["boards"]["path"]))
-    full = wb["Full Board"]["rows"][1:]
-    assert len(full) == 3
-    for sheet, thr in (("60 Percent Plus", 0.60), ("65 Percent Plus", 0.65)):
-        rows = wb[sheet]["rows"][1:]
-        assert rows == [r for r in full if r[8] >= thr] and rows[0] in full
-    assert [r[11] for r in wb["65 Percent Plus"]["rows"][1:]] == ["bookb"]
-    assert [(r[4], r[11]) for r in wb["60 Percent Plus"]["rows"][1:] if r[2] == "Q"] == [(5.5, "booka")]
+def test_12_13_threshold_sheets_pure_full_board_filters():
+    """The Board threshold sheets are pure filters of Full Board on the PREFERRED side's model probability."""
+    col = {c: i for i, c in enumerate(EX.BOARD_COLS)}
+
+    def row(pid, side, po, pu):
+        r = [None] * len(EX.BOARD_COLS)
+        r[col["Canonical Player ID"]], r[col["Preferred Side"]] = pid, side
+        r[col["Model Over %"]], r[col["Model Under %"]] = po, pu
+        return r
+    rows = [row("a", "OVER", 0.66, 0.34), row("b", "UNDER", 0.39, 0.61), row("c", "PASS", 0.70, 0.30),
+            row("d", None, None, None), row("e", "OVER", 0.60, 0.40)]
+    sh = EX.board_sheets(rows)
+    assert sh["Full Board"] == rows
+    assert [r[col["Canonical Player ID"]] for r in sh["60 Percent Plus"]] == ["a", "b", "e"]
+    assert [r[col["Canonical Player ID"]] for r in sh["65 Percent Plus"]] == ["a"]
 
 
 def test_duplicate_key_aborts():
@@ -177,7 +180,9 @@ def test_14_provisional_updates_before_cutoff(tmp_path):
     tree = _tree(tmp_path, [_q("a", 17.5, "OVER", "booka", 0.6, -110, 0.02)])
     r1 = _daily(tree, now=BEFORE)
     assert r1["official_selection"]["written"] == {"PROVISIONAL": 1, "OFFICIAL_FROZEN": 0}
-    assert r1["boards"]["status"] == "WRITTEN" and r1["grades"]["status"] == "MISSING_EVIDENCE"   # not frozen: no grade
+    assert r1["official_rows"] == 1 and r1["official_frozen_rows"] == 0                          # not frozen: no grade
+    assert r1["grades"]["status"] == "WRITTEN" and r1["grades"]["rows"] == 0
+    assert r1["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"
     _append_offer(tree, _q("b", 17.5, "OVER", "bookb", 0.6, -102, 0.05))
     r2 = _daily(tree, now=BEFORE)
     assert r2["official_selection"]["written"]["PROVISIONAL"] == 1 and _full(r2)[0][11] == "bookb"
@@ -282,7 +287,7 @@ def test_23_24_25_quote_refresh_no_refit_no_network_no_artifacts(tmp_path, monke
     snap = frozen()
     assert snap == {k: h for k, (_, h) in PC.ARTIFACTS.items()}
     rep = _daily(tree, now=BEFORE)
-    assert rep["network_calls"] == 0 and rep["refits_triggered"] == 0 and rep["boards"]["status"] == "WRITTEN"
+    assert rep["network_calls"] == 0 and rep["refits_triggered"] == 0 and rep["official_rows"] == 1
     life = L.Life(ops_root=tree["ops_root"], prod_root=tmp_path / "t", clock=lambda: pd.Timestamp(BEFORE),
                   history_db=Path("/nonexistent"))
     out = L.exports_now(life)

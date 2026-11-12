@@ -189,7 +189,10 @@ def test_no_forecast_after_a_games_cutoff_and_distributions_use_latest_pre_cutof
     d = rep["distributions"]
     assert d["status"] == "WRITTEN" and d["PMF_RECONCILIATION"] == "PASS" and d["negative"] == 0
     assert d["distributions"] == len(set(PE.read(life_.forecasts("2026-11-10", first["snapshot_id"], PE.FILE))["prediction_receipt_id"]))
-    assert rep["boards"]["status"] == "MISSING_EVIDENCE" and rep["grades"]["status"] == "MISSING_EVIDENCE"  # no quote: no bet
+    b = rep["boards"]                                                # the forecast universe, no market yet
+    assert b["status"] == "WRITTEN" and b["duplicate_keys"] == 0 and b["rows_with_valid_market"] == 0
+    assert b["rows"] == b["unique_player_stat_keys"] == d["distributions"]          # one row per persisted PMF key
+    assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"  # no bet
 
 
 # ============================================================================ odds discovery: curated team map

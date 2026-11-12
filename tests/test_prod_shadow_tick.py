@@ -147,6 +147,14 @@ def life(tmp_path_factory):
     pre = RN.daily("2026-11-10T23:00Z", state_root=w / "prod" / "state", history_db=hist, ledger_path=w / "pre" / "l.jsonl",
                    run_root=w / "pre", sims=200, sync_log=w / "pre" / "s.jsonl", odds_cache_root=w / "pre" / "nc",
                    odds_collections=None, odds_ledger=w / "pre" / "o.jsonl", odds_record=w / "pre" / "r.json")
+    from cbb_platform.prod import pmf_evidence as PE
+    snap = w / "ops" / "forecasts" / "2026-11-10" / "F-PRE"                 # the morning forecast the certification prices
+    pe = PE.from_run(Path(pre["run_dir"]), pre["run_id"], pre["prediction_as_of"],
+                     (pre.get("model_identity") or {}).get("model_version"))
+    PE.write(snap / PE.FILE, pe)
+    OS.append_jsonl(w / "ops" / "forecasts" / "index.jsonl", [{
+        "slate_date": "2026-11-10", "status": "FORECAST", "snapshot_id": "F-PRE", "prediction_as_of": pre["prediction_as_of"],
+        "games": sorted(pe["game_id"].unique()), "cutoffs": {g: "2026-11-10T23:30:00+00:00" for g in pe["game_id"].unique()}}])
     u = pd.read_csv(Path(pre["run_dir"]) / "player_universe.csv")
     a, b = FF.gid("A"), FF.gid("B")
     ok = u[(u["game_id"] == a) & u["in_frozen_pool"].astype(bool) & u["suppression_reason"].isna()].drop_duplicates("canonical_player_id")
@@ -164,6 +172,8 @@ def life(tmp_path_factory):
     out["t3"] = TK.tick(ctx)
     out["report_t3"] = _report_vs_ledgers(w)
     out["paid_after_t3"] = [c for c in odds2.calls if "/odds" in c[0]]
+    out["markets_after_t3"] = [c for c in odds2.calls if c[0].endswith("/markets")]
+    out["calls_t3"] = [c[0] for c in odds2.calls]
     out["t3b"] = (TK.tick(ctx), len(cbbd.calls), len(odds2.calls))
     out["calls_after_t3"] = (len(cbbd.calls), len(odds2.calls))
     # ---------------------------------------------------------------- durable restore on a fresh root
@@ -308,9 +318,18 @@ def test_first_real_event_validation_once(life):
     assert t3["quote_validation"]["status"] == "PASS" and t3["quote_validation"]["event_id"] == "evt-A"
     assert (life["w"] / "ops" / "markers" / "QUOTE_INTEGRATION_VALIDATED.json").exists()
     paid = life["paid_after_t3"]
-    assert len(paid) == 1 and paid[0][0].endswith("/events/evt-A/odds")          # ONE paid request in total
+    assert len(paid) == 1 and paid[0][0].endswith("/events/evt-A/odds")          # ONE event-odds request in total
+    assert [c[0] for c in life["markets_after_t3"]] == [OX.OA.BASE + "/v4/sports/basketball_ncaab/events/evt-A/markets"]
+    calls = life["calls_t3"]
+    assert calls.index(life["markets_after_t3"][0][0]) < calls.index(paid[0][0])  # market discovery first
+    assert paid[0][1]["markets"] == "player_points,player_rebounds"              # only the advertised markets
     att = OS.read_jsonl(life["w"] / "ops" / "markers" / "quote_validation_attempts.jsonl")
-    assert len(att) == 1 and att[0]["credits"] == 2
+    assert len(att) == 1 and att[0]["credits"] == 3                               # 1 discovery + 2 markets returned
+    assert att[0]["ranking"] == ["evt-A"] and all(att[0]["checks"].values()) and len(att[0]["checks"]) == 9
+    from cbb_platform.prod import quote_cert as QC
+    assert QC.state(life["w"] / "ops" / "markers")["certified"]
+    rec = json.loads((life["w"] / "prod" / "odds" / "integration_validation.json").read_text())
+    assert rec["status"] == "PASS" and rec["integration_fingerprint"] == QC.fingerprint()
     assert "quote_validation" not in life["t5"] and life["paid_delta_t5"] == 0     # never repeated after PASS
     assert len(OS.read_jsonl(life["w"] / "ops" / "markers" / "quote_validation_attempts.jsonl")) == 1
 
@@ -541,52 +560,77 @@ def test_daily_and_cumulative_reports(tmp_path):
     assert PM.daily_report_due(ops, pd.Timestamp("2026-11-12T13:00Z"), pd.Timestamp("2026-11-10T12:00Z")) is True
 
 
-def test_validation_fail_blocks_and_inconclusive_retries(tmp_path, monkeypatch):
-    from cbb_platform.prod import odds_feed as OF
-    ctx = _ctx(tmp_path, None, Clock("2026-11-10T23:00Z"), None, None)
-    (tmp_path / "ops").mkdir()
+def _fake_cert(status, clk):
+    from cbb_platform.prod import quote_refresh as QR
+    checks = {k: {"pass": status == "PASS"} for k in QR.CERT_CHECKS}
+    return lambda *a, **k: {"status": status, "certification_id": "V1", "requests": [{"endpoint": "event_markets", "cost": 1},
+                                                                                   {"endpoint": "event_odds", "cost": 5}],
+                            "checks": checks, **{c: ("PASS" if status == "PASS" else "FAIL") for c in QR.CERT_CHECKS},
+                            "validated_at": clk().isoformat(), "event_id": "e", "canonical_game_id": "g",
+                            "feed_version": "v", "validation_receipt": "r.json", "candidates": 1}
 
-    def fake(status, per):
-        return lambda *a, **k: {"status": status, "requests": [{"endpoint": "event_odds", "cost": 0}],
-                                "checks": {"expected_markets_returned": {"pass": status == "PASS", "per_market": per},
-                                           "timestamps_usable": {"pass": status == "PASS"}},
-                                "validated_at": "2026-11-10T23:00:00+00:00", "event_id": "e", "canonical_game_id": "g",
-                                "feed_version": "v"}
-    monkeypatch.setattr(OF, "validate", fake("FAIL", {"player_points": "MARKET_NOT_OFFERED_FOR_EVENT"}))
-    assert TK.step_validate(ctx, None, "e1", "g1", {}) == "INCONCLUSIVE_NO_PLAYER_PROPS_POSTED"
+
+def test_validation_fail_blocks_and_inconclusive_retries(tmp_path, monkeypatch):
+    from cbb_platform.prod import quote_refresh as QR
+    clk = Clock("2026-11-10T23:00Z")
+    ctx = _ctx(tmp_path, None, clk, None, None)
+    (tmp_path / "ops").mkdir()
+    monkeypatch.setattr(QR, "certify", _fake_cert("INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS", clk))
+    assert TK.step_validate(ctx, None, {}) == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
     v = TK._validation_state(ctx, ctx.now())
-    assert v["inconclusive_today"] == 1 and TK.validation_eligible(v, ctx)          # nothing posted yet: may retry
-    monkeypatch.setattr(OF, "validate", fake("FAIL", {"player_points": "RETURNED"}))
-    assert TK.step_validate(ctx, None, "e2", "g2", {}) == "FAIL"
+    assert v["inconclusive_today"] == 1 and not TK.validation_eligible(v, ctx)     # spaced: not again right away
+    clk.t += pd.Timedelta(minutes=TK.MIN_MINUTES_BETWEEN_INCONCLUSIVE)
+    assert TK.validation_eligible(TK._validation_state(ctx, ctx.now()), ctx)        # nothing posted yet: may retry
+    monkeypatch.setattr(QR, "certify", _fake_cert("FAIL", clk))
+    assert TK.step_validate(ctx, None, {}) == "FAIL"
     v = TK._validation_state(ctx, ctx.now())
     assert v["failed"] and not TK.validation_eligible(v, ctx)                        # FAIL: persisted, stays BLOCKED
     assert not (tmp_path / "ops" / "markers" / "QUOTE_INTEGRATION_VALIDATED.json").exists()
     ctx.allow_revalidation = True
     assert TK.validation_eligible(v, ctx)                                            # explicit architect action only
-    monkeypatch.setattr(OF, "validate", fake("PASS", {"player_points": "RETURNED"}))
-    assert TK.step_validate(ctx, None, "e3", "g3", {}) == "PASS"
-    assert not TK.validation_eligible(TK._validation_state(ctx, ctx.now()), ctx)    # never repeated after PASS
+    monkeypatch.setattr(QR, "certify", _fake_cert("PASS", clk))
+    assert TK.step_validate(ctx, None, {}) == "PASS"
+    v = TK._validation_state(ctx, ctx.now())
+    assert v["passed"] and not TK.validation_eligible(v, ctx)                       # never repeated after PASS
+    att = OS.read_jsonl(tmp_path / "ops" / "markers" / "quote_validation_attempts.jsonl")
+    assert [a["credits"] for a in att] == [6, 6, 6]
+    clk.t += pd.Timedelta(days=30)
+    assert TK._validation_state(ctx, ctx.now())["passed"]                         # persistent: no re-certification
+
+
+def test_material_invalidation_recloses_and_recertifies(tmp_path, monkeypatch):
+    from cbb_platform.prod import quote_refresh as QR
+    clk = Clock("2026-11-10T23:00Z")
+    ctx = _ctx(tmp_path, None, clk, None, None)
+    (tmp_path / "ops").mkdir()
+    monkeypatch.setattr(QR, "certify", _fake_cert("PASS", clk))
+    assert TK.step_validate(ctx, None, {}) == "PASS"
+    clk.t += pd.Timedelta(hours=2)
+
+    class S:
+        entries = [{"endpoint": "event_odds", "status": "FAILED", "http_status": 401, "requested_at": "x"}]
+    inv = TK.check_material_failure(ctx, S(), ctx.now())
+    assert inv["reason"] == "CREDENTIAL_FAILURE"
+    v = TK._validation_state(ctx, ctx.now())
+    assert not v["passed"] and v["certification_reason"] == "INVALIDATED_CREDENTIAL_FAILURE" and TK.validation_eligible(v, ctx)
+    assert json.loads(Path(ctx.odds_record).read_text())["status"] == "INVALIDATED"   # the run gate closes too
+    clk.t += pd.Timedelta(minutes=10)
+    assert TK.step_validate(ctx, None, {}) == "PASS"                                # a new real PASS re-opens it
+    assert TK._validation_state(ctx, ctx.now())["passed"]
 
 
 def test_revalidation_authorization_is_one_shot_and_evidence_based(tmp_path, monkeypatch):
     """The scheduled tick cannot take --allow-revalidation: an architect authorization recorded after a FAIL lifts only
     the FAILs before it (one more attempt under the same checks); a FAIL after it blocks again; refused when nothing is
     blocked or after PASS; the FAIL attempts are never edited."""
-    from cbb_platform.prod import odds_feed as OF
+    from cbb_platform.prod import quote_refresh as QR
     clk = Clock("2026-11-10T23:00Z")
     ctx = _ctx(tmp_path, None, clk, None, None)
     (tmp_path / "ops").mkdir()
-
-    def fake(status):
-        return lambda *a, **k: {"status": status, "requests": [{"endpoint": "event_odds", "cost": 5}],
-                                "checks": {"expected_markets_returned": {"pass": True, "per_market": {"player_points": "RETURNED"}},
-                                           "best_price_selection": {"pass": status == "PASS"}},
-                                "validated_at": clk().isoformat(), "event_id": "e", "canonical_game_id": "g",
-                                "feed_version": "v"}
     with pytest.raises(ValueError):
         TK.authorize_revalidation(ctx, "nothing failed", "abc")                     # nothing is blocked
-    monkeypatch.setattr(OF, "validate", fake("FAIL"))
-    assert TK.step_validate(ctx, None, "e1", "g1", {}) == "FAIL"
+    monkeypatch.setattr(QR, "certify", _fake_cert("FAIL", clk))
+    assert TK.step_validate(ctx, None, {}) == "FAIL"
     assert not TK.validation_eligible(TK._validation_state(ctx, ctx.now()), ctx)
     with pytest.raises(ValueError):
         TK.authorize_revalidation(ctx, "", "abc")                                   # reason + fix commit required
@@ -598,15 +642,15 @@ def test_revalidation_authorization_is_one_shot_and_evidence_based(tmp_path, mon
     assert not v["failed"] and v["fails_recorded"] == 1 and TK.validation_eligible(v, ctx)   # exactly one more try
     assert not ctx.allow_revalidation
     clk.t += pd.Timedelta(minutes=10)
-    assert TK.step_validate(ctx, None, "e2", "g2", {}) == "FAIL"                    # the new attempt fails again
+    assert TK.step_validate(ctx, None, {}) == "FAIL"                                # the new attempt fails again
     v = TK._validation_state(ctx, ctx.now())
     assert v["failed"] and not TK.validation_eligible(v, ctx)                        # blocked again: one-shot
     assert (tmp_path / "ops" / "markers" / "quote_validation_attempts.jsonl").read_text().startswith(attempts)
     clk.t += pd.Timedelta(minutes=10)
     TK.authorize_revalidation(ctx, "second fix", "def456")
-    monkeypatch.setattr(OF, "validate", fake("PASS"))
+    monkeypatch.setattr(QR, "certify", _fake_cert("PASS", clk))
     clk.t += pd.Timedelta(minutes=10)
-    assert TK.step_validate(ctx, None, "e3", "g3", {}) == "PASS"
+    assert TK.step_validate(ctx, None, {}) == "PASS"
     v = TK._validation_state(ctx, ctx.now())
     assert v["passed"] and not TK.validation_eligible(v, ctx)
     assert (tmp_path / "ops" / "markers" / "QUOTE_INTEGRATION_VALIDATED.json").exists()

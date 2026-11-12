@@ -34,6 +34,7 @@ Boards (prod.exports) select among the latest quote observation of each game; at
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import uuid
@@ -42,8 +43,8 @@ from pathlib import Path
 import pandas as pd
 
 from cbb_platform.prod import (board as BO, config as PC, matching as MT, odds_acquire as OA, odds_feed as OF,
-                               ops_store as OS, pmf_evidence as PE, quotes as QT, shadow_tick as SH, side_monitor as SD,
-                               slate as SL, state as ST)
+                               ops_store as OS, pmf_evidence as PE, quote_cert as QC, quote_obs as QO, quotes as QT,
+                               shadow_tick as SH, side_monitor as SD, slate as SL, state as ST)
 
 QR_VERSION = "cbb-prod-quote-refresh-1.0.0"
 SLOT_MINUTES = 10
@@ -51,6 +52,8 @@ SLOT_MINUTES = 10
 TIERS = (("T6H_T2H", 360, 120, 60), ("T2H_T30M", 120, 30, 30), ("T30M_CUTOFF", 30, 0, 10))
 EVENTS_REFRESH_MINUTES = 30                 # a due game with no matched event refreshes the FREE events listing
 REFRESH_FILE = "reprice_side_monitor.jsonl"
+LIVE_STATUSES = ("FETCHED", "FETCHED_UNCHANGED")            # odds_acquire ledger statuses of a live (paid) request
+OK_STATUSES = LIVE_STATUSES + ("CACHE_HIT",)
 
 
 def _utc(x):
@@ -114,7 +117,7 @@ def _write_last(ops_root: Path) -> None:
     for r in OS.read_jsonl(requests_path(ops_root)):
         g = r.get("game_id")
         att[g] = r.get("requested_at")
-        if r.get("status") in ("LIVE", "CACHE"):
+        if r.get("status") in OK_STATUSES or r.get("discovery_status") == OF.NO_SUPPORTED:
             ok[g] = {"last_success_at": r.get("received_at"), "event_id": r.get("event_id"),
                      "response_sha256": r.get("response_sha256")}
     doc = {g: {"last_attempt_at": att[g], **ok.get(g, {"last_success_at": None})} for g in sorted(att)}
@@ -177,16 +180,14 @@ def _dist_and_exposure(src: dict, game_id: str) -> tuple[pd.DataFrame, pd.DataFr
     return dist, expo, cands, {"model_version": mv, "pmf_sha256": PE.sha256(src["pmfs"])}
 
 
-def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.DataFrame, tidx: dict, now,
-            refresh_id: str, request: dict) -> dict:
-    """QUOTE_SIDE receipts of one game: the persisted PMF `src` priced at the quotes of `collection`. Appends them to
-    quotes/<D>/reprice_side_monitor.jsonl. Nothing is simulated, fitted or recomputed."""
+def price_collection(game: dict, src: dict, collection: Path, slate: pd.DataFrame, tidx: dict, now, refresh_id: str,
+                     request: dict) -> tuple[dict, list[dict], pd.DataFrame]:
+    """(summary, QUOTE_SIDE bodies, matched quote rows) of one game: the persisted PMF `src` priced at the quotes of
+    `collection`. Writes nothing; nothing is simulated, fitted or recomputed."""
     now = _utc(now)
     gid = game["canonical_game_id"]
     dist, expo, cands, info = _dist_and_exposure(src, gid)
     out = {"game_id": gid, "pmf_source": src["kind"], "pmf_source_id": src["id"], "pmfs": int(len(dist)), "receipts": 0}
-    if not len(dist):
-        return {**out, "status": "NO_PMF_ROWS"}
     q = QT.load_collected(collection)
     if len(q):
         q = MT.match_games(q, slate, tidx)
@@ -194,6 +195,8 @@ def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.D
         q = BO.quote_freshness(q, now, slate.set_index("canonical_game_id")["start_time"].to_dict())
     out["quote_rows"] = int(len(q))
     out["valid_quote_rows"] = int((q["quote_status"] == "VALID").sum()) if len(q) else 0
+    if not len(dist):
+        return {**out, "status": "NO_PMF_ROWS"}, [], q
     meta = {"run_id": refresh_id, "prediction_as_of": src["prediction_as_of"], "model_version": info["model_version"],
             "data_label": "LIVE", "game_dates": {gid: str(pd.Timestamp(game["game_date_et"]).date())}}
     bodies = SD.quote_side_records(dist, q, expo, meta)
@@ -206,11 +209,208 @@ def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.D
                   "pmf_prediction_receipt_id": rid.get((b["player_id"], b["market"])),
                   "quote_event_id": request["event_id"], "quote_collection": Path(collection).name,
                   "quote_response_sha256": request.get("response_sha256")})
-    if bodies:
-        day = SH._utc(game["scheduled_tip_utc"]).tz_convert("America/New_York").date().isoformat()
-        SD.append([{"record_type": "QUOTE_SIDE", "body": b} for b in bodies], Path(ops_root) / "quotes" / day / REFRESH_FILE)
     out.update(status="REPRICED" if bodies else "NO_MATCHED_VALID_QUOTE", receipts=len(bodies))
+    return out, bodies, q
+
+
+def game_day(game: dict) -> str:
+    return SH._utc(game["scheduled_tip_utc"]).tz_convert("America/New_York").date().isoformat()
+
+
+def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.DataFrame, tidx: dict, now,
+            refresh_id: str, request: dict) -> dict:
+    """price_collection + persistence: the QUOTE_SIDE receipts are appended to quotes/<D>/reprice_side_monitor.jsonl
+    and the capture (every normalized row with its status) becomes a quote observation (prod.quote_obs) for the Board."""
+    out, bodies, q = price_collection(game, src, collection, slate, tidx, now, refresh_id, request)
+    day = game_day(game)
+    QO.record(ops_root, day, game["canonical_game_id"], request["event_id"],
+              json.loads(Path(collection).read_text())["collector_received_at"], q, "QUOTE_REFRESH",
+              {"refresh_id": refresh_id, "collection": Path(collection).name,
+               "discovery_status": request.get("discovery_status"), "credits": request.get("credits")})
+    if bodies:
+        SD.append([{"record_type": "QUOTE_SIDE", "body": b} for b in bodies], Path(ops_root) / "quotes" / day / REFRESH_FILE)
     return out
+
+
+# ============================================================================ quote-integration certification
+CERT_MAX_DISCOVERY = 15          # market discovery (1 credit each) on at most this many candidate games per attempt
+CERT_MAX_ODDS_EVENTS = 2         # event-odds requests per attempt (the top-ranked event; one more if it returned none)
+CERT_CHECKS = ("GAME_MATCH", "PLAYER_MATCH", "STAT_MATCH", "LINE_VALIDATION", "PRICE_VALIDATION",
+               "FRESHNESS_VALIDATION", "PMF_LOOKUP", "PRICING_VALIDATION", "RAW_EVIDENCE_PERSISTENCE")
+
+
+def certification_candidates(ctx: SH.Ctx, st: dict, now, sl: pd.DataFrame, tidx: dict) -> list[dict]:
+    """Today's (ET) forecasted, pre-tip D-I games inside the prop window whose event maps strictly and whose PMF is
+    already persisted, ordered by tip (then game id)."""
+    now = _utc(now)
+    sch = SH.schedule(st)
+    today = now.tz_convert("America/New_York").date()
+    g = sch[(sch["game_universe"] == "DI_VS_DI") & ~sch["not_played"] & sch["home_points"].isna() & (sch["cutoff"] > now)
+            & (sch["scheduled_tip_utc"] > now)
+            & (sch["scheduled_tip_utc"] - now <= pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS))
+            & (pd.to_datetime(sch["game_date_et"]).dt.date == today)]
+    m = OF.match_events((OF.listing(now, ctx.cache_raw) or {}).get("events"), sl, tidx)
+    ev = {gg: e for gg, e in zip(m["canonical_game_id"], m["provider_event_id"]) if isinstance(gg, str)}
+    out = []
+    for r in g.sort_values(["scheduled_tip_utc", "canonical_game_id"]).to_dict(orient="records"):
+        src = latest_pmf_source(ctx.ops_root, r["canonical_game_id"], r["cutoff"], now)
+        if src is not None and r["canonical_game_id"] in ev:
+            out.append({"game": r, "event_id": ev[r["canonical_game_id"]], "src": src})
+    return out
+
+
+def rank(discovered: list[dict]) -> list[dict]:
+    """Deterministic certification order: most supported markets advertised, then most bookmakers advertising them,
+    then earliest tip, then game id. Events advertising none are dropped."""
+    x = [d for d in discovered if d["supported_market_count"] > 0]
+    return sorted(x, key=lambda d: (-d["supported_market_count"], -d["bookmakers_advertising"],
+                                    _utc(d["tip"]), d["game_id"]))
+
+
+def certification_checks(game: dict, src: dict, collection: Path, q: pd.DataFrame, bodies: list, summary: dict,
+                         cache_root: Path) -> dict:
+    """The nine certification checks on one real event's quotes priced at the persisted PMF (CERT_CHECKS)."""
+    from cbb_platform import raw_store as RS
+    from cbb_platform.prod import consensus as CN
+    gid = game["canonical_game_id"]
+    doc = json.loads(Path(collection).read_text())
+    requested = set((doc.get("market_discovery") or {}).get("requested_markets") or [])
+    props = q[q["stat"].notna()] if len(q) else q
+    matched = props[props["canonical_player_id"].map(lambda v: isinstance(v, str))] if len(props) else props
+    valid = matched[matched["quote_status"] == "VALID"] if len(matched) else matched
+    returned = {m.get("key") for e in doc["events"] for b in e.get("bookmakers") or [] for m in b.get("markets") or []}
+    c = {}
+    c["GAME_MATCH"] = {"pass": bool(len(props)) and bool((props["canonical_game_id"] == gid).all()),
+                       "prop_quotes": int(len(props)), "canonical_game_id": gid}
+    pmf_players = set(PE.read(src["pmfs"]).query("game_id == @gid")["player_id"]) if src else set()
+    c["PLAYER_MATCH"] = {"pass": bool(len(matched)) and set(matched["canonical_player_id"]) <= pmf_players,
+                         "matched_quotes": int(len(matched)), "players": int(matched["canonical_player_id"].nunique()) if len(matched) else 0,
+                         "unmatched_names": sorted(props.loc[props["canonical_player_id"].map(lambda v: not isinstance(v, str)),
+                                                             "provider_player_name"].unique().tolist())[:50] if len(props) else []}
+    key_ok = bool(len(props)) and bool((props["market_key"].map(QT.KEY_TO_STAT) == props["stat"]).all())
+    c["STAT_MATCH"] = {"pass": key_ok and returned <= requested <= set(QT.REQUEST_MARKETS)
+                       and all(b["market"] in PC.MARKETS for b in bodies),
+                       "requested_markets": sorted(requested), "returned_markets": sorted(returned)}
+    bad = int((props["suppression_reason"] == "INVALID_QUOTE").sum()) if len(props) else 0
+    c["LINE_VALIDATION"] = {"pass": bool(len(valid)) and bad <= 0.01 * len(props), "invalid_quotes": bad}
+    pv = valid.groupby(["sportsbook", "canonical_player_id", "stat", "line"])["side"].nunique() if len(valid) else pd.Series(dtype=int)
+    c["PRICE_VALIDATION"] = {"pass": bool(len(valid)) and bool((valid["decimal_odds"] > 1).all())
+                             and bool(valid["american_odds"].map(lambda o: abs(float(o)) >= 100).all()) and bool((pv == 2).any()),
+                             "paired_book_lines": int((pv == 2).sum())}
+    ts = props["market_last_update"].notna() & (props["market_last_update"] <= props["collector_received_at"]) if len(props) else pd.Series(dtype=bool)
+    c["FRESHNESS_VALIDATION"] = {"pass": bool(len(props)) and bool(ts.all()) and bool(len(valid)),
+                                 "stale_or_post_cutoff": int(matched["suppression_reason"].isin(["STALE_QUOTE", "POST_CUTOFF_QUOTE"]).sum()) if len(matched) else 0}
+    c["PMF_LOOKUP"] = {"pass": src is not None and summary.get("pmfs", 0) > 0
+                       and all(b.get("pmf_prediction_receipt_id") for b in bodies) and bool(bodies),
+                       "pmf_source": src["kind"] if src else None, "pmf_source_id": src["id"] if src else None,
+                       "pmf_sha256": bodies[0]["pmf_sha256"] if bodies else None}
+    trace, mass = 0, 0
+    for b in bodies:
+        hit = valid[(valid["canonical_player_id"] == b["player_id"]) & (valid["stat"] == b["market"])
+                    & (valid["line"] == b["line"]) & (valid["side"] == b["side"]) & (valid["sportsbook"] == b["sportsbook"])
+                    & ((valid["decimal_odds"] - b["book_decimal_odds"]).abs() < 1e-12)]
+        trace += len(hit) == 0
+        mass += abs(b["p_over"] + b["p_under"] + b["p_push"] - 1) > 1e-9
+    board_ok = 0
+    for _, g in matched.groupby(["canonical_player_id", "stat"]) if len(matched) else []:
+        board_ok += CN.consensus(g)[0]["market_status"] == "VALID_MARKET"
+    c["PRICING_VALIDATION"] = {"pass": bool(bodies) and trace == 0 and mass == 0 and board_ok > 0,
+                               "quote_side_receipts": len(bodies), "untraceable": trace, "mass_errors": mass,
+                               "consensus_valid_markets": int(board_ok)}
+    eo = (doc.get("requests") or {}).get("event_odds") or {}
+    raw_ok = False
+    if eo.get("cache_path"):
+        rp = Path(cache_root) / eo["cache_path"]
+        raw_ok = rp.exists() and hashlib.sha256(RS.read_payload(rp)).hexdigest() == eo.get("response_sha256")
+    c["RAW_EVIDENCE_PERSISTENCE"] = {"pass": bool(raw_ok) and Path(collection).exists(),
+                                     "collection": Path(collection).name, "response_sha256": eo.get("response_sha256")}
+    return c
+
+
+def certify(ctx: SH.Ctx, st: dict, now=None, quota_remaining: int | None = None) -> dict:
+    """One certification attempt (shadow_tick.step_validate): market discovery on today's candidates, deterministic
+    ranking, then ONE event-odds request on the best-ranked event (one more only if it returned no prop rows); the
+    nine checks on its real quotes priced at the already-persisted PMF. Nothing is simulated or fitted. Returns the
+    attempt receipt (status PASS / FAIL / INCONCLUSIVE_*); the caller persists it."""
+    now = _utc(now or ctx.now())
+    rid = "V" + now.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
+    rep = {"certification_id": rid, "attempted_at": now.isoformat(), "checks_required": list(CERT_CHECKS),
+           "integration_fingerprint": QC.fingerprint(), "discovery": [], "odds_events": []}
+    session = SH._session(ctx, f"{rid}:certify")
+    session.quota_remaining = quota_remaining          # known from the tick's live (free) listing, when there was one
+    sl = SL.build(st["increment_db"], now, st["manifest"].get("schedule_as_of") or st["manifest"]["source_cutoff"],
+                  PC.ODDS_PROP_WINDOW_HOURS)
+    tidx = MT.team_index(SH.team_names(ctx, st), MT.odds_team_map())
+    try:
+        # 0 credits; live when the quota (every paid call is checked against it) is not known yet
+        session.get("events", OF.events_params(now, now + pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS)),
+                    max_age_seconds=0 if quota_remaining is None else PC.ODDS_EVENTS_MAX_AGE_HOURS * 3600,
+                    purpose="events listing (0 credits)")
+    except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
+        return {**rep, "status": "ERROR", "error": f"events listing: {str(e)[:200]}", "requests": _reqs(session)}
+    session.event_commence = OF.event_commence_resolver(ctx.cache_raw, now)
+    cands = certification_candidates(ctx, st, now, sl, tidx)
+    rep["candidates"] = len(cands)
+    if not cands:
+        return {**rep, "status": "INCONCLUSIVE_NO_CANDIDATE_GAME", "requests": _reqs(session)}
+    found = {}
+    for c in cands[:CERT_MAX_DISCOVERY]:
+        try:
+            d = OF.discover(session, c["event_id"])
+        except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
+            rep["discovery"].append({"game_id": c["game"]["canonical_game_id"], "event_id": c["event_id"],
+                                     "status": "FAILED", "error": str(e)[:200]})
+            continue
+        found[c["event_id"]] = (c, d)
+        rep["discovery"].append({"game_id": c["game"]["canonical_game_id"], "event_id": c["event_id"],
+                                 "tip": _utc(c["game"]["scheduled_tip_utc"]).isoformat(), "status": d["status"],
+                                 "supported_market_count": d["supported_market_count"],
+                                 "bookmakers_advertising": d["bookmakers_advertising"],
+                                 "supported_markets": d["supported_markets"]})
+    rep["discovery_truncated"] = max(0, len(cands) - CERT_MAX_DISCOVERY)
+    ranked = rank([r for r in rep["discovery"] if r["status"] != "FAILED"])
+    rep["ranking"] = [r["event_id"] for r in ranked]
+    if not ranked:
+        failed = [r for r in rep["discovery"] if r["status"] == "FAILED"]
+        if failed and len(failed) == len(rep["discovery"]):
+            return {**rep, "status": "ERROR", "error": f"market discovery failed: {failed[0]['error']}",
+                    "requests": _reqs(session)}
+        return {**rep, "status": "INCONCLUSIVE_" + OF.NO_SUPPORTED, "requests": _reqs(session)}
+    for r in ranked[:CERT_MAX_ODDS_EVENTS]:
+        c, d = found[r["event_id"]]
+        try:
+            path = OF.collect(session, [r["event_id"]], ctx.collections, discovered={r["event_id"]: d})[-1]
+        except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
+            rep["odds_events"].append({"event_id": r["event_id"], "status": "FAILED", "error": str(e)[:200]})
+            continue
+        req = {"event_id": r["event_id"], "tier": "CERTIFICATION", **OF.collection_receipt(path)}
+        summ, bodies, q = price_collection(c["game"], c["src"], path, sl, tidx, now, rid, req)
+        props = int(q["stat"].notna().sum()) if len(q) else 0
+        rep["odds_events"].append({**req, "collection": path.name, "prop_quotes": props})
+        if not props:
+            continue                                     # advertised, but nothing returned: the next-ranked event
+        checks = certification_checks(c["game"], c["src"], path, q, bodies, summ, ctx.cache_raw)
+        ok = all(x["pass"] for x in checks.values())
+        run_dir = Path(ctx.prod_root) / "odds" / "validation_runs" / rid
+        run_dir.mkdir(parents=True, exist_ok=True)
+        q.to_csv(run_dir / "quotes_normalized.csv", index=False)
+        (run_dir / "quote_side_receipts.jsonl").write_text("".join(json.dumps(x, sort_keys=True, default=str) + "\n"
+                                                                   for x in bodies))
+        out = {**rep, "status": "PASS" if ok else "FAIL", "validated_at": now.isoformat(), "event_id": r["event_id"],
+               "canonical_game_id": c["game"]["canonical_game_id"], "feed_version": PC.ODDS_FEED_VERSION,
+               "collection": path.name, "pmf_source": {k: str(v) for k, v in c["src"].items()},
+               "checks": checks, **{k: ("PASS" if checks[k]["pass"] else "FAIL") for k in CERT_CHECKS},
+               "requests": _reqs(session), "validation_receipt": str(run_dir / "certification.json")}
+        (run_dir / "certification.json").write_text(json.dumps(out, indent=1, default=str))
+        out["VALIDATION_RECEIPT_WRITTEN"] = (run_dir / "certification.json").exists()
+        return out
+    return {**rep, "status": "INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED", "requests": _reqs(session)}
+
+
+def _reqs(session: OA.Session) -> list[dict]:
+    return [{k: e.get(k) for k in ("endpoint", "status", "cost", "markets_returned", "response_sha256", "received_at",
+                                   "quota_remaining", "quota_used", "http_status")} | {"event_id": (e.get("params") or {}).get("eventId")}
+            for e in session.entries]
 
 
 # ============================================================================ one scheduler wake
@@ -223,8 +423,10 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     st = ST.current(ctx.state_root)
     if st is None:
         return {**rep, "status": "BLOCKED", "reason": "no promoted 2026-27 state"}
-    if not SH._validation_state(ctx, now)["passed"]:
-        return {**rep, "status": "SKIPPED", "reason": "QUOTE_INTEGRATION_NOT_VALIDATED (the official tick validates first)"}
+    vs = SH._validation_state(ctx, now)
+    if not vs["passed"]:
+        return {**rep, "status": "SKIPPED", "reason": f"QUOTE_INTEGRATION_NOT_VALIDATED ({vs['certification_reason']}; "
+                                                     "the official tick certifies first)"}
     sch = SH.schedule(st)
     dec = SH.decided(ctx)
     open_ = sch[(sch["game_universe"] == "DI_VS_DI") & ~sch["not_played"] & sch["home_points"].isna()
@@ -283,16 +485,19 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
             reqs.append({**req, "status": "FAILED", "error": str(e)[:200]})
             row["result"] = "FAILED"
             continue
-        ent = [x for x in session.entries if x.get("endpoint") == "event_odds"
-               and x.get("params", {}).get("eventId") == eid][-1]
-        req.update(status=ent["status"], received_at=ent.get("received_at"), response_sha256=ent.get("response_sha256"),
-                   credits=int(ent.get("cost") or 0), collection=paths[-1].name)
+        rc = OF.collection_receipt(paths[-1])
+        req.update(**rc, collection=paths[-1].name)
         reqs.append(req)
         row["result"] = reprice(ctx.ops_root, g, src, paths[-1], sl, tidx, now, rid, req)
     OS.append_jsonl(requests_path(ctx.ops_root), reqs)
+    inv = SH.check_material_failure(ctx, session, now)
+    if inv:
+        rep["certification_invalidated"] = inv
     if reqs:
         _write_last(ctx.ops_root)
-    rep["requests"] = sum(1 for r in reqs if r.get("status") == "LIVE")
+    rep["requests"] = sum((r.get("markets_status") in LIVE_STATUSES) + (r.get("odds_status") in LIVE_STATUSES) for r in reqs)
+    rep["market_discovery"] = pd.Series([r.get("discovery_status") for r in reqs if r.get("discovery_status")]
+                                        ).value_counts().to_dict() if reqs else {}
     rep["credits"] = sum(int(r.get("credits") or 0) for r in reqs)
     rep["receipts"] = sum(int((x.get("result") or {}).get("receipts", 0)) for x in rep["games"] if isinstance(x.get("result"), dict))
     rep["status"] = "RAN"

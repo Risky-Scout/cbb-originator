@@ -56,8 +56,9 @@ def event_odds(ev: dict, books: list[dict]) -> dict:
 
 
 class FakeOdds:
-    """Stands in for requests.get against The Odds API: serves the events listing and per-event odds, charges the
-    documented cost (unique markets returned x regions), reports usage headers, can fail on demand."""
+    """Stands in for requests.get against The Odds API: serves the events listing, per-event market discovery (the
+    keys each bookmaker of the event's odds payload carries; 1 credit) and per-event odds, charges the documented cost
+    (unique markets returned x regions), reports usage headers, can fail on demand."""
 
     def __init__(self, events: list[dict], odds: dict | None = None, remaining: int = 20_000, fail: dict | None = None,
                  raise_exc: Exception | None = None):
@@ -78,6 +79,17 @@ class FakeOdds:
         if path == OA.PATHS["events"]:
             return _Resp(200, self.events, self._hdr(0))
         pre = OA.PATHS["event_odds"].split("{")[0]
+        if path.startswith(pre) and path.endswith("/markets"):     # event markets: advertised keys, 1 credit
+            eid = path[len(pre):-len("/markets")]
+            ev = next((e for e in self.events if e.get("id") == eid), None)
+            if ev is None and eid not in self.odds:
+                return _Resp(404, {"message": "Event not found"}, self._hdr(0))
+            src = self.odds.get(eid) or {**ev, "bookmakers": []}
+            body = {k: src.get(k) for k in ("id", "sport_key", "sport_title", "commence_time", "home_team", "away_team")}
+            body["bookmakers"] = [{"key": b["key"], "title": b.get("title"), "last_update": b.get("last_update"),
+                                   "markets": [{"key": m["key"], "last_update": m.get("last_update")}
+                                               for m in b.get("markets", [])]} for b in src.get("bookmakers", [])]
+            return _Resp(200, body, self._hdr(1))
         eid = path[len(pre):-len("/odds")]
         if eid not in self.odds:
             return _Resp(404, {"message": "Event not found"}, self._hdr(0))

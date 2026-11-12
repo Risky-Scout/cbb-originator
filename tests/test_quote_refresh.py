@@ -85,9 +85,16 @@ def _sim_day(tmp_path, monkeypatch, official=True):
     def collect(session, eids, out):
         t = clock["now"]
         calls.append(t)
-        session.entries.append({"endpoint": "event_odds", "params": {"eventId": eids[0]}, "status": "LIVE",
-                                "received_at": t.isoformat(), "cost": 7, "response_sha256": "s"})
-        return [Path(f"E1_{t.strftime('%H%M')}.json")]
+        e = {"endpoint": "event_odds", "params": {"eventId": eids[0]}, "status": "FETCHED",
+             "received_at": t.isoformat(), "cost": 7, "response_sha256": "s"}
+        session.entries.append(e)
+        p = tmp_path / "coll" / f"E1_{t.strftime('%H%M')}.json"          # a collection file as odds_feed.collect writes
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"collector_received_at": t.isoformat(), "events": [{"id": eids[0], "bookmakers": []}],
+                                 "market_discovery": {"status": "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"},
+                                 "requests": {"event_markets": {**e, "endpoint": "event_markets", "cost": 1},
+                                              "event_odds": e}}))
+        return [p]
     monkeypatch.setattr(QR.OF, "collect", collect)
     monkeypatch.setattr(QR, "reprice", lambda *a, **k: {"receipts": 0, "status": "NO_MATCHED_VALID_QUOTE"})
     clock = {"now": None}
@@ -219,6 +226,14 @@ def _boards(ops, out, now):
                     now=now)
 
 
+def _board_line(rep):
+    """(consensus line, market status, confidence) of the single Board row, read right after this export."""
+    rows = EX.read_xlsx(Path(rep["boards"]["path"]))["Full Board"]["rows"][1:]
+    assert len(rows) == 1
+    col = {c: i for i, c in enumerate(EX.BOARD_COLS)}
+    return rows[0][col["Consensus Line"]], rows[0][col["Market Status"]], rows[0][col["Consensus Confidence"]]
+
+
 def test_boards_provisional_then_frozen_latest_observation_never_replaced(tmp_path, monkeypatch):
     _no_model_work(monkeypatch)
     ops = tmp_path / "ops"
@@ -227,6 +242,7 @@ def test_boards_provisional_then_frozen_latest_observation_never_replaced(tmp_pa
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", T(300), 12.5, 150, -190), SLATE, TIDX, T(300), "Q1",
                {"tier": "T6H_T2H", "event_id": "E1"})
     r1 = _boards(ops, tmp_path, T(299))
+    lines = [_board_line(r1)]
     assert r1["boards"]["status"] == "WRITTEN" and r1["official_frozen_rows"] == 0
     sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
     assert [s["state"] for s in sel] == ["PROVISIONAL"] and sel[0]["line"] == 12.5
@@ -234,6 +250,7 @@ def test_boards_provisional_then_frozen_latest_observation_never_replaced(tmp_pa
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", T(20), 16.5, -110, -110), SLATE, TIDX, T(20), "Q2",
                {"tier": "T30M_CUTOFF", "event_id": "E1"})
     r2 = _boards(ops, tmp_path, T(19))
+    lines.append(_board_line(r2))
     sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
     assert [s["state"] for s in sel] == ["PROVISIONAL", "PROVISIONAL"] and sel[-1]["line"] == 16.5
     assert r2["official_rows"] == 1 and r2["duplicate_game_player_prop_rows"] == 0
@@ -242,11 +259,18 @@ def test_boards_provisional_then_frozen_latest_observation_never_replaced(tmp_pa
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", CUT + pd.Timedelta(minutes=10), 10.5, 400, -900), SLATE, TIDX,
                CUT + pd.Timedelta(minutes=10), "Q3", {"tier": "AFTER", "event_id": "E1"})
     r4 = _boards(ops, tmp_path, CUT + pd.Timedelta(minutes=11))
+    lines.append(_board_line(r4))
     sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
     frozen = [s for s in sel if s["state"] == "OFFICIAL_FROZEN"]
     assert r3["official_frozen_rows"] == 1 and len(frozen) == 1 and frozen[0]["line"] == 16.5
     assert r4["official_frozen_rows"] == 1 and len(sel) == 3
     assert r4["grades"]["status"] == "WRITTEN"                             # graded from the frozen receipt (PENDING)
+    # the consensus Board: the forecast row, market fields from the latest PRE-cutoff observation (never post-cutoff)
+    obs = [json.loads(l) for l in (ops / "quotes" / DAY / "observations.jsonl").read_text().splitlines()]
+    assert [o["source"] for o in obs] == ["QUOTE_REFRESH"] * 3 and all(o["rows"] > 0 for o in obs)
+    assert lines == [(12.5, "VALID_MARKET", "SINGLE_BOOK"), (16.5, "VALID_MARKET", "SINGLE_BOOK"),
+                     (16.5, "VALID_MARKET", "SINGLE_BOOK")]
+    assert r4["boards"]["rewritten"] is False and r4["distributions"]["rewritten"] is False
 
 
 def test_latest_observation_rule_keeps_single_official_tick_unchanged():

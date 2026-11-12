@@ -4,7 +4,8 @@
 
     verify frozen artifact hashes (BLOCK on mismatch)          -> load last-known-good state (restored if --restore)
     -> incremental CBBD sync, only if due                       -> free Odds API events listing, only if due
-    -> first real-event quote validation (ONE paid request), only if eligible and never repeated after PASS
+    -> quote-integration certification (market discovery + ONE event-odds request; quote_refresh.certify), only while
+       not certified; persistent after PASS (prod.quote_cert)
     -> games whose TIP_MINUS_1H cutoff is within SCORE_LEAD_MINUTES: ONE quote snapshot per event, then ONE run that
        draws ONE 20,000-draw JM1_FINAL bank per game (run.daily, unchanged), appended once to the shadow evidence
     -> games whose cutoff passed unscored: MISSED_PREDICTION_CUTOFF (never a retrospective "pregame" forecast)
@@ -39,7 +40,7 @@ import pandas as pd
 
 from cbb_platform.prod import (config as PC, history_extract as HX, ledger as LG, loader as LD, matching as MT,
                                odds_acquire as OA, odds_feed as OF, ops_store as OS, pmf_evidence as PE,
-                               prospective_monitor as PM,
+                               prospective_monitor as PM, quote_cert as QC, quote_obs as QO,
                                run as RN, slate as SL, state as ST, sync as Y)
 
 TICK_VERSION = "cbb-prod-shadow-tick-1.0.0"
@@ -47,6 +48,7 @@ DECIDED = ("PREDICTED", "EXCLUDED", "MISSED_PREDICTION_CUTOFF", "NOT_SCORED_AT_C
 NOT_PLAYED = ("canceled", "cancelled", "postponed")
 STAT_COLS = {"PTS": "points", "REB": "reb", "AST": "ast", "FG3M": "three_pm", "STL": "stl", "BLK": "blk", "TOV": "tov"}
 MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY = 3
+MIN_MINUTES_BETWEEN_INCONCLUSIVE = 90     # spread the day's inconclusive attempts over the slate (props post near tip)
 EVENTS_LOOKAHEAD_HOURS = 14 * 24          # routine free listing horizon (first real event discovery); 0 credits
 
 
@@ -429,13 +431,17 @@ def _validation_state(ctx: Ctx, now: pd.Timestamp) -> dict:
     att = OS.read_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"))
     auth = OS.read_jsonl(ctx.ops("markers", REVALIDATION_LOG))
     since = max((_utc(a["authorized_at"]) for a in auth), default=None)
-    passed = ctx.ops("markers", "QUOTE_INTEGRATION_VALIDATED.json").exists()
-    fails = [a for a in att if a["status"] == "FAIL"]
+    cert = QC.state(ctx.ops("markers"), now)
+    passed = cert["certified"]
+    fails = [a for a in att if a["status"] == "FAIL"
+             and (cert["certification"] is None or _utc(a["attempted_at"]) > _utc(cert["certification"]["validated_at"]))]
     failed = any(since is None or _utc(a["attempted_at"]) > since for a in fails)
     day = now.tz_convert("America/New_York").date()
-    inconcl = sum(1 for a in att if a["status"] != "PASS" and a["status"] != "FAIL"
-                  and _utc(a["attempted_at"]).tz_convert("America/New_York").date() == day)
-    return {"passed": passed, "failed": failed, "inconclusive_today": inconcl, "attempts": len(att),
+    inc = [_utc(a["attempted_at"]) for a in att if a["status"] != "PASS" and a["status"] != "FAIL"
+           and _utc(a["attempted_at"]).tz_convert("America/New_York").date() == day]
+    return {"passed": passed, "failed": failed, "inconclusive_today": len(inc), "attempts": len(att),
+            "last_inconclusive_at": max(inc).isoformat() if inc else None,
+            "certification_reason": cert["reason"], "integration_fingerprint": cert["fingerprint"],
             "fails_recorded": len(fails), "revalidation_authorized_at": since.isoformat() if since is not None else None}
 
 
@@ -461,44 +467,86 @@ def validation_eligible(vstate: dict, ctx: Ctx) -> bool:
     """One paid validation request is allowed only when: no PASS exists (never repeated after PASS); no FAIL is
     recorded (a FAIL stays BLOCKED until an explicit architect re-validation); and fewer than
     MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY inconclusive / error attempts today (props not yet posted)."""
+    spaced = vstate.get("last_inconclusive_at") is None or \
+        ctx.now() - _utc(vstate["last_inconclusive_at"]) >= pd.Timedelta(minutes=MIN_MINUTES_BETWEEN_INCONCLUSIVE)
     return (not vstate["passed"] and (not vstate["failed"] or ctx.allow_revalidation)
-            and vstate["inconclusive_today"] < MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY)
+            and vstate["inconclusive_today"] < MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY and spaced)
 
 
-def step_validate(ctx: Ctx, session: OA.Session, event_id: str, gid: str, tick: dict) -> str:
-    """The existing one-event validation (odds_feed.validate). PASS -> immutable QUOTE_INTEGRATION_VALIDATED. A payload
-    with no player-prop market at all is INCONCLUSIVE (nothing posted yet), not an integration failure."""
+def step_validate(ctx: Ctx, st: dict, tick: dict, quota_remaining: int | None = None) -> str:
+    """One certification attempt (prod.quote_refresh.certify: market discovery on today's forecasted pre-tip games,
+    deterministic ranking, one event-odds request, the nine checks against the persisted PMF). PASS -> persistent
+    certification (prod.quote_cert) + the run gate record. INCONCLUSIVE when no supported prop market is advertised or
+    returned (nothing posted yet), never an integration failure."""
+    from cbb_platform.prod import quote_refresh as QR                 # late: quote_refresh imports this module
     now = ctx.now()
-    a = {"attempted_at": now.isoformat(), "event_id": event_id, "canonical_game_id": gid}
     try:
-        out = OF.validate(event_id, now=now, session=session, run_root=Path(ctx.prod_root) / "odds" / "validation_runs",
-                          record=ctx.odds_record, state_root=ctx.state_root, history_db=ctx.history_db,
-                          collections_dir=ctx.collections, sims=ctx.sims, sync_log=ctx.sync_log)
+        out = QR.certify(ctx, st, now, quota_remaining=quota_remaining)
     except Exception as e:                                            # noqa: BLE001 -- recorded; never retried blindly
-        a.update({"status": "ERROR", "error": f"{type(e).__name__}: {str(e)[:300]}"})
+        a = {"attempted_at": now.isoformat(), "status": "ERROR", "error": f"{type(e).__name__}: {str(e)[:300]}"}
         OS.append_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"), [a])
         tick["quote_validation"] = a
         return "ERROR"
-    per = out["checks"]["expected_markets_returned"]["per_market"]
-    status = out["status"]
-    if status == "FAIL" and "RETURNED" not in per.values():
-        status = "INCONCLUSIVE_NO_PLAYER_PROPS_POSTED"
-    credits = sum(int(e.get("cost") or 0) for e in out.get("requests", []) if e.get("endpoint") == "event_odds")
-    a.update({"status": status, "credits": credits, "checks": {k: v["pass"] for k, v in out["checks"].items()},
-              "requests": [{k: e.get(k) for k in ("endpoint", "status", "cost", "markets_returned", "response_sha256",
-                                                  "received_at")} for e in out.get("requests", [])]})
+    reqs = out.get("requests") or []
+    credits = sum(int(e.get("cost") or 0) for e in reqs)
+    a = {"attempted_at": now.isoformat(), "status": out["status"], "certification_id": out.get("certification_id"),
+         "event_id": out.get("event_id"), "canonical_game_id": out.get("canonical_game_id"), "credits": credits,
+         "candidates": out.get("candidates"), "discovery": out.get("discovery"), "ranking": out.get("ranking"),
+         "odds_events": out.get("odds_events"), "requests": reqs, "error": out.get("error"),
+         "checks": {k: v["pass"] for k, v in (out.get("checks") or {}).items()},
+         "validation_receipt": out.get("validation_receipt")}
     OS.append_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"), [a])
-    if status == "PASS":
-        OS.write_once(ctx.ops("markers", "QUOTE_INTEGRATION_VALIDATED.json"),
-                      {"QUOTE_INTEGRATION_VALIDATED": True, **{k: out[k] for k in ("validated_at", "event_id",
-                       "canonical_game_id", "feed_version", "checks")}, "credits": credits})
-    tick["quote_validation"] = {k: a[k] for k in ("status", "event_id", "credits")}
-    return status
+    if out["status"] == "PASS":
+        rec = QC.certify(ctx.ops("markers"), {k: out[k] for k in ("status", "validated_at", "certification_id", "event_id",
+                                                                  "canonical_game_id", "feed_version", "validation_receipt",
+                                                                  *QR.CERT_CHECKS)} | {"credits": credits})
+        Path(ctx.odds_record).parent.mkdir(parents=True, exist_ok=True)
+        Path(ctx.odds_record).write_text(json.dumps({**rec, "checks": out["checks"]}, indent=1, default=str))
+    tick["quote_validation"] = {k: a[k] for k in ("status", "event_id", "credits", "candidates")}
+    return out["status"]
+
+
+def check_material_failure(ctx: Ctx, session: OA.Session | None, now) -> dict | None:
+    """A material provider failure in this Odds API session (schema / credential) closes the certification."""
+    if session is None:
+        return None
+    inv = QC.check_session(ctx.ops("markers"), session.entries, now)
+    if inv:
+        close_run_gate(ctx, inv)
+    return inv
+
+
+def close_run_gate(ctx: Ctx, inv: dict) -> None:
+    """The run gate record (prod/odds/integration_validation.json, read by prod.run) follows the certification."""
+    rp = Path(ctx.odds_record)
+    if rp.exists():
+        r = json.loads(rp.read_text())
+        rp.write_text(json.dumps({**r, "status": "INVALIDATED", "invalidation": inv}, indent=1, default=str))
+
+
+def record_tick_observations(ctx: Ctx, tdir: Path, run_dir: str | None, paths: list[Path], games: dict, tick: dict) -> int:
+    """The official tick's quote captures as Board observations (prod.quote_obs): every row of the run's normalized,
+    matched, freshness-checked quotes, per event. games: event id -> (game id, ET slate date)."""
+    qn = Path(run_dir) / "quotes_normalized.csv" if run_dir else None
+    rows = pd.read_csv(qn) if qn is not None and qn.exists() else pd.DataFrame(columns=QO.KEEP)
+    n = 0
+    for p in paths:
+        doc = json.loads(Path(p).read_text())
+        eid = str((doc.get("events") or [{}])[0].get("id"))
+        if eid not in games:
+            continue
+        gid, day = games[eid]
+        part = rows[rows["provider_event_id"].astype(str) == eid] if len(rows) else rows
+        QO.record(ctx.ops_root, day, gid, eid, doc["collector_received_at"], part, "OFFICIAL_TICK",
+                  {"tick_id": tick["tick_id"], "collection": Path(p).name, **OF.collection_receipt(p)})
+        n += 1
+    return n
 
 
 def step_quotes(ctx: Ctx, session: OA.Session, due_events: list[tuple], tick: dict) -> list[Path]:
-    """ONE quote snapshot per due event at the decision time (documented NCAAB base keys; the existing per-stage credit
-    and request budgets; a validation fetch of the same event within 10 min is reused, not re-bought)."""
+    """ONE quote snapshot per due event at the decision time: market discovery, then the advertised subset of the 12
+    production markets (odds_feed.collect); the existing per-stage credit and request budgets; a fetch of the same
+    event within 10 min (e.g. the certification's) is reused, not re-bought."""
     paths, snaps = [], []
     for i, (gid, eid) in enumerate(due_events):
         try:
@@ -511,14 +559,9 @@ def step_quotes(ctx: Ctx, session: OA.Session, due_events: list[tuple], tick: di
         except (OA.OddsProviderFailure, OA.OddsGuardViolation) as e:
             snaps.append({"event_id": eid, "game_id": gid, "status": "FAILED", "error": str(e)[:200]})
             continue
-        ent = [x for x in session.entries if x.get("endpoint") == "event_odds" and x.get("params", {}).get("eventId") == eid][-1]
         paths += got
-        body = (json.loads(got[-1].read_text()).get("events") or [{}])[0]
-        books = body.get("bookmakers") or []
-        snaps.append({"event_id": eid, "game_id": gid, "status": ent["status"], "received_at": ent.get("received_at"),
-                      "response_sha256": ent.get("response_sha256"), "credits": int(ent.get("cost") or 0),
-                      "markets_returned": len({m.get("key") for b in books for m in b.get("markets") or []}),
-                      "bookmakers": len(books), "collection": paths[-1].name})
+        rc = OF.collection_receipt(got[-1])
+        snaps.append({"event_id": eid, "game_id": gid, **rc, "collection": got[-1].name})
     for s in snaps:
         s["tick_id"] = tick["tick_id"]
     OS.append_jsonl(ctx.ops("registry", "quote_snapshots.jsonl"), snaps)
@@ -651,10 +694,13 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                             key=lambda x: (order.index(x[0]), x[1]))
         tick["events_matched_to_due_games"] = len(due_events)
         if due_events and validation_eligible(vstate, ctx):
-            step_validate(ctx, session, due_events[0][1], due_events[0][0], tick)
+            step_validate(ctx, st, tick, quota_remaining=session.quota_remaining)
             vstate = _validation_state(ctx, ctx.now())
         if vstate["passed"] and due_events:
             paths = step_quotes(ctx, session, due_events, tick)
+            inv = check_material_failure(ctx, session, ctx.now())
+            if inv:
+                tick["certification_invalidated"] = inv
         elif due_events:
             tick["quote_snapshots"] = {"skipped": "QUOTE_INTEGRATION_NOT_VALIDATED" if not vstate["failed"]
                                        else "QUOTE_INTEGRATION_VALIDATION_FAILED (architect review)"}
@@ -678,6 +724,11 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                  odds_cache_root=ctx.cache_raw, odds_collections=None, odds_ledger=ctx.odds_ledger,
                  odds_record=ctx.odds_record, side_monitor_path=tdir / "side_monitor.jsonl")
     banks = s.get("banks", {})
+    if paths:
+        days = {r.canonical_game_id: _utc(r.scheduled_tip_utc).tz_convert("America/New_York").date().isoformat()
+                for r in due.itertuples(index=False)}
+        tick["quote_observations"] = record_tick_observations(
+            ctx, tdir, s.get("run_dir"), paths, {e: (g, days[g]) for g, e in due_events if g in days}, tick)
     ev = scoring_evidence(ctx, tdir, s, timing, p["schedule"]) if s.get("predictions") else {}
     led = pd.DataFrame()
     if (tdir / "projections.parquet").exists():
@@ -982,7 +1033,20 @@ def main(argv=None) -> None:
                     help="architect action, no tick: record ONE re-validation authorization after a recorded FAIL "
                          "(the next scheduled tick validates); needs --fix-commit")
     ap.add_argument("--fix-commit", default="", help="the commit that fixes the recorded FAIL")
+    ap.add_argument("--invalidate-certification", metavar="REASON", choices=QC.MATERIAL_REASONS,
+                    help="architect action, no tick: close the quote-integration certification after a MATERIAL event "
+                         "(the next scheduled scoring tick re-certifies); needs --detail")
+    ap.add_argument("--detail", default="", help="what material event closes the certification")
     a = ap.parse_args(argv)
+    if a.invalidate_certification is not None:
+        if not a.detail.strip():
+            raise SystemExit("--invalidate-certification needs --detail")
+        c = Ctx(ops_root=a.ops_root)
+        inv = QC.invalidate(c.ops("markers"), a.invalidate_certification, a.detail, c.now())
+        if inv:
+            close_run_gate(c, inv)
+        print(json.dumps(inv, indent=1, default=str))
+        return
     if a.authorize_revalidation is not None:
         print(json.dumps(authorize_revalidation(Ctx(ops_root=a.ops_root), a.authorize_revalidation, a.fix_commit),
                          indent=1, default=str))

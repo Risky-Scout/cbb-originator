@@ -1,7 +1,9 @@
 """2026-27 NCAAB player-prop quote feed (The Odds API v4) around the documented event-odds endpoint.
 
     listing    GET events (0 credits)  -> which 2026-27 events are listed, with provider event ids
-    collect    GET events/{id}/odds    -> one load_collected()-format file per event (data/prod/odds/collections)
+    discover   GET events/{id}/markets (1 credit) -> which of the 12 production prop markets are advertised
+    collect    discover, then GET events/{id}/odds for the advertised subset only (none advertised: no odds call)
+               -> one load_collected()-format file per event (data/prod/odds/collections)
     coverage   precise operational quote states for a slate (replaces the retired QUOTE_COVERAGE_UNVERIFIED):
 
       game   ODDS_EVENT_NOT_YET_LISTED          no listed event matches the game (or no listing covers its tip)
@@ -32,7 +34,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import config as PC, matching as MT, odds_acquire as OA, quotes as QT
+from cbb_platform.prod import config as PC, matching as MT, odds_acquire as OA, quote_cert as QC, quotes as QT
 
 PROP_STATS = set(QT.KEY_TO_STAT.values())
 EVENT_COLS = ["provider_event_id", "provider_home_team", "provider_away_team", "provider_commence_time"]
@@ -95,24 +97,104 @@ def match_events(events: pd.DataFrame, slate: pd.DataFrame, tidx: dict) -> pd.Da
 
 
 # ============================================================================ collection (paid)
+NO_SUPPORTED = "NO_SUPPORTED_PLAYER_PROP_MARKETS"
+DISCOVERED = "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"
+
+
+def _brief(e: dict | None) -> dict | None:
+    """Ledger entry -> the request receipt carried by a collection file (quota headers included; never the body)."""
+    if e is None:
+        return None
+    return {k: e.get(k) for k in ("endpoint", "status", "params", "requested_at", "received_at", "http_status", "cost",
+                                  "quota_remaining", "quota_used", "markets_returned", "response_sha256", "cache_path",
+                                  "estimated_cost")}
+
+
+def advertised(body: dict) -> dict:
+    """An event-markets payload -> the production markets advertised: SUPPORTED_FOR_EVENT = advertised keys INTERSECT
+    quotes.REQUEST_MARKETS (production order), the bookmakers advertising at least one of them, and every other key."""
+    keys, books = set(), {}
+    for bk in body.get("bookmakers") or []:
+        ks = {m.get("key") for m in bk.get("markets") or [] if isinstance(m.get("key"), str)}
+        keys |= ks
+        hit = sorted(ks & set(QT.REQUEST_MARKETS))
+        if hit:
+            books[str(bk.get("key") or "").strip().lower()] = hit
+    supported = [m for m in QT.REQUEST_MARKETS if m in keys]
+    return {"supported_markets": supported, "supported_market_count": len(supported),
+            "bookmakers_advertising": len(books), "bookmaker_markets": dict(sorted(books.items())),
+            "other_market_keys": sorted(keys - set(QT.REQUEST_MARKETS)),
+            "status": DISCOVERED if supported else NO_SUPPORTED}
+
+
+def discover(session: OA.Session, event_id: str) -> dict:
+    """GET events/{id}/markets (1 credit; a recent cached answer is reused) -> advertised() + the request receipt."""
+    params = {"eventId": event_id, "regions": PC.ODDS_REGIONS, "dateFormat": "iso"}
+    e = session.get("event_markets", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
+                    purpose="player-prop market discovery (1 credit)")
+    return {**advertised(e["body"]), "event_id": event_id, "body": e["body"], "request": _brief(e)}
+
+
 def collect(session: OA.Session, event_ids, out_dir: Path | None = None, markets=QT.REQUEST_MARKETS,
-            label: str = "LIVE The Odds API event odds (2026-27 NCAAB)") -> list[Path]:
-    """One event-odds request per event (documented NCAAB base keys, region us). Writes one collection file per event
-    carrying the payload's own received_at. A recent cached payload (ODDS_EVENT_ODDS_MAX_AGE_MINUTES) is reused."""
+            label: str = "LIVE The Odds API event odds (2026-27 NCAAB)", discovered: dict | None = None) -> list[Path]:
+    """Per event: market discovery FIRST (events/{id}/markets), then ONE event-odds request for exactly the advertised
+    subset of the production markets (never a key discovery did not show). An event advertising none of them gets NO
+    event-odds request: its collection file carries the discovery receipt, status NO_SUPPORTED_PLAYER_PROP_MARKETS and
+    no bookmakers (it normalizes to zero quotes). One collection file per event, stamped with the instant its quote
+    evidence was received. Recent cached payloads (ODDS_EVENT_ODDS_MAX_AGE_MINUTES) are reused, never re-bought.
+    `discovered`: event id -> a discover() result already made in this session (not re-requested)."""
     out = Path(out_dir or PC.ODDS_COLLECTIONS)
     out.mkdir(parents=True, exist_ok=True)
     paths = []
     for eid in event_ids:
-        params = {"eventId": eid, "regions": PC.ODDS_REGIONS, "markets": ",".join(markets), "oddsFormat": "american",
-                  "dateFormat": "iso", "includeLinks": "true", "includeSids": "true"}
-        e = session.get("event_odds", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
-                        purpose="player props")
-        doc = {"label": label, "provider": QT.PROVIDER, "collector_received_at": e["received_at"],
-               "request_sha256": e.get("response_sha256"), "events": [{**e["body"], "collector_received_at": e["received_at"]}]}
-        p = out / f"{eid}_{_utc(e['received_at']).strftime('%Y%m%dT%H%M%S%fZ')}.json"
+        d = (discovered or {}).get(eid) or discover(session, eid)
+        want = [m for m in markets if m in d["supported_markets"]]
+        disc = {k: d[k] for k in ("status", "supported_markets", "supported_market_count", "bookmakers_advertising",
+                                  "bookmaker_markets", "other_market_keys")}
+        disc["requested_markets"] = want
+        if not want:
+            disc["status"] = NO_SUPPORTED
+            rx = d["request"]["received_at"]
+            ev = {k: d["body"].get(k) for k in ("id", "sport_key", "sport_title", "commence_time", "home_team", "away_team")}
+            doc = {"label": label, "provider": QT.PROVIDER, "collector_received_at": rx,
+                   "request_sha256": None, "market_discovery": disc,
+                   "requests": {"event_markets": d["request"], "event_odds": None},
+                   "events": [{**ev, "bookmakers": [], "collector_received_at": rx}]}
+        else:
+            params = {"eventId": eid, "regions": PC.ODDS_REGIONS, "markets": ",".join(want), "oddsFormat": "american",
+                      "dateFormat": "iso", "includeLinks": "true", "includeSids": "true"}
+            e = session.get("event_odds", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
+                            purpose="player props")
+            rx = e["received_at"]
+            doc = {"label": label, "provider": QT.PROVIDER, "collector_received_at": rx,
+                   "request_sha256": e.get("response_sha256"), "market_discovery": disc,
+                   "requests": {"event_markets": d["request"], "event_odds": _brief(e)},
+                   "events": [{**e["body"], "collector_received_at": rx}]}
+        p = out / f"{eid}_{_utc(rx).strftime('%Y%m%dT%H%M%S%fZ')}.json"
         p.write_text(json.dumps(doc, indent=1, default=str))
         paths.append(p)
     return paths
+
+
+def collection_receipt(path: Path) -> dict:
+    """What one collection file cost and showed: discovery status, credits of both requests, quota headers."""
+    doc = json.loads(Path(path).read_text())
+    rq = doc.get("requests") or {}
+    em, eo = rq.get("event_markets"), rq.get("event_odds")
+    books = (doc.get("events") or [{}])[0].get("bookmakers") or []
+    last = eo or em or {}
+    return {"discovery_status": (doc.get("market_discovery") or {}).get("status"),
+            "supported_markets": (doc.get("market_discovery") or {}).get("supported_markets"),
+            "requested_markets": (doc.get("market_discovery") or {}).get("requested_markets"),
+            "markets_credits": int((em or {}).get("cost") or 0), "odds_credits": int((eo or {}).get("cost") or 0),
+            "credits": int((em or {}).get("cost") or 0) + int((eo or {}).get("cost") or 0),
+            "markets_status": (em or {}).get("status"), "odds_status": (eo or {}).get("status"),
+            "status": last.get("status"), "received_at": doc.get("collector_received_at"),
+            "response_sha256": (eo or {}).get("response_sha256"),
+            "markets_response_sha256": (em or {}).get("response_sha256"),
+            "quota_remaining": last.get("quota_remaining"), "quota_used": last.get("quota_used"),
+            "markets_returned": len({m.get("key") for b in books for m in b.get("markets") or []}),
+            "bookmakers": len(books)}
 
 
 def collections(as_of, root: Path | None = None) -> list[Path]:
@@ -208,6 +290,8 @@ def integration_validated(record: Path, aso) -> dict | None:
     if not p.exists():
         return None
     r = json.loads(p.read_text())
+    if r.get("integration_fingerprint") and r["integration_fingerprint"] != QC.fingerprint():
+        return None                                   # certified by a materially different integration
     return r if r.get("status") == "PASS" and _utc(r["validated_at"]) <= _utc(aso) else None
 
 

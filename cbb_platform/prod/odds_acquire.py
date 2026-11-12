@@ -1,12 +1,15 @@
 """PRODUCTION-ONLY The Odds API acquisition for 2026-27 NCAAB player props. Never research, never historical.
 
 Provider support for NCAAB player props is DOCUMENTED (sport `basketball_ncaab`; props one event at a time through
-/v4/sports/basketball_ncaab/events/{eventId}/odds); nothing here spends credits to discover it. Two endpoints only:
+/v4/sports/basketball_ncaab/events/{eventId}/odds). Three endpoints only:
 
     events       GET /v4/sports/basketball_ncaab/events                   0 credits (documented)
                  params: dateFormat=iso, commenceTimeFrom, commenceTimeTo (both required, inside 2026-08-01..2027-07-31)
+    event_markets GET /v4/sports/basketball_ncaab/events/{eventId}/markets 1 credit (documented)
+                 params: eventId, regions=us, dateFormat=iso, [bookmakers]: the market keys each bookmaker currently
+                 advertises for the event. ALWAYS called before event_odds (odds_feed.collect); same event guards.
     event_odds   GET /v4/sports/basketball_ncaab/events/{eventId}/odds    cost = markets returned x regions (documented)
-                 params: eventId, regions=us, markets (documented NCAAB keys only, quotes.REQUEST_MARKETS),
+                 params: eventId, regions=us, markets (the advertised subset of quotes.REQUEST_MARKETS only),
                  oddsFormat=american, dateFormat=iso, includeLinks=true, includeSids=true, [bookmakers]
                  eventId must be in an events listing already acquired (inside the season) and the call must fall
                  inside ODDS_PROP_WINDOW_HOURS before that listed commence time (props are posted near tip);
@@ -38,13 +41,17 @@ from cbb_platform.prod import config as PC, quotes as QT
 PROVIDER = QT.PROVIDER
 BASE = "https://api.the-odds-api.com"
 SPORT = QT.SPORT_KEY
-PATHS = {"events": f"/v4/sports/{SPORT}/events", "event_odds": f"/v4/sports/{SPORT}/events/{{eventId}}/odds"}
+PATHS = {"events": f"/v4/sports/{SPORT}/events", "event_markets": f"/v4/sports/{SPORT}/events/{{eventId}}/markets",
+         "event_odds": f"/v4/sports/{SPORT}/events/{{eventId}}/odds"}
+EVENT_ENDPOINTS = ("event_markets", "event_odds")              # per-event endpoints: listed, pregame, inside the window
 ALLOWED = {
     "events": {"dateFormat", "commenceTimeFrom", "commenceTimeTo"},
+    "event_markets": {"eventId", "regions", "dateFormat", "bookmakers"},
     "event_odds": {"eventId", "regions", "markets", "oddsFormat", "dateFormat", "includeLinks", "includeSids",
                    "bookmakers"},
 }
 REQUIRED = {"events": {"dateFormat", "commenceTimeFrom", "commenceTimeTo"},
+            "event_markets": {"eventId", "regions", "dateFormat"},
             "event_odds": {"eventId", "regions", "markets", "oddsFormat", "dateFormat"}}
 FIXED = {"dateFormat": "iso", "regions": PC.ODDS_REGIONS, "oddsFormat": "american", "includeLinks": "true",
          "includeSids": "true"}
@@ -86,7 +93,9 @@ def _markets(v) -> list[str]:
 
 
 def estimated_cost(endpoint: str, params: dict) -> int:
-    """Documented upper bound: unique markets requested x regions (events listing: 0)."""
+    """Documented upper bound: unique markets requested x regions (events listing: 0; event markets: 1)."""
+    if endpoint == "event_markets":
+        return 1
     if endpoint != "event_odds":
         return 0
     return len(set(_markets(params.get("markets", "")))) * len(_markets(params.get("regions", "")))
@@ -116,10 +125,11 @@ def check_request(endpoint: str, params: dict, event_commence=None, now=None) ->
         if not (a <= lo <= hi <= b):
             raise OddsGuardViolation(f"ODDS_GUARD: commence window {lo.isoformat()}..{hi.isoformat()} is outside 2026-27")
         return
-    mk = _markets(params["markets"])
-    bad = [m for m in mk if m not in QT.REQUEST_MARKETS]
-    if not mk or bad or len(mk) != len(set(mk)):
-        raise OddsGuardViolation(f"ODDS_GUARD: markets must be distinct documented NCAAB player-prop keys; bad={bad}")
+    if endpoint == "event_odds":
+        mk = _markets(params["markets"])
+        bad = [m for m in mk if m not in QT.REQUEST_MARKETS]
+        if not mk or bad or len(mk) != len(set(mk)):
+            raise OddsGuardViolation(f"ODDS_GUARD: markets must be distinct documented NCAAB player-prop keys; bad={bad}")
     eid = str(params["eventId"])
     if not eid or "/" in eid or "?" in eid:
         raise OddsGuardViolation("ODDS_GUARD: malformed eventId")
@@ -142,16 +152,21 @@ def check_response(endpoint: str, body, params: dict) -> None:
     evs = body if endpoint == "events" else [body]
     if endpoint == "events" and not isinstance(body, list):
         raise OddsGuardViolation("ODDS_GUARD: events response is not a list")
-    if endpoint == "event_odds" and not isinstance(body, dict):
-        raise OddsGuardViolation("ODDS_GUARD: event odds response is not an object")
+    if endpoint in EVENT_ENDPOINTS and not isinstance(body, dict):
+        raise OddsGuardViolation(f"ODDS_GUARD: {endpoint} response is not an object")
     for e in evs:
         if e.get("sport_key") not in (None, SPORT):
             raise OddsGuardViolation(f"ODDS_GUARD: response sport_key {e.get('sport_key')!r}")
         ct = e.get("commence_time")
         if ct and not (a <= _utc(ct) <= b):
             raise OddsGuardViolation(f"ODDS_GUARD: response event commences {ct}, outside 2026-27")
-    if endpoint == "event_odds" and str(body.get("id")) != str(params["eventId"]):
-        raise OddsGuardViolation("ODDS_GUARD: event odds response is for a different event")
+    if endpoint in EVENT_ENDPOINTS and str(body.get("id")) != str(params["eventId"]):
+        raise OddsGuardViolation(f"ODDS_GUARD: {endpoint} response is for a different event")
+    if endpoint in EVENT_ENDPOINTS:
+        for bk in body.get("bookmakers") or []:
+            if not isinstance(bk, dict) or not isinstance(bk.get("markets") or [], list) or \
+                    any(not isinstance(m, dict) or not isinstance(m.get("key"), str) for m in bk.get("markets") or []):
+                raise OddsGuardViolation(f"ODDS_GUARD: {endpoint} response has a malformed bookmaker / market entry")
 
 
 # ============================================================================ cache

@@ -108,7 +108,7 @@ def schedule_spec() -> dict:
     return {"timezone": TZ, "morning": {"at": MORNING_TIME_ET, "steps": [
         "prior-day settlement (shadow tick: CBBD sync of final games, settlement)", "prior-day Grades export",
         "daily walk-forward update (existing gates; last-known-good retained on failure)", "INITIAL forecast snapshot",
-        "Distributions export", "Boards export (only when priced receipts exist)"]},
+        "Distributions export", "Boards export (forecast universe; market consensus when quotes exist)"]},
         "rotowire_refresh": {"at": list(ROTOWIRE_REFRESH_TIMES_ET), "steps": [
             "RotoWire availability refresh (BLOCKED_NO_KEY without ROTOWIRE_API_KEY)",
             "re-forecast only games with an availability change and a future cutoff", "PMFs persisted",
@@ -498,6 +498,8 @@ def board_status(export_status: str | None, quote_refresh: dict, real_quotes: bo
         return None
     if export_status == "WRITTEN":
         return "WRITTEN"
+    if export_status.startswith("ABORTED"):
+        return export_status                       # a defect (e.g. ABORTED_DUPLICATE_BOARD_KEYS), never a quote cause
     if not real_quotes and str(quote_refresh.get("reason") or "").startswith("QUOTE_INTEGRATION_NOT_VALIDATED"):
         return "NONE_QUOTE_INTEGRATION_NOT_VALIDATED"
     return "NONE_NO_REAL_QUOTES" if not real_quotes else "NONE_NO_VALID_OFFER"
@@ -527,6 +529,10 @@ def receipt(h: dict) -> dict:
         warnings.append(f"WALK_FORWARD_{wf.get('DAILY_REFIT_STATUS')}")
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
+    bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}
+    valid_rows = bx.get("rows_with_valid_market")
+    market = None if board is None else ("VALID_MARKETS" if valid_rows else
+                                         board_status("NONE", qr, real))      # why no market field is populated
     if fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"):
         warnings.append(f"FORECAST_{fc.get('status')}")
     if last and last.get("auth") not in (None, "PASS"):
@@ -544,6 +550,8 @@ def receipt(h: dict) -> dict:
             "ROTOWIRE_NEWS_OVERLAP": last.get("news_continuity"),
             "QUOTE_REFRESH_STATUS": qr.get("status"),
             "REAL_QUOTES": real, "BOARD_STATUS": board, "BOARD_EXPORT_STATUS": st("boards"),
+            "BOARD_ROWS": bx.get("rows"), "BOARD_ROWS_WITH_VALID_MARKET": valid_rows,
+            "BOARD_MARKET_STATUS": market,
             "MODEL_FALLBACK_USED": bool(wf) and wf.get("DAILY_MODEL_PROMOTION") != "PROMOTED"
                                    and wf.get("DAILY_REFIT_STATUS") not in ("PASS", "NO_NEW_DATA"),
             "FALLBACK_REASON": (wf.get("note") or wf.get("reason") or wf.get("DAILY_REFIT_STATUS"))
@@ -666,7 +674,9 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
 
 
 def _brief(rep: dict) -> dict:
-    return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing")} if isinstance(v, dict) else v
+    return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing", "rewritten", "rows_with_valid_market",
+                                         "rows_with_no_valid_market", "unique_player_stat_keys", "duplicate_keys",
+                                         "GRADE_STATUS") if kk in v} if isinstance(v, dict) else v
             for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "predicted_games",
                                              "raw_quote_rows", "official_rows", "official_frozen_rows")}
 

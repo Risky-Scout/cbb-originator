@@ -132,18 +132,23 @@ def test_boards_sheets_columns_membership_thresholds_and_order(full):
     tree, rep = full
     wb = _book(rep, "boards")
     assert list(wb) == ["Full Board", "60 Percent Plus", "65 Percent Plus"]
+    last = EX._col(len(EX.BOARD_COLS) - 1)
     for s in wb.values():
         assert s["rows"][0] == list(EX.BOARD_COLS)
-        assert s["freeze"] == "A2" and s["filters"] == [s["filters"][0]] and s["filters"][0].startswith("A1:P")
-        assert all(f"{c}1" in s["bold"] for c in "ABCDEFGHIJKLMNOP")
-    full_rows = wb["Full Board"]["rows"][1:]
+        assert s["freeze"] == "A2" and s["filters"] == [s["filters"][0]] and s["filters"][0].startswith(f"A1:{last}")
+        assert all(f"{EX._col(i)}1" in s["bold"] for i in range(len(EX.BOARD_COLS)))
+    board = wb["Full Board"]["rows"][1:]                        # the forecast universe: one row per persisted PMF key
+    col = {c: i for i, c in enumerate(EX.BOARD_COLS)}
+    assert sorted((r[col["Canonical Game ID"]], r[col["Canonical Player ID"]], r[col["Stat"]]) for r in board) == \
+        [("G1", "Amy", "PRA"), ("G1", "Zed", "PTS"), ("G2", "Bo", "AST")]
+    assert {r[col["Market Status"]] for r in board} == {"NO_VALID_MARKET"}   # no quote observation: blank market
+    assert rep["boards"]["duplicate_keys"] == 0 and rep["boards"]["unique_player_stat_keys"] == 3
+    full_rows = rep["official_selection_rows"]                  # the official best-offer selection (drives Grades)
     assert len(full_rows) == 6                                  # one official best offer per GAME x PLAYER x PROP
-    p60 = {(r[2], r[3], r[7], r[11]) for r in wb["60 Percent Plus"]["rows"][1:]}
+    p60 = {(r[2], r[3], r[7], r[11]) for r in full_rows if r[8] >= 0.60}
     assert ("Amy", "REB", "OVER", "betmgm") in p60 and ("Amy", "REB", "OVER", "draftkings") not in p60
-    assert all(r[8] >= 0.60 for r in wb["60 Percent Plus"]["rows"][1:])
-    p65 = {(r[2], r[3], r[7]) for r in wb["65 Percent Plus"]["rows"][1:]}
+    p65 = {(r[2], r[3], r[7]) for r in full_rows if r[8] >= 0.65}
     assert ("Amy", "PRA", "OVER") in p65 and ("Amy", "PRA", "UNDER") not in p65
-    assert len(wb["65 Percent Plus"]["rows"]) - 1 == sum(1 for r in full_rows if r[8] >= 0.65)
     # order: tip (G1 00:00Z before G2 02:00Z), GAME, PLAYER, PROP, LINE, PICK, BOOK
     keys = [(r[0], r[2], r[3], r[4], r[7], r[11]) for r in full_rows]
     assert [k[0].startswith("Away G1") for k in keys] == [True] * 3 + [False] * 3
@@ -155,8 +160,7 @@ def test_boards_sheets_columns_membership_thresholds_and_order(full):
     assert z[12] == 120 and isinstance(z[12], int) and z[13] == pytest.approx(0.01)
     assert z[14] == "TIP_MINUS_1H" and z[15] == "2026-11-04T22:55:00Z"
     fm = wb["Full Board"]["styles"]
-    assert fm["I2"] == "0.0%" and fm["E2"] == "0.0" and fm["F2"] == "0.00" and fm["G2"] == "0.00" and fm["N2"] == "0.000"
-    assert fm["M2"] == "0"
+    assert fm[f"{EX._col(col['Model Projection'])}2"] == "0.00"
     assert all(w <= 40 for w in wb["Full Board"]["widths"].values())
 
 
@@ -190,7 +194,8 @@ def test_grades_sheets_columns_results_and_profit(full):
     """10 sheets, 11 columns, 12 WIN +odds, 13 WIN -odds, 14 LOSS, 15 PUSH, 16 VOID, 17 PENDING, 18 invalid odds."""
     tree, rep = full
     wb = _book(rep, "grades")
-    assert list(wb) == ["Graded Bets", "Performance Summary"]
+    assert list(wb) == ["Graded Bets", "Performance Summary", "Status"]
+    assert wb["Status"]["rows"][0] == list(EX.GRADE_STATUS_COLS)
     g = wb["Graded Bets"]["rows"]
     assert g[0] == list(EX.GRADE_COLS)
     by = {(r[2], r[3], r[5], r[9]): r for r in g[1:]}
@@ -325,14 +330,14 @@ def test_export_date_uses_america_new_york(tmp_path):
                                      aso="2026-11-05T02:00:00+00:00", recv="2026-11-05T01:59:00+00:00")],
                       [_game("GL", "2026-11-05T03:30:00+00:00")])
     rep = _run(tree, DATE)
-    assert rep["boards"]["status"] == "WRITTEN" and rep["boards"]["Full Board"] == 1
-    assert Path(rep["boards"]["path"]).name == "CBB_Boards_11_04_2026.xlsx"
-    assert Path(rep["boards"]["path"]).parent == tree["out_root"] / "2026-11-04"
+    assert rep["official_rows"] == 1 and rep["grades"]["status"] == "WRITTEN"
+    assert Path(rep["grades"]["path"]).name == "CBB_Grades_11_04_2026.xlsx"
+    assert Path(rep["grades"]["path"]).parent == tree["out_root"] / "2026-11-04"
     assert EX.file_names("2026-11-04") == {"boards": "CBB_Boards_11_04_2026.xlsx",
                                            "distributions": "CBB_Distributions_11_04_2026.xlsx",
                                            "grades": "CBB_Grades_11_04_2026.xlsx"}
     nxt = _run(tree, "2026-11-05")
-    assert nxt["predicted_games"] == 0 and nxt["boards"]["status"] == "MISSING_EVIDENCE"
+    assert nxt["predicted_games"] == 0 and nxt["boards"]["status"] == "MISSING_EVIDENCE" and "official_rows" not in nxt
     assert EX.slate_date_of("2026-11-05T04:59:00Z") == "2026-11-04" and EX.slate_date_of("2026-11-05T05:00:00Z") == "2026-11-05"
 
 
@@ -343,7 +348,7 @@ def test_post_tip_receipts_excluded(tmp_path):
                                      recv="2026-11-05T00:00:00+00:00")],
                       [_game("G1", "2026-11-05T00:00:00+00:00")])
     rep = _run(tree)
-    assert rep["no_post_tip_leakage"]["post_tip_excluded"] == 1 and rep["boards"]["Full Board"] == 1
+    assert rep["no_post_tip_leakage"]["post_tip_excluded"] == 1 and rep["official_rows"] == 1
 
 
 # ---------------------------------------------------------------- 32 idempotence + immutability
@@ -409,8 +414,9 @@ def test_export_no_network_no_refit_no_artifact_change(full, monkeypatch, tmp_pa
 def test_missing_evidence_writes_nothing_and_decided_matches_tick(tmp_path):
     tree = build_tree(tmp_path, [], [_game("G1", "2026-11-05T00:00:00+00:00")])
     rep = _run(tree)
-    assert all(rep[k]["status"] == "MISSING_EVIDENCE" for k in ("boards", "distributions", "grades"))
-    assert not (tree["out_root"] / DATE).exists() or not list((tree["out_root"] / DATE).glob("*.xlsx"))
+    assert all(rep[k]["status"] == "MISSING_EVIDENCE" for k in ("boards", "distributions"))
+    assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"
+    assert [p.name for p in (tree["out_root"] / DATE).glob("*.xlsx")] == ["CBB_Grades_11_04_2026.xlsx"]
     from cbb_platform.prod import shadow_tick as TK
     assert EX.DECIDED == TK.DECIDED
     assert EX.main(["daily", "--date", DATE, "--ops-root", str(tree["ops_root"]), "--runs-root", str(tree["runs_root"]),

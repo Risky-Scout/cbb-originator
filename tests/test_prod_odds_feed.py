@@ -111,8 +111,10 @@ def test_acquisition_budget_quota_headers_cache_and_no_credential_leak(tmp_path)
     e = OF.collect(s, ["evt-1"], tmp_path / "coll")
     led = OA.ledger(tmp_path / "odds.jsonl")
     last = led[-1]
-    assert last["status"] == "FETCHED" and last["cost"] == 2 and last["quota_remaining"] == 998
-    assert last["estimated_cost"] == 12 and last["markets_returned"] == 2 and s.credits_charged == 2
+    assert [x["endpoint"] for x in led[-2:]] == ["event_markets", "event_odds"]   # discovery first (1 credit)
+    assert led[-2]["cost"] == 1 and led[-2]["quota_remaining"] == 999
+    assert last["status"] == "FETCHED" and last["cost"] == 2 and last["quota_remaining"] == 997
+    assert last["estimated_cost"] == 2 and last["markets_returned"] == 2 and s.credits_charged == 3   # advertised only
     n = len(fake.calls)
     OF.collect(s, ["evt-1"], tmp_path / "coll")                     # within 10 min: cache hit, no call
     assert len(fake.calls) == n and OA.ledger(tmp_path / "odds.jsonl")[-1]["status"] == "CACHE_HIT"
