@@ -233,7 +233,10 @@ def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.D
 
 
 # ============================================================================ quote-integration certification
-CERT_MAX_DISCOVERY = 15          # market discovery (1 credit each) on at most this many candidate games per attempt
+CERT_DISCOVERY_BATCH_SIZE = 8    # market discovery (1 credit each) on at most this many candidates per region pass
+CERT_DISCOVERY_REGIONS = (PC.ODDS_REGIONS, "us2")   # `us` first; `us2` ONLY when `us` showed no supported market
+CERT_STRONG_MARKETS = 3          # early-stop discovery once a candidate advertises >= 3 supported markets
+CERT_STRONG_BOOKS = 2            #   ... on >= 2 bookmakers (stop rule only: weaker supported candidates stay selectable)
 CERT_MAX_ODDS_EVENTS = 2         # event-odds requests per attempt (the top-ranked event; one more if it returned none)
 CERT_CHECKS = ("GAME_MATCH", "PLAYER_MATCH", "STAT_MATCH", "LINE_VALIDATION", "PRICE_VALIDATION",
                "FRESHNESS_VALIDATION", "PMF_LOOKUP", "PRICING_VALIDATION", "RAW_EVIDENCE_PERSISTENCE")
@@ -327,17 +330,67 @@ def certification_checks(game: dict, src: dict, collection: Path, q: pd.DataFram
     return c
 
 
-def certify(ctx: SH.Ctx, st: dict, now=None, quota_remaining: int | None = None) -> dict:
-    """One certification attempt (shadow_tick.step_validate): market discovery on today's candidates, deterministic
-    ranking, then ONE event-odds request on the best-ranked event (one more only if it returned no prop rows); the
-    nine checks on its real quotes priced at the already-persisted PMF. Nothing is simulated or fitted. Returns the
-    attempt receipt (status PASS / FAIL / INCONCLUSIVE_*); the caller persists it."""
+def strong(d: dict) -> bool:
+    """Discovery is strong enough to stop scanning (never a quote-validity or model gate)."""
+    return d["supported_market_count"] >= CERT_STRONG_MARKETS and d["bookmakers_advertising"] >= CERT_STRONG_BOOKS
+
+
+def discovery_pass(session: OA.Session, batch: list[dict], region: str, rep: dict, found: dict) -> list[dict]:
+    """One region pass over the bounded candidate batch in its deterministic order (tip, game id): /markets per event,
+    stopping right after the first strong candidate. Returns the supported candidates discovered, ranked."""
+    for c in batch:
+        gid = c["game"]["canonical_game_id"]
+        try:
+            d = OF.discover(session, c["event_id"], region=region)
+        except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
+            rep["discovery"].append({"game_id": gid, "event_id": c["event_id"], "region": region, "status": "FAILED",
+                                     "error": str(e)[:200]})
+            continue
+        found[(region, c["event_id"])] = (c, d)
+        rep["discovery"].append({"game_id": gid, "event_id": c["event_id"], "region": region,
+                                 "tip": _utc(c["game"]["scheduled_tip_utc"]).isoformat(), "status": d["status"],
+                                 "supported_market_count": d["supported_market_count"],
+                                 "bookmakers_advertising": d["bookmakers_advertising"],
+                                 "supported_markets": d["supported_markets"]})
+        if strong(d):
+            rep["discovery_early_stop"] = {"region": region, "event_id": c["event_id"]}
+            break
+    return rank([r for r in rep["discovery"] if r["region"] == region and r["status"] != "FAILED"])
+
+
+def _accounting(rep: dict, session: OA.Session) -> dict:
+    """Structured discovery vs certification-attempt accounting (shadow_tick._validation_state reads these fields)."""
+    ent = session.entries
+    net = [e for e in ent if e.get("status") not in ("CACHE_HIT",) and not str(e.get("status") or "").startswith("REFUSED")]
+    mk = [e for e in net if e.get("endpoint") == "event_markets"]
+    n_odds = sum(1 for e in net if e.get("endpoint") == "event_odds")
+    counts = bool(rep.get("counts_toward_certification_limit"))
+    return {"discovery_run": bool(rep.get("discovery")), "discovery_only": not counts, "event_odds_request_count": n_odds,
+            "counts_toward_certification_limit": counts,
+            "us_market_discovery_calls": sum(1 for e in mk if (e.get("params") or {}).get("regions") == "us"),
+            "us2_market_discovery_calls": sum(1 for e in mk if (e.get("params") or {}).get("regions") == "us2"),
+            "supported_markets_found": sum(1 for r in rep.get("discovery") or [] if r.get("supported_market_count")),
+            "requests": _reqs(session)}
+
+
+def certify(ctx: SH.Ctx, st: dict, now=None, quota_remaining: int | None = None, progress: dict | None = None) -> dict:
+    """One certification invocation (shadow_tick.step_validate). DISCOVERY: today's candidates in deterministic order,
+    at most CERT_DISCOVERY_BATCH_SIZE /markets calls per region, `us` first and stopping at the first strong candidate;
+    `us2` only if `us` showed no supported market at all. The best discovered supported candidate (ranked: markets,
+    bookmakers, tip, game id) is then requested with ONE event-odds call in the SAME region for exactly its advertised
+    markets (one more only if it returned no prop rows); the nine checks on its real quotes priced at the
+    already-persisted PMF. Only an invocation that reaches event odds is a CERTIFICATION ATTEMPT
+    (counts_toward_certification_limit; marked in `progress` before the first event-odds call so a crash still counts);
+    discovery-only outcomes never consume the day's attempts. Nothing is simulated or fitted."""
     now = _utc(now or ctx.now())
+    progress = {} if progress is None else progress
     rid = "V" + now.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     rep = {"certification_id": rid, "attempted_at": now.isoformat(), "checks_required": list(CERT_CHECKS),
-           "integration_fingerprint": QC.fingerprint(), "discovery": [], "odds_events": []}
+           "integration_fingerprint": QC.fingerprint(), "discovery": [], "odds_events": [],
+           "counts_toward_certification_limit": False}
     session = SH._session(ctx, f"{rid}:certify")
     session.quota_remaining = quota_remaining          # known from the tick's live (free) listing, when there was one
+    done = lambda status, **kw: {**rep, "status": status, **kw, **_accounting(rep, session)}   # noqa: E731
     sl = SL.build(st["increment_db"], now, st["manifest"].get("schedule_as_of") or st["manifest"]["source_cutoff"],
                   PC.ODDS_PROP_WINDOW_HOURS)
     tidx = MT.team_index(SH.team_names(ctx, st), MT.odds_team_map())
@@ -347,43 +400,40 @@ def certify(ctx: SH.Ctx, st: dict, now=None, quota_remaining: int | None = None)
                     max_age_seconds=0 if quota_remaining is None else PC.ODDS_EVENTS_MAX_AGE_HOURS * 3600,
                     purpose="events listing (0 credits)")
     except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
-        return {**rep, "status": "ERROR", "error": f"events listing: {str(e)[:200]}", "requests": _reqs(session)}
+        return done("ERROR", error=f"events listing: {str(e)[:200]}")
     session.event_commence = OF.event_commence_resolver(ctx.cache_raw, now)
     cands = certification_candidates(ctx, st, now, sl, tidx)
     rep["candidates"] = len(cands)
     if not cands:
-        return {**rep, "status": "INCONCLUSIVE_NO_CANDIDATE_GAME", "requests": _reqs(session)}
-    found = {}
-    for c in cands[:CERT_MAX_DISCOVERY]:
-        try:
-            d = OF.discover(session, c["event_id"])
-        except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
-            rep["discovery"].append({"game_id": c["game"]["canonical_game_id"], "event_id": c["event_id"],
-                                     "status": "FAILED", "error": str(e)[:200]})
-            continue
-        found[c["event_id"]] = (c, d)
-        rep["discovery"].append({"game_id": c["game"]["canonical_game_id"], "event_id": c["event_id"],
-                                 "tip": _utc(c["game"]["scheduled_tip_utc"]).isoformat(), "status": d["status"],
-                                 "supported_market_count": d["supported_market_count"],
-                                 "bookmakers_advertising": d["bookmakers_advertising"],
-                                 "supported_markets": d["supported_markets"]})
-    rep["discovery_truncated"] = max(0, len(cands) - CERT_MAX_DISCOVERY)
-    ranked = rank([r for r in rep["discovery"] if r["status"] != "FAILED"])
+        return done("INCONCLUSIVE_NO_CANDIDATE_GAME")
+    batch = cands[:CERT_DISCOVERY_BATCH_SIZE]
+    rep["discovery_batch"] = len(batch)
+    rep["discovery_truncated"] = max(0, len(cands) - len(batch))
+    found: dict = {}
+    ranked: list[dict] = []
+    for region in CERT_DISCOVERY_REGIONS:
+        ranked = discovery_pass(session, batch, region, rep, found)
+        ours = [r for r in rep["discovery"] if r["region"] == region]
+        if ranked or all(r["status"] == "FAILED" for r in ours):
+            break                                        # a supported candidate, or the provider failed: no fallback
     rep["ranking"] = [r["event_id"] for r in ranked]
+    rep["ranking_region"] = ranked[0]["region"] if ranked else None
     if not ranked:
         failed = [r for r in rep["discovery"] if r["status"] == "FAILED"]
         if failed and len(failed) == len(rep["discovery"]):
-            return {**rep, "status": "ERROR", "error": f"market discovery failed: {failed[0]['error']}",
-                    "requests": _reqs(session)}
-        return {**rep, "status": "INCONCLUSIVE_" + OF.NO_SUPPORTED, "requests": _reqs(session)}
+            return done("ERROR", error=f"market discovery failed: {failed[0]['error']}")
+        return done("INCONCLUSIVE_" + OF.NO_SUPPORTED)
+    rep["selected_region"] = ranked[0]["region"]
     for r in ranked[:CERT_MAX_ODDS_EVENTS]:
-        c, d = found[r["event_id"]]
+        c, d = found[(r["region"], r["event_id"])]
+        rep["counts_toward_certification_limit"] = progress["counts_toward_certification_limit"] = True
         try:
             path = OF.collect(session, [r["event_id"]], ctx.collections, discovered={r["event_id"]: d})[-1]
         except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
-            rep["odds_events"].append({"event_id": r["event_id"], "status": "FAILED", "error": str(e)[:200]})
+            rep["odds_events"].append({"event_id": r["event_id"], "region": r["region"], "status": "FAILED",
+                                       "error": str(e)[:200]})
             continue
-        req = {"event_id": r["event_id"], "tier": "CERTIFICATION", **OF.collection_receipt(path)}
+        req = {"event_id": r["event_id"], "region": r["region"], "tier": "CERTIFICATION", **OF.collection_receipt(path)}
         summ, bodies, q = price_collection(c["game"], c["src"], path, sl, tidx, now, rid, req)
         props = int(q["stat"].notna().sum()) if len(q) else 0
         rep["odds_events"].append({**req, "collection": path.name, "prop_quotes": props})
@@ -396,15 +446,15 @@ def certify(ctx: SH.Ctx, st: dict, now=None, quota_remaining: int | None = None)
         q.to_csv(run_dir / "quotes_normalized.csv", index=False)
         (run_dir / "quote_side_receipts.jsonl").write_text("".join(json.dumps(x, sort_keys=True, default=str) + "\n"
                                                                    for x in bodies))
-        out = {**rep, "status": "PASS" if ok else "FAIL", "validated_at": now.isoformat(), "event_id": r["event_id"],
-               "canonical_game_id": c["game"]["canonical_game_id"], "feed_version": PC.ODDS_FEED_VERSION,
-               "collection": path.name, "pmf_source": {k: str(v) for k, v in c["src"].items()},
-               "checks": checks, **{k: ("PASS" if checks[k]["pass"] else "FAIL") for k in CERT_CHECKS},
-               "requests": _reqs(session), "validation_receipt": str(run_dir / "certification.json")}
+        out = done("PASS" if ok else "FAIL", validated_at=now.isoformat(), event_id=r["event_id"],
+                   canonical_game_id=c["game"]["canonical_game_id"], feed_version=PC.ODDS_FEED_VERSION,
+                   collection=path.name, pmf_source={k: str(v) for k, v in c["src"].items()}, checks=checks,
+                   **{k: ("PASS" if checks[k]["pass"] else "FAIL") for k in CERT_CHECKS},
+                   validation_receipt=str(run_dir / "certification.json"))
         (run_dir / "certification.json").write_text(json.dumps(out, indent=1, default=str))
         out["VALIDATION_RECEIPT_WRITTEN"] = (run_dir / "certification.json").exists()
         return out
-    return {**rep, "status": "INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED", "requests": _reqs(session)}
+    return done("INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED")
 
 
 def _reqs(session: OA.Session) -> list[dict]:

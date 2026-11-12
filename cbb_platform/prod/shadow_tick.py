@@ -47,8 +47,10 @@ TICK_VERSION = "cbb-prod-shadow-tick-1.0.0"
 DECIDED = ("PREDICTED", "EXCLUDED", "MISSED_PREDICTION_CUTOFF", "NOT_SCORED_AT_CUTOFF")
 NOT_PLAYED = ("canceled", "cancelled", "postponed")
 STAT_COLS = {"PTS": "points", "REB": "reb", "AST": "ast", "FG3M": "three_pm", "STL": "stl", "BLK": "blk", "TOV": "tov"}
-MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY = 3
-MIN_MINUTES_BETWEEN_INCONCLUSIVE = 90     # spread the day's inconclusive attempts over the slate (props post near tip)
+MAX_CERTIFICATION_ATTEMPTS_PER_DAY = 3      # REAL attempts only: certify() invocations that reached event odds
+MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY = MAX_CERTIFICATION_ATTEMPTS_PER_DAY      # former name
+MIN_MINUTES_BETWEEN_INCONCLUSIVE = 90     # spread the day's real inconclusive attempts over the slate (props post near tip)
+MIN_MINUTES_BETWEEN_EMPTY_DISCOVERY = 60  # discovery-only run with no supported market (or failed): no new scan before
 EVENTS_LOOKAHEAD_HOURS = 14 * 24          # routine free listing horizon (first real event discovery); 0 credits
 
 
@@ -437,12 +439,33 @@ def _validation_state(ctx: Ctx, now: pd.Timestamp) -> dict:
              and (cert["certification"] is None or _utc(a["attempted_at"]) > _utc(cert["certification"]["validated_at"]))]
     failed = any(since is None or _utc(a["attempted_at"]) > since for a in fails)
     day = now.tz_convert("America/New_York").date()
-    inc = [_utc(a["attempted_at"]) for a in att if a["status"] != "PASS" and a["status"] != "FAIL"
-           and _utc(a["attempted_at"]).tz_convert("America/New_York").date() == day]
-    return {"passed": passed, "failed": failed, "inconclusive_today": len(inc), "attempts": len(att),
+    today = [a for a in att if _utc(a["attempted_at"]).tz_convert("America/New_York").date() == day]
+    inc = [_utc(a["attempted_at"]) for a in today if a["status"] not in ("PASS", "FAIL") and counts_as_attempt(a)]
+    disc = [a for a in att if not counts_as_attempt(a) and a["status"] not in ("PASS", "FAIL")]
+    last = max(att, key=lambda a: _utc(a["attempted_at"]), default=None)
+    ld = max(disc, key=lambda a: _utc(a["attempted_at"]), default=None)
+    cooling = (last is not None and not counts_as_attempt(last) and last["status"] in EMPTY_DISCOVERY_STATUSES
+               and now - _utc(last["attempted_at"]) < pd.Timedelta(minutes=MIN_MINUTES_BETWEEN_EMPTY_DISCOVERY))
+    return {"passed": passed, "failed": failed, "inconclusive_today": len(inc), "certification_attempts_today": len(inc),
+            "discovery_only_runs_today": sum(1 for a in today if not counts_as_attempt(a)), "attempts": len(att),
             "last_inconclusive_at": max(inc).isoformat() if inc else None,
+            "last_discovery_at": ld["attempted_at"] if ld else None, "last_discovery_status": ld["status"] if ld else None,
+            "last_discovery_supported_markets_found": ld.get("supported_markets_found") if ld else None,
+            "last_discovery_event_odds_request_count": ld.get("event_odds_request_count") if ld else None,
+            "discovery_cooldown_active": bool(cooling),
             "certification_reason": cert["reason"], "integration_fingerprint": cert["fingerprint"],
             "fails_recorded": len(fails), "revalidation_authorized_at": since.isoformat() if since is not None else None}
+
+
+EMPTY_DISCOVERY_STATUSES = ("INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS", "ERROR")
+
+
+def counts_as_attempt(a: dict) -> bool:
+    """A REAL certification attempt reached event odds. Structured field when recorded; older records (before the
+    field existed) are judged by their own request log: any event_odds request = an attempt."""
+    if a.get("counts_toward_certification_limit") is not None:
+        return bool(a["counts_toward_certification_limit"])
+    return any(r.get("endpoint") == "event_odds" for r in a.get("requests") or [])
 
 
 def authorize_revalidation(ctx: Ctx, reason: str, fix_commit: str) -> dict:
@@ -466,11 +489,14 @@ def authorize_revalidation(ctx: Ctx, reason: str, fix_commit: str) -> dict:
 def validation_eligible(vstate: dict, ctx: Ctx) -> bool:
     """One paid validation request is allowed only when: no PASS exists (never repeated after PASS); no FAIL is
     recorded (a FAIL stays BLOCKED until an explicit architect re-validation); and fewer than
-    MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY inconclusive / error attempts today (props not yet posted)."""
+    MAX_CERTIFICATION_ATTEMPTS_PER_DAY real attempts (event odds reached) today, MIN_MINUTES_BETWEEN_INCONCLUSIVE after
+    the last one, and no discovery cooldown (MIN_MINUTES_BETWEEN_EMPTY_DISCOVERY after an empty or failed discovery-only
+    run). Discovery-only runs never consume the day's attempts."""
     spaced = vstate.get("last_inconclusive_at") is None or \
         ctx.now() - _utc(vstate["last_inconclusive_at"]) >= pd.Timedelta(minutes=MIN_MINUTES_BETWEEN_INCONCLUSIVE)
     return (not vstate["passed"] and (not vstate["failed"] or ctx.allow_revalidation)
-            and vstate["inconclusive_today"] < MAX_INCONCLUSIVE_VALIDATIONS_PER_DAY and spaced)
+            and vstate["inconclusive_today"] < MAX_CERTIFICATION_ATTEMPTS_PER_DAY and spaced
+            and not vstate.get("discovery_cooldown_active"))
 
 
 def step_validate(ctx: Ctx, st: dict, tick: dict, quota_remaining: int | None = None) -> str:
@@ -480,10 +506,13 @@ def step_validate(ctx: Ctx, st: dict, tick: dict, quota_remaining: int | None = 
     returned (nothing posted yet), never an integration failure."""
     from cbb_platform.prod import quote_refresh as QR                 # late: quote_refresh imports this module
     now = ctx.now()
+    progress: dict = {}
     try:
-        out = QR.certify(ctx, st, now, quota_remaining=quota_remaining)
+        out = QR.certify(ctx, st, now, quota_remaining=quota_remaining, progress=progress)
     except Exception as e:                                            # noqa: BLE001 -- recorded; never retried blindly
-        a = {"attempted_at": now.isoformat(), "status": "ERROR", "error": f"{type(e).__name__}: {str(e)[:300]}"}
+        c = bool(progress.get("counts_toward_certification_limit"))
+        a = {"attempted_at": now.isoformat(), "status": "ERROR", "error": f"{type(e).__name__}: {str(e)[:300]}",
+             "discovery_run": True, "discovery_only": not c, "counts_toward_certification_limit": c}
         OS.append_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"), [a])
         tick["quote_validation"] = a
         return "ERROR"
@@ -494,7 +523,11 @@ def step_validate(ctx: Ctx, st: dict, tick: dict, quota_remaining: int | None = 
          "candidates": out.get("candidates"), "discovery": out.get("discovery"), "ranking": out.get("ranking"),
          "odds_events": out.get("odds_events"), "requests": reqs, "error": out.get("error"),
          "checks": {k: v["pass"] for k, v in (out.get("checks") or {}).items()},
-         "validation_receipt": out.get("validation_receipt")}
+         "validation_receipt": out.get("validation_receipt"),
+         **{k: out.get(k) for k in ("discovery_run", "discovery_only", "event_odds_request_count",
+                                    "counts_toward_certification_limit", "us_market_discovery_calls",
+                                    "us2_market_discovery_calls", "supported_markets_found", "selected_region",
+                                    "discovery_batch", "discovery_early_stop")}}
     OS.append_jsonl(ctx.ops("markers", "quote_validation_attempts.jsonl"), [a])
     if out["status"] == "PASS":
         rec = QC.certify(ctx.ops("markers"), {k: out[k] for k in ("status", "validated_at", "certification_id", "event_id",
@@ -502,7 +535,8 @@ def step_validate(ctx: Ctx, st: dict, tick: dict, quota_remaining: int | None = 
                                                                   *QR.CERT_CHECKS)} | {"credits": credits})
         Path(ctx.odds_record).parent.mkdir(parents=True, exist_ok=True)
         Path(ctx.odds_record).write_text(json.dumps({**rec, "checks": out["checks"]}, indent=1, default=str))
-    tick["quote_validation"] = {k: a[k] for k in ("status", "event_id", "credits", "candidates")}
+    tick["quote_validation"] = {k: a[k] for k in ("status", "event_id", "credits", "candidates",
+                                                  "counts_toward_certification_limit", "event_odds_request_count")}
     return out["status"]
 
 

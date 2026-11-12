@@ -131,14 +131,23 @@ dates `iso`, the 12 production player-prop keys (`quotes.REQUEST_MARKETS`; no `_
 Every live request's `x-requests-last / -used / -remaining` is in `prod/cache/odds_production_requests.jsonl` and in
 the collection file's `requests` receipt.
 
-**Certification** (`quote_refresh.certify`, run by a due scoring tick while not certified): market discovery on
-today's forecasted pre-tip games with a persisted PMF (at most 15), ranked by supported markets advertised, then
-bookmakers advertising them, then tip; ONE event-odds request on the top event (one more only if it returned no prop
-rows). Nine checks on those real quotes priced at the persisted PMF (no simulation): GAME_MATCH, PLAYER_MATCH,
+**Certification** (`quote_refresh.certify`, run by a due scoring tick while not certified). Discovery: today's
+forecasted pre-tip games with a persisted PMF, in tip order, at most 8 `/markets` calls per region pass; `regions=us`
+first, stopping right after the first strong candidate (>= 3 supported markets on >= 2 bookmakers: a stop rule
+only); `regions=us2` ONLY when the `us` pass showed no supported market at all (never `us_dfs`, never both at once).
+The best discovered supported candidate (supported markets, then bookmakers, then tip, then game id) gets ONE
+event-odds request in the SAME region for exactly its advertised keys (one more, next-ranked, only if it returned no
+prop rows). Nine checks on those real quotes priced at the persisted PMF (no simulation): GAME_MATCH, PLAYER_MATCH,
 STAT_MATCH, LINE_VALIDATION, PRICE_VALIDATION, FRESHNESS_VALIDATION, PMF_LOOKUP, PRICING_VALIDATION,
 RAW_EVIDENCE_PERSISTENCE. Receipt: `prod/odds/validation_runs/<id>/certification.json`; a PASS is appended to
 `prod/ops/markers/quote_certifications.jsonl` (the first also writes the write-once `QUOTE_INTEGRATION_VALIDATED.json`)
-and the run gate `prod/odds/integration_validation.json`. At most 3 inconclusive attempts per ET day, 90 min apart.
+and the run gate `prod/odds/integration_validation.json`.
+
+Accounting (`prod/ops/markers/quote_validation_attempts.jsonl`: `discovery_run`, `discovery_only`,
+`event_odds_request_count`, `counts_toward_certification_limit`, `us_/us2_market_discovery_calls`, `selected_region`):
+only an invocation that reached event odds is a CERTIFICATION ATTEMPT (one per invocation, however many odds calls);
+at most 3 per ET day, 90 min apart. Discovery-only runs never consume them; an empty (or failed) discovery-only run
+starts a 60-minute discovery cooldown (no new scan before; the quote timer keeps running).
 
 The certification is **persistent** (no daily re-certification). It closes only on a material event:
 `INVALIDATED_INTEGRATION_CHANGED` (automatic: endpoint / sport / market keys / fixed parameters or the source of

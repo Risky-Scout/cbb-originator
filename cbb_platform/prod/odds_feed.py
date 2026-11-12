@@ -127,12 +127,13 @@ def advertised(body: dict) -> dict:
             "status": DISCOVERED if supported else NO_SUPPORTED}
 
 
-def discover(session: OA.Session, event_id: str) -> dict:
-    """GET events/{id}/markets (1 credit; a recent cached answer is reused) -> advertised() + the request receipt."""
-    params = {"eventId": event_id, "regions": PC.ODDS_REGIONS, "dateFormat": "iso"}
+def discover(session: OA.Session, event_id: str, region: str = PC.ODDS_REGIONS) -> dict:
+    """GET events/{id}/markets (1 credit; a recent cached answer is reused) -> advertised() + the request receipt.
+    `region`: production `us`; `us2` only for the certification discovery fallback."""
+    params = {"eventId": event_id, "regions": region, "dateFormat": "iso"}
     e = session.get("event_markets", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
                     purpose="player-prop market discovery (1 credit)")
-    return {**advertised(e["body"]), "event_id": event_id, "body": e["body"], "request": _brief(e)}
+    return {**advertised(e["body"]), "event_id": event_id, "region": region, "body": e["body"], "request": _brief(e)}
 
 
 def collect(session: OA.Session, event_ids, out_dir: Path | None = None, markets=QT.REQUEST_MARKETS,
@@ -161,7 +162,7 @@ def collect(session: OA.Session, event_ids, out_dir: Path | None = None, markets
                    "requests": {"event_markets": d["request"], "event_odds": None},
                    "events": [{**ev, "bookmakers": [], "collector_received_at": rx}]}
         else:
-            params = {"eventId": eid, "regions": PC.ODDS_REGIONS, "markets": ",".join(want), "oddsFormat": "american",
+            params = {"eventId": eid, "regions": d.get("region", PC.ODDS_REGIONS), "markets": ",".join(want), "oddsFormat": "american",
                       "dateFormat": "iso", "includeLinks": "true", "includeSids": "true"}
             e = session.get("event_odds", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
                             purpose="player props")

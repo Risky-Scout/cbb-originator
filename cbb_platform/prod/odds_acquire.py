@@ -6,7 +6,7 @@ Provider support for NCAAB player props is DOCUMENTED (sport `basketball_ncaab`;
     events       GET /v4/sports/basketball_ncaab/events                   0 credits (documented)
                  params: dateFormat=iso, commenceTimeFrom, commenceTimeTo (both required, inside 2026-08-01..2027-07-31)
     event_markets GET /v4/sports/basketball_ncaab/events/{eventId}/markets 1 credit (documented)
-                 params: eventId, regions=us, dateFormat=iso, [bookmakers]: the market keys each bookmaker currently
+                 params: eventId, regions=us (us2: certification fallback only), dateFormat=iso, [bookmakers]: the market keys each bookmaker currently
                  advertises for the event. ALWAYS called before event_odds (odds_feed.collect); same event guards.
     event_odds   GET /v4/sports/basketball_ncaab/events/{eventId}/odds    cost = markets returned x regions (documented)
                  params: eventId, regions=us, markets (the advertised subset of quotes.REQUEST_MARKETS only),
@@ -53,8 +53,10 @@ ALLOWED = {
 REQUIRED = {"events": {"dateFormat", "commenceTimeFrom", "commenceTimeTo"},
             "event_markets": {"eventId", "regions", "dateFormat"},
             "event_odds": {"eventId", "regions", "markets", "oddsFormat", "dateFormat"}}
-FIXED = {"dateFormat": "iso", "regions": PC.ODDS_REGIONS, "oddsFormat": "american", "includeLinks": "true",
-         "includeSids": "true"}
+FIXED = {"dateFormat": "iso", "oddsFormat": "american", "includeLinks": "true", "includeSids": "true"}
+# exactly ONE sportsbook region per request: production `us`; `us2` only as the certification discovery fallback
+# (prod.quote_refresh.certify). DFS regions (us_dfs) and combined regions are never requested.
+ALLOWED_REGIONS = (PC.ODDS_REGIONS, "us2")
 MAX_RETRIES = 3
 BACKOFF = 2.0
 TIMEOUT = 60
@@ -116,6 +118,8 @@ def check_request(endpoint: str, params: dict, event_commence=None, now=None) ->
     for k, v in FIXED.items():
         if k in params and str(params[k]) != v:
             raise OddsGuardViolation(f"ODDS_GUARD: {k} must be {v!r}; got {params[k]!r}")
+    if "regions" in params and str(params["regions"]) not in ALLOWED_REGIONS:
+        raise OddsGuardViolation(f"ODDS_GUARD: regions must be one of {ALLOWED_REGIONS}; got {params['regions']!r}")
     a, b = _season_window()
     if endpoint == "events":
         try:
