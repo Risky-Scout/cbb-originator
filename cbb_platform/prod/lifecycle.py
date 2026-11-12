@@ -427,9 +427,14 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
                 if rec.get("DAILY_REFIT_STATUS") != DEFERRED_FEATURE_BACKLOG:
                     wf = run(day, root=root, state_root=life.state_root, now=life.now())
                     rec.update({k: wf.get(k) for k in WF_KEYS})
+                    if wf.get("memory_mb") is not None:
+                        rec["memory_mb"] = wf["memory_mb"]
             except Exception as e:                       # noqa: BLE001 -- promotion is atomic: ACTIVE is unchanged
                 rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_PROMOTED",
                            reason=f"{type(e).__name__}: {e}"[:400])
+                if runner is None:                       # the morning job's stage markers (walkforward.daily.PROGRESS)
+                    rec["failed_stage"] = WD.PROGRESS.get("stage")
+                    rec["memory_mb"] = dict(WD.PROGRESS.get("memory_mb") or {})
     finally:
         if fd is not None:
             os.close(fd)

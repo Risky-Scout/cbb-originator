@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import uuid
 from pathlib import Path
@@ -32,7 +33,7 @@ import pandas as pd
 
 from cbb_platform import props_v0 as P, props_v0_participation as Q
 from cbb_platform.prod import features as PF, inputs as IN, slate as SL
-from cbb_platform.stage3 import build as S3B
+from cbb_platform.stage3 import build as S3B, labels as LB, sources
 from cbb_platform.v2 import latent as L, phase3 as P3
 from cbb_platform.walkforward import config as WC, eligibility as EL
 
@@ -176,6 +177,61 @@ def _fin_sql(cfg: dict, season: int) -> str:
         ORDER BY canonical_player_id, season"""
 
 
+# The label relations label_rows reads. stage3.labels.build also writes three Stage 3.1 DIAGNOSTIC relations (target box
+# rows outside the pregame universe / unresolved, and their pool-miss classification); the walk-forward never reads them
+# and deletes the scratch label DB right after this read, so they are not built here. lab.player_pool_misses (correlated
+# subqueries over all player box rows) was the one label operator whose hash table outgrew the 700MB history cap as the
+# season's target games accumulated (2026-11-12 morning OOM: 954 MB measured for 414 games; every consumed relation
+# < 460 MB). The frozen lockbox label store, which the coverage / eligibility audits read, is not affected.
+LABEL_RELATIONS = ("lab.player_game_labels", "lab.team_game_labels")
+LABEL_DIAGNOSTIC_RELATIONS = ("lab.target_box_rows_outside_universe", "lab.player_pool_misses",
+                              "lab.target_box_rows_unresolved")
+_CREATE = re.compile(r"^(?:--[^\n]*\n\s*)*CREATE\s+(?:OR\s+REPLACE\s+)?(?:TEMP\s+)?(TABLE|SCHEMA)\s+(?:IF\s+NOT\s+EXISTS\s+)?"
+                     r"([\w.]+)", re.IGNORECASE)
+
+
+def label_statements() -> list[str]:
+    """stage3.labels.build's statements, rendered by the frozen function itself (stage3/labels.py is not edited), minus
+    the diagnostic relations. Every kept statement is verbatim; refuses if the frozen build's relation set changed or a
+    kept statement reads a dropped relation."""
+    calls: list[str] = []
+
+    class _Record:
+        def execute(self, sql, *a, **k):
+            calls.append(sql)
+    LB.build(_Record())
+    keep, dropped = [], []
+    for s in (x.strip() for c in calls for x in c.split(";\n") if x.strip()):
+        m = _CREATE.match(s)
+        if m is None:
+            raise TrainingRowsError(f"unexpected statement in stage3.labels.build: {s[:80]!r}")
+        (dropped if m.group(2) in LABEL_DIAGNOSTIC_RELATIONS else keep).append((m.group(2), s))
+    if sorted(r for r, _ in dropped) != sorted(LABEL_DIAGNOSTIC_RELATIONS) or \
+            not set(LABEL_RELATIONS) <= {r for r, _ in keep}:
+        raise TrainingRowsError("stage3.labels.build relation set changed: label_statements must be re-verified")
+    for r, s in keep:
+        if any(d.split(".")[1] in s for d in LABEL_DIAGNOSTIC_RELATIONS):
+            raise TrainingRowsError(f"{r} reads a diagnostic relation")
+    return [s for _, s in keep]
+
+
+def build_labels(db_path: Path, features_db: Path, canonical: Path) -> None:
+    """stage3.build.build_labels with label_statements() (same connection, binding, attach and file swap; the unused
+    fingerprints are not computed)."""
+    tmp = Path(str(db_path) + ".building")
+    if tmp.exists():
+        tmp.unlink()
+    con = S3B.connect(tmp)
+    sources.bind(con, canonical)
+    con.execute(f"ATTACH '{features_db}' AS fx (READ_ONLY)")
+    for s in label_statements():
+        con.execute(s)
+    con.execute("DETACH fx")
+    sources.unbind(con)
+    con.close()
+    os.replace(tmp, db_path)
+
+
 def label_rows(work: Path, state: dict | None, cutoff, game_ids, history_db: Path, cfg: dict,
                season: int = WC.PRODUCTION_SEASON) -> dict:
     """Labels of the completed target games + season-to-date finals, from the state as-of the refit cutoff."""
@@ -185,7 +241,7 @@ def label_rows(work: Path, state: dict | None, cutoff, game_ids, history_db: Pat
                   blank_targets=False)
     ldb = work / "labels.duckdb"
     with PF.stage3_window(season):
-        S3B.build_labels(ldb, fr["features_db"], canonical=work / "canonical_asof.duckdb")
+        build_labels(ldb, fr["features_db"], canonical=work / "canonical_asof.duckdb")
     con = duckdb.connect(str(ldb), read_only=True)
     targets = list(cfg["count_targets"].values())
     lab = con.execute(f"""SELECT canonical_game_id, canonical_team_id, canonical_player_id, {", ".join(LABEL_COLS)},

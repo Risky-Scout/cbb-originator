@@ -59,6 +59,30 @@ def _rss_gb() -> float:
     return r / 1e9 if sys.platform == "darwin" else r * 1024 / 1e9
 
 
+# Stage markers of the current morning job (lightweight: one /proc read per stage). lifecycle.walk_forward records the
+# last stage reached and these readings when the job raises, so a failure names its stage (2026-11-12: it did not).
+PROGRESS: dict = {"stage": None, "memory_mb": {}}
+
+
+def _mem_mb() -> dict:
+    out = {}
+    try:
+        for line in open("/proc/self/status"):
+            k, v = line.split(":", 1)
+            if k in ("VmRSS", "VmHWM"):
+                out[k] = round(int(v.split()[0]) / 1024, 1)
+    except OSError:                                   # macOS: peak only
+        out["VmHWM"] = round(_rss_gb() * 1000, 1)
+    return out
+
+
+def _stage(name: str, done: str | None = None) -> None:
+    """Enter stage `name`; `done` = the stage just completed (its memory reading is recorded)."""
+    if done is not None:
+        PROGRESS["memory_mb"][done] = _mem_mb()
+    PROGRESS["stage"] = name
+
+
 def _du(p: Path) -> int:
     return sum(f.stat().st_size for f in Path(p).rglob("*") if f.is_file()) if Path(p).exists() else 0
 
@@ -134,6 +158,7 @@ def training_state(day: date, root: Path, state_root: Path, history_db: Path, cf
     inc = el.loc[el["decision"] == "INCLUDED", "game_id"].tolist()
     out["timings"]["eligibility_s"] = time.time() - t0
     if inc:
+        _stage("feature_rows", done="eligibility")
         t1 = time.time()
         gc = TR.game_cutoffs(st["increment_db"], inc)
         feats = TR.feature_rows(SO.paths(root)["training"], state_root, gc, history_db, cfg, log=log)
@@ -144,12 +169,14 @@ def training_state(day: date, root: Path, state_root: Path, history_db: Path, cf
             el.loc[el["game_id"] == g, ["decision", "reason"]] = ["EXCLUDED", meta.get(g, {}).get("status", "NO_PREGAME_EXAMPLES")]
         out.update(feature_meta=meta, trained_games=trained, included=trained)
         if trained:
+            _stage("label_rows", done="feature_rows")
             t2 = time.time()
             work = SO.paths(root)["candidates"] / f".labels-{uuid.uuid4().hex[:10]}"
             try:
                 lab = TR.label_rows(work, st, cut, trained, history_db, cfg)
             finally:
                 shutil.rmtree(work, ignore_errors=True)
+            _stage("assembly", done="label_rows")
             opening = SO.load_version(root, WC.version_id(WC.OPENING_DATE))
             oos_state = {"v0_state": opening.v0_state, "participation_state": opening.participation_state}
             cand = feats["cand"][feats["cand"]["canonical_game_id"].isin(trained)]
@@ -192,14 +219,19 @@ def build_candidate(root: Path, day: date, ts: dict, cfg: dict, prev_active: str
               "games": len(ts["trained_games"]), "frames_sha256": fr["hashes"]}
     meta = {"model_version": vid, "training_cutoff": cut.isoformat(), "training_state": tstate}
     timings, shas, built = {}, [], None
+    from cbb_platform import duckdb_limits as DLM
     for k in (1, 2):                                             # determinism: two independent fits
+        _stage(f"fit_{k}")
         t = time.time()
-        f = WF.fit(cfg, fr, log=lambda s: log(f"fit {k}/2: {s}"))
+        f = WF.fit(cfg, fr, log=lambda s: log(f"fit {k}/2: {s}"))   # inputs read per group and freed inside fit()
         x = serialize(f, cfg, meta)
         shas.append(hashlib.sha256(x["mbytes"] + x["abytes"] + x["dbytes"]).hexdigest())
         timings[f"fit_{k}_s"] = time.time() - t
         if built is None:
-            built = (f, x)
+            built = (f, x)                                       # fitted parameters + artifact bytes only
+        del f, x
+        DLM.release()                                            # nothing of fit k's working set is carried forward
+        _stage("candidate_write" if k == 2 else "fit_2", done=f"fit_{k}")
     f, x = built
     marg, art, mbytes, abytes, dbytes = x["marg"], x["art"], x["mbytes"], x["abytes"], x["dbytes"]
     cand = SO.new_candidate_dir(root, day)
@@ -294,6 +326,7 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
     SO.register_opening(root)
     rec = {"day": day.isoformat(), "training_cutoff": cut.isoformat(), "started_at": now.isoformat(),
            "threads_ok": WC.threads_ok(), "platform": f"{sys.platform}-{platform.machine()}", "timings": {}}
+    PROGRESS.update(stage="settle_and_monitor", memory_mb={})
     with _lock(root):
         prev_active = SO.active(root)["ACTIVE_MODEL_VERSION"]
         cfg = P.load_config()
@@ -303,8 +336,10 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
         rec["monitoring"] = MON.write_report(root, day)
         rec["timings"]["settle_and_monitor_s"] = time.time() - t
         # 3. ingest -> eligibility -> training rows
+        _stage("eligibility", done="settle_and_monitor")
         t = time.time()
         ts = training_state(day, root, state_root, history_db, cfg, log)
+        _stage("run_identity", done=PROGRESS["stage"])
         rec["timings"]["ingestion_s"] = time.time() - t
         rec["timings"].update(ts["timings"])
         prev_inc = []
@@ -350,6 +385,7 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
             rec["timings"]["training_s"] = time.time() - t
             rec["timings"].update(c["timings"])
             rec["CANDIDATE_MODEL_VERSION"] = c["version"]
+            _stage("gates", done="candidate_write")
             t = time.time()
             opening_dir = SO.version_dir(root, WC.OPENING_DATE)
             opening = {"art": json.loads((opening_dir / SO.FILES["jm1_final"]).read_text()),
@@ -358,6 +394,7 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
                                                         "opening": opening, "previous_active": prev_active, "root": root}, log)
             rec["timings"]["artifact_validation_s"] = time.time() - t
             SO.write_json(Path(c["dir"]) / "gates.json", gres)
+            _stage("promotion", done="gates")
             rec["gates"] = {k: gres[k] for k in ("ALL_PASS", "POINT_IN_TIME_LEGALITY", "FUTURE_DATA_LEAKAGE_DETECTED",
                                                  "TARGET_GAME_FEATURE_LEAKAGE_DETECTED", "TARGET_GAME_OUTCOME_LEAKAGE_DETECTED",
                                                  "failed")}
@@ -378,7 +415,7 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
         rec["season_guard"] = WF.guard_state()                   # structural.MAX_SEASON restored to the frozen 2026
         rec.update(ACTIVE_MODEL_VERSION=a["ACTIVE_MODEL_VERSION"],
                    ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"),
-                   total_s=time.time() - t0, peak_rss_gb=_rss_gb(),
+                   total_s=time.time() - t0, peak_rss_gb=_rss_gb(), memory_mb={**PROGRESS["memory_mb"], "end": _mem_mb()},
                    disk_bytes_training_cache=_du(SO.paths(root)["training"]))
         runs = SO.read_log(SO.paths(root)["manifests"] / "runs.jsonl")
         if not any(r["run_id"] == run_id for r in runs):          # a run id = its inputs: the first record stands
