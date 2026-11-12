@@ -68,6 +68,10 @@ DEFERRED_SHARED_LOCK = "DEFERRED_SHARED_LOCK"
 # forecast with it) and the 08:00 retry / next warmup continue from the persisted cache. Fits and gates are unchanged.
 DEFERRED_FEATURE_BACKLOG = "DEFERRED_FEATURE_BACKLOG"
 RETRYABLE_DEFERRALS = (DEFERRED_SHARED_LOCK, DEFERRED_FEATURE_BACKLOG)
+# The state the refit trains on is the latest version as-of the training cutoff (point in time). When no sync confirmed
+# it within PC.MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES before that cutoff, the refit is refused rather than trained on a
+# stale state; no later refresh can legally change the as-of state, so this deferral is not retried at 08:00.
+DEFERRED_STATE_REFRESH_FAILED = "DEFERRED_STATE_REFRESH_FAILED"
 MORNING_FEATURE_BUDGET_ENV = "CBB_MORNING_FEATURE_BUDGET_MIN"
 MORNING_FEATURE_BUDGET_MIN = 30.0     # worst case 07:00 total ~80 min (tick + 30 + refit ~35 + forecast)
 HEAVY_LOCK_ENV, HEAVY_WAIT_ENV, MIN_MEM_ENV = "CBB_HEAVY_LOCK", "CBB_HEAVY_LOCK_WAIT_SEC", "CBB_MIN_MEMAVAILABLE_MB"
@@ -381,6 +385,28 @@ def wf_attempts_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "walkforward_attempts" / f"{day.isoformat()}.jsonl"
 
 
+def state_freshness(life: Life, day: date) -> dict:
+    """The state the day's refit would train on (eligibility.state_asof at the training cutoff) and the latest instant
+    a successful sync (PROMOTED, or UNCHANGED = same version re-confirmed) confirmed it, no later than the cutoff."""
+    from cbb_platform.walkforward import config as WC, eligibility as EL
+    cut = WC.refit_cutoff(day)
+    st = EL.state_asof(life.state_root, cut)
+    out = {"training_cutoff": cut.isoformat(), "state_version": None, "confirmed_at": None, "STATE_AGE_MIN": None,
+           "max_age_min": PC.MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES, "STATE_FRESH": None}
+    if st is None:
+        return out
+    seen = [SH._utc(st["source_cutoff"])]
+    for r in OS.read_jsonl(Path(life.prod_root) / "sync" / "sync_log.jsonl"):
+        if r.get("status") in ("PROMOTED", "UNCHANGED") and r.get("state_version") == st["state_version"] \
+                and r.get("source_cutoff") and r.get("finished_at") and SH._utc(r["finished_at"]) <= cut:
+            seen.append(min(SH._utc(r["source_cutoff"]), cut))
+    conf = max(seen)
+    age = (cut - conf).total_seconds() / 60.0
+    out.update(state_version=st["state_version"], confirmed_at=conf.isoformat(), STATE_AGE_MIN=round(age, 1),
+               STATE_FRESH=age <= PC.MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES)
+    return out
+
+
 def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=None, warm_runner=None) -> dict:
     """One authorized walk-forward attempt (walkforward.daily.morning: existing gates, atomic promotion, last-known-good
     kept on any failure). The shared heavy lock (env CBB_HEAVY_LOCK) is held for exactly this step."""
@@ -406,7 +432,14 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
         if need and have is not None and have < float(need):
             rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_ATTEMPTED",
                        reason=f"RESOURCE: MemAvailable {have:.0f} MB < {float(need):.0f} MB; last-known-good retained")
+        elif (fresh := state_freshness(life, day)) and fresh["STATE_FRESH"] is False:
+            rec["state_freshness"] = fresh
+            rec.update(DAILY_REFIT_STATUS=DEFERRED_STATE_REFRESH_FAILED, DAILY_MODEL_PROMOTION="NOT_ATTEMPTED",
+                       reason=f"STATE_STALE_AT_CUTOFF: state {fresh['state_version']} last confirmed "
+                              f"{fresh['confirmed_at']}, {fresh['STATE_AGE_MIN']} min before the training cutoff "
+                              f"{fresh['training_cutoff']} (max {fresh['max_age_min']}); last-known-good ACTIVE retained")
         else:
+            rec["state_freshness"] = fresh
             from cbb_platform.walkforward import config as WC, daily as WD
             run = runner or WD.morning
             warm = warm_runner or (WD.warm_features if runner is None else None)
@@ -427,8 +460,9 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
                 if rec.get("DAILY_REFIT_STATUS") != DEFERRED_FEATURE_BACKLOG:
                     wf = run(day, root=root, state_root=life.state_root, now=life.now())
                     rec.update({k: wf.get(k) for k in WF_KEYS})
-                    if wf.get("memory_mb") is not None:
-                        rec["memory_mb"] = wf["memory_mb"]
+                    for k in ("memory_mb", "prior_day_completeness"):
+                        if wf.get(k) is not None:
+                            rec[k] = wf[k]
             except Exception as e:                       # noqa: BLE001 -- promotion is atomic: ACTIVE is unchanged
                 rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="NOT_PROMOTED",
                            reason=f"{type(e).__name__}: {e}"[:400])
@@ -532,6 +566,11 @@ def receipt(h: dict) -> dict:
         errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
     if wf.get("DAILY_REFIT_STATUS") in RETRYABLE_DEFERRALS:
         warnings.append(f"WALK_FORWARD_{wf.get('DAILY_REFIT_STATUS')}")
+    if wf.get("DAILY_REFIT_STATUS") == DEFERRED_STATE_REFRESH_FAILED:
+        errors.append(f"WALK_FORWARD_{DEFERRED_STATE_REFRESH_FAILED}: {wf.get('reason')}")
+    pdc = wf.get("prior_day_completeness") or {}
+    if pdc.get("STATUS") not in (None, "COMPLETE"):
+        warnings.append(f"{pdc['STATUS']}: {pdc.get('INCOMPLETE_FINAL')} of {pdc.get('FINAL_GAMES')} prior-day finals")
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
     bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}

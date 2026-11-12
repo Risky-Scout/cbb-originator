@@ -123,6 +123,15 @@ SCORE_LEAD_MINUTES = 50                             # earliest scoring instant b
 SYNC_INTERVAL_HOURS = 6.0                           # routine state refresh (= the CBBD schedule TTL)
 SYNC_RETRY_MINUTES = 20                             # re-check of a knowable-but-not-yet-ingested game
 RESULT_LAG_RETRY_HOURS = 24                         # how long a knowable game's schedule window is re-checked early
+# Overnight completeness (2026-11-12: state 05:22Z was the last before the 11:00Z refit cutoff; the next routine refresh
+# was due 11:20Z, and 28 knowable D-I finals waited on the completed-stage request budget or a later sync).
+#   COMPLETION_BACKLOG  a knowable, played D-I game not yet complete in state re-triggers a sync every
+#                       SYNC_RETRY_MINUTES for RESULT_LAG_RETRY_HOURS (complete games are never re-requested)
+#   PRE_REFIT_REFRESH   one sync inside the PRE_REFIT_REFRESH_LEAD_MINUTES before the daily refit cutoff
+#   the walk-forward refuses (DEFERRED_STATE_REFRESH_FAILED) a state last confirmed by a sync more than
+#   MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES before the cutoff. The cutoff itself and the PIT rules are unchanged.
+PRE_REFIT_REFRESH_LEAD_MINUTES = 45
+MAX_STATE_AGE_AT_REFIT_CUTOFF_MINUTES = 60
 VOID_AFTER_HOURS = 48                               # a cancelled / unlisted game's predictions settle NO_ACTION after this
 DAILY_REPORT_HOUR_UTC = 12                          # the daily report of ET date D is written at/after D+1 12:00Z
 FIRST_DAYS_WINDOW = 30                              # "first 30 calendar days" of the 2026-27 D-I schedule

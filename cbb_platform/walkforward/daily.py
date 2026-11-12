@@ -349,6 +349,7 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
             pe = pd.read_parquet(pdir / "eligibility.parquet")
             prev_inc = pe.loc[pe["decision"] == "INCLUDED", "game_id"].tolist()
         rec["eligibility"] = EL.summary(ts["eligibility"], prev_inc)
+        rec["prior_day_completeness"] = EL.prior_day_completeness(ts["eligibility"], day)
         ident = {"code": SO.code_commit(), "config_hash": config_hash(cfg), "training": ts["identity"]}
         ident["sha"] = _sha({"training": ts["identity"], "code": ident["code"]["commit"], "config": ident["config_hash"]})
         vdir = SO.version_dir(root, day)

@@ -112,7 +112,8 @@ def completed_reuse_age(endpoint: str, params: dict, games: pd.DataFrame, sched:
     substitutions/game of a final game is immutable: any cached copy is reused. A date-window box payload
     (games/teams, games/players) or the season player file is reused only when the cached copy already carries every
     newly completed game it must carry; otherwise it is re-fetched. (A window cached when its first game finished
-    omits a later game of the same window; reusing that copy forever would never ingest the later game.)"""
+    omits a later game of the same window; reusing that copy forever would never ingest the later game. Likewise a
+    games/players row with an empty player list does not carry its game.)"""
     if endpoint == "substitutions/game":
         return None
     hit = A.cached(endpoint, params, cache_root, as_of)
@@ -127,7 +128,10 @@ def completed_reuse_age(endpoint: str, params: dict, games: pd.DataFrame, sched:
     pid = sched.set_index("canonical_game_id")["provider_game_id"].astype(str)
     want = {pid[g] for g, t in zip(games["canonical_game_id"], games["scheduled_tip_utc"])
             if pd.notna(t) and a <= _utc(t).date() < b and g in pid.index}
-    have = {str(r.get("gameId")) for r in (A.read(path) or []) if isinstance(r, dict)}
+    rows = [r for r in (A.read(path) or []) if isinstance(r, dict)]
+    have = {str(r.get("gameId")) for r in rows}
+    if endpoint == "games/players":      # a game row with no players is not carried: the provider had not posted the
+        have -= {str(r.get("gameId")) for r in rows if not r.get("players")}   # box yet (2026-11-12: 12 D-I finals)
     return None if want <= have else 0.0
 
 

@@ -42,6 +42,7 @@ from cbb_platform.prod import (config as PC, history_extract as HX, ledger as LG
                                odds_acquire as OA, odds_feed as OF, ops_store as OS, pmf_evidence as PE,
                                prospective_monitor as PM, quote_cert as QC, quote_obs as QO,
                                run as RN, slate as SL, state as ST, sync as Y)
+from cbb_platform.walkforward import config as WC
 
 TICK_VERSION = "cbb-prod-shadow-tick-1.0.0"
 DECIDED = ("PREDICTED", "EXCLUDED", "MISSED_PREDICTION_CUTOFF", "NOT_SCORED_AT_CUTOFF")
@@ -253,9 +254,23 @@ def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
     if len(blocking) and not halted and retry_ok:
         why.append("RESULT_NEEDED_FOR_SCORING")
         windows |= {w for w in map(_window_of, blocking["scheduled_tip_utc"]) if w}
+    # completion loop: a knowable D-I game the provider reports FINAL that is not complete in state (no result, or a
+    # team / player box missing) is re-requested every SYNC_RETRY_MINUTES while within RESULT_LAG_RETRY_HOURS of
+    # becoming knowable. The sync requests only games not yet complete (sync._complete_in_state); an unchanged result
+    # writes no new state. A game not (yet) final is never polled here: the routine / pre-refit refreshes re-check it.
+    backlog = recent[(recent["game_universe"] == "DI_VS_DI") & final]
+    if len(backlog) and not halted and retry_ok:
+        why.append("COMPLETION_BACKLOG")
+    # pre-refit refresh: one sync inside the lead window before today's walk-forward training cutoff
+    rcut = WC.refit_cutoff(now.tz_convert(WC.TZ).date())
+    rlead = rcut - pd.Timedelta(minutes=PC.PRE_REFIT_REFRESH_LEAD_MINUTES)
+    if rlead <= now < rcut and (last_ok is None or last_ok < rlead) and retry_ok:
+        why.append("PRE_REFIT_REFRESH")
     if last_ok is not None:
         nxt.append(("sync", last_ok + pd.Timedelta(hours=PC.SYNC_INTERVAL_HOURS)))
-    if len(blocking) and not halted and last_try is not None:
+        if last_ok < rlead and now < rlead:
+            nxt.append(("sync", rlead))
+    if (len(blocking) or len(backlog)) and not halted and last_try is not None:
         nxt.append(("sync", last_try + pd.Timedelta(minutes=PC.SYNC_RETRY_MINUTES)))
     # ------------------------------------------------------------ events listing (free)
     lst = OF.listing(now, ctx.cache_raw)

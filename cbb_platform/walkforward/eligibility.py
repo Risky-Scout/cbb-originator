@@ -10,7 +10,9 @@ A game tipped before T enters the training state only if ALL hold (else DEFERRED
     played          not cancelled / forfeited                                    else EXCLUDED NOT_PLAYED
     final           result recorded (the feed records results only at status 'final') and, where the provider
                     schedule snapshot exists, its status is exactly 'final'      else DEFERRED NOT_FINAL_AT_CUTOFF /
-                                                                                      STATUS_NOT_FINAL
+                                                                                      STATUS_NOT_FINAL; provider 'final'
+                    without a result in state: DEFERRED FINAL_DATA_INCOMPLETE_AT_CUTOFF (or NOT_KNOWABLE_AT_CUTOFF
+                    while HR-1 still withholds it)
     knowable        canonical HR-1 knowable_at <= T and outcome_available_at <= T else DEFERRED NOT_KNOWABLE_AT_CUTOFF
     box complete    both team box rows, player rows for both teams, and per team sum(player points) = team box points =
                     game score (2025-26: 5,733 of 5,752 D-I games reconcile)     else DEFERRED BOX_INCOMPLETE /
@@ -129,6 +131,11 @@ def evaluate(state: dict, cutoff, available: dict) -> pd.DataFrame:
             d = ("EXCLUDED", "NOT_IN_TRAINING_UNIVERSE")
         elif status in NOT_PLAYED_STATUSES:
             d = ("EXCLUDED", "NOT_PLAYED")
+        elif not ev["has_result"] and status == WC.FINAL_STATUS:
+            # the provider reports the game final but the state holds no result at the cutoff: not yet knowable (HR-1,
+            # legitimate), else its result / box data had not reached the state (a data-pipeline gap, never "not final")
+            d = ("DEFERRED", "NOT_KNOWABLE_AT_CUTOFF" if pd.isna(ev["knowable_at"]) or ev["knowable_at"] > cut
+                 else "FINAL_DATA_INCOMPLETE_AT_CUTOFF")
         elif not ev["has_result"]:
             d = ("DEFERRED", "NOT_FINAL_AT_CUTOFF")
         elif status is not None and status != WC.FINAL_STATUS:
@@ -160,3 +167,32 @@ def summary(el: pd.DataFrame, previous_included=()) -> dict:
                                  el[el["decision"] != "INCLUDED"].groupby(["decision", "reason"]).size().items()},
             "DEFERRED_GAME_IDS": sorted(el.loc[el["decision"] == "DEFERRED", "game_id"]),
             "NO_LONGER_INCLUDED": sorted(prev - set(inc["game_id"]))}
+
+
+PRIOR_DAY_INCOMPLETE = "DEFERRED_PRIOR_DAY_DATA_INCOMPLETE"
+_INCOMPLETE_REASONS = ("FINAL_DATA_INCOMPLETE_AT_CUTOFF", "BOX_INCOMPLETE", "BOX_UNRECONCILED")
+
+
+def prior_day_completeness(el: pd.DataFrame, day) -> dict:
+    """Training-universe games of ET date day - 1 at the refit cutoff (what the morning walk-forward could train on).
+    A provider-final game whose result / box had not reached the state is counted INCOMPLETE_FINAL and makes the status
+    DEFERRED_PRIOR_DAY_DATA_INCOMPLETE (those games are deferred to the next cutoff; nothing is inferred or backdated)."""
+    prior = (pd.Timestamp(str(day)) - pd.Timedelta(days=1)).date()
+    if len(el):
+        tip_et = pd.to_datetime(el["scheduled_tip_utc"], utc=True).dt.tz_convert(WC.TZ).dt.date
+        g = el[(tip_et == prior) & (el["game_universe"] == WC.TRAINING_UNIVERSE)]
+    else:
+        g = el
+    status = g["provider_status"].fillna("") if len(g) else pd.Series(dtype=str)
+    final = status == WC.FINAL_STATUS
+    inc = g[g["reason"].isin(_INCOMPLETE_REASONS) & final] if len(g) else g
+    out = {"PRIOR_DAY": str(prior), "PRIOR_DAY_GAMES": int(len(g)), "FINAL_GAMES": int(final.sum()),
+           "FINAL_WITH_RESULT": int((final & g["has_result"]).sum()) if len(g) else 0,
+           "FINAL_WITH_COMPLETE_BOX": int((final & g["has_result"] & g["box_complete"]).sum()) if len(g) else 0,
+           "IN_PROGRESS": int((~final & ~status.isin(NOT_PLAYED_STATUSES)).sum()) if len(g) else 0,
+           "INCOMPLETE_FINAL": int(len(inc)),
+           "UNRESOLVED_IDENTITY": int((g["reason"] == "IDENTITY_UNRESOLVED").sum()) if len(g) else 0,
+           "INCLUDED": int((g["decision"] == "INCLUDED").sum()) if len(g) else 0,
+           "INCOMPLETE_FINAL_GAME_IDS": sorted(inc["game_id"]) if len(inc) else []}
+    out["STATUS"] = PRIOR_DAY_INCOMPLETE if out["INCOMPLETE_FINAL"] else "COMPLETE"
+    return out
