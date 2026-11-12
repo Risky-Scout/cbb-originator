@@ -106,6 +106,15 @@ def test_I_no_pre_refit_refresh_at_or_after_cutoff(tmp_path, monkeypatch):
         assert "PRE_REFIT_REFRESH" not in p["sync_why"]
 
 
+def test_B_last_sync_just_before_et_midnight_still_schedules_next_day_lead_window(tmp_path, monkeypatch):
+    # 04:52Z Nov 13 = 23:52 ET Nov 12: the routine refresh (10:52Z) would land after the 10:15Z lead start
+    p = _plan(tmp_path, monkeypatch, [], "2026-11-13T04:55Z", last_ok="2026-11-13T04:52Z", last_try="2026-11-13T04:53Z")
+    syncs = [t for k, t in p["next"] if k == "sync"]
+    assert min(syncs) == U("2026-11-13T10:15Z")
+    pre = _plan(tmp_path, monkeypatch, [], "2026-11-13T10:20Z", last_ok="2026-11-13T04:52Z", last_try="2026-11-13T04:53Z")
+    assert pre["sync_why"] == ["PRE_REFIT_REFRESH"]
+
+
 # ============================================================================ sync: retry only what is incomplete
 def _kw(w: Path, hist: Path) -> dict:
     return dict(history_db=hist, state_root=w / "state", cache_root=w / "cache", ledger_path=w / "ledger.jsonl",

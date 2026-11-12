@@ -262,7 +262,11 @@ def plan(ctx: Ctx, st: dict | None, now: pd.Timestamp) -> dict:
     if len(backlog) and not halted and retry_ok:
         why.append("COMPLETION_BACKLOG")
     # pre-refit refresh: one sync inside the lead window before today's walk-forward training cutoff
-    rcut = WC.refit_cutoff(now.tz_convert(WC.TZ).date())
+    # the NEXT refit cutoff: a tick late on ET day D-1 must already schedule day D's lead-window wake-up
+    today = now.tz_convert(WC.TZ).date()
+    rcut = WC.refit_cutoff(today)
+    if now >= rcut:
+        rcut = WC.refit_cutoff(today + timedelta(days=1))
     rlead = rcut - pd.Timedelta(minutes=PC.PRE_REFIT_REFRESH_LEAD_MINUTES)
     if rlead <= now < rcut and (last_ok is None or last_ok < rlead) and retry_ok:
         why.append("PRE_REFIT_REFRESH")
