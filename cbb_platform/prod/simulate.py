@@ -8,19 +8,29 @@ Distribution per market (both from the same bank):
                                      the pmf the 2025-26 confirmation scored)
     combos      BANK_DRAWS        -- empirical pmf of the summed joint draws (joint.derived_markets)
 Distributions are CONDITIONAL ON PLAYING; P(play) is reported beside them and never mixed in.
+
+Memory (2026-11-13 morning OOM): the frozen structural.mixture_tables materializes ~11 table-sized temporaries for the
+whole game at once (NB pmf -> cdf -> AS241 thresholds over every (stat dim, mean grid) row), a ~2.1 GB transient per
+20,000-draw game. bounded_mixture_tables returns EXACTLY the same tables (every row of every table is a function of its
+own dim's column only) by calling the frozen function on whole-player column blocks and concatenating the results with
+their global row offsets; simulate_game substitutes it for the scorer's call only. No model code changes (the frozen
+files stay hash-pinned); tests/test_prod_bounded_tables.py proves array equality against the frozen function.
 """
 from __future__ import annotations
 
 import hashlib
+from contextlib import contextmanager
 
 import numpy as np
 import pandas as pd
 
 from cbb_platform.prod import config as PC
-from cbb_platform.v2 import dependence as D, jm1_final_production as JP, joint as J
+from cbb_platform.v2 import dependence as D, jm1_final_production as JP, joint as J, structural as S
 
 PMF_TOL = 1e-9
 PSD_TOL = -1e-9
+TABLE_BLOCK_PLAYERS = 2                       # whole players per frozen mixture_tables call (7 stat dims each)
+_FROZEN_MIXTURE_TABLES = S.mixture_tables
 
 
 class ScoringFailure(RuntimeError):
@@ -29,12 +39,48 @@ class ScoringFailure(RuntimeError):
         self.reason = reason
 
 
+def bounded_mixture_tables(lm: np.ndarray, phi: np.ndarray, kmax: int = S.L.KMAX,
+                           block_players: int = TABLE_BLOCK_PLAYERS, keep: tuple = ("pmf", "cdf", "thr")) -> dict:
+    """structural.mixture_tables(lm, phi, kmax), identical arrays, peak memory bounded by one player block: rows are
+    ordered (dim, grid) with each dim's grid / pmf / cdf / thresholds computed from its own column, so the full result
+    is the block results concatenated, with inv / starts shifted by the rows of the preceding blocks. Blocks start at
+    multiples of NS, so a block's local dim % NS is the global stat. `keep` drops tables the caller never reads (the
+    scorer reads pmf via mixture_pmf and thr via counts, never cdf)."""
+    d = lm.shape[1]
+    step = block_players * S.NS if d % S.NS == 0 else d      # not player-aligned: one block (the frozen call itself)
+    tabs = []
+    for a in range(0, d, step):
+        t = _FROZEN_MIXTURE_TABLES(lm[:, a:a + step], phi, kmax)
+        tabs.append({k: v for k, v in t.items() if k in keep or k in ("inv", "starts")})
+        del t
+    off = np.concatenate([[0], np.cumsum([t["starts"][-1] for t in tabs])])
+    out = {"inv": np.concatenate([t.pop("inv") + o for t, o in zip(tabs, off)], axis=1),
+           "starts": np.concatenate([t["starts"][:-1] + o for t, o in zip(tabs, off)] + [off[-1:]])}
+    for k in keep:                                           # one table at a time: block copies freed as each is joined
+        out[k] = np.concatenate([t.pop(k) for t in tabs])
+    return out
+
+
+def _scorer_tables(lm: np.ndarray, phi: np.ndarray, kmax: int = S.L.KMAX) -> dict:
+    return bounded_mixture_tables(lm, phi, kmax, keep=("pmf", "thr"))
+
+
+@contextmanager
+def _bounded_tables():
+    S.mixture_tables = _scorer_tables
+    try:
+        yield
+    finally:
+        S.mixture_tables = _FROZEN_MIXTURE_TABLES
+
+
 def simulate_game(prod: dict, gid: str, gp: pd.DataFrame, envd: dict, sims: int = PC.SIMS) -> dict:
     """The single bank for one game + validity checks. Raises ScoringFailure with a readiness reason."""
     if gp.loc[gp["_scored"], "team_id"].nunique() != 2:
         raise ScoringFailure("MISSING_PLAYER_STATE", f"{gid}: priced players on fewer than two teams")
     try:
-        r = JP.score_game(prod, gid, gp.reset_index(drop=True), envd, sims)
+        with _bounded_tables():
+            r = JP.score_game(prod, gid, gp.reset_index(drop=True), envd, sims)
     except D.V2Phase2DataViolation as e:
         raise ScoringFailure("NON_PSD_DEPENDENCE", str(e)) from e
     except Exception as e:                                           # noqa: BLE001 -- any scorer failure blocks

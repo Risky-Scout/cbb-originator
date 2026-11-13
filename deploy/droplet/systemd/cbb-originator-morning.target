@@ -1,0 +1,8 @@
+# CBB Originator 07:00 ET morning chain: the ONE morning entrypoint (cbb-originator-morning.timer). Each stage is its
+# own oneshot service / cgroup; Requires= + After= between stages (a failed stage stops the normal chain; health
+# always runs). StopWhenUnneeded: the target goes inactive once the chain ends, so the next timer elapse starts it.
+[Unit]
+Description=CBB Originator 07:00 ET morning chain (prep -> walk-forward -> forecast -> exports -> health)
+Wants=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service cbb-originator-morning-health.service
+After=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service cbb-originator-morning-health.service
+StopWhenUnneeded=yes

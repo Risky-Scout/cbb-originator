@@ -1,0 +1,56 @@
+# CBB Originator 08:00 ET morning recovery: evaluates the FULL durable morning state machine (ops/morning/<D>/progress.json).
+# Complete -> ALREADY_COMPLETE (no work). Otherwise it resumes the chain at the first incomplete stage; a promoted same-day
+# model is never refit. Ordered After= every morning stage: it never overlaps a 07:00 stage (no concurrent CBB writers).
+# Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
+[Unit]
+Description=CBB Originator 08:00 ET morning recovery
+After=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service cbb-originator-morning-health.service cbb-originator-morning.target
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/sports-models/cbb-originator.env
+
+[Service]
+Type=oneshot
+User=cbb-originator
+Group=cbb-originator
+WorkingDirectory=/opt/sports-models/cbb-originator/current
+EnvironmentFile=/etc/sports-models/cbb-originator.env
+Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Environment=CBB_DUCKDB_THREADS=1
+Environment=CBB_APP_ROOT=/opt/sports-models/cbb-originator/current
+Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod
+Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
+Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
+Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
+Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-recover
+# root (+): re-starts the idempotent chain ONLY when the recovery wrote ops/morning/RESUME_REQUEST (at most
+# MAX_RECOVERY_PASSES passes; the stages themselves run as cbb-originator in their own units)
+ExecStartPost=+/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-morning-resume
+Restart=no
+TimeoutStartSec=360min
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cbb-originator-morning-recover
+MemoryHigh=600M
+MemoryMax=800M
+MemorySwapMax=0
+Nice=10
+CPUQuota=100%
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+ReadOnlyPaths=/opt/sports-models/cbb-originator
+ReadWritePaths=/var/lib/sports-models/cbb-originator
+InaccessiblePaths=-/opt/nba-prop-runtime -/srv/nba-production -/var/lib/nba-prop -/etc/nba-prop-quant

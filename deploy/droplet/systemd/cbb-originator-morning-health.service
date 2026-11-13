@@ -1,16 +1,16 @@
-# CBB Originator: 07:00 ET daily lifecycle: settlement, prior-day Grades, walk-forward under the shared heavy lock, INITIAL forecast, exports, health
+# CBB Originator 07:00 ET morning stage 5/5 HEALTH: aggregates the durable stage receipts into the daily health record.
+# Wants= (not Requires=) its predecessors: it always runs and records an incomplete morning honestly.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator 07:00 ET daily lifecycle
-After=network-online.target
-Wants=network-online.target
+Description=CBB Originator morning stage 5/5: health
+Wants=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service
+After=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env
 
 [Service]
 Type=oneshot
 User=cbb-originator
 Group=cbb-originator
-SupplementaryGroups=sports-models-heavy
 WorkingDirectory=/opt/sports-models/cbb-originator/current
 EnvironmentFile=/etc/sports-models/cbb-originator.env
 Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
@@ -21,16 +21,16 @@ Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod
 Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
 Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
 Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
-Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock
 Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
-ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run lifecycle-morning
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-stage health
+ExecStopPost=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-finalize health
 Restart=no
-TimeoutStartSec=120min
+TimeoutStartSec=10min
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=cbb-originator-morning
-MemoryHigh=2800M
-MemoryMax=3200M
+SyslogIdentifier=cbb-originator-morning-health
+MemoryHigh=600M
+MemoryMax=800M
 MemorySwapMax=0
 Nice=10
 CPUQuota=100%
@@ -48,5 +48,5 @@ RestrictSUIDSGID=yes
 LockPersonality=yes
 UMask=0027
 ReadOnlyPaths=/opt/sports-models/cbb-originator
-ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models
+ReadWritePaths=/var/lib/sports-models/cbb-originator
 InaccessiblePaths=-/opt/nba-prop-runtime -/srv/nba-production -/var/lib/nba-prop -/etc/nba-prop-quant

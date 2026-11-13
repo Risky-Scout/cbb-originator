@@ -1,4 +1,4 @@
-# CBB Originator 07:00 ET daily lifecycle timer. systemd evaluates the zone itself (DST-correct).
+# CBB Originator 07:00 ET morning timer: starts the five-stage chain (cbb-originator-morning.target). systemd evaluates the zone itself (DST-correct).
 [Unit]
 Description=CBB Originator 07:00 ET daily lifecycle timer
 
@@ -7,7 +7,7 @@ OnCalendar=*-*-* 07:00:00 America/New_York
 AccuracySec=1s
 RandomizedDelaySec=0
 Persistent=false
-Unit=cbb-originator-morning.service
+Unit=cbb-originator-morning.target
 
 [Install]
 WantedBy=timers.target

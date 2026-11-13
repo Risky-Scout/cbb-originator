@@ -268,7 +268,8 @@ def test_droplet_units_implement_exactly_the_fixed_schedule():
     sd = d / "systemd"
     timers = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")] for p in sd.glob("*.timer")}
     assert timers["cbb-originator-morning.timer"] == [f"OnCalendar=*-*-* {L.MORNING_TIME_ET}:00 America/New_York"]
-    assert timers["cbb-originator-refit-retry.timer"] == [f"OnCalendar=*-*-* {L.REFIT_RETRY_TIME_ET}:00 America/New_York"]
+    assert timers["cbb-originator-morning-recover.timer"] == [f"OnCalendar=*-*-* {L.REFIT_RETRY_TIME_ET}:00 America/New_York"]
+    assert "Unit=cbb-originator-morning.target" in (sd / "cbb-originator-morning.timer").read_text()
     for t in L.ROTOWIRE_REFRESH_TIMES_ET:
         assert timers[f"cbb-originator-availability-{t.replace(':', '')}.timer"] == [f"OnCalendar=*-*-* {t}:00 America/New_York"]
     for p in sd.glob("*"):
@@ -342,36 +343,6 @@ def test_walk_forward_exception_keeps_last_good_and_is_recorded(tmp_path, monkey
     assert r["DAILY_REFIT_STATUS"] == "FAIL" and r["DAILY_MODEL_PROMOTION"] == "NOT_PROMOTED" and "MemoryError" in r["reason"]
 
 
-def test_refit_retry_is_a_no_op_unless_the_morning_was_deferred(tmp_path, monkeypatch):
-    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
-    life = _wf_life(tmp_path)
-    day = L.et_date(life.now())
-    calls = []
-    r = L.refit_retry(life, day, runner=lambda *a, **k: calls.append(1) or {})
-    assert r["status"] == "NO_OP" and calls == []
-    OS.append_jsonl(L.wf_attempts_path(life, day), [{"attempt": "MORNING_0700", "DAILY_REFIT_STATUS": "PASS"}])
-    assert L.refit_retry(life, day, runner=lambda *a, **k: calls.append(1) or {})["status"] == "NO_OP" and calls == []
-    h = json.loads(L.health_path(life, day).read_text())
-    assert h["et_date"] == day.isoformat() and h["refit_retry"]["status"] == "NO_OP"
-
-
-def test_refit_retry_runs_once_after_deferral_and_reforecasts_on_promotion(tmp_path, monkeypatch):
-    monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
-    life = _wf_life(tmp_path)
-    day = L.et_date(life.now())
-    OS.append_jsonl(L.wf_attempts_path(life, day), [{"attempt": "MORNING_0700", "DAILY_REFIT_STATUS": L.DEFERRED_SHARED_LOCK}])
-    fc = []
-    monkeypatch.setattr(L, "forecast", lambda lf, w=L.INITIAL, **k: fc.append(w) or {"status": "FORECAST", "window": w})
-    monkeypatch.setattr(L, "exports_for", lambda lf, d: {})
-    r = L.refit_retry(life, day, runner=lambda *a, **k: {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED"})
-    assert r["status"] == "RAN" and fc == [L.REFIT_RETRY]
-    assert L.window_label(L.REFIT_RETRY) == "REFIT_RETRY_0800"
-    again = L.refit_retry(life, day, runner=lambda *a, **k: {"DAILY_MODEL_PROMOTION": "PROMOTED"})
-    assert again["status"] == "NO_OP" and fc == [L.REFIT_RETRY]          # exactly one retry per day
-    h = json.loads(L.health_path(life, day).read_text())
-    assert not any(k in json.dumps(h) for k in ("API_KEY=", "ENCRYPTION_KEY="))
-
-
 # ============================================================================ bounded 07:00 feature catch-up (2026-11-11)
 def _warm(status, todo=72, built=27):
     calls = []
@@ -409,28 +380,33 @@ def test_complete_feature_cache_runs_the_unchanged_refit(tmp_path, monkeypatch):
         assert r["DAILY_REFIT_STATUS"] == "PASS" and r["feature_catchup"]["status"] == status
 
 
-def test_deferred_backlog_morning_still_forecasts_with_the_incumbent_and_retry_runs_once(tmp_path, monkeypatch):
-    """Fail safe, not fail silent: the 07:00 forecast is made with the last-known-good ACTIVE model; the 08:00 retry
-    (NO_OP after a morning that ran) retries a deferred backlog exactly once."""
+def test_deferred_backlog_morning_still_forecasts_with_the_incumbent_and_recovery_retries_once(tmp_path, monkeypatch):
+    """Fail safe, not fail silent: a deferred walk-forward (backlog) exits 0 with the incumbent, so the 07:00 INITIAL
+    forecast is made with the last-known-good ACTIVE model; the 08:00 recovery retries the walk-forward exactly once and a
+    promotion then re-forecasts (window REFIT_RETRY) -- the INITIAL snapshot stands."""
+    from cbb_platform.prod import morning_stages as MS
     monkeypatch.delenv(L.HEAVY_LOCK_ENV, raising=False)
     life = _wf_life(tmp_path)
     day = L.et_date(life.now())
     fc = []
-    monkeypatch.setattr(L.SH, "tick", lambda ctx: {"tick_id": "K", "status": "OK"})
     monkeypatch.setattr(L, "exports_for", lambda lf, d: {})
-    monkeypatch.setattr(L, "forecast", lambda lf, w=L.INITIAL, **k: fc.append(w) or {"status": "FORECAST", "window": w})
+    monkeypatch.setattr(L, "forecast", lambda lf, w=L.INITIAL, **k: fc.append(w) or {
+        "status": "FORECAST", "window": w, "snapshot_id": f"S-{w}", "model_version": "v-old" if len(fc) == 1 else "v-new"})
+    with MS.locked(life.ops_root, day) as p:                # PREP already PASS (its own unit; not under test here)
+        p["PREP"].update(STATUS=MS.PASS, ATTEMPTS=1)
     warm, _ = _warm("BUDGET_EXHAUSTED")
-    real = L.walk_forward
-    monkeypatch.setattr(L, "walk_forward", lambda lf, d, a="MORNING_0700", **k: real(lf, d, a, runner=lambda *x, **y: {},
-                                                                                    warm_runner=warm))
-    out = L.morning(life, day, tick_ctx=type("C", (), {"history_db": None})())
-    assert out["walk_forward"]["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG and fc == [L.INITIAL]
-    h = json.loads(L.health_path(life, day).read_text())
-    assert h["walk_forward"]["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG
-    monkeypatch.setattr(L, "walk_forward", real)
+    code, r = MS.run_walkforward(life, day, runner=lambda *x, **y: {}, warm_runner=warm)
+    assert code == 0 and r["status"] == MS.DEFERRED and r["DAILY_REFIT_STATUS"] == L.DEFERRED_FEATURE_BACKLOG
+    assert MS.run_forecast(life, day)[0] == 0 and fc == [L.INITIAL]
+    p = MS.load(life.ops_root, day)
+    assert p["WALK_FORWARD"]["RETRYABLE"] and MS.first_incomplete(p) == "WALK_FORWARD" and not p["MORNING_COMPLETE"]
     warm2, _ = _warm("COMPLETE", todo=2, built=2)
-    r = L.refit_retry(life, day, warm_runner=warm2,
-                      runner=lambda *a, **k: {"DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED"})
-    assert r["status"] == "RAN" and r["walk_forward"]["feature_catchup"]["status"] == "COMPLETE"
-    assert fc == [L.INITIAL, L.REFIT_RETRY]
-    assert L.refit_retry(life, day, warm_runner=warm2, runner=lambda *a, **k: {})["status"] == "NO_OP"
+    code, r = MS.run_walkforward(life, day, warm_runner=warm2, runner=lambda *a, **k: {
+        "DAILY_REFIT_STATUS": "PASS", "DAILY_MODEL_PROMOTION": "PROMOTED", "ACTIVE_MODEL_VERSION": "v-new"})
+    assert code == 0 and r["status"] == MS.PASS
+    assert MS.run_forecast(life, day)[0] == 0 and fc == [L.INITIAL, L.REFIT_RETRY]
+    assert MS.run_forecast(life, day)[0] == 0 and fc == [L.INITIAL, L.REFIT_RETRY]        # once
+    p = MS.load(life.ops_root, day)
+    assert p["INITIAL_FORECAST"]["SNAPSHOT_ID"] == "S-INITIAL" and p["INITIAL_FORECAST"]["REFIT_RETRY_SNAPSHOT_ID"] == "S-REFIT_RETRY"
+    attempts = [x["attempt"] for x in OS.read_jsonl(L.wf_attempts_path(life, day))]
+    assert attempts == ["MORNING_0700", "RECOVERY_2"]

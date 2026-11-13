@@ -17,7 +17,7 @@ from cbb_platform.prod import config as PC
 
 D = C.PROJECT_ROOT / "deploy" / "droplet"
 RUN = D / "bin" / "cbb-originator-run"
-UNITS = sorted((D / "systemd").glob("*.service")) + sorted((D / "systemd").glob("*.timer"))
+UNITS = sorted((D / "systemd").glob("*.service")) + sorted((D / "systemd").glob("*.timer")) + sorted((D / "systemd").glob("*.target"))
 SECRET_NAMES = ("CBBD_API_KEY", "ODDS_API_KEY", "CBB_OPS_ENCRYPTION_KEY", "GH_TOKEN", "ROTOWIRE_API_KEY")
 THREADS = {k: "1" for k in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS",
                             "NUMEXPR_NUM_THREADS")}
@@ -143,24 +143,25 @@ def test_git_checkout_mode_still_verifies_identity(tmp_path, app):
     {"CBB_EXPECTED_COMMIT": None},
 ])
 def test_unsafe_or_unverified_configuration_is_refused(app, extra):
-    for cmd in (["preflight"], ["lifecycle-morning"], ["refit-retry"], ["tick"], ["lifecycle-refresh", "10:00"]):
+    for cmd in (["preflight"], ["morning-stage", "walkforward"], ["morning-recover"], ["tick"], ["lifecycle-refresh", "10:00"]):
         r = _run(app, *cmd, CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1", **extra)
         assert r.returncode == 3, (cmd, extra, r.stderr)
         assert "REFUSED" in r.stderr
 
 
 def test_no_writer_role_means_nothing_runs(app):
-    for cmd in (["lifecycle-morning"], ["refit-retry"], ["tick"], ["lifecycle-refresh", "13:00"]):
+    for cmd in (["morning-stage", "prep"], ["morning-stage", "walkforward"], ["morning-finalize", "forecast"],
+                ["morning-recover"], ["tick"], ["lifecycle-refresh", "13:00"]):
         r = _run(app, *cmd)                                  # CBB_SCHEDULER_ROLE unset -> DISABLED
         assert r.returncode == 4 and "not the designated" in r.stderr
         assert _run(app, *cmd, CBB_SCHEDULER_ROLE="SECONDARY").returncode == 4
 
 
 def test_dry_run_paths_are_outside_the_release(app):
-    m = _run(app, "lifecycle-morning", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    m = _run(app, "morning-stage", "walkforward", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
     assert m.returncode == 0, m.stderr
     s = m.stderr
-    assert "cbb_platform.prod.lifecycle" in s and " morning" in s
+    assert "cbb_platform.prod.lifecycle" in s and " morning-stage --stage walkforward" in s
     assert f"--prod-root {app['state']}/prod" in s and f"--ops-root {app['state']}/prod/ops" in s
     assert f"{app['state']}/locks/cbb-originator.writer.lock" in s
     assert str(app["rel"]) not in s.split("run:", 1)[1].replace(f"{app['tmp']}/venv", "")
@@ -176,7 +177,7 @@ def test_writer_lock_busy_fails_closed_with_tempfail(app):
     try:
         import time
         time.sleep(0.5)
-        r = _run(app, "refit-retry", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_WRITER_LOCK_WAIT_SEC="1")
+        r = _run(app, "morning-recover", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_MORNING_WRITER_LOCK_WAIT_SEC="1")
         assert r.returncode == 75 and "writer lock busy" in r.stderr
     finally:
         holder.kill()
@@ -207,8 +208,12 @@ def test_prod_root_env_relocates_every_mutable_production_path(tmp_path):
 
 
 # ------------------------------------------------------------------ systemd units
-HEAVY_UNITS = ("cbb-originator-morning.service", "cbb-originator-refit-retry.service",
-               "cbb-originator-features-warmup.service")
+HEAVY_UNITS = ("cbb-originator-walkforward.service", "cbb-originator-features-warmup.service")
+# the 07:00 chain's other stages: own unit / cgroup each, CBB writer lock (taken by the stage), NEVER the heavy lock
+STAGE_UNITS = ("cbb-originator-morning-prep.service", "cbb-originator-morning-forecast.service",
+               "cbb-originator-morning-exports.service")
+SMALL_UNITS = ("cbb-originator-morning-health.service", "cbb-originator-morning-recover.service")
+NO_HEAVY_UNITS = STAGE_UNITS + SMALL_UNITS
 LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
 POLL_UNIT = "cbb-originator-availability-poll.service"      # 08:30 light poll: writer lock only, NEVER the heavy lock
 RETENTION_UNIT = "cbb-originator-retention.service"          # 05:45 run-scratch retention: writer lock only, NEVER heavy
@@ -220,9 +225,10 @@ def _mem(s: str, key: str) -> int:
 
 
 def test_units_are_isolated_and_hold_no_secrets():
-    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, RETENTION_UNIT,
+    assert {u.name for u in UNITS} == {*HEAVY_UNITS, *NO_HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, RETENTION_UNIT,
                                        "cbb-originator-retention.timer", "cbb-originator-morning.timer",
-                                       "cbb-originator-refit-retry.timer", "cbb-originator-quotes.timer",
+                                       "cbb-originator-morning.target", "cbb-originator-morning-recover.timer",
+                                       "cbb-originator-quotes.timer",
                                        "cbb-originator-availability-0830.timer", "cbb-originator-features-warmup.timer",
                                        *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
     for u in UNITS:
@@ -234,7 +240,7 @@ def test_units_are_isolated_and_hold_no_secrets():
     for u in (D / "systemd").glob("*.service"):
         s = u.read_text()
         lines = s.splitlines()
-        heavy = () if u.name in (POLL_UNIT, RETENTION_UNIT) else ("SupplementaryGroups=sports-models-heavy",
+        heavy = () if u.name in (POLL_UNIT, RETENTION_UNIT) + NO_HEAVY_UNITS else ("SupplementaryGroups=sports-models-heavy",
                                                  "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
                                                  "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models")
         for line in heavy + ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
@@ -256,9 +262,14 @@ def test_units_are_isolated_and_hold_no_secrets():
         for k in THREADS:
             assert f"{k}=1" in s
         assert _mem(s, "MemoryHigh") < _mem(s, "MemoryMax")
-    for n in HEAVY_UNITS:
+    for n in HEAVY_UNITS + STAGE_UNITS:
         s = (D / "systemd" / n).read_text()
         assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200        # 8 GB host: 4 GiB reserve kept
+    for n in NO_HEAVY_UNITS:                       # structurally never the host-wide heavy lock (walk-forward only)
+        body = "\n".join(l for l in (D / "systemd" / n).read_text().splitlines() if not l.lstrip().startswith("#"))
+        assert "SupplementaryGroups" not in body and "/run/lock" not in body and "CBB_HEAVY_LOCK" not in body, n
+    for n in SMALL_UNITS:
+        assert _mem((D / "systemd" / n).read_text(), "MemoryMax") <= 800
     # quotes / availability refreshes build the full-state pregame features before scoring (2026-11-09: a 1800M/2200M
     # quotes cgroup throttled then OOM-killed after the season state grew), so they carry the same 2800M/3200M ceiling;
     # they hold the CBB writer lock (never concurrent with morning / refit-retry) and the 01:30 ET warmup window has no
@@ -273,7 +284,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
     cal = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")]
            for p in (D / "systemd").glob("*.timer")}
     assert cal == {"cbb-originator-morning.timer": ["OnCalendar=*-*-* 07:00:00 America/New_York"],
-                   "cbb-originator-refit-retry.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
+                   "cbb-originator-morning-recover.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
                    "cbb-originator-features-warmup.timer": ["OnCalendar=*-*-* 01:30:00 America/New_York"],
@@ -392,3 +403,16 @@ def test_retention_unit_never_takes_the_heavy_lock_and_only_prunes():
     assert "prune-scratch)     RUN=(\"$PY\" -m cbb_platform.prod.retention" in r
     blk = r[r.index("prune-scratch)     RUN="):r.index("tick)              RUN=")]
     assert "unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC" in blk
+
+
+def test_forecast_and_walkforward_stages_pin_the_measured_allocator_thresholds_only_there():
+    # measured 2026-11-13 in clean QA processes (forecast: full 55-game slate, bit-identical PMFs; walk-forward: 11-13
+    # replay, byte-identical artifacts): fixed mmap / trim thresholds; allocation placement only. Limits unchanged.
+    env = "Environment=MALLOC_MMAP_THRESHOLD_=131072 MALLOC_TRIM_THRESHOLD_=131072 MALLOC_ARENA_MAX=2"
+    for u in (D / "systemd").glob("*.service"):
+        lines = u.read_text().splitlines()
+        assert (env in lines) == (u.name in ("cbb-originator-morning-forecast.service",
+                                             "cbb-originator-walkforward.service")), u.name
+    for n in ("cbb-originator-morning-forecast.service", "cbb-originator-walkforward.service"):
+        s = (D / "systemd" / n).read_text()
+        assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200 and "MemorySwapMax=0" in s

@@ -34,12 +34,41 @@ are out of scope. CBB units list them under `InaccessiblePaths=` and never touch
 | unit (timer) | when | locks | memory (High / Max) |
 |---|---|---|---|
 | `cbb-originator-features-warmup` | 01:30 | heavy lock only (150-min budget; no fit / forecast / manifest) | 2800M / 3200M |
-| `cbb-originator-morning` | 07:00 | CBB writer lock; heavy lock inside walk-forward | 2800M / 3200M |
-| `cbb-originator-refit-retry` | 08:00 | as morning | 2800M / 3200M |
+| `cbb-originator-morning.target` (`cbb-originator-morning` timer) | 07:00 | the five-stage chain below (Requires= + After=) | per stage |
+| `cbb-originator-morning-prep` | stage 1/5 | writer lock (taken by the stage), never heavy; tick + prior-day Grades | 2800M / 3200M |
+| `cbb-originator-walkforward` | stage 2/5 | writer lock; THE ONLY CBB unit with the heavy lock (fit step only) | 2800M / 3200M |
+| `cbb-originator-morning-forecast` | stage 3/5 | writer lock, never heavy; INITIAL forecast on the ACTIVE model | 2800M / 3200M |
+| `cbb-originator-morning-exports` | stage 4/5 | writer lock, never heavy; exports from persisted evidence | 2800M / 3200M |
+| `cbb-originator-morning-health` | stage 5/5 | writer lock, never heavy; Wants= (always runs) | 600M / 800M |
+| `cbb-originator-morning-recover` | 08:00 | writer lock, never heavy; After= every stage (never overlaps) | 600M / 800M |
 | `cbb-originator-availability-poll` (`-0830` timer) | 08:30 | writer lock; RotoWire acquisition only | 1000M / 1400M |
 | `cbb-originator-availability@1000/1300/1600/1800` | 10:00, 13:00, 16:00, 18:00 | writer lock, never heavy | 2800M / 3200M |
 | `cbb-originator-quotes` | every 10 min | writer lock; official tick + reprice of persisted PMFs, never fits | 2800M / 3200M |
 | `cbb-originator-retention` | 05:45 | writer lock, never heavy; run-scratch retention (below) | 500M / 800M |
+
+Morning stages (`cbb_platform/prod/morning_stages.py`; 2026-11-13 incident: the single 07:00 process promoted the day's
+model, then was OOM-killed in the INITIAL forecast). Each stage is a fresh process in its own cgroup and exits before
+the next starts. Each writes a durable receipt to `prod/ops/morning/<D>/progress.json` (atomic replace; statuses NOT_STARTED /
+RUNNING / PASS / DEFERRED / FAIL, PID, START/PEAK/END RSS, cgroup `memory.peak`), plus `stage_log.jsonl`. The
+ExecStopPost `morning-finalize` records SERVICE_RESULT (oom-kill / timeout / signal) for a stage killed before its
+receipt. A walk-forward killed after promotion is reconstructed as PASS from the model store
+(`walkforward.store.same_day_promotion`), never refit. The 08:00 recovery evaluates the whole state machine. If the
+morning is complete it records ALREADY_COMPLETE. Otherwise it writes `prod/ops/morning/RESUME_REQUEST`, and its root
+`ExecStartPost=+` (`deploy/droplet/bin/cbb-originator-morning-resume`) re-starts the same idempotent chain, which skips
+PASS stages, at most twice. Every retry trains as of the original `D 06:00 ET` cutoff. Inspect:
+`jq . /var/lib/sports-models/cbb-originator/prod/ops/morning/$(TZ=America/New_York date +%F)/progress.json`.
+
+Forecast memory (measured 2026-11-13 in a clean QA process with production limits, 55-game INITIAL slate). The frozen
+`structural.mixture_tables` built every table row of a 20,000-draw game at once, a transient of about 2.1 GB per game. The
+pre-fix forecast reached at least 3,283 MiB VmHWM and never finished under throttling. `prod/simulate.bounded_mixture_tables`
+now assembles the identical tables from the frozen function on two-player column blocks. The tables are byte-identical
+(`tests/test_prod_bounded_tables.py`), and the frozen files stay hash-pinned. The full slate then finishes at 2,463 MiB.
+The forecast stage unit also pins glibc `MALLOC_MMAP_THRESHOLD_` / `MALLOC_TRIM_THRESHOLD_` / `MALLOC_ARENA_MAX`. This
+stops heap baseline creep across games: 1,971 MiB, with PMFs bit-identical on all 1,647,530 rows.
+The walk-forward unit pins the same allocator settings. On the standalone 11-13 replay, VmHWM drops from 3,081 to 2,856 MiB,
+and every model artifact is byte-identical to production. Its fit 1 (`marginal.fit_v0`) peak remains above MemoryHigh
+(throttled, not killed) and grows with the season's training rows. Watch `MORNING_STAGE_MEMORY.WALK_FORWARD` in the
+health receipt.
 
 Availability refreshes re-forecast only pre-cutoff games whose availability changed (the targeted reforecast path).
 They never retrain. The quotes tick and the availability refreshes build full-state pregame features before scoring. They

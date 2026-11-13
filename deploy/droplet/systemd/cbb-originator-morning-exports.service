@@ -1,16 +1,16 @@
-# CBB Originator: 08:00 ET walk-forward retry: no-op unless 07:00 recorded DEFERRED_SHARED_LOCK
+# CBB Originator 07:00 ET morning stage 4/5 EXPORTS: rebuild the day's Boards / Distributions / Grades from persisted
+# evidence. No fit, no simulation, no network, no heavy lock.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator 08:00 ET walk-forward retry
-After=network-online.target
-Wants=network-online.target
+Description=CBB Originator morning stage 4/5: exports
+Requires=cbb-originator-morning-forecast.service
+After=cbb-originator-morning-forecast.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env
 
 [Service]
 Type=oneshot
 User=cbb-originator
 Group=cbb-originator
-SupplementaryGroups=sports-models-heavy
 WorkingDirectory=/opt/sports-models/cbb-originator/current
 EnvironmentFile=/etc/sports-models/cbb-originator.env
 Environment=TZ=America/New_York PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
@@ -21,14 +21,14 @@ Environment=CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod
 Environment=CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward
 Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
 Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
-Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock
 Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
-ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run refit-retry
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-stage exports
+ExecStopPost=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-finalize exports
 Restart=no
-TimeoutStartSec=90min
+TimeoutStartSec=30min
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=cbb-originator-refit-retry
+SyslogIdentifier=cbb-originator-morning-exports
 MemoryHigh=2800M
 MemoryMax=3200M
 MemorySwapMax=0
@@ -48,5 +48,5 @@ RestrictSUIDSGID=yes
 LockPersonality=yes
 UMask=0027
 ReadOnlyPaths=/opt/sports-models/cbb-originator
-ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models
+ReadWritePaths=/var/lib/sports-models/cbb-originator
 InaccessiblePaths=-/opt/nba-prop-runtime -/srv/nba-production -/var/lib/nba-prop -/etc/nba-prop-quant

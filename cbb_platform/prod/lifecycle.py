@@ -1,17 +1,24 @@
 """THE daily production lifecycle (America/New_York): line-independent forecast snapshots + morning settlement/refit.
 
-    PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle morning  [--date D]      07:00 ET
+    PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle morning-stage --stage prep|walkforward|forecast|exports|health
+    PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle morning-recover [--date D]                  08:00 ET
     PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle refresh  --window HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET
     PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle forecast [--window INITIAL]   (one snapshot now)
     PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.lifecycle schedule                  (the fixed schedule, JSON)
 
-07:00 ET  morning(D):
-    1. shadow tick (prod.shadow_tick): CBBD sync of the prior night's final games + settlement of prior predictions
-    2. CBB_Grades for D-1 (prod.exports; only valid pre-tip priced receipts are graded, never unquoted forecasts)
-    3. the authorized daily walk-forward update (walkforward.daily.morning: eligibility -> training rows -> refit ->
-       existing hard gates -> atomic promotion, else the last-known-good version stays ACTIVE)
-    4. the INITIAL forecast snapshot of D's full eligible slate (below) + the D exports (Distributions always; Boards
-       when priced receipts exist)
+07:00 ET  the morning chain of D (prod.morning_stages; one systemd oneshot + cgroup PER STAGE, in this order, each a
+    fresh process that exits before the next starts -- 2026-11-13 a single morning process was OOM-killed in step 4
+    after step 3 had promoted the day's model):
+    1. PREP: shadow tick (prod.shadow_tick): CBBD sync of the prior night's final games + settlement of prior
+       predictions; CBB_Grades for D-1 (prod.exports; only valid pre-tip priced receipts are graded)
+    2. WALK_FORWARD: the authorized daily walk-forward update (walk_forward below -> walkforward.daily.morning:
+       eligibility -> training rows -> refit -> existing hard gates -> atomic promotion, else the last-known-good
+       version stays ACTIVE)
+    3. INITIAL_FORECAST: the INITIAL forecast snapshot of D's full eligible slate (below)
+    4. EXPORTS: the D exports (Distributions always; Boards when priced receipts exist)
+    5. HEALTH: the stage receipts aggregated into the daily health record
+08:00 ET  morning recovery (prod.morning_stages.recover): resumes the first incomplete stage of the durable state
+    machine <ops_root>/morning/<D>/progress.json (never refits once D's version was promoted)
 10:00 / 13:00 / 16:00 / 18:00 ET  refresh(window): RotoWire availability refresh -> re-forecast ONLY the games whose
     availability changed (cutoff not yet passed) -> new immutable snapshot -> D exports regenerated. Without
     ROTOWIRE_API_KEY the refresh is recorded as BLOCKED_NO_KEY and no forecast changes (nothing new is knowable).
@@ -59,7 +66,8 @@ SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") fo
 INITIAL = "INITIAL"
 # ---- shared cross-model heavy-job lock (operational only; nothing here reaches a forecast). Only the walk-forward step
 # takes it. Not acquired within the wait -> DEFERRED_SHARED_LOCK: the last-known-good ACTIVE model stays, the rest of
-# the morning still runs (the day is never left without forecasts), and ONE retry runs at REFIT_RETRY_TIME_ET.
+# the morning still runs (the day is never left without forecasts), and the REFIT_RETRY_TIME_ET (08:00 ET) morning
+# recovery (prod.morning_stages.recover) retries it once; a retry that promotes re-forecasts as window REFIT_RETRY.
 REFIT_RETRY = "REFIT_RETRY"
 REFIT_RETRY_TIME_ET = "08:00"
 DEFERRED_SHARED_LOCK = "DEFERRED_SHARED_LOCK"
@@ -76,7 +84,8 @@ DEFERRED_STATE_REFRESH_FAILED = "DEFERRED_STATE_REFRESH_FAILED"
 MORNING_FEATURE_BUDGET_ENV = "CBB_MORNING_FEATURE_BUDGET_MIN"
 MORNING_FEATURE_BUDGET_MIN = 30.0     # worst case 07:00 total ~80 min (tick + 30 + refit ~35 + forecast)
 HEAVY_LOCK_ENV, HEAVY_WAIT_ENV, MIN_MEM_ENV = "CBB_HEAVY_LOCK", "CBB_HEAVY_LOCK_WAIT_SEC", "CBB_MIN_MEMAVAILABLE_MB"
-WF_KEYS = ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION", "CANDIDATE_MODEL_VERSION", "note", "reason")
+WF_KEYS = ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION", "CANDIDATE_MODEL_VERSION", "note", "reason",
+           "run_id")
 ROTOWIRE_KEY_ENV = "ROTOWIRE_API_KEY"
 PLAYER_COLS = ["game_id", "team_id", "player_id", "min_mu", "min_sigma", "p_play", "availability_status",
                "availability_received_at", "player_suppression", "cold_start_class", "role_diagnostic"]
@@ -110,7 +119,12 @@ class Life:
 
 def schedule_spec() -> dict:
     """The fixed daily schedule the Droplet units implement (deploy/droplet/systemd/cbb-lifecycle-*)."""
-    return {"timezone": TZ, "morning": {"at": MORNING_TIME_ET, "steps": [
+    return {"timezone": TZ, "morning_recovery": {"at": REFIT_RETRY_TIME_ET, "steps": [
+        "evaluate the durable morning state machine (ops/morning/<D>/progress.json); complete -> ALREADY_COMPLETE",
+        "else resume the first incomplete stage (the same chain; PASS stages are skipped; never a refit after a promotion)"]},
+        "morning": {"at": MORNING_TIME_ET, "stage_units": ["cbb-originator-morning-prep", "cbb-originator-walkforward",
+                    "cbb-originator-morning-forecast", "cbb-originator-morning-exports", "cbb-originator-morning-health"],
+                    "steps": [
         "prior-day settlement (shadow tick: CBBD sync of final games, settlement)", "prior-day Grades export",
         "daily walk-forward update (existing gates; last-known-good retained on failure)", "INITIAL forecast snapshot",
         "Distributions export", "Boards export (forecast universe; market consensus when quotes exist)"]},
@@ -487,27 +501,6 @@ def walk_forward(life: Life, day: date, attempt: str = "MORNING_0700", runner=No
     return rec
 
 
-def refit_retry(life: Life, day: date | None = None, runner=None, warm_runner=None) -> dict:
-    """08:00 ET: one retry, ONLY when the 07:00 attempt of the day was deferred (DEFERRED_SHARED_LOCK or
-    DEFERRED_FEATURE_BACKLOG); a 07:00 that ran (PASS / FAIL / NO_NEW_DATA) is a NO_OP. A retry that promotes a
-    new model re-forecasts the still-pre-cutoff games (new immutable snapshot; earlier snapshots stand)."""
-    day = day or et_date(life.now())
-    recs = OS.read_jsonl(wf_attempts_path(life, day))
-    out = {"lifecycle": REFIT_RETRY, "day": day.isoformat()}
-    if not recs or recs[-1].get("DAILY_REFIT_STATUS") not in RETRYABLE_DEFERRALS \
-            or any(r.get("attempt") == "RETRY_0800" for r in recs):
-        out.update(status="NO_OP", reason="the 07:00 walk-forward was not deferred (or already retried)")
-        health(life, day, refit_retry=out)
-        return out
-    wf = walk_forward(life, day, "RETRY_0800", runner=runner, warm_runner=warm_runner)
-    out.update(status="RAN", walk_forward=wf)
-    if wf.get("DAILY_MODEL_PROMOTION") == "PROMOTED":
-        out["forecast"] = forecast(life, REFIT_RETRY)
-        out["exports"] = _brief(exports_for(life, day))
-    health(life, day, refit_retry=out)
-    return out
-
-
 # ============================================================================ daily health record (no secrets)
 def health_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
@@ -570,8 +563,18 @@ def receipt(h: dict) -> dict:
           and a.get("snapshot_status") == "PROCESSED"]
     st = lambda k: (ex.get(k) or {}).get("status") if isinstance(ex.get(k), dict) else None
     errors, warnings = [], []
-    if not wf:                                     # no morning walk-forward recorded for this ET date (yet / killed)
-        warnings.append("MORNING_NOT_RECORDED")
+    mo = h.get("morning") or {}                    # the stage-aware morning record (prod.morning_stages.summary)
+    if not wf and mo.get("MORNING_WALK_FORWARD_STATUS") in (None, "NOT_STARTED"):
+        warnings.append("MORNING_NOT_RECORDED")    # no walk-forward evidence at all for this ET date (yet / killed)
+    if mo and not mo.get("MORNING_COMPLETE"):
+        warnings.append(f"MORNING_INCOMPLETE: first incomplete stage {mo.get('FIRST_INCOMPLETE_STAGE')}"
+                        + (f"; INITIAL forecast {mo.get('MORNING_INITIAL_FORECAST_HISTORICAL_STATUS')}"
+                           if mo.get("MORNING_INITIAL_FORECAST_HISTORICAL_STATUS") else "")
+                        + ("; RECOVERY_REQUIRED" if mo.get("RECOVERY_REQUIRED") else ""))
+    for stg, m in (mo.get("STAGE_MEMORY") or {}).items():
+        pk = (m or {}).get("PEAK_RSS_MB")
+        if pk is not None and pk > 2800:           # above the unit MemoryHigh (2800M): reclaim throttling, low headroom
+            warnings.append(f"MEMORY_HIGH_EXCEEDED: {stg} peak RSS {pk:.0f} MB > MemoryHigh 2800 MB (MemoryMax 3200 MB)")
     if wf.get("DAILY_REFIT_STATUS") == "FAIL":
         errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
     if wf.get("DAILY_REFIT_STATUS") in RETRYABLE_DEFERRALS:
@@ -599,7 +602,8 @@ def receipt(h: dict) -> dict:
         warnings.append("ROTOWIRE_WEB_NEWS_COVERAGE_GAP")
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
             "MODEL_VERSION": lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION"),
-            "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS"), "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION"),
+            "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS") or mo.get("MORNING_REFIT_STATUS"),
+            "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION") or mo.get("MODEL_PROMOTION"),
             "FORECAST_STATUS": fc.get("status") or ("FORECAST" if lf else None),
             "FORECAST_WINDOW": lf.get("window"), "FORECAST_GAME_COUNT": lf.get("games_forecast"),
             "FORECAST_PLAYER_COUNT": lf.get("players_forecast"), "PMF_COUNT": lf.get("pmfs_persisted"),
@@ -620,6 +624,10 @@ def receipt(h: dict) -> dict:
                                           if r and "AVAILABILITY_IDENTITY_UNRESOLVED" in r),
             "WRITER_COUNT": 1 if os.environ.get("CBB_SCHEDULER_ROLE") == "PRIMARY_WRITER" else 0,
             "HEAVY_LOCK_STATUS": wf.get("lock_result"),
+            **{k: mo.get(k) for k in ("MORNING_PREP_STATUS", "MORNING_WALK_FORWARD_STATUS", "MORNING_ACTIVE_MODEL",
+                                      "MORNING_INITIAL_FORECAST_STATUS", "MORNING_EXPORTS_STATUS", "MORNING_HEALTH_STATUS",
+                                      "MORNING_COMPLETE", "FIRST_INCOMPLETE_STAGE", "RECOVERY_REQUIRED", "RECOVERY_LAST_ACTION")},
+            "MORNING_STAGE_MEMORY": mo.get("STAGE_MEMORY"),
             "ERRORS": errors, "WARNINGS": warnings, "FINAL_STATUS": "FAIL" if errors else ("DEGRADED" if warnings else "OK")}
 
 
@@ -628,24 +636,6 @@ def _rotowire_mode() -> str:
     if src is not None:
         return f"SOURCE_{src}"
     return "HARD_DISABLED_NO_KEY" if not os.environ.get(ROTOWIRE_KEY_ENV) else "KEY_PRESENT"
-
-
-def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None) -> dict:
-    now = life.now()
-    day = day or et_date(now)
-    out = {"lifecycle": "MORNING", "day": day.isoformat(), "started_at": now.isoformat()}
-    ctx = tick_ctx or SH.Ctx(ops_root=Path(life.ops_root), prod_root=Path(life.prod_root), history_db=life.history_db,
-                             clock=life.clock, artifact_paths=life.artifact_paths, sims=life.sims)
-    t = SH.tick(ctx)                                             # prior-night ingestion + settlement (idempotent)
-    out["tick"] = {k: t.get(k) for k in ("tick_id", "status", "sync", "settlement", "did_work")}
-    life.history_db = life.history_db or ctx.history_db
-    out["prior_day_exports"] = _brief(exports_for(life, day - timedelta(days=1)))
-    out["walk_forward"] = walk_forward(life, day, "MORNING_0700")
-    out["forecast"] = forecast(life, INITIAL)
-    out["exports"] = _brief(exports_for(life, day))
-    health(life, day, morning_tick=out["tick"], prior_day_exports=out["prior_day_exports"],
-           walk_forward=out["walk_forward"], forecast=out["forecast"], exports=out["exports"])
-    return out
 
 
 WEB_ACQUIRE_LOCK_NAME = ".acquire.lock"     # under PC.ROTOWIRE_WEB_ROOT: serializes every RotoWire web acquisition
@@ -974,8 +964,19 @@ def main(argv=None) -> None:
     ap.add_argument("--prod-root", type=Path, default=PC.PROD_ROOT)
     ap.add_argument("--model-root", type=Path, default=None)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    m = sub.add_parser("morning")
-    m.add_argument("--date", default=None)
+    from cbb_platform.prod import morning_stages as MS
+    ms = sub.add_parser("morning-stage")                   # one stage of the 07:00 chain (its own systemd unit)
+    ms.add_argument("--stage", required=True, choices=sorted(MS.CLI_STAGES))
+    ms.add_argument("--date", default=None)
+    mf = sub.add_parser("morning-finalize")                # the stage unit's ExecStopPost (SERVICE_RESULT, cgroup peak)
+    mf.add_argument("--stage", required=True, choices=sorted(MS.CLI_STAGES))
+    mf.add_argument("--date", default=None)
+    mr = sub.add_parser("morning-recover")                 # 08:00 ET: full state-machine recovery
+    mr.add_argument("--date", default=None)
+    mc = sub.add_parser("morning-reconcile")               # one-off: a pre-split morning killed after promotion
+    mc.add_argument("--date", required=True)
+    mc.add_argument("--missed-reason", required=True, choices=("MORNING_OOM_AFTER_PROMOTION",))
+    mc.add_argument("--prep-evidence", required=True)
     r = sub.add_parser("refresh")
     r.add_argument("--window", required=True, choices=ROTOWIRE_REFRESH_TIMES_ET)
     ap_ = sub.add_parser("availability-poll")
@@ -986,8 +987,6 @@ def main(argv=None) -> None:
     sub.add_parser("exports")
     qp = sub.add_parser("quotes")
     qp.add_argument("--dry-run", action="store_true")
-    rr = sub.add_parser("refit-retry")
-    rr.add_argument("--date", default=None)
     fw = sub.add_parser("features-warmup")
     fw.add_argument("--budget-min", type=float, default=None)
     aa = sub.add_parser("availability-acquire")             # Phase A (never the CBB writer lock)
@@ -1008,8 +1007,17 @@ def main(argv=None) -> None:
     from cbb_platform import duckdb_limits as DLM
     DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
     life = Life(ops_root=a.ops_root, prod_root=a.prod_root, model_root=a.model_root)
-    if a.cmd == "morning":
-        out = morning(life, date.fromisoformat(a.date) if a.date else None)
+    day = date.fromisoformat(a.date) if getattr(a, "date", None) else et_date(life.now())
+    if a.cmd == "morning-stage":
+        code, out = MS.run_stage(life, day, MS.CLI_STAGES[a.stage])
+        print(json.dumps(out, indent=1, default=str))
+        raise SystemExit(code)
+    if a.cmd == "morning-finalize":
+        out = MS.finalize(life, day, MS.CLI_STAGES[a.stage])
+    elif a.cmd == "morning-recover":
+        out = MS.recover(life, day)
+    elif a.cmd == "morning-reconcile":
+        out = MS.reconcile_missed_morning(life, day, a.missed_reason, a.prep_evidence)
     elif a.cmd == "refresh":
         out = refresh(life, a.window)
     elif a.cmd == "availability-poll":
@@ -1020,8 +1028,6 @@ def main(argv=None) -> None:
         out = exports_now(life)
     elif a.cmd == "quotes":
         out = quotes(life, dry_run=a.dry_run)
-    elif a.cmd == "refit-retry":
-        out = refit_retry(life, date.fromisoformat(a.date) if a.date else None)
     elif a.cmd == "features-warmup":
         out = features_warmup(life, a.budget_min)
     elif a.cmd == "availability-acquire":

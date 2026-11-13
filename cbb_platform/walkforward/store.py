@@ -229,6 +229,45 @@ def rollback(root: Path, reason: str, approved_by: str) -> dict:
     return body
 
 
+def same_day_promotion(root: Path, day: date) -> dict:
+    """Authoritative proof that day D's walk-forward already trained, gated and promoted its version (used by the
+    morning recovery, prod.morning_stages, so a promoted day is never refit), from the model store alone (version
+    manifest + sidecar hash, gates.json, promotion log, ACTIVE pointer) -- never process history. VALID only if: the version dir of D holds cbb-jm1-...-D, its TRAINING_CUTOFF is D's authorized cutoff, every artifact
+    hash verifies, gates ALL_PASS, and the promotion log records its PROMOTE."""
+    root = Path(root)
+    vid, cut = WC.version_id(day), WC.refit_cutoff(day)
+    out = {"VALID": False, "MODEL_VERSION": vid, "TRAINING_CUTOFF_UTC": cut.isoformat()}
+    vdir = version_dir(root, day)
+    try:
+        man = json.loads((vdir / MANIFEST).read_text())
+    except (OSError, ValueError):
+        return {**out, "reason": "NO_SAME_DAY_VERSION"}
+    if man.get("MODEL_VERSION") != vid:
+        return {**out, "reason": f"VERSION_MISMATCH {man.get('MODEL_VERSION')}"}
+    if pd.Timestamp(man.get("TRAINING_CUTOFF")) != cut:
+        return {**out, "reason": f"TRAINING_CUTOFF_MISMATCH {man.get('TRAINING_CUTOFF')} != {cut.isoformat()}"}
+    try:
+        ver = verify_version(root, vid)
+    except Exception as e:                                   # noqa: BLE001 -- any integrity failure = not valid
+        return {**out, "reason": f"INTEGRITY {type(e).__name__}: {e}"[:400]}
+    gates = (json.loads((vdir / "gates.json").read_text()) if (vdir / "gates.json").exists() else {})
+    if gates.get("ALL_PASS") is not True:
+        return {**out, "reason": "GATES_NOT_ALL_PASS"}
+    promos = [r for r in read_log(paths(root)["manifests"] / "promotion_log.jsonl")
+              if r.get("event") == "PROMOTE" and r.get("ACTIVE_MODEL_VERSION") == vid]
+    if not promos:
+        return {**out, "reason": "NEVER_PROMOTED"}
+    act = active(root) or {}
+    runs = [r for r in read_log(paths(root)["manifests"] / "runs.jsonl") if r.get("run_id") == promos[-1].get("run_id")]
+    return {**out, "VALID": True, "RUN_ID": promos[-1].get("run_id"), "PROMOTED_AT": promos[-1].get("promoted_at"),
+            "ACTIVE_MODEL_VERSION": act.get("ACTIVE_MODEL_VERSION"), "PRODUCTION_MANIFEST_HASH": ver["PRODUCTION_MANIFEST_HASH"],
+            "STATE_VERSION": man.get("STATE_VERSION"), "INPUT_IDENTITY_SHA": man.get("INPUT_IDENTITY_SHA"),
+            "DETERMINISTIC_REFIT_BIT_IDENTICAL": (man.get("deterministic_refit") or {}).get("BIT_IDENTICAL"),
+            "RUN_RECORD": {k: runs[0].get(k) for k in ("DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "peak_rss_gb")}
+            if runs else None}
+
+
+
 # ============================================================================ opening-day baseline
 def register_opening(root: Path = WC.STORE_ROOT) -> dict:
     """models/2026-11-01 = byte copies of the four frozen artifacts (hash-verified against prod.config.ARTIFACTS);

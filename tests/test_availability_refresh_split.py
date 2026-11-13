@@ -213,7 +213,7 @@ def test_wrapper_runs_the_orchestrator_without_taking_the_writer_lock_for_refres
     assert '--writer-lock "$WRITER_LOCK"' in r
     pre = r[:r.index('exec 9>>"$WRITER_LOCK"')]
     assert 'if [ "$CMD" = "lifecycle-refresh" ]; then\n  exec "${RUN[@]}"' in pre     # exec'd BEFORE the bash flock
-    for cmd in ("lifecycle-morning) RUN=", "refit-retry)       RUN=", "availability-poll) RUN=", "tick)              RUN="):
+    for cmd in ("morning-stage)     RUN=", "morning-recover)   RUN=", "availability-poll) RUN=", "tick)              RUN="):
         assert cmd in r                                                          # other commands keep their locking
     assert r.count('flock -w "$WRITER_WAIT_SEC" 9') == 1
 

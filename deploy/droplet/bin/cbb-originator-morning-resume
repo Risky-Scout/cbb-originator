@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# CBB Originator 08:00 ET morning recovery, root half (cbb-originator-morning-recover.service ExecStartPost=+).
+# The recovery itself (cbb-originator-run morning-recover, as cbb-originator, under the CBB writer lock) decides; this
+# only re-starts the SAME idempotent five-stage chain when it left ops/morning/RESUME_REQUEST, at most two passes (the
+# health stage requests a second pass only while recovery passes remain, e.g. after a walk-forward OOM exhausted its
+# retries). Every stage still runs as cbb-originator in its own unit / cgroup and skips what is already PASS. It reads
+# no content from the request file (existence only) and never runs project code as root.
+set -u
+REQ="${CBB_PROD_ROOT:-/var/lib/sports-models/cbb-originator/prod}/ops/morning/RESUME_REQUEST"
+TARGET="${CBB_MORNING_TARGET:-cbb-originator-morning.target}"
+SYSTEMCTL="${CBB_SYSTEMCTL:-systemctl}"
+for pass in 1 2; do
+  [ -f "$REQ" ] || { echo "morning-resume: no resume request (pass $pass): done"; exit 0; }
+  rm -f -- "$REQ"
+  echo "morning-resume: pass $pass: starting $TARGET"
+  "$SYSTEMCTL" start "$TARGET" || echo "morning-resume: pass $pass: the chain ended with a failed stage (recorded in progress.json)"
+done
+rm -f -- "$REQ"
+exit 0
