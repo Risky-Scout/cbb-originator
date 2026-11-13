@@ -9,7 +9,7 @@
 #                                               exports, health report. CBB writer lock for the whole job.
 #   cbb-originator-run refit-retry              08:00 ET: no-op unless 07:00 recorded DEFERRED_SHARED_LOCK (writer lock)
 #   cbb-originator-run lifecycle-refresh HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET availability refresh
-#                                               (prod/availability_refresh.py): Phase A RotoWire acquisition WITHOUT the
+#                                               (cbb_platform/availability_refresh.py): Phase A RotoWire acquisition WITHOUT the
 #                                               writer lock (narrow locks, budget 300 s, immutable receipt), then Phase B
 #                                               forecast + exports UNDER the writer lock (wait <= 300 s, retries +5/+10/+15
 #                                               min; 15-min watchdog with faulthandler stack dumps). The wrapper does NOT
@@ -142,7 +142,7 @@ fi
 case "$CMD" in
   lifecycle-morning) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" morning) ;;
   refit-retry)       RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" refit-retry) ;;
-  lifecycle-refresh) RUN=("$PY" -m cbb_platform.prod.availability_refresh --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" --window "$2" --writer-lock "$WRITER_LOCK") ;;
+  lifecycle-refresh) RUN=("$PY" -m cbb_platform.availability_refresh --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" --window "$2" --writer-lock "$WRITER_LOCK") ;;
   availability-poll) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" availability-poll --window "$2")
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC            # structurally never the shared heavy lock
                      WRITER_WAIT_SEC="${CBB_POLL_WRITER_LOCK_WAIT_SEC:-1500}" ;;  # waits out a quote run / a long morning

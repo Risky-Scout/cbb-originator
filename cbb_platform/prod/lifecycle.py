@@ -723,7 +723,7 @@ def refresh(life: Life, window: str) -> dict:
 
 
 # ============================================================================ availability refresh: Phase A / Phase B
-# prod/availability_refresh.py orchestrates the scheduled 10:00 / 13:00 / 16:00 / 18:00 refresh as two processes:
+# cbb_platform/availability_refresh.py orchestrates the scheduled 10:00 / 13:00 / 16:00 / 18:00 refresh as two processes:
 #   Phase A  availability-acquire: the RotoWire acquisition ONLY, NEVER under the CBB writer lock (narrow locks:
 #            web-acquisition lock, EventStore lock, request-ledger lock), budget CBB_AVAILABILITY_ACQUIRE_BUDGET_SEC,
 #            one immutable receipt <ops_root>/availability_acquisitions/<refresh_id>.json. No forecast / RN.daily /

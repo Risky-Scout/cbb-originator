@@ -1,6 +1,6 @@
 """21:00 availability starvation fix (2026-11-12): the scheduled availability refresh as Phase A (RotoWire acquisition,
 NEVER under the CBB global writer lock) + Phase B (forecast / exports under the writer lock, bounded by a 15-min
-faulthandler watchdog). prod/availability_refresh.py, prod/lifecycle.py availability-acquire / availability-publish.
+faulthandler watchdog). cbb_platform/availability_refresh.py, prod/lifecycle.py availability-acquire / availability-publish.
 
 Concurrency / process-death tests use REAL processes and real flock(2) locks (fcntl; no flock(1) needed). The phase
 children of the orchestrator tests are a small fake (tests drive their timing); the prediction-equivalence test runs the
@@ -26,7 +26,8 @@ import pandas as pd
 import pytest
 
 from cbb_platform import config as C
-from cbb_platform.prod import (availability_refresh as AR, config as PC, lifecycle as L, ops_store as OS,
+from cbb_platform import availability_refresh as AR
+from cbb_platform.prod import (config as PC, lifecycle as L, ops_store as OS,
                                pmf_evidence as PE, rotowire_acquire as RA, rotowire_feed as RW)
 
 ROOT = Path(C.PROJECT_ROOT)
@@ -101,7 +102,7 @@ HOLDER = textwrap.dedent('''
 DRIVER = textwrap.dedent('''
     import json, os, sys
     from pathlib import Path
-    from cbb_platform.prod import availability_refresh as AR
+    from cbb_platform import availability_refresh as AR
     cfg = json.loads(os.environ["DRIVER_CFG"])
     lim = AR.Limits(**cfg["limits"])
     fake = cfg["fake"]
@@ -208,7 +209,7 @@ def test_limits_match_the_directive_and_the_unchanged_unit_timeout():
 
 def test_wrapper_runs_the_orchestrator_without_taking_the_writer_lock_for_refresh_only():
     r = RUN.read_text()
-    assert 'lifecycle-refresh) RUN=("$PY" -m cbb_platform.prod.availability_refresh' in r
+    assert 'lifecycle-refresh) RUN=("$PY" -m cbb_platform.availability_refresh' in r
     assert '--writer-lock "$WRITER_LOCK"' in r
     pre = r[:r.index('exec 9>>"$WRITER_LOCK"')]
     assert 'if [ "$CMD" = "lifecycle-refresh" ]; then\n  exec "${RUN[@]}"' in pre     # exec'd BEFORE the bash flock
@@ -230,7 +231,7 @@ def test_wrapper_dry_run_of_refresh_reports_no_wrapper_lock(tmp_path):
         pytest.skip("sha256sum not installed (coreutils; present on the Droplet and CI)")
     r = subprocess.run(["bash", str(RUN), "lifecycle-refresh", "16:00"], env=env, capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr
-    assert "Phase A without the CBB writer lock" in r.stderr and "cbb_platform.prod.availability_refresh" in r.stderr
+    assert "Phase A without the CBB writer lock" in r.stderr and "cbb_platform.availability_refresh" in r.stderr
     assert f"--writer-lock {state}/locks/cbb-originator.writer.lock" in r.stderr and "--window 16:00" in r.stderr
 
 

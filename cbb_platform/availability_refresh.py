@@ -1,6 +1,6 @@
 """The scheduled availability refresh (10:00 / 13:00 / 16:00 / 18:00 ET) as Phase A + Phase B.
 
-    cbb-originator-run lifecycle-refresh HH:MM  ->  python -m cbb_platform.prod.availability_refresh --window HH:MM
+    cbb-originator-run lifecycle-refresh HH:MM  ->  python -m cbb_platform.availability_refresh --window HH:MM
 
 Why: the old refresh held the CBB global writer lock for its WHOLE run (acquisition + forecast + exports), so one slow
 refresh (2026-11-12 21:00Z: the forecast stalled after model_inputs at ~0% CPU until the 40-min unit timeout) starved
@@ -28,7 +28,8 @@ when both are gone (the kernel releases it on any death).
 Records: <ops>/availability_acquisitions/<id>.json (receipts) and <ops>/availability_publications/<refresh_id>.json
 (phase timings, lock times, attempts, outcome, stack file). Exit: 0 published | 1 failed / aborted / acquisition
 timeout | 75 DEFERRED_WRITER_LOCK after the last retry (EX_TEMPFAIL).
-Stdlib only (plus prod.ops_store): this parent stays small while it holds the lock.
+Stdlib only (plus prod.ops_store): this parent stays small while it holds the lock. It lives OUTSIDE the production
+layer (cbb_platform/prod has no process / shell code; tests/test_prod_shadow.py) -- like cbb_platform/ops_persistence.py.
 """
 from __future__ import annotations
 
@@ -311,7 +312,7 @@ class Refresh:
 
 
 def main(argv=None) -> None:
-    ap = argparse.ArgumentParser(prog="cbb_platform.prod.availability_refresh")
+    ap = argparse.ArgumentParser(prog="cbb_platform.availability_refresh")
     ap.add_argument("--window", required=True, choices=WINDOWS)
     ap.add_argument("--ops-root", type=Path, required=True)
     ap.add_argument("--prod-root", type=Path, required=True)
