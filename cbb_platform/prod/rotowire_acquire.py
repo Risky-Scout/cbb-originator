@@ -25,7 +25,7 @@ from pathlib import Path
 import requests
 
 from cbb_platform import credentials, raw_store
-from cbb_platform.prod import config as PC
+from cbb_platform.prod import config as PC, ops_store as OS
 
 PROVIDER = "rotowire"
 BASE = "https://api.rotowire.com"
@@ -97,9 +97,7 @@ class Session:
 
     def _log(self, entry: dict) -> dict:
         entry = {"provider": PROVIDER, "stage": self.stage, "feed_version": PC.ROTOWIRE_FEED_VERSION, **entry}
-        self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.ledger_path.open("a") as f:
-            f.write(json.dumps(entry, sort_keys=True, default=str) + "\n")
+        OS.append_jsonl_locked(self.ledger_path, [entry])   # the same narrow <ledger>.lock as the WEB adapter
         self.entries.append(entry)
         return entry
 
@@ -169,8 +167,7 @@ class Session:
 
 
 def ledger(path: Path | None = None) -> list[dict]:
-    p = Path(path or PC.ROTOWIRE_REQUEST_LEDGER)
-    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
+    return OS.read_jsonl_locked(Path(path or PC.ROTOWIRE_REQUEST_LEDGER))   # LOCK_SH: never a half-appended entry
 
 
 def last_success(entries: list[dict], endpoint: str, as_of) -> datetime | None:

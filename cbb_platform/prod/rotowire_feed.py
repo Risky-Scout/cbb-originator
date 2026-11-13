@@ -41,7 +41,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import config as PC, matching as MT, roster_omissions as RO, rotowire_acquire as RA
+from cbb_platform.prod import config as PC, matching as MT, ops_store as OS, roster_omissions as RO, rotowire_acquire as RA
 
 PROVIDER = "ROTOWIRE"
 SCHEMA_VERIFIED = False
@@ -336,10 +336,18 @@ class EventStore:
         self.root = Path(root)
         self.path = self.root / "events.jsonl"
 
-    def load(self) -> list[dict]:
+    def _read(self) -> list[dict]:
         if not self.path.exists():
             return []
         return [json.loads(l) for l in self.path.read_text().splitlines() if l.strip()]
+
+    def load(self) -> list[dict]:
+        """A consistent read (LOCK_SH on the store's .lock; append holds LOCK_EX): never a half-appended batch, even
+        while the availability Phase A appends outside the CBB writer lock."""
+        if not self.path.exists():
+            return []
+        with OS.file_lock(self.root / ".lock", shared=True):
+            return self._read()
 
     def frame(self) -> pd.DataFrame:
         ev = self.load()
@@ -350,9 +358,9 @@ class EventStore:
         if not events:
             return 0
         self.root.mkdir(parents=True, exist_ok=True)
-        with open(self.root / ".lock", "w") as lk:
+        with open(self.root / ".lock", "a") as lk:
             fcntl.flock(lk, fcntl.LOCK_EX)
-            have = self.load()
+            have = self._read()                          # (this process already holds LOCK_EX: no second flock)
             keys = {e["semantic_key"] for e in have}
             seq = len(have)
             new = []
@@ -363,7 +371,7 @@ class EventStore:
                 new.append({**e, "seq": seq})
                 seq += 1
             if new:
-                with self.path.open("a") as f:
+                with OS.alarm_deferred(), self.path.open("a") as f:
                     for e in new:
                         f.write(json.dumps(e, sort_keys=True, default=str) + "\n")
                     f.flush()

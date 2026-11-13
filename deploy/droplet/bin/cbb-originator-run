@@ -8,7 +8,13 @@
 #                                               busy -> DEFERRED_SHARED_LOCK, last-known-good kept), INITIAL forecast,
 #                                               exports, health report. CBB writer lock for the whole job.
 #   cbb-originator-run refit-retry              08:00 ET: no-op unless 07:00 recorded DEFERRED_SHARED_LOCK (writer lock)
-#   cbb-originator-run lifecycle-refresh HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET availability refresh (writer lock)
+#   cbb-originator-run lifecycle-refresh HH:MM  10:00 / 13:00 / 16:00 / 18:00 ET availability refresh
+#                                               (prod/availability_refresh.py): Phase A RotoWire acquisition WITHOUT the
+#                                               writer lock (narrow locks, budget 300 s, immutable receipt), then Phase B
+#                                               forecast + exports UNDER the writer lock (wait <= 300 s, retries +5/+10/+15
+#                                               min; 15-min watchdog with faulthandler stack dumps). The wrapper does NOT
+#                                               take the writer lock for this command; the orchestrator takes it for
+#                                               Phase B only.
 #   cbb-originator-run availability-poll HH:MM  08:30 ET light RotoWire poll: acquisition only (writer lock; NEVER the
 #                                               heavy lock; no forecast / refit / simulation / PMF)
 #   cbb-originator-run features-warmup         01:30 ET: pre-build the per-game pregame feature cache for the next 07:00
@@ -136,7 +142,7 @@ fi
 case "$CMD" in
   lifecycle-morning) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" morning) ;;
   refit-retry)       RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" refit-retry) ;;
-  lifecycle-refresh) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" refresh --window "$2") ;;
+  lifecycle-refresh) RUN=("$PY" -m cbb_platform.prod.availability_refresh --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" --window "$2" --writer-lock "$WRITER_LOCK") ;;
   availability-poll) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" availability-poll --window "$2")
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC            # structurally never the shared heavy lock
                      WRITER_WAIT_SEC="${CBB_POLL_WRITER_LOCK_WAIT_SEC:-1500}" ;;  # waits out a quote run / a long morning
@@ -149,6 +155,10 @@ if [ "$DRY" = "1" ] && [ "$CMD" = "features-warmup" ]; then
   log "DRY RUN: no CBB writer lock; heavy lock ${CBB_HEAVY_LOCK:-NONE} for the whole warmup (budget ${CBB_WARMUP_BUDGET_MIN:-150} min), run: ${RUN[*]}"
   exit 0
 fi
+if [ "$DRY" = "1" ] && [ "$CMD" = "lifecycle-refresh" ]; then
+  log "DRY RUN: Phase A without the CBB writer lock; Phase B takes $WRITER_LOCK (wait <= 300 s) inside the orchestrator; run: ${RUN[*]}"
+  exit 0
+fi
 if [ "$DRY" = "1" ]; then
   EXTRA=""; [ "$CMD" = "tick" ] && EXTRA=" (only when due_check says due); then: $PY -m cbb_platform.prod.lifecycle quotes (tiered quote refresh + exports)"
   log "DRY RUN: would take $WRITER_LOCK (heavy lock ${CBB_HEAVY_LOCK:-NONE} only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT (history $CBB_DUCKDB_HISTORY_MEMORY_LIMIT) spill $CBB_DUCKDB_TEMP_DIR"
@@ -158,6 +168,9 @@ if [ "$CMD" = "features-warmup" ]; then
   exec "${RUN[@]}"                       # no CBB writer lock: only the append-only feature cache is written
 fi
 mkdir -p "$LOCK_DIR"
+if [ "$CMD" = "lifecycle-refresh" ]; then
+  exec "${RUN[@]}"                       # no wrapper writer lock: the orchestrator takes it for Phase B only
+fi
 exec 9>>"$WRITER_LOCK"
 flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC} s; $CMD skipped"; exit 75; }
 

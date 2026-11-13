@@ -29,6 +29,8 @@ cbb_platform/ops_persistence.py, outside the production layer.
 """
 from __future__ import annotations
 
+import contextlib
+import fcntl
 import gzip
 import hashlib
 import io
@@ -122,16 +124,106 @@ def read_jsonl(p: Path) -> list[dict]:
     return [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
 
 
+_CRITICAL = {"depth": 0, "pending": None}
+
+
+@contextlib.contextmanager
+def alarm_deferred():
+    """A critical section for complete-line appends: a budget handler that fires inside it (the availability Phase A
+    SIGALRM, prod/lifecycle.availability_acquire) defers its exception to the section's end via defer_if_critical(), so
+    a budget expiring mid-append fires right after the append, never inside it (no torn jsonl line). Python runs
+    signal handlers in the main thread between bytecodes, so this holds whichever OS thread received the signal."""
+    _CRITICAL["depth"] += 1
+    try:
+        yield
+    finally:
+        _CRITICAL["depth"] -= 1
+        if _CRITICAL["depth"] == 0 and _CRITICAL["pending"] is not None:
+            fn, _CRITICAL["pending"] = _CRITICAL["pending"], None
+            fn()
+
+
+def defer_if_critical(fn) -> bool:
+    """Called by a signal handler: inside alarm_deferred() -> run fn at the section's end (True); else False."""
+    if _CRITICAL["depth"] > 0:
+        _CRITICAL["pending"] = fn
+        return True
+    return False
+
+
+@contextlib.contextmanager
+def file_lock(lock_path: Path, shared: bool = False):
+    """A narrow advisory flock(2) on `lock_path` (LOCK_SH for readers, LOCK_EX for writers). Never the CBB global
+    writer lock. Released by the kernel when the holder exits or dies. A reader that cannot create the lock file
+    (read-only tree) reads unlocked, exactly as before."""
+    lock_path = Path(lock_path)
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(lock_path, "a")
+    except OSError:
+        if not shared:
+            raise
+        yield
+        return
+    try:
+        fcntl.flock(fh, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+        yield
+    finally:
+        fh.close()
+
+
+def lock_path_for(p: Path) -> Path:
+    p = Path(p)
+    return p.with_name(p.name + ".lock")
+
+
 def append_jsonl(p: Path, rows: list[dict]) -> int:
     if not rows:
         return 0
     p = Path(p)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "a") as f:
+    with alarm_deferred(), open(p, "a") as f:
         f.writelines(json.dumps(r, sort_keys=True, default=str) + "\n" for r in rows)
         f.flush()
         os.fsync(f.fileno())
     return len(rows)
+
+
+def append_jsonl_locked(p: Path, rows: list[dict]) -> int:
+    """append_jsonl under the file's own narrow lock (<p>.lock, LOCK_EX): for a ledger written by processes that no
+    longer share the global writer lock (the availability Phase A acquisition)."""
+    if not rows:
+        return 0
+    with file_lock(lock_path_for(p)):
+        return append_jsonl(p, rows)
+
+
+def read_jsonl_locked(p: Path) -> list[dict]:
+    """read_jsonl under <p>.lock LOCK_SH: never observes a half-appended batch."""
+    p = Path(p)
+    if not p.exists():
+        return []
+    with file_lock(lock_path_for(p), shared=True):
+        return read_jsonl(p)
+
+
+def create_once(p: Path, obj) -> bool:
+    """Atomic write-once: the complete file appears under its final name exactly once (link(2) of a fully written,
+    fsynced temp file; EEXIST -> False, the existing file is never replaced). Readers never see a partial file."""
+    p = Path(p)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(f".{p.name}.{uuid.uuid4().hex}.tmp")
+    with open(tmp, "w") as f:
+        f.write(json.dumps(obj, indent=1, sort_keys=True, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        os.link(tmp, p)
+        return True
+    except FileExistsError:
+        return False
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def gzip_file(src: Path, dst: Path) -> Path:

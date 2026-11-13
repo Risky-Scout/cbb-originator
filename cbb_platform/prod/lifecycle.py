@@ -37,6 +37,7 @@ import argparse
 import fcntl
 import json
 import os
+import signal
 import time
 import uuid
 from dataclasses import dataclass
@@ -647,10 +648,23 @@ def morning(life: Life, day: date | None = None, tick_ctx: SH.Ctx | None = None)
     return out
 
 
-def web_acquire(life: Life) -> dict:
+WEB_ACQUIRE_LOCK_NAME = ".acquire.lock"     # under PC.ROTOWIRE_WEB_ROOT: serializes every RotoWire web acquisition
+WEB_ACQUIRE_LOCK_WAIT_SEC = 300.0
+
+
+def web_acquire_lock_path() -> Path:
+    return Path(PC.ROTOWIRE_WEB_ROOT) / WEB_ACQUIRE_LOCK_NAME
+
+
+def web_acquire(life: Life, lock_wait_s: float = WEB_ACQUIRE_LOCK_WAIT_SEC) -> dict:
     """ROTOWIRE_SOURCE=WEB: one authenticated web acquisition (snapshot + injury news) into the existing event store,
     right before the refresh forecast. Provider failures are recorded with reason codes, never raised: the existing
-    freshness gate then fails the affected games closed."""
+    freshness gate then fails the affected games closed.
+    Narrow lock (never the CBB writer lock): the RotoWire web-acquisition lock (<ROTOWIRE_WEB_ROOT>/.acquire.lock,
+    LOCK_EX) covers everything only an acquisition writes -- raw evidence + meta, acquisitions / news-window /
+    news-item logs, the web identity maps + discrepancy / review logs, the session cookie file -- so an availability
+    Phase A and the 08:30 light poll can never interleave. The event store (EventStore .lock) and the request ledger
+    (<ledger>.lock) keep their own locks because the forecast / official tick read them."""
     from cbb_platform.prod import rotowire_feed as RW, rotowire_web_acquire as RWW
     client = life.rotowire_web_client or RWW.WebClient()
     try:
@@ -659,9 +673,17 @@ def web_acquire(life: Life) -> dict:
         ctx = RW.load_identity_context(life.state_root, life.history_db)
     except Exception as e:                               # noqa: BLE001 -- no roster: nothing can be resolved
         return {"status": "BLOCKED", "reason": f"NO_IDENTITY_CONTEXT ({type(e).__name__})"}
-    # the same event store / request ledger forecast() and prod.run.daily read (PC paths follow CBB_PROD_ROOT)
-    rep = RWW.acquire(client, ctx, store=RW.EventStore(PC.ROTOWIRE_ROOT), root=PC.ROTOWIRE_WEB_ROOT,
-                      ledger_path=PC.ROTOWIRE_REQUEST_LEDGER, map_root=PC.ROTOWIRE_MAP_ROOT)
+    lk = web_acquire_lock_path()
+    lk.parent.mkdir(parents=True, exist_ok=True)
+    fd = acquire_heavy_lock(str(lk), lock_wait_s, sleep=lambda s: time.sleep(min(s, 1.0)))   # generic bounded flock
+    if fd is None:
+        return {"status": "BLOCKED", "reason": f"WEB_ACQUIRE_LOCK_BUSY (> {lock_wait_s:.0f} s)", "at": life.now().isoformat()}
+    try:
+        # the same event store / request ledger forecast() and prod.run.daily read (PC paths follow CBB_PROD_ROOT)
+        rep = RWW.acquire(client, ctx, store=RW.EventStore(PC.ROTOWIRE_ROOT), root=PC.ROTOWIRE_WEB_ROOT,
+                          ledger_path=PC.ROTOWIRE_REQUEST_LEDGER, map_root=PC.ROTOWIRE_MAP_ROOT)
+    finally:
+        os.close(fd)
     out = {k: rep.get(k) for k in ("acquisition_id", "auth", "news_status", "snapshot_status", "news_rows",
                                    "snapshot_rows", "news_new_items", "news_events_new", "snapshot_events_new",
                                    "news_continuity", "news_window_overlap", "reasons", "warnings")}
@@ -696,6 +718,144 @@ def refresh(life: Life, window: str) -> dict:
            **({k: rec.get(k) for k in FORECAST_SUMMARY} if rec.get("status") == "FORECAST" else {})}
     if acq is not None:
         out["rotowire_web_acquisition"] = sec["rotowire_web_acquisition"] = acq
+    health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": sec}, exports=out["exports"])
+    return out
+
+
+# ============================================================================ availability refresh: Phase A / Phase B
+# prod/availability_refresh.py orchestrates the scheduled 10:00 / 13:00 / 16:00 / 18:00 refresh as two processes:
+#   Phase A  availability-acquire: the RotoWire acquisition ONLY, NEVER under the CBB writer lock (narrow locks:
+#            web-acquisition lock, EventStore lock, request-ledger lock), budget CBB_AVAILABILITY_ACQUIRE_BUDGET_SEC,
+#            one immutable receipt <ops_root>/availability_acquisitions/<refresh_id>.json. No forecast / RN.daily /
+#            simulation / PMF / snapshot / export / ACTIVE change / fit.
+#   Phase B  availability-publish: under the CBB writer lock -- forecast() (re-reads the promoted state, re-resolves
+#            ACTIVE, re-reads the event store and prior snapshots; PMFs -> forecast_players -> snapshot.json -> index
+#            LAST) -> exports -> health (with the receipt). Exactly the old refresh() minus its web_acquire() call.
+ACQ_BUDGET_ENV = "CBB_AVAILABILITY_ACQUIRE_BUDGET_SEC"
+ACQ_BUDGET_SEC = 300.0
+ACQ_RECEIPT_MAX_AGE_SEC = 15 * 60
+ACQ_COMPLETED, ACQ_BLOCKED, ACQ_NOT_ENABLED = "COMPLETED", "ACQUISITION_BLOCKED", "NOT_ENABLED"
+ACQ_TIMEOUT, ACQ_FAILED = "ACQUISITION_TIMEOUT", "ACQUISITION_FAILED"
+ACQ_PUBLISHABLE = (ACQ_COMPLETED, ACQ_BLOCKED, ACQ_NOT_ENABLED)   # what the old refresh() went on to forecast after
+RECEIPT_FIELDS = ("REFRESH_ID", "WINDOW", "STARTED_AT", "FINISHED_AT", "STATUS", "ACQUISITION_ID", "AUTH",
+                  "NEWS_STATUS", "SNAPSHOT_STATUS", "NEWS_ROWS", "SNAPSHOT_ROWS", "NEWS_NEW_ITEMS", "NEWS_EVENTS_NEW",
+                  "SNAPSHOT_EVENTS_NEW", "NEWS_CONTINUITY", "NEWS_WINDOW_OVERLAP", "REASONS", "WARNINGS")
+
+
+ACQ_REPORT_FIELDS = RECEIPT_FIELDS[5:]          # ACQUISITION_ID .. WARNINGS: copied from the web_acquire() report
+
+
+class AcquireBudgetExceeded(BaseException):
+    """The Phase A budget expired (SIGALRM). A BaseException so no provider `except Exception` can swallow it."""
+
+
+def acquisition_receipt_path(ops_root: Path, refresh_id: str) -> Path:
+    return Path(ops_root) / "availability_acquisitions" / f"{refresh_id}.json"
+
+
+def availability_acquire(life: Life, window: str, refresh_id: str, budget_s: float | None = None) -> dict:
+    """Phase A. Writes (atomically, write-once) and returns the receipt. Never raises for a provider problem, a
+    timeout or an unexpected error: each is a STATUS the orchestrator reads (ACQUISITION_TIMEOUT / _FAILED -> no
+    Phase B; the prior forecast and exports stand)."""
+    if window not in ROTOWIRE_REFRESH_TIMES_ET:
+        raise ValueError(f"refresh window {window!r} is not one of {ROTOWIRE_REFRESH_TIMES_ET}")
+    path = acquisition_receipt_path(life.ops_root, refresh_id)
+    if path.exists():
+        raise FileExistsError(f"acquisition receipt {path} already exists (receipts are immutable)")
+    budget = float(budget_s if budget_s is not None else os.environ.get(ACQ_BUDGET_ENV) or ACQ_BUDGET_SEC)
+    rec = {k: None for k in RECEIPT_FIELDS}
+    rec.update(REFRESH_ID=refresh_id, WINDOW=window, STARTED_AT=life.now().isoformat(), REASONS=[], WARNINGS=[],
+               BUDGET_SEC=budget, GLOBAL_WRITER_LOCK_USED="NO", CODE_COMMIT=os.environ.get("CBB_CODE_COMMIT"),
+               PID=os.getpid())
+    armed = [True]
+
+    def _expire():
+        if armed[0]:
+            raise AcquireBudgetExceeded()
+
+    def _alarm(signum, frame):                           # never inside a complete-line append (OS.alarm_deferred)
+        if armed[0] and not OS.defer_if_critical(_expire):
+            _expire()
+
+    prev = signal.signal(signal.SIGALRM, _alarm)
+    signal.setitimer(signal.ITIMER_REAL, budget)
+    acq = None
+    try:
+        try:
+            src, st = PC.rotowire_source(), rotowire_state(life)
+            rec.update(ROTOWIRE_SOURCE=src, ROTOWIRE_REFRESH=st)
+            if src == "WEB" and st == "ENABLED":
+                acq = web_acquire(life, lock_wait_s=budget)
+            armed[0] = False
+        finally:
+            armed[0] = False
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, prev)
+        if acq is None:
+            rec["STATUS"] = ACQ_NOT_ENABLED
+        elif acq.get("status") == "BLOCKED":
+            rec.update(STATUS=ACQ_BLOCKED, REASONS=[acq.get("reason")])
+        else:
+            rec["STATUS"] = ACQ_COMPLETED
+            for k in ACQ_REPORT_FIELDS:                      # provider fields only: never STATUS / ids / times
+                if k.lower() in acq:
+                    rec[k] = acq[k.lower()]
+            rec["REASONS"], rec["WARNINGS"] = list(acq.get("reasons") or []), list(acq.get("warnings") or [])
+        if acq is not None:
+            from cbb_platform.prod import rotowire_feed as RW
+            rec["EVENT_STORE_EVENTS_AFTER"] = len(RW.EventStore(PC.ROTOWIRE_ROOT).load())
+    except AcquireBudgetExceeded:
+        rec.update(STATUS=ACQ_TIMEOUT, REASONS=[f"ACQUISITION_TIMEOUT (> {budget:.0f} s budget)"])
+    except Exception as e:                               # noqa: BLE001 -- recorded; the orchestrator skips Phase B
+        rec.update(STATUS=ACQ_FAILED, REASONS=[f"ACQUISITION_FAILED ({type(e).__name__}: {str(e)[:200]})"])
+    rec["ACQUISITION_REPORT"] = acq                      # verbatim web_acquire() result (the old refresh health section)
+    rec["PUBLISHABLE"] = rec["STATUS"] in ACQ_PUBLISHABLE
+    rec["FINISHED_AT"] = life.now().isoformat()
+    if not OS.create_once(path, rec):
+        raise FileExistsError(f"acquisition receipt {path} appeared concurrently (receipts are immutable)")
+    return rec
+
+
+class ReceiptRejected(RuntimeError):
+    pass
+
+
+def check_receipt(rcpt: dict, window: str, now: pd.Timestamp, max_age_s: float = ACQ_RECEIPT_MAX_AGE_SEC) -> float:
+    """Raises ReceiptRejected unless the receipt is publishable, for this window and <= max_age_s old. Returns its age."""
+    if rcpt.get("WINDOW") != window:
+        raise ReceiptRejected(f"RECEIPT_WINDOW_MISMATCH ({rcpt.get('WINDOW')} != {window})")
+    if rcpt.get("STATUS") not in ACQ_PUBLISHABLE:
+        raise ReceiptRejected(f"RECEIPT_NOT_PUBLISHABLE ({rcpt.get('STATUS')})")
+    age = (SH._utc(now) - SH._utc(rcpt["FINISHED_AT"])).total_seconds()
+    if age > max_age_s or age < -60:
+        raise ReceiptRejected(f"RECEIPT_STALE (age {age:.0f} s > {max_age_s:.0f} s)")
+    return age
+
+
+def availability_publish(life: Life, window: str, receipt_path: Path, lock_meta: dict | None = None, mark=None) -> dict:
+    """Phase B. The caller holds the CBB writer lock. Everything mutable is (re-)read here, after the lock: forecast()
+    reads the current promoted state, resolves ACTIVE now, and evaluates availability from the event store (which holds
+    the Phase A events) against the prior snapshots. Identical to the old refresh() after its acquisition."""
+    mark = mark or (lambda m: None)
+    rcpt = json.loads(Path(receipt_path).read_text())
+    age = check_receipt(rcpt, window, life.now())
+    if rcpt.get("EVENT_STORE_EVENTS_AFTER") is not None:
+        from cbb_platform.prod import rotowire_feed as RW
+        n = len(RW.EventStore(PC.ROTOWIRE_ROOT).load())
+        if n < int(rcpt["EVENT_STORE_EVENTS_AFTER"]):
+            raise ReceiptRejected(f"EVENT_STORE_BEHIND_RECEIPT ({n} < {rcpt['EVENT_STORE_EVENTS_AFTER']})")
+    rec = forecast(life, window)
+    mark("FORECAST_COMPLETE")
+    out = {"lifecycle": "REFRESH", "window": window, "forecast": rec, "exports": _brief(exports_for(life, et_date(life.now())))}
+    mark("EXPORTS_COMPLETE")
+    sec = {"rotowire_refresh": rec.get("rotowire_refresh"), "status": rec.get("status"), "note": rec.get("note"),
+           **({k: rec.get(k) for k in FORECAST_SUMMARY} if rec.get("status") == "FORECAST" else {})}
+    if rcpt.get("ACQUISITION_REPORT") is not None:
+        out["rotowire_web_acquisition"] = sec["rotowire_web_acquisition"] = rcpt["ACQUISITION_REPORT"]
+    sec["availability_acquisition"] = out["availability_acquisition"] = {
+        "refresh_id": rcpt.get("REFRESH_ID"), "receipt": str(receipt_path), "status": rcpt.get("STATUS"),
+        "started_at": rcpt.get("STARTED_AT"), "finished_at": rcpt.get("FINISHED_AT"), "receipt_age_sec": round(age, 1),
+        **(lock_meta or {})}
     health(life, et_date(life.now()), **{f"availability_{window.replace(':', '')}": sec}, exports=out["exports"])
     return out
 
@@ -738,6 +898,76 @@ def _brief(rep: dict) -> dict:
                                              "raw_quote_rows", "official_rows", "official_frozen_rows")}
 
 
+def new_refresh_id(now) -> str:
+    return "R" + SH._utc(now).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
+
+
+def _mark(name: str) -> None:
+    import sys
+    print(f"AVAILABILITY_MARK {name} {datetime.now().astimezone().isoformat(timespec='seconds')}", file=sys.stderr, flush=True)
+
+
+def _stack_dumps(stack_file: Path | None, watchdog_sec: float | None) -> None:
+    """faulthandler evidence: every thread's Python stack on SIGUSR1 (non-fatal, the orchestrator's early dump), on
+    SIGABRT / a fatal signal (the orchestrator's watchdog abort), and -- a backstop if the orchestrator itself is gone --
+    after watchdog_sec + 15 s (then exit). faulthandler's watchdog is a C thread: it fires even when the Python main
+    thread is stuck inside a C call."""
+    if stack_file is None:
+        return
+    import faulthandler
+    import resource
+    try:                                                     # the watchdog SIGABRT must never write a multi-GB core
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    except (ValueError, OSError):
+        pass
+    stack_file.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(stack_file, "a", buffering=1)
+    _stack_dumps.fh = fh                                     # keep the file object alive for the process lifetime
+    faulthandler.enable(file=fh, all_threads=True)
+    faulthandler.register(signal.SIGUSR1, file=fh, all_threads=True, chain=False)
+    if watchdog_sec:
+        faulthandler.dump_traceback_later(float(watchdog_sec) + 15.0, exit=True, file=fh)
+
+
+def _publish_cli(life: Life, a) -> dict:
+    _stack_dumps(a.stack_file, a.watchdog_sec)
+    rp = Path(a.receipt)
+    if not rp.suffix == ".json":
+        rp = acquisition_receipt_path(life.ops_root, a.receipt)
+    if a.lock_fd is not None:
+        try:                                                 # same open file description as the holder: succeeds
+            fcntl.flock(a.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)  # only if the orchestrator really holds the lock
+        except OSError:
+            raise SystemExit("availability-publish: --lock-fd does not hold the CBB writer lock; refused")
+        meta = json.loads(a.lock_meta) if a.lock_meta else {}
+    else:
+        wl = a.writer_lock or os.environ.get("CBB_WRITER_LOCK")
+        if not wl:
+            raise SystemExit("availability-publish needs --lock-fd or --writer-lock / CBB_WRITER_LOCK")
+        t0 = time.monotonic()
+        fd = acquire_heavy_lock(wl, 300.0, sleep=lambda x: time.sleep(min(x, 1.0)))
+        if fd is None:
+            print(json.dumps({"status": "DEFERRED_WRITER_LOCK", "window": a.window}))
+            raise SystemExit(75)
+        meta = {"phase_b_lock_acquired_at": datetime.now().astimezone().isoformat(),
+                "phase_b_lock_wait_sec": round(time.monotonic() - t0, 1)}
+    try:
+        out = availability_publish(life, a.window, rp, lock_meta=meta, mark=_mark)
+    except ReceiptRejected as e:
+        out = {"status": "RECEIPT_REJECTED", "reason": str(e)}
+        if a.result_file:
+            OS.create_once(a.result_file, out)
+        print(json.dumps(out))
+        raise SystemExit(1)
+    f = out.get("forecast") or {}
+    res = {"status": "PUBLISHED", "window": a.window, "forecast_status": f.get("status"), "snapshot_id": f.get("snapshot_id"),
+           "games": f.get("games"), "games_forecast": f.get("games_forecast"), "model_version": f.get("model_version"),
+           "pmfs_persisted": f.get("pmfs_persisted"), "exports": out.get("exports")}
+    if a.result_file:
+        OS.create_once(a.result_file, res)
+    return out
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(prog="cbb_platform.prod.lifecycle")
     ap.add_argument("--ops-root", type=Path, default=PC.OPS_ROOT)
@@ -760,6 +990,20 @@ def main(argv=None) -> None:
     rr.add_argument("--date", default=None)
     fw = sub.add_parser("features-warmup")
     fw.add_argument("--budget-min", type=float, default=None)
+    aa = sub.add_parser("availability-acquire")             # Phase A (never the CBB writer lock)
+    aa.add_argument("--window", required=True, choices=ROTOWIRE_REFRESH_TIMES_ET)
+    aa.add_argument("--refresh-id", default=None)
+    aa.add_argument("--budget-sec", type=float, default=None)
+    aa.add_argument("--stack-file", type=Path, default=None)
+    apb = sub.add_parser("availability-publish")            # Phase B (under the CBB writer lock)
+    apb.add_argument("--window", required=True, choices=ROTOWIRE_REFRESH_TIMES_ET)
+    apb.add_argument("--receipt", required=True, help="receipt path or refresh id")
+    apb.add_argument("--lock-fd", type=int, default=None, help="inherited fd holding the CBB writer lock (orchestrator)")
+    apb.add_argument("--writer-lock", default=None, help="standalone: take this writer lock (wait <= 300 s)")
+    apb.add_argument("--stack-file", type=Path, default=None)
+    apb.add_argument("--watchdog-sec", type=float, default=None)
+    apb.add_argument("--result-file", type=Path, default=None)
+    apb.add_argument("--lock-meta", default=None, help="JSON lock timing recorded in the health section")
     a = ap.parse_args(argv)
     from cbb_platform import duckdb_limits as DLM
     DLM.install()                                  # DuckDB memory cap + spill dir when configured (no-op otherwise)
@@ -780,6 +1024,14 @@ def main(argv=None) -> None:
         out = refit_retry(life, date.fromisoformat(a.date) if a.date else None)
     elif a.cmd == "features-warmup":
         out = features_warmup(life, a.budget_min)
+    elif a.cmd == "availability-acquire":
+        _stack_dumps(a.stack_file, None)
+        rid = a.refresh_id or new_refresh_id(life.now())
+        out = availability_acquire(life, a.window, rid, a.budget_sec)
+        print(json.dumps(out, indent=1, default=str))
+        raise SystemExit(0 if out["PUBLISHABLE"] else 1)
+    elif a.cmd == "availability-publish":
+        out = _publish_cli(life, a)
     else:
         out = schedule_spec()
     print(json.dumps(out, indent=1, default=str))

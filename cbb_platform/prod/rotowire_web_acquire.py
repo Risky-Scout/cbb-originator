@@ -931,7 +931,7 @@ class _Ledger:
     def _log(self, entry: dict) -> dict:
         entry = {"provider": PROVIDER, "acquisition_source": ACQUISITION_SOURCE, "stage": self.stage,
                  "feed_version": PC.ROTOWIRE_WEB_FEED_VERSION, **entry}
-        OS.append_jsonl(self.path, [entry])
+        OS.append_jsonl_locked(self.path, [entry])     # <ledger>.lock: Phase A appends outside the CBB writer lock
         self.entries.append(entry)
         return entry
 
