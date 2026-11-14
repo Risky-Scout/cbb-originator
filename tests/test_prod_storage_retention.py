@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cbb_platform.prod import ops_store as OS, pmf_evidence as PE, storage_retention as SR
+from cbb_platform.prod import ops_store as OS, pmf_evidence as PE, run_receipts as RR, storage_retention as SR
 
 NOW = pd.Timestamp("2026-11-30T10:45:00Z")
 
@@ -125,6 +125,7 @@ def _paths(p):
 
 def test_plan_selects_exactly_the_expected_targets(base):
     assert _paths(base) == {
+        ("ORPHAN_RUN_RECEIPT", "prod/runs/R-old-incomplete/run_failure.json"),
         ("INCOMPLETE_RUN_SCRATCH", "prod/runs/R-old-incomplete/features/features_asof.duckdb"),
         ("VALIDATION_RUN_SCRATCH", "prod/odds/validation_runs/V1/R1/features/canonical_asof.duckdb"),
         ("DUCKDB_SPILL", "staging/tmp/duckdb/pid-999999999"),
@@ -154,7 +155,11 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
     led = (ops / "forecasts" / "2026-11-20" / "F1" / "forecast_ledger.jsonl").read_bytes()
     page = (prod / "availability" / "rotowire_web" / "raw" / "2026-11-02" / "page.html").read_bytes()
     out = SR.run(base, apply=True, now=NOW)
-    assert out["changed"] == 13
+    assert out["changed"] == 14
+    rec = json.loads((prod / "runs" / "R-old-incomplete" / RR.FAILURE_FILE).read_text())
+    assert rec["status"] == "ORPHANED" and rec["run_id"] == "R-old-incomplete" and rec["detected_by"] == "storage_retention"
+    assert RR.state(prod / "runs" / "R-old-incomplete") == "ORPHANED"
+    assert not (prod / "runs" / "R-new-incomplete" / RR.FAILURE_FILE).exists()     # younger than ORPHAN_HOURS
     for p in ("prod/state/versions/S1/increment.duckdb", "prod/state/CURRENT.json", "secrets/cookie",
               "walkforward/cbb-originator/models/2026-11-01/marginal.json", f"prod/ops/ticks/K0/{PE.FILE}",
               "exports/2026-11-01/CBB_Boards_11_01_2026.xlsx", "exports/2026-11-01/boards_receipt.json",
@@ -187,7 +192,7 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
     OS.mirror_in(ops, prod)
     assert os.path.samefile(a, m)
     rec = [json.loads(l) for l in (ops / "retention" / "storage_retention.jsonl").read_text().splitlines()]
-    assert rec[-1]["summary"] and rec[-1]["changed"] == 13 and len(rec) == 14
+    assert rec[-1]["summary"] and rec[-1]["changed"] == 14 and len(rec) == 15
     again = SR.run(base, apply=True, now=NOW)                      # idempotent
     assert again["changed"] == 0
 
