@@ -75,7 +75,9 @@ jobs:
       - name: Excel-valid workbooks (worksheet row limit, defined names, non-finite cells; openpyxl reads every part)
         run: python -m pytest -q -rs tests/test_exports_xlsx_validity.py tests/test_exports_distributions_rebuild.py
       - name: Droplet deployment package (safe defaults, refusals, locks / memory gate, units, transfer manifest; no server)
-        run: python -m pytest -q -rs tests/test_droplet_deploy_package.py tests/test_prod_retention.py tests/test_prod_storage_retention.py
+        run: python -m pytest -q -rs tests/test_droplet_deploy_package.py tests/test_prod_retention.py tests/test_prod_storage_retention.py tests/test_prod_run_receipts.py
+      - name: Production grain (one row per game x player; cross-team pool resolution by frozen EVIDENCE_RANK) + morning state / health semantics
+        run: python -m pytest -q -rs tests/test_prod_pool_grain.py tests/test_prod_morning_state_semantics.py
       - name: Availability refresh Phase A / Phase B split (acquisition outside the writer lock, bounded Phase B watchdog, real-process lock contention / process death, old-vs-split prediction equivalence; fixtures, no network)
         run: python -m pytest -q -rs tests/test_availability_refresh_split.py tests/test_lifecycle_availability_changes.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
