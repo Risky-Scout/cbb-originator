@@ -22,7 +22,8 @@ low_memory_fetch() (used ONLY around the frozen history loaders, walkforward/fit
 Droplet, the frame query itself runs at ~1.7 GB, but DuckDB's .df() conversion of its 1.38 M x 75 result then grows the
 process past 4.8 GB (a COPY to parquet buffers the ordered result outside the cap as well). Inside the context a SELECT /
 WITH query's .df() instead (1) streams the result as Arrow record batches from the capped, spilling engine (row order is
-the query's), (2) builds the frame DuckDB's .df() builds (one preallocated 2D block per NumPy dtype, filled column by column while
+the query's), each batch copied into process-owned buffers and DuckDB's exported batch dropped (owned_table; measured
+2026-11-14: holding DuckDB's exported batches through the conversion put the walk-forward frame load at 2,584 MiB), (2) builds the frame DuckDB's .df() builds (one preallocated 2D block per NumPy dtype, filled column by column while
 each Arrow column is released; .df()'s own conversion plus pandas consolidation held ~3 copies) with exactly .df()'s
 dtype rules (verified:
 VARCHAR -> pandas str, an all-NULL VARCHAR -> object None; BOOLEAN / integers -> numpy, or the pandas nullable dtype
@@ -36,6 +37,7 @@ import atexit
 import contextlib
 import ctypes
 import gc
+import itertools
 import os
 import re
 import shutil
@@ -194,10 +196,15 @@ def _owned(v):
     return v.copy()                                      # DatetimeArray / masked arrays: a deep copy
 
 
-def table_like_df(tab: pa.Table, session_tz: str) -> pd.DataFrame:
+def table_like_df(tab, session_tz: str) -> pd.DataFrame:
     """The DataFrame DuckDB's .df() builds (same values, dtypes and per-dtype block grouping: one C-ordered 2D block per
     NumPy dtype, one block per extension / tz-aware column), filled column by column from `tab` with each Arrow column
-    released once copied: the peak is about one copy of the result, not three."""
+    released once copied: the peak is about one copy of the result, not three.
+    `tab` is a pa.Table, or a one-element list holding it: the list form hands the only reference over, so a dropped
+    column is really freed (a caller still bound to the table keeps every column alive until the end -- measured
+    2026-11-14 on the walk-forward frame: +886 MiB during the conversion)."""
+    if isinstance(tab, list):
+        tab = tab.pop()
     names, n = list(tab.column_names), tab.num_rows
     want = [_predicted_dtype(tab.column(c), session_tz) for c in names]
     groups: dict = {}
@@ -210,6 +217,8 @@ def table_like_df(tab: pa.Table, session_tz: str) -> pd.DataFrame:
     for j, name in enumerate(names):
         s = arrow_column_like_df(tab.column(0), session_tz)
         tab = tab.drop_columns([tab.column_names[0]])           # release the converted Arrow column
+        if j % 8 == 7:
+            _trim()                                              # return the freed column buffers (resource only)
         if s.dtype != want[j]:
             raise DuckDBLimitError(f"column {name}: dtype {s.dtype} differs from the predicted .df() dtype {want[j]}")
         if j in row:
@@ -222,6 +231,34 @@ def table_like_df(tab: pa.Table, session_tz: str) -> pd.DataFrame:
     del tab
     blocks = [(arrays[d], np.array(locs)) for d, locs in groups.items()] + ext
     return create_dataframe_from_blocks(blocks, index=pd.RangeIndex(n), columns=pd.Index(names))
+
+
+def _owned_array(a: pa.Array) -> pa.Array:
+    """A copy of one Arrow array in buffers allocated from the system allocator (same type, values, validity, offsets
+    rebased): DuckDB's exported batch memory is DuckDB-owned and only returned when the WHOLE batch is dropped."""
+    return pa.concat_arrays([a, pa.array([], type=a.type)], memory_pool=pa.system_memory_pool())
+
+
+def owned_table(reader) -> pa.Table:
+    """reader.read_all() without holding DuckDB's exported batches: each record batch is copied (owned_array) and the
+    exported batch dropped before the next is read, so the drained result is held once, in memory that table_like_df
+    then frees column by column. Same schema, same chunking (one chunk per streamed batch), same values.
+    Measured 2026-11-14 on the Droplet (walk-forward frame, 1.38 M x 75, 849 MB): read_all() + conversion peaked at
+    2,584 MiB RSS (engine ~700 MB + DuckDB-owned Arrow 849 MB + the frame 849 MB); see CBB_FOOTPRINT_AUDIT.md."""
+    schema, batches = reader.schema, []
+    while True:
+        try:
+            b = reader.read_next_batch()
+        except StopIteration:
+            break
+        batches.append(pa.RecordBatch.from_arrays([_owned_array(c) for c in b.columns], schema=schema))
+        del b
+    return pa.Table.from_batches(batches, schema=schema)
+
+
+def _trim() -> None:
+    with contextlib.suppress(Exception):
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
 
 
 class _Result:
@@ -241,11 +278,10 @@ class _Result:
         if not all(_supported(f.type) for f in reader.schema) or len(set(reader.schema.names)) != len(reader.schema.names):
             reader.close()
             return con.execute(self._sql).df()           # an unverified type / duplicate names: DuckDB's own conversion
-        tab = reader.read_all()                          # compact Arrow batches; nothing else runs until drained
+        holder = [owned_table(reader)]                   # batch by batch into process-owned buffers (owned_table)
         del reader
         release()
-        out = table_like_df(tab, tz)
-        del tab
+        out = table_like_df(holder, tz)                  # the holder hands the only reference to the conversion
         release()
         return out
 
@@ -306,31 +342,64 @@ SPILL_MIN_BYTES = 64 * 2**20
 
 
 def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
-    """The same DataFrame (same columns, index, dtypes, values and block layout) with each large NumPy block held in a
-    memory-mapped file of this process's CBB spill directory instead of anonymous memory: its pages are file-backed and
-    reclaimable by the kernel under the cgroup ceiling, while a frozen fit copies what it needs (e.g. marginal.fit_v0's
-    frame[mask].copy()) into ordinary memory. The file is unlinked at once (the mapping keeps it until the frame is
-    freed). No-op unless CBB_DUCKDB_TEMP_DIR is configured (Droplet) or the frame is small."""
+    """The same DataFrame (same columns, index, dtypes and values), CONSOLIDATED (exactly the block layout pandas'
+    own consolidation builds: one block per consolidatable dtype, its rows in column-position order, the blocks in
+    pandas' group order), with each large NumPy block held in a memory-mapped file of this process's CBB spill directory
+    instead of anonymous memory. Each dtype group is written straight into its memmap (no anonymous consolidated copy).
+
+    Why consolidated: marginal.fit_v0's frozen frame[mask].copy() consolidates an unconsolidated frame AFTER copying it
+    (pandas BlockManager.copy -> _consolidate_inplace -> _merge_blocks: vstack + reorder), i.e. two more full copies of
+    the float64 group at once -- the walk-forward high-water (measured 2026-11-14, QA block probe). On a consolidated
+    frame the same expression copies once and builds the same consolidated result (identical values, layout and order).
+    The file-backed pages are reclaimable by the kernel under the cgroup ceiling. Files are unlinked at once (the mapping
+    keeps them until the frame is freed). No-op unless CBB_DUCKDB_TEMP_DIR is configured (Droplet) or the frame is
+    small."""
     tmp = settings().get("temp_directory")
     blocks = df._mgr.blocks
     if not tmp or sum(b.values.nbytes for b in blocks if isinstance(b.values, np.ndarray)) < SPILL_MIN_BYTES:
         return df
     out = []
-    for i, b in enumerate(blocks):
-        v = b.values
-        if isinstance(v, np.ndarray) and v.dtype != object and v.nbytes >= 2**20:
-            path = Path(tmp) / f"frame-{id(df)}-{i}.npy"
-            mm = np.lib.format.open_memmap(path, mode="w+", dtype=v.dtype, shape=v.shape,
-                                           fortran_order=bool(v.flags["F_CONTIGUOUS"] and not v.flags["C_CONTIGUOUS"]))
-            mm[...] = v
+    key = lambda b: b._consolidate_key                       # noqa: E731 -- pandas _consolidate's grouping and order
+    for i, ((can, _), grp) in enumerate(itertools.groupby(sorted(blocks, key=key), key)):
+        grp = list(grp)
+        if not can or len(grp) == 1:
+            out += [(_spilled(b.values, tmp, df, f"{i}-{k}"), b.mgr_locs.as_array) for k, b in enumerate(grp)]
+            continue
+        locs = np.concatenate([b.mgr_locs.as_array for b in grp])
+        order = np.argsort(locs, kind="stable")
+        rows = [(b.values, k) for b in grp for k in range(len(b.mgr_locs))]
+        v0 = grp[0].values
+        if isinstance(v0, np.ndarray) and v0.dtype != object:
+            mm, path = _memmap(tmp, df, str(i), v0.dtype, (len(rows), len(df)))
+            for r, j in enumerate(order):                    # one column at a time into its final position
+                v, k = rows[j]
+                mm[r] = v[k]
             mm.flush()
             path.unlink()
-            v = mm.view(np.ndarray)                  # a plain ndarray (as before); the mapping is its base
-        out.append((v, b.mgr_locs.as_array))
+            out.append((mm.view(np.ndarray), locs[order]))
+        else:                                                # object / datetime-like groups: pandas' own merge
+            from pandas.core.internals.managers import _merge_blocks
+            (m,), _ = _merge_blocks(grp, dtype=grp[0].dtype, can_consolidate=True)
+            out.append((m.values, m.mgr_locs.as_array))
     res = create_dataframe_from_blocks(out, index=df.index, columns=df.columns)
-    if not res.dtypes.equals(df.dtypes):
-        raise DuckDBLimitError("spilled frame dtypes differ")
+    if not res.dtypes.equals(df.dtypes) or not res._mgr.is_consolidated():
+        raise DuckDBLimitError("spilled frame dtypes differ or the frame is not consolidated")
     return res
+
+
+def _memmap(tmp, df, tag, dtype, shape, fortran=False):
+    path = Path(tmp) / f"frame-{id(df)}-{tag}.npy"
+    return np.lib.format.open_memmap(path, mode="w+", dtype=dtype, shape=shape, fortran_order=fortran), path
+
+
+def _spilled(v, tmp, df, tag):
+    if not (isinstance(v, np.ndarray) and v.dtype != object and v.nbytes >= 2**20):
+        return v
+    mm, path = _memmap(tmp, df, tag, v.dtype, v.shape, bool(v.flags["F_CONTIGUOUS"] and not v.flags["C_CONTIGUOUS"]))
+    mm[...] = v
+    mm.flush()
+    path.unlink()
+    return mm.view(np.ndarray)                               # a plain ndarray (as before); the mapping is its base
 
 
 def release() -> None:
