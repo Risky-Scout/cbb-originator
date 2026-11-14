@@ -20,7 +20,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC,
+from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC, pool_grain as PG,
                                inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
                                roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
@@ -195,6 +195,11 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         cand, availability, ic_block, ic_rep = IC.apply(fr["cand"], availability,
                                                         run_dir / "features" / "canonical_asof.duckdb", conflicts, aso)
         roster_sup.update(ic_block)                              # unverified conflict: primary simulated, never priced
+        cand, pg_reasons, pg_conflicts = PG.resolve(cand)       # canonical grain: one row per game x player
+        for gid, rs in pg_reasons.items():
+            game_reasons[gid] += rs
+        if pg_conflicts:
+            summary["pool_team_conflicts"] = pg_conflicts
         if ic_rep["conflicts"]:
             summary["identity_conflicts"] = ic_rep
         try:                                                     # monitoring stratum only (never a model input)
@@ -215,6 +220,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         envd = IN.environment(fr["team"], model.jm1["struct"]["env"]) if len(cand) else {}
         if len(rows):
             rows, aflags = IN.apply_availability(rows, availability)
+            PG.assert_canonical_key_is_unique(rows, ["game_id", "player_id"], "model inputs")
             for gid, f in aflags.items():
                 game_reasons[gid] += f["reasons"]
             rows.drop(columns=["_scored"]).to_parquet(run_dir / "model_inputs.parquet", index=False)
