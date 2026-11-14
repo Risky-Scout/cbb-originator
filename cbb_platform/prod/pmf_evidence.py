@@ -19,6 +19,10 @@ plus run_id, method, game_label and player_label (provenance and labels for the 
 
 Integrity: a PMF with a negative / non-finite value, or with mass more than PMF_TOL from 1, is refused; a file is written
 once (an existing file with different content is an ExportIntegrityError-style refusal, never overwritten).
+
+Storage (footprint directive, 2026-11-14): the file on disk is the COMPACT canonical form (prod.pmf_compact: one row per
+PMF with its exact float64 vector, zstd), not one row per outcome. read() returns the identical long frame (a
+deterministic view); files written before the change (long schema) are read as before.
 """
 from __future__ import annotations
 
@@ -29,7 +33,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import ledger as LG
+from cbb_platform.prod import ledger as LG, pmf_compact as PCX
 
 PMF_TOL = 1e-9                                   # = prod.pricing.SUM_TOL = prod.simulate.PMF_TOL
 FILE = "pmfs.parquet"
@@ -84,7 +88,7 @@ def check(pmf: np.ndarray, what: str = "") -> None:
 
 def _bytes(df: pd.DataFrame) -> bytes:
     buf = io.BytesIO()
-    df.to_parquet(buf, index=False)
+    PCX.compact(df).to_parquet(buf, index=False, compression="zstd")
     return buf.getvalue()
 
 
@@ -102,15 +106,34 @@ def write(path: Path, df: pd.DataFrame) -> dict:
     tmp.write_bytes(_bytes(df))
     tmp.replace(path)
     return {"path": str(path), "rows": int(len(df)), "written": True, "sha256": sha256(path),
-            "pmfs": int(df["prediction_receipt_id"].nunique()) if len(df) else 0}
+            "pmfs": int(df["prediction_receipt_id"].nunique()) if len(df) else 0, "format": "COMPACT"}
 
 
-def read(path: Path) -> pd.DataFrame:
+def read_compact(path: Path) -> pd.DataFrame:
+    """The compact canonical rows (a legacy long-schema file is compacted on read)."""
     df = pd.read_parquet(path)
+    if "probabilities" in df.columns:
+        miss = [c for c in PCX.PMF_COLUMNS if c not in df.columns]
+        if miss:
+            raise PMFEvidenceError(f"{path}: missing columns {miss}")
+        PCX.verify(df)
+        return df[PCX.PMF_COLUMNS].reset_index(drop=True)
+    return PCX.compact(_long(df, path))
+
+
+def _long(df: pd.DataFrame, path) -> pd.DataFrame:
     miss = [c for c in COLUMNS if c not in df.columns]
     if miss:
         raise PMFEvidenceError(f"{path}: missing columns {miss}")
     return df[COLUMNS].reset_index(drop=True)
+
+
+def read(path: Path) -> pd.DataFrame:
+    """The long frame (one row per outcome): the exact expansion of the compact file, or a legacy long file as stored."""
+    df = pd.read_parquet(path)
+    if "probabilities" in df.columns:
+        return read_compact(path).pipe(PCX.expand)[COLUMNS].reset_index(drop=True)
+    return _long(df, path)
 
 
 def sha256(path: Path) -> str:
