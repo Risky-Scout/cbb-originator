@@ -46,6 +46,12 @@ CLI_STAGES = {"prep": "PREP", "walkforward": "WALK_FORWARD", "forecast": "INITIA
               "health": "HEALTH"}
 NOT_STARTED, RUNNING, PASS, DEFERRED, FAIL = "NOT_STARTED", "RUNNING", "PASS", "DEFERRED", "FAIL"
 STATUSES = (NOT_STARTED, RUNNING, PASS, DEFERRED, FAIL)
+# terminal stage states (summary / health; derived, never stored as STATUS): RECOVERED = the stage's outcome was
+# reconstructed from durable evidence (walk-forward promotion found in the model store); NOT_REQUIRED = nothing to do
+# (no forecast due); DEFERRED on EXPORTS = no morning forecast evidence existed to export (the day's exports come from
+# a later forecast window)
+RECOVERED, NOT_REQUIRED = "RECOVERED", "NOT_REQUIRED"
+TERMINAL_STATES = (PASS, FAIL, DEFERRED, RECOVERED, NOT_REQUIRED)
 MAX_ATTEMPTS = 2                         # per stage per ET date: the 07:00 attempt + one recovery attempt
 MAX_RECOVERY_PASSES = 2                  # chain passes one 08:00 recovery may request (bounded; never a loop)
 # orchestration failures (directive section 15): they never imply MODEL_FAIL / TRAINING_DATA_FAIL -- the durable
@@ -238,11 +244,44 @@ def complete(p: dict) -> bool:
             and not forecast_stale(p) and p["EXPORTS"]["STATUS"] == PASS and first_incomplete(p) is None)
 
 
+def stage_terminal_states(p: dict) -> dict:
+    """Per stage: PASS | FAIL | DEFERRED | RECOVERED | NOT_REQUIRED, or NOT_STARTED / RUNNING while not terminal."""
+    out = {}
+    for s in STAGES:
+        st = p[s]
+        S = st["STATUS"]
+        if S in (NOT_STARTED, RUNNING):
+            out[s] = S
+        elif s == "WALK_FORWARD" and S == PASS and st.get("RECOVERED_FROM"):
+            out[s] = RECOVERED
+        elif s == "INITIAL_FORECAST" and S == PASS and st.get("FORECAST_STATUS") == "NO_FORECAST_DUE":
+            out[s] = NOT_REQUIRED
+        elif s == "EXPORTS" and S == PASS and p["INITIAL_FORECAST"]["STATUS"] != PASS and all(
+                st.get(k) == "MISSING_EVIDENCE" for k in ("BOARDS_STATUS", "DISTRIBUTIONS_STATUS", "GRADES_STATUS")):
+            out[s] = DEFERRED
+        else:
+            out[s] = S
+    return out
+
+
+def first_historical_failure(p: dict, terminal: dict | None = None) -> str | None:
+    """The first stage, in chain order, whose terminal state is FAIL (settled: nothing left to retry today)."""
+    terminal = terminal or stage_terminal_states(p)
+    return next((s for s in STAGES if terminal[s] == FAIL), None)
+
+
 def derive(p: dict) -> None:
     p["MORNING_COMPLETE"] = complete(p)
     nxt = first_incomplete(p)
     p["FIRST_INCOMPLETE_STAGE"] = nxt
     p["RECOVERY_REQUIRED"] = (not p["MORNING_COMPLETE"]) and nxt is not None and nxt != "HEALTH"
+    term = stage_terminal_states(p)
+    p["STAGE_TERMINAL_STATES"] = term
+    p["MORNING_CHAIN_COMPLETE"] = p["MORNING_COMPLETE"]
+    fh = first_historical_failure(p, term)
+    if not p["MORNING_COMPLETE"] and nxt is None and fh is None:     # never an unexplained incomplete morning
+        fh = next((s for s in STAGES if term[s] not in (PASS, NOT_REQUIRED, RECOVERED)), "UNCLASSIFIED")
+    p["FIRST_HISTORICAL_FAILURE"] = fh
 
 
 # ============================================================================ stage scaffolding
@@ -502,7 +541,10 @@ def summary(p: dict) -> dict:
             "MORNING_INITIAL_SNAPSHOT_ID": fc.get("SNAPSHOT_ID"), "MORNING_EXPORTS_STATUS": ex["STATUS"],
             "MORNING_HEALTH_STATUS": p["HEALTH"]["STATUS"], "MORNING_COMPLETE": p["MORNING_COMPLETE"],
             "FIRST_INCOMPLETE_STAGE": p.get("FIRST_INCOMPLETE_STAGE"), "RECOVERY_REQUIRED": p["RECOVERY_REQUIRED"],
-            "RECOVERY_LAST_ACTION": p.get("RECOVERY_LAST_ACTION"), "STAGE_MEMORY": mem}
+            "RECOVERY_LAST_ACTION": p.get("RECOVERY_LAST_ACTION"), "STAGE_MEMORY": mem,
+            "INITIAL_FORECAST": fc["STATUS"], "STAGE_TERMINAL_STATES": stage_terminal_states(p),
+            "MORNING_CHAIN_COMPLETE": p["MORNING_COMPLETE"],
+            "FIRST_HISTORICAL_FAILURE": p.get("FIRST_HISTORICAL_FAILURE", first_historical_failure(p))}
 
 
 def _health_sections(p: dict) -> dict:
