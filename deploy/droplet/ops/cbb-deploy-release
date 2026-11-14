@@ -1,0 +1,26 @@
+#!/bin/bash
+# CBB Originator: atomic release swap (root, on the Droplet). Supersedes /root/cbb_deploy_remote.sh (2026-11-14).
+#   bash <any release>/deploy/droplet/ops/cbb-deploy-release <full sha>
+# The tree must already be staged at releases/<sha>.tmp (git archive | gzip -1 | ssh ... | tar -x). Aborts while any CBB
+# oneshot unit is running. Records the replaced release in ROLLBACK_RELEASE, backs up the env, swaps `current`.
+# Then: install units (cbb-install-units), preflight, and prune (cbb-prune-releases --apply).
+set -euo pipefail
+S="${1:?usage: cbb-deploy-release <full sha>}"; R=/opt/sports-models/cbb-originator; REL=$R/releases; ENV=/etc/sports-models/cbb-originator.env
+[[ "$S" =~ ^[0-9a-f]{40}$ ]] || { echo "need a full 40-hex sha"; exit 3; }
+[ -d "$REL/$S.tmp" ] || { echo "no staged tree $REL/$S.tmp"; exit 4; }
+[ ! -e "$REL/$S" ] || { echo "release exists"; exit 5; }
+for u in $(systemctl list-units --all --plain --no-legend 'cbb-originator-*.service' | awk '{print $1}'); do
+  a=$(systemctl show "$u" -p ActiveState --value)
+  case "$a" in inactive|failed) ;; *) echo "$u $a: abort"; exit 9;; esac
+done
+PREV="$(basename "$(readlink -f $R/current)")"
+cd "$REL/$S.tmp" && find . -type f ! -name '*.pyc' -print0 | sort -z | xargs -0 sha256sum > "$REL/$S.sha256sums"
+cd "$REL" && mv "$S.tmp" "$S"
+chown -R root:cbb-originator "$REL/$S" "$REL/$S.sha256sums"
+chmod -R a-w,a+rX "$REL/$S"; chmod 0444 "$REL/$S.sha256sums"
+for u in "$REL/$S"/deploy/droplet/systemd/*; do n=$(basename "$u"); cmp -s "$u" "/etc/systemd/system/$n" || echo "UNIT DIFFERS: $n"; done
+cp -p "$ENV" "$ENV.bak-$(date -u +%Y%m%d)-pre-${S:0:7}"
+sed -i "s/^CBB_EXPECTED_COMMIT=.*/CBB_EXPECTED_COMMIT=$S/" "$ENV"
+echo "$PREV" > "$R/ROLLBACK_RELEASE.new" && mv -T "$R/ROLLBACK_RELEASE.new" "$R/ROLLBACK_RELEASE"
+cd "$R" && ln -sfn "releases/$S" current.new && mv -T current.new current
+echo "current -> $(readlink current); rollback -> $PREV"

@@ -1,0 +1,15 @@
+#!/bin/bash
+# CBB Originator: install the systemd units of the CURRENT release (root). Supersedes /root/cbb_install_units.sh.
+# Backs up the installed units to /root/cbb-units-backup-<ts> (only the newest 2 backups are kept), installs every
+# changed unit, daemon-reload, re-enables the timers of the release. Never starts a service.
+set -euo pipefail
+R=/opt/sports-models/cbb-originator/current/deploy/droplet/systemd; E=/etc/systemd/system
+BK=/root/cbb-units-backup-$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$BK"
+cp -p $E/cbb-originator-* "$BK"/ 2>/dev/null || true
+for f in "$R"/*; do n=$(basename "$f"); cmp -s "$f" "$E/$n" || { install -m 0644 "$f" "$E/$n"; echo "installed $n"; }; done
+systemctl daemon-reload
+for t in "$R"/*.timer; do systemctl enable "$(basename "$t")" >/dev/null 2>&1; done
+for f in "$R"/*; do n=$(basename "$f"); cmp -s "$f" "$E/$n" || echo "STILL DIFFERS $n"; done
+ls -1dt /root/cbb-units-backup-* 2>/dev/null | tail -n +3 | xargs -r rm -rf
+echo "backup: $BK"
+systemctl list-timers --all --no-legend 'cbb-originator-*'

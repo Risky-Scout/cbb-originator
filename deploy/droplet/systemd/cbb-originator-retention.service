@@ -1,5 +1,7 @@
-# CBB Originator: 05:45 ET run-scratch retention (prod/retention.py) -- dry-run report, then deletes ONLY
-# prod/runs/*/features/*.duckdb of completed, verified runs outside the keep window (latest 2 completed / 48 h).
+# CBB Originator: 05:45 ET storage retention (prod/retention.py + prod/storage_retention.py) -- dry-run report, then the
+# run-scratch rule (prod/runs/*/features/*.duckdb of completed, verified runs outside latest 2 completed / 24 h) and the
+# bounded-growth rules of docs/operations/CBB_STORAGE_AND_RETENTION.md. Never the state, models, ticks, PMF evidence,
+# final exports, secrets or the release tree (/opt is read-only here; releases are pruned by the root deploy tooling).
 # CBB writer lock only; NEVER the shared heavy lock (no heavy group, no heavy lock path, nothing under /run/lock).
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
