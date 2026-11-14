@@ -202,6 +202,13 @@ def rotowire_state(life: Life) -> str:
     return "ENABLED" if smoke.get("status") == "PASS" else "DISABLED_SMOKE_NOT_PASSED"
 
 
+def priced_status(s) -> str:
+    """The availability_status inputs.apply_availability prices a player with: no record (None / NaN / "") -> NO_REPORT.
+    Before 2026-11-14 the refresh compared a stored "NO_REPORT" against an absent record as a change and re-simulated
+    every such game (11-13: 936 / 850 / 499 players flagged NO_REPORT -> NO_REPORT at 13:00 / 16:00 / 18:00)."""
+    return s if isinstance(s, str) and s else "NO_REPORT"
+
+
 def availability_changes(life: Life, games: pd.DataFrame, now: pd.Timestamp) -> tuple[list, dict]:
     """Games whose point-in-time availability (RotoWire event store, knowable < now) differs from the status their
     latest snapshot priced with. Returns (affected game ids, per-game changed players)."""
@@ -217,7 +224,11 @@ def availability_changes(life: Life, games: pd.DataFrame, now: pd.Timestamp) -> 
         prev = latest_players(life, gid)
         before = {} if prev is None else {(gid, p): s for p, s in zip(prev["player_id"], prev["availability_status"])}
         keys = {k for k in set(cur) | set(before) if k[0] == gid}
-        diff = sorted(k[1] for k in keys if (cur.get(k) or None) != (before.get(k) if isinstance(before.get(k), str) else None))
+        if prev is None:                           # never priced: unchanged rule (any availability record -> forecast)
+            diff = sorted(k[1] for k in keys if cur.get(k))
+        else:                                      # compare the status the forecast PRICES with: inputs.apply_availability
+            diff = sorted(k[1] for k in keys       # gives a player without a record NO_REPORT, so an absent record and a
+                          if priced_status(cur.get(k)) != priced_status(before.get(k)))   # stored NO_REPORT are equal
         if diff:
             affected.append(gid)
             changed[gid] = diff
@@ -287,8 +298,10 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     pe = PE.from_run(run_dir, s["run_id"], now, ident["model_version"], rec["games"])
     w = PE.write(sdir / PE.FILE, pe) if len(pe) else {"pmfs": 0}
     players = pd.DataFrame(columns=PLAYER_COLS)
+    input_hash = {}
     if (run_dir / "model_inputs.parquet").exists():
         mi = pd.read_parquet(run_dir / "model_inputs.parquet")
+        input_hash = forecast_input_hashes(mi, rec["games"], ident, life.sims)
         players = mi[[c for c in PLAYER_COLS if c in mi.columns]].drop_duplicates(["game_id", "player_id"])
         players = players[players["game_id"].isin(rec["games"])].reset_index(drop=True)
     players = players.assign(snapshot_id=sid, run_id=s["run_id"], prediction_as_of=now.isoformat(),
@@ -305,10 +318,37 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
                players_forecast=int(pe[["game_id", "player_id"]].drop_duplicates().shape[0]) if len(pe) else 0,
                stat_predictions=int(pe["prediction_receipt_id"].nunique()) if len(pe) else 0,
                pmfs_persisted=int(w.get("pmfs", 0)), pmfs_sha256=w.get("sha256"),
-               availability=s.get("availability"))
+               availability=s.get("availability"), forecast_input_hash=input_hash)
     OS.write_once(sdir / "snapshot.json", rec)
     OS.append_jsonl(life.forecasts("index.jsonl"), [_index(rec)])
     return rec
+
+
+INPUT_HASH_EXCLUDE = ("availability_received_at",)     # when a status arrived does not enter the simulation
+
+
+def forecast_input_hashes(mi: pd.DataFrame, games, ident: dict, sims: int) -> dict:
+    """FORECAST_INPUT_HASH per game (audit metadata; nothing is skipped on it): sha256 of the model identity (version,
+    artifact hashes), the MC draw count and the game's complete per-player model inputs (run model_inputs.parquet:
+    marginal means / dispersions / participation / roles / availability status / suppression), rows in player order.
+    Two snapshots of a game with the same hash priced the same marginal inputs under the same model."""
+    import hashlib
+    cols = sorted(c for c in mi.columns if c not in INPUT_HASH_EXCLUDE)
+    head = json.dumps({"model_version": ident.get("model_version"), "artifact_sha256": ident.get("artifact_sha256"),
+                       "sims": sims}, sort_keys=True, default=str).encode()
+    out = {}
+    for gid in games:
+        g = mi[mi["game_id"] == gid].sort_values(["team_id", "player_id"], kind="mergesort")[cols]
+        h = hashlib.sha256(head)
+        for c in cols:                                   # exact: numeric columns by their bytes, others by value
+            v = g[c]
+            h.update(c.encode() + b"\0" + str(v.dtype).encode() + b"\0")
+            if v.dtype.kind in "fiub":
+                h.update(v.to_numpy().tobytes())
+            else:
+                h.update(json.dumps([None if pd.isna(x) else str(x) for x in v], separators=(",", ":")).encode())
+        out[gid] = h.hexdigest()
+    return out
 
 
 def _index(rec: dict) -> dict:

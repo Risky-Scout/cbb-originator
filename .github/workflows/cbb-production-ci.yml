@@ -77,7 +77,7 @@ jobs:
       - name: Droplet deployment package (safe defaults, refusals, locks / memory gate, units, transfer manifest; no server)
         run: python -m pytest -q -rs tests/test_droplet_deploy_package.py tests/test_prod_retention.py
       - name: Availability refresh Phase A / Phase B split (acquisition outside the writer lock, bounded Phase B watchdog, real-process lock contention / process death, old-vs-split prediction equivalence; fixtures, no network)
-        run: python -m pytest -q -rs tests/test_availability_refresh_split.py
+        run: python -m pytest -q -rs tests/test_availability_refresh_split.py tests/test_lifecycle_availability_changes.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke
