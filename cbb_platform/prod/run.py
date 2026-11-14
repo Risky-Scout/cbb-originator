@@ -220,8 +220,10 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             rows.drop(columns=["_scored"]).to_parquet(run_dir / "model_inputs.parquet", index=False)
         tname = teams.set_index("canonical_team_id")["display_name"].to_dict()
         pname = players.set_index("canonical_player_id")["display_name"].to_dict()
+        bank = md = None
         for gid in score_ids:
-            gp = rows[rows["game_id"] == gid] if len(rows) else pd.DataFrame()
+            bank = md = None                                     # game-local lifetime: the previous game's draw bank is
+            gp = rows[rows["game_id"] == gid] if len(rows) else pd.DataFrame()   # released before the next simulation
             if gp.empty or "FUTURE_LEAKAGE" in game_reasons[gid]:
                 continue
             srow = slate.set_index("canonical_game_id").loc[gid]
@@ -263,6 +265,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                                             "availability_received_at": r.availability_received_at} for m in PC.MARKETS]))
             cand_names.append(gp[["game_id", "team_id", "player_id"]].assign(
                 display_name=gp["player_id"].map(lambda p: pname.get(p))))
+        bank = md = None
         summary["scored_games"] = len(banks)
     dist = pd.concat(dists, ignore_index=True) if dists else pd.DataFrame(
         columns=["game_id", "team_id", "player_id", "market", "pmf", "projection", "method", "p_play", "game_label",
