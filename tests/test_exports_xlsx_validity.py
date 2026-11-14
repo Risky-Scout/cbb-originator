@@ -151,7 +151,9 @@ def test_non_finite_values_are_blank_cells_never_invalid_numbers(tmp_path):
 
 
 def test_daily_distributions_workbook_valid_and_matches_source_without_model_change(monkeypatch, tmp_path):
-    """End to end through EX.daily: split workbook equals distribution_rows exactly; 7 frozen artifacts unchanged."""
+    """End to end through EX.daily: the summary workbook has one row per distribution; the on-request long derivative
+    (expand_distributions, rebuilt from the compact PMF parquet) is Excel-valid, split across sheets, and equals
+    distribution_rows exactly; 7 frozen artifacts unchanged."""
     arts = {k: hashlib.sha256((C.PROJECT_ROOT / p).read_bytes()).hexdigest() for k, (p, _) in PC.ARTIFACTS.items()}
     pm = {"G1": [{"game_id": "G1", "team_id": "T1", "player_id": f"P{i}", "market": "PTS", "method": "X",
                   "projection": 2.0 + i, "pmf": _pmf(2.0 + i, 40).tolist()} for i in range(5)]}
@@ -161,8 +163,10 @@ def test_daily_distributions_workbook_valid_and_matches_source_without_model_cha
     src_bytes = (tree["runs_root"] / "R1" / "market_pmfs.parquet").read_bytes()
     monkeypatch.setattr(EX, "EXCEL_MAX_ROWS", 90)                  # 89 data rows/sheet; 40-outcome PMFs, 2 per sheet
     rep = _run(tree)
-    assert rep["distributions"]["status"] == "WRITTEN" and rep["distributions"]["rows"] == len(src) > 2 * 89
-    p = Path(rep["distributions"]["path"])
+    assert rep["distributions"]["status"] == "WRITTEN" and rep["distributions"]["rows"] == 5
+    assert rep["distributions"]["outcome_rows_represented"] == len(src) > 2 * 89
+    assert len(_openpyxl_rows(Path(rep["distributions"]["path"]))[EX.DIST_SHEET]) == 6
+    p = EX.expand_distributions("2026-11-04", tree["out_root"])
     counts = _structural(p)
     assert len(counts) >= 3 and sum(counts.values()) == len(src)
     got = [r for sheet in _openpyxl_rows(p).values() for r in sheet[1:]]

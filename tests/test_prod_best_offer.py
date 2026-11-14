@@ -9,6 +9,7 @@ import json
 import socket
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -261,8 +262,11 @@ def test_20_21_22_distributions_latest_valid_pre_cutoff(tmp_path):
     rep = _daily(tree)
     assert rep["distributions"]["status"] == "WRITTEN" and rep["distributions"]["PMF_RECONCILIATION"] == "PASS"
     rows = EX.read_xlsx(Path(rep["distributions"]["path"]))["Distributions"]["rows"][1:]
-    assert {r[4] for r in rows} == {9.0}                                       # F2 mean
-    assert abs(sum(r[6] for r in rows) - 1) <= EX.PMF_TOL and all(r[6] >= 0 for r in rows)
+    c = {k: i for i, k in enumerate(EX.DIST_SUMMARY_COLS)}
+    assert {r[c["MEAN"]] for r in rows} == {9.0} and {r[c["FORECAST_ID"]] for r in rows} == {"F2"}   # F2 mean
+    pm = pd.read_parquet(rep["distributions"]["pmf_path"])
+    v = np.asarray(pm.iloc[0].probabilities)
+    assert len(pm) == 1 and abs(v.sum() - 1) <= EX.PMF_TOL and (v >= 0).all()
 
 
 # ---------------------------------------------------------------- 23-25 no refit / no network / no artifact change
