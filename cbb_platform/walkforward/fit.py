@@ -81,6 +81,37 @@ def production_season_guard():
         _GUARD_LOCK.release()
 
 
+_FROZEN_PREDICT_MEANS = P._predict_means
+PREDICT_CHUNK_ROWS = 65_536             # a multiple of 64: BLAS X @ beta is row-chunk invariant only at such boundaries
+
+
+def chunked_predict_means(df: pd.DataFrame, cfg: dict, st: dict) -> dict:
+    """The frozen props_v0._predict_means applied to consecutive row blocks and concatenated: every quantity it returns
+    is row-wise (the _design transform with a FITTED state, X @ beta, clip, _hist, the position prior map, maximum), so
+    the result is the same per row; only the design matrix is never materialized for all rows at once.
+    Measured 2026-11-14 (Droplet, 1.39 M training rows): the full-frame call built a second 1,392,565 x 47 float64 X
+    (499 MB, ~885 MB transient) while marginal.fit_v0 still held its training X -- the walk-forward high-water mark."""
+    n, R = len(df), PREDICT_CHUNK_ROWS
+    if n < 2 * R:
+        return _FROZEN_PREDICT_MEANS(df, cfg, st)
+    bounds = list(range(0, n - n % R - R, R)) + [n - n % R - R, n]   # the last block absorbs the remainder (R..2R-1
+    parts = [_FROZEN_PREDICT_MEANS(df.iloc[a:b], cfg, st) for a, b in zip(bounds[:-1], bounds[1:])]   # rows): never
+    return {k: np.concatenate([q[k] for q in parts]) for k in parts[0]}         # a short tail block (own BLAS kernel)
+
+
+@contextlib.contextmanager
+def bounded_predict_means():
+    """props_v0._predict_means -> chunked_predict_means for ONE marginal fit (props_v0.py is hash-pinned, not edited);
+    the frozen function is restored in `finally` and the restoration verified."""
+    if P._predict_means is not _FROZEN_PREDICT_MEANS:
+        raise WalkForwardFitError("props_v0._predict_means is not the frozen function before the fit")
+    P._predict_means = chunked_predict_means
+    try:
+        yield
+    finally:
+        P._predict_means = _FROZEN_PREDICT_MEANS
+
+
 def guard_state() -> dict:
     return {"structural_MAX_SEASON": S.MAX_SEASON, "frozen": FROZEN_MAX_SEASON, "guard_active": _GUARD_LOCK.locked(),
             "RESTORED": S.MAX_SEASON == FROZEN_MAX_SEASON and not _GUARD_LOCK.locked()}
@@ -167,8 +198,8 @@ class _Inputs:
             del h
         from cbb_platform import duckdb_limits as DLM
         out = self._ready.pop(k)
-        if k == "frame":                             # marginal.fit_v0 copies it (frame[mask].copy()): hold the
-            out = DLM.spill_frame(out)               # caller's copy file-backed (identical frame; no-op off-Droplet)
+        if k == "frame":                             # marginal.fit_v0 copies it (frame[mask].copy()): hand it over
+            out = DLM.spill_frame(out)               # consolidated + file-backed (identical values; no-op off-Droplet)
             DLM.release()
         return out
 
@@ -233,7 +264,8 @@ def fit(cfg: dict, new: dict | None, log=print) -> dict:
     frame, finals = x.pop("frame"), x.pop("finals")
     with production_season_guard():
         _admitted()
-        v0 = M.stl_policy(M.fit_v0(frame, finals, cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
+        with bounded_predict_means():
+            v0 = M.stl_policy(M.fit_v0(frame, finals, cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
     rows["frame"] = int(len(frame))
     del frame, finals
     DLM.release()

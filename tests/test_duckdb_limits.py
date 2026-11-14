@@ -6,6 +6,7 @@ store with and without a cap small enough to force external (spilling) operators
 dtypes, row order, row count: no truncation, no sampling). Synthetic data only; no network.
 """
 import os
+import re
 from pathlib import Path
 
 import duckdb
@@ -124,6 +125,9 @@ TYPES_SQL = """SELECT i, 'PGE-'||i AS id, CASE WHEN i%3=0 THEN NULL ELSE 'x'||(i
   (i%11)::DECIMAL(9,2) AS dec
   FROM range(20000) t(i) ORDER BY i DESC"""
 
+NO_DECIMAL_SQL = re.sub(r",\s*\(i%11\)::DECIMAL\(9,2\) AS dec", "", TYPES_SQL)   # every type the conversion handles
+assert "DECIMAL" not in NO_DECIMAL_SQL
+
 
 @pytest.mark.parametrize("tz", ["UTC", "America/New_York"])
 def test_low_memory_fetch_equals_native_df_every_type(tmp_path, tz):
@@ -131,7 +135,7 @@ def test_low_memory_fetch_equals_native_df_every_type(tmp_path, tz):
         con = duckdb.connect(config={"threads": 1})
         con.execute(f"SET TimeZone = '{tz}'")
         a = con.execute(TYPES_SQL).df()
-        b = con.execute(TYPES_SQL.replace(", (i%11)::DECIMAL(9,2) AS dec", "")).df()   # no fallback type
+        b = con.execute(NO_DECIMAL_SQL).df()   # no fallback type
         con.close()
         return a, b
     ref_a, ref_b = run()
@@ -179,7 +183,7 @@ def _layout(d):
 
 @pytest.mark.parametrize("tz", ["UTC", "America/New_York"])
 def test_low_memory_fetch_same_block_grouping_as_native_df(tmp_path, tz):
-    sql = TYPES_SQL.replace(", (i%11)::DECIMAL(9,2) AS dec", "")
+    sql = NO_DECIMAL_SQL
     con = duckdb.connect(config={"threads": 1})
     con.execute(f"SET TimeZone = '{tz}'")
     ref = con.execute(sql).df()
@@ -251,26 +255,87 @@ def test_stage3_connect_untouched_without_configuration(monkeypatch):
     assert S3B.connect is before
 
 
-def test_spill_frame_identical_values_dtypes_and_layout(monkeypatch, tmp_path):
-    n = 300_000
+def _unconsolidated_like_walkforward_frame(n=300_000):
+    """The walk-forward frame's shape (QA block probe 2026-11-14): str / int64 / tz-aware datetime columns, one large
+    float64 block plus float64 columns assigned afterwards (each its own block), a bool column."""
     rng = np.random.default_rng(1)
-    df = pd.DataFrame({"a": rng.normal(size=n), "s": pd.array([f"x{i % 7}" for i in range(n)], dtype="str"),
-                       "b": rng.normal(size=n), "i": rng.integers(0, 9, n).astype("int32"),
-                       "t": pd.date_range("2025-01-01", periods=n, freq="s", tz="America/New_York"), "c": rng.normal(size=n)})
-    df = df.copy()                                            # consolidated blocks, as a loader / concat returns
+    df = pd.DataFrame({"id": pd.array([f"g{i}" for i in range(n)], dtype="str"), "season": rng.integers(2014, 2028, n),
+                       "t": pd.date_range("2025-01-01", periods=n, freq="s", tz="America/New_York"),
+                       "is_home": rng.integers(0, 2, n).astype(float),
+                       "pos": pd.array([f"x{i % 7}" for i in range(n)], dtype="str")})
+    df = pd.concat([df, pd.DataFrame(rng.normal(size=(n, 6)), columns=[f"f{j}" for j in range(6)])], axis=1)
+    for j in range(4):                                       # .loc-assigned targets: one block each (as load_frames)
+        df[f"y_{j}"] = np.where(rng.random(n) < 0.1, np.nan, rng.normal(size=n))
+    df["ok"] = rng.random(n) < 0.9
+    assert not df._mgr.is_consolidated()
+    return df
+
+
+def _ordered_layout(d):
+    return [(str(b.dtype), b.mgr_locs.as_array.tolist(), tuple(getattr(b.values, "shape", ()))) for b in d._mgr.blocks]
+
+
+def test_spill_frame_identical_values_dtypes_consolidated_layout(monkeypatch, tmp_path):
+    """Contract: same values, dtypes, index and column order; the block layout is INTENTIONALLY consolidated -- exactly
+    the layout pandas' own consolidation builds (df.copy()), so the frozen fit_v0's frame[mask].copy() no longer merges
+    blocks and returns the same frame, with the same layout, as on the unconsolidated input."""
+    df = _unconsolidated_like_walkforward_frame()
     monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
     monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
     got = DLM.spill_frame(df)
     pd.testing.assert_frame_equal(got, df, check_exact=True)
-    assert _layout(got) == _layout(df)
-    fl = [b for b in got._mgr.blocks if str(b.dtype) == "float64"][0]
-    assert type(fl.values) is np.ndarray and isinstance(fl.values.base, np.memmap)
+    assert got.index.equals(df.index) and list(got.columns) == list(df.columns) and got.dtypes.equals(df.dtypes)
+    assert got._mgr.is_consolidated() and len(got._mgr.blocks) < len(df._mgr.blocks)
+    assert _ordered_layout(got) == _ordered_layout(df.copy())             # pandas' consolidated layout, same order
+    fl = [b for b in got._mgr.blocks if str(b.dtype) == "float64"]
+    assert len(fl) == 1 and type(fl[0].values) is np.ndarray and isinstance(fl[0].values.base, np.memmap)
     assert not [p for p in (tmp_path / "t").rglob("frame-*")]           # unlinked; mapping keeps the data
-    tr = got[got["i"] <= 8].copy()                                       # the frozen fit's access pattern
-    tr["_w"] = 1.0
-    pd.testing.assert_frame_equal(tr.drop(columns="_w"), df, check_exact=True)
-    a = got[["a", "b", "c"]].to_numpy()
-    assert np.array_equal(a, df[["a", "b", "c"]].to_numpy())
+    import pandas.core.internals.managers as MG
+    merges, orig = [], MG._merge_blocks
+
+    def counted(blocks, *a, **k):
+        if len(blocks) > 1:
+            merges.append(len(blocks))
+        return orig(blocks, *a, **k)
+    monkeypatch.setattr(MG, "_merge_blocks", counted)
+    for tt in (2027, 2026, 2019):                                        # the frozen fit's access pattern, verbatim
+        merges.clear()
+        tr_new = got[got["season"] <= tt].copy()
+        assert not merges                                                # no consolidation inside the frozen copy
+        tr_old = df[df["season"] <= tt].copy()
+        assert merges                                                    # (the old hand-off merged here)
+        pd.testing.assert_frame_equal(tr_new, tr_old, check_exact=True)
+        assert _ordered_layout(tr_new) == _ordered_layout(tr_old)
+        for c in tr_old.columns:
+            if tr_old[c].dtype.kind in "fib":
+                assert tr_new[c].to_numpy().tobytes() == tr_old[c].to_numpy().tobytes(), c
+        cols = [c for c in tr_old.columns if c.startswith(("f", "y_"))]
+        assert tr_new[cols].to_numpy().tobytes() == tr_old[cols].to_numpy().tobytes()
+
+
+def test_spill_frame_keeps_an_already_consolidated_frame_layout(monkeypatch, tmp_path):
+    df = _unconsolidated_like_walkforward_frame().copy()                # consolidated, as a loader / concat returns
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    got = DLM.spill_frame(df)
+    pd.testing.assert_frame_equal(got, df, check_exact=True)
+    assert _ordered_layout(got) == _ordered_layout(df)
+
+
+def test_walkforward_frame_is_handed_over_consolidated(monkeypatch, tmp_path):
+    """The frame _Inputs.pop hands to marginal.fit_v0 is consolidated (and identical to the loaded frame)."""
+    from cbb_platform.walkforward import fit as WF
+    df = _unconsolidated_like_walkforward_frame()
+    fin = pd.DataFrame({"season": [2025]})
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    monkeypatch.setitem(WF._HIST, "frame", df)
+    monkeypatch.setitem(WF._HIST, "finals", fin)
+    x = WF.inputs({}, None)
+    got = x.pop("frame")
+    assert got._mgr.is_consolidated()
+    pd.testing.assert_frame_equal(got, df, check_exact=True)
+    assert x.pop("finals") is fin
 
 
 def test_spill_frame_noop_without_configuration(monkeypatch):
@@ -298,3 +363,33 @@ def test_history_scope_cap(monkeypatch, tmp_path):
         DLM.uninstall()
     assert general.startswith(("488", "512")) and after == general
     assert hist.startswith(("122", "128")) and s3.startswith(("122", "128"))
+
+
+def test_owned_table_equals_read_all_and_owns_its_buffers():
+    """owned_table (footprint 2026-11-14): the drained result is the same table (schema, chunking, values, validity)
+    as reader.read_all(), but in buffers this process allocated, so DuckDB's exported batches are freed while reading."""
+    sql = NO_DECIMAL_SQL
+    con = duckdb.connect(config={"threads": 1})
+    ref = con.execute(sql).to_arrow_reader(DLM.BATCH_ROWS // 16).read_all()
+    got = DLM.owned_table(con.execute(sql).to_arrow_reader(DLM.BATCH_ROWS // 16))
+    con.close()
+    assert got.schema == ref.schema and got.num_rows == ref.num_rows
+    assert [got.column(i).num_chunks for i in range(got.num_columns)] == [ref.column(i).num_chunks for i in range(ref.num_columns)]
+    assert got.equals(ref)
+    for i in range(got.num_columns):
+        assert got.column(i).null_count == ref.column(i).null_count
+        a, b = got.column(i).chunk(0), ref.column(i).chunk(0)
+        assert {x.address for x in a.buffers() if x is not None}.isdisjoint({x.address for x in b.buffers() if x is not None})
+    for tz in ("UTC", "America/New_York"):
+        pd.testing.assert_frame_equal(DLM.table_like_df(got, tz), DLM.table_like_df(ref, tz), check_exact=True)
+
+
+def test_table_like_df_takes_ownership_from_a_holder():
+    con = duckdb.connect(config={"threads": 1})
+    sql = NO_DECIMAL_SQL
+    a = DLM.table_like_df(con.execute(sql).to_arrow_reader(DLM.BATCH_ROWS).read_all(), "UTC")
+    holder = [con.execute(sql).to_arrow_reader(DLM.BATCH_ROWS).read_all()]
+    b = DLM.table_like_df(holder, "UTC")
+    con.close()
+    assert holder == []                                   # the only reference was handed over
+    pd.testing.assert_frame_equal(a, b, check_exact=True)
