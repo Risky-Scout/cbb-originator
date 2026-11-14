@@ -1,5 +1,5 @@
 """Run-scratch retention (prod/retention.py): only prod/runs/*/features/*.duckdb of completed, verified runs outside the
-keep window (latest 2 completed / 48 h, whichever keeps more) are deleted; dry-run report first; receipts with bytes.
+keep window (latest 2 completed / 24 h, whichever keeps more) are deleted; dry-run report first; receipts with bytes.
 TEST fixtures only (temporary trees)."""
 import json
 from pathlib import Path
@@ -41,7 +41,7 @@ def tree(tmp_path):
     _run(runs, "R3-old-unverified", 80)                         # predictions but no durable PMF evidence
     _run(runs, "R4-incomplete", 70, summary=False)              # in progress / failed: never touched
     _run(runs, "R5-old-no-predictions", 60, predictions=0)      # nothing to verify: summary is the durable record
-    _run(runs, "R6-recent", 30)
+    _run(runs, "R6-recent", 20)
     _run(runs, "R7-recent", 2)
     _run(runs, "R8-recent", 1)
     _durable(ops, "K1", ["R1-old-verified", "R2-old-verified"])
@@ -61,12 +61,12 @@ def test_plan_states_and_keep_window(tree):
                  "R3-old-unverified": ("UNVERIFIED", "KEEP"),
                  "R4-incomplete": ("INCOMPLETE", "KEEP"),
                  "R5-old-no-predictions": ("COMPLETED_VERIFIED", "DELETE_SCRATCH"),
-                 "R6-recent": ("COMPLETED_VERIFIED", "KEEP"),               # within 48 h (more than the latest 2)
+                 "R6-recent": ("COMPLETED_VERIFIED", "KEEP"),               # within 24 h (more than the latest 2)
                  "R7-recent": ("COMPLETED_VERIFIED", "KEEP"),
                  "R8-recent": ("COMPLETED_VERIFIED", "KEEP")}
 
 
-def test_latest_two_completed_kept_even_when_older_than_48h(tmp_path):
+def test_latest_two_completed_kept_even_when_older_than_24h(tmp_path):
     runs, ops = tmp_path / "runs", tmp_path / "ops"
     for rid, h in (("A", 300), ("B", 200), ("C", 100)):
         _run(runs, rid, h)
@@ -116,3 +116,12 @@ def test_refuses_a_path_outside_run_scratch(tree, monkeypatch):
     with pytest.raises(RuntimeError, match="refusing"):
         RT.run(runs, ops, apply=True, now=NOW)
     assert (ops / "ticks" / "K1" / PE.FILE).exists()
+
+
+def test_keep_window_is_24_hours(tmp_path):
+    runs, ops = tmp_path / "runs", tmp_path / "ops"
+    for rid, h in (("A", 30), ("B", 23), ("C", 2), ("D", 1)):
+        _run(runs, rid, h)
+    _durable(ops, "K", ["A", "B", "C", "D"])
+    assert _actions(RT.plan(runs, ops, NOW))["A"] == ("COMPLETED_VERIFIED", "DELETE_SCRATCH")
+    assert _actions(RT.plan(runs, ops, NOW))["B"] == ("COMPLETED_VERIFIED", "KEEP")

@@ -78,12 +78,26 @@ season state grew). Writer-lock holders never overlap one another. The 01:30 war
 Run-scratch retention (`cbb_platform/prod/retention.py`, `cbb-originator-run prune-scratch [--apply]`): deletes ONLY
 `prod/runs/<run>/features/*.duckdb` (~530 MB per run) of runs that completed (valid `run_summary.json`) and whose PMFs
 are in durable evidence (`ops/ticks/*/pmfs.parquet` or `ops/forecasts/*/*/pmfs.parquet`; or 0 predictions). The latest
-2 completed runs and every completed run of the last 48 h are kept, whichever keeps more. Incomplete / unverified runs and
+2 completed runs and every completed run of the last 24 h are kept, whichever keeps more. Incomplete / unverified runs and
 every other file (summaries, PMFs, inputs, universe, boards, bundles, ops evidence, state, models, exports, health,
 audit evidence) are never deleted. A dry-run report (`ops/retention/reports/<ts>.json`) is written before any deletion;
 each deleted file and the reclaimed total go to `ops/retention/scratch_prune.jsonl`. Without `--apply`: report only.
+The same pass then runs the bounded-growth rules of `prod/storage_retention.py` (report `ops/retention/reports/<ts>-storage.json`,
+receipts `ops/retention/storage_retention.jsonl`); full policy and directory map: `docs/operations/CBB_STORAGE_AND_RETENTION.md`.
 
 ## 3. Deploy a release (atomic)
+
+Supported tooling (root, from the release tree; `docs/operations/CBB_STORAGE_AND_RETENTION.md` §1):
+
+```
+git archive $sha | gzip -1 | ssh root@<droplet> "mkdir $R/releases/$sha.tmp && gunzip | tar -x -C $R/releases/$sha.tmp"
+bash $R/current/deploy/droplet/ops/cbb-deploy-release $sha     # aborts while any cbb-originator unit is running
+bash $R/current/deploy/droplet/ops/cbb-install-units
+sudo -u cbb-originator ... cbb-originator-run preflight
+bash $R/current/deploy/droplet/ops/cbb-prune-releases           # dry run; then --apply (keeps current, ROLLBACK_RELEASE, KEEP_RELEASES)
+```
+
+The equivalent manual steps:
 
 ```
 sha=<commit on production/cbb-daily-walk-forward-2026-27, pushed, CI green>
@@ -105,7 +119,8 @@ cbb-originator-run preflight
 ## 4. Rollback
 
 1. `systemctl stop 'cbb-originator-*.timer'`, then wait for any running `cbb-originator-*` service to finish.
-2. `ln -sfn releases/<previous sha> current.new && mv -T current.new current`.
+2. `ln -sfn releases/$(cat ROLLBACK_RELEASE) current.new && mv -T current.new current` (the previous release; an
+   emergency one may be pinned in `KEEP_RELEASES`).
 3. Restore the matching env backup (`CBB_EXPECTED_COMMIT=<previous sha>`). For RotoWire only, set
    `ROTOWIRE_ENABLED=false` instead.
 4. Reinstall that release's units from `current/deploy/droplet/systemd/`, then `systemctl daemon-reload`.

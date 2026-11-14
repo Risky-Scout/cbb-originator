@@ -10,10 +10,14 @@ run COMPLETED SUCCESSFULLY and its DURABLE outputs are VERIFIED:
     completed   run_summary.json exists and parses, its run_id equals the directory
     verified    predictions == 0, or a durable PMF evidence file (ops/ticks/*/pmfs.parquet or
                 ops/forecasts/<date>/<snapshot>/pmfs.parquet) holds rows of this run_id and reads back (prod.pmf_evidence)
-    kept        the 2 most recent completed runs and every completed run of the last 48 h (whichever keeps more); an
+    kept        the 2 most recent completed runs and every completed run of the last 24 h (whichever keeps more); an
                 incomplete / unverified run is never touched (a run in progress has no run_summary.json yet)
 
-Nothing else is ever deleted: run_summary.json, market_pmfs.parquet, model_inputs.parquet, player_universe.csv, board,
+After this rule, the same pass runs every bounded-growth rule of prod/storage_retention.py (incomplete-run and
+validation-run scratch, dead DuckDB spills, staging / QA / temporary exports, forecast-ledger compression, superseded raw
+cache, RotoWire raw compression, duplicated run PMFs, ledger-mirror hard links); docs/operations/CBB_STORAGE_AND_RETENTION.md.
+
+This rule never deletes anything else: run_summary.json, market_pmfs.parquet, model_inputs.parquet, player_universe.csv, board,
 bundle, diagnostics, every ops / forecast / PMF / selection / grade / health / state / model / evidence file stay.
 Each pass writes a dry-run report (ops/retention/reports/<ts>.json) BEFORE any deletion and appends one receipt per
 deleted file (path, bytes, mtime) with the reclaimed total to ops/retention/scratch_prune.jsonl.
@@ -31,7 +35,7 @@ import pandas as pd
 from cbb_platform.prod import config as PC, pmf_evidence as PE
 
 KEEP_RECENT = 2
-KEEP_HOURS = 48
+KEEP_HOURS = 24
 SCRATCH_GLOB = "features/*.duckdb"
 
 
@@ -144,8 +148,17 @@ def main(argv=None) -> int:
     ap.add_argument("--runs-root", type=Path, default=PC.RUNS_ROOT)
     ap.add_argument("--ops-root", type=Path, default=PC.OPS_ROOT)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--base", type=Path, default=None, help="CBB state root (default: parent of CBB_PROD_ROOT)")
+    ap.add_argument("--scratch-only", action="store_true", help="run only the run-scratch rule")
     a = ap.parse_args(argv)
-    print(json.dumps(run(a.runs_root, a.ops_root, apply=a.apply), indent=1, default=str))
+    res = {"run_scratch": run(a.runs_root, a.ops_root, apply=a.apply)}
+    if not a.scratch_only:
+        from cbb_platform.prod import storage_retention as SR
+        prod = Path(a.ops_root).parent                       # --ops-root is <prod>/ops
+        spill = os.environ.get("CBB_DUCKDB_TEMP_DIR")
+        paths = SR.Paths(a.base or prod.parent, prod, Path(spill) if spill else None)
+        res["storage"] = SR.run(paths, apply=a.apply)
+    print(json.dumps(res, indent=1, default=str))
     return 0
 
 

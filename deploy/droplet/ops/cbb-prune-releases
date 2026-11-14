@@ -1,0 +1,30 @@
+#!/bin/bash
+# CBB Originator: release retention (root). Keeps EXACTLY: the release `current` points to, the one named in
+# ROLLBACK_RELEASE, and any sha listed in KEEP_RELEASES (one per line, `<sha> <documented reason>`). Deletes every other
+# releases/<sha> directory and its .sha256sums (the commits stay in git: each is checked with `git cat-file` when a
+# local clone is given in CBB_GIT_DIR). Also keeps only the newest 3 env backups (/etc/sports-models/cbb-originator.env.bak-*).
+#   cbb-prune-releases            dry run (prints the plan)
+#   cbb-prune-releases --apply    delete
+set -euo pipefail
+APPLY="${1:-}"; R="${CBB_OPT_ROOT:-/opt/sports-models/cbb-originator}"; REL=$R/releases; ETC="${CBB_ETC_DIR:-/etc/sports-models}"; UNITS="${CBB_UNIT_DIR:-/etc/systemd/system}"
+CUR="$(basename "$(readlink -f $R/current)")"
+[ -d "$REL/$CUR" ] || { echo "current does not resolve"; exit 3; }
+KEEP="$CUR"
+[ -s "$R/ROLLBACK_RELEASE" ] && KEEP="$KEEP $(cat $R/ROLLBACK_RELEASE)"
+[ -s "$R/KEEP_RELEASES" ] && KEEP="$KEEP $(awk 'NF && $1 !~ /^#/ {print $1}' $R/KEEP_RELEASES)"
+for k in $KEEP; do [ -d "$REL/$k" ] || { echo "kept release $k is missing: refusing"; exit 3; }; done
+REFS="$(grep -rhoE '[0-9a-f]{40}' $UNITS/cbb-originator-* 2>/dev/null | sort -u || true)"
+for d in "$REL"/*; do
+  n="$(basename "$d")"; [ -d "$d" ] || continue
+  case " $KEEP " in *" $n "*) echo "KEEP   $n"; continue ;; esac
+  [[ "$n" =~ ^[0-9a-f]{40}(\.tmp)?$ ]] || { echo "SKIP   $n (not a release directory)"; continue; }
+  if echo "$REFS" | grep -qx "${n%.tmp}"; then echo "KEEP   $n (referenced by a systemd unit)"; continue; fi
+  if [ -n "${CBB_GIT_DIR:-}" ] && ! git -C "$CBB_GIT_DIR" cat-file -e "${n%.tmp}^{commit}" 2>/dev/null; then
+    echo "KEEP   $n (commit not in $CBB_GIT_DIR)"; continue; fi
+  echo "DELETE $n ($(du -sb "$d" | cut -f1) B)"
+  if [ "$APPLY" = "--apply" ]; then rm -rf "$d" "$REL/${n%.tmp}.sha256sums"; fi
+done
+for s in "$REL"/*.sha256sums; do b="$(basename "$s" .sha256sums)"; [ -d "$REL/$b" ] || { echo "DELETE orphan $(basename "$s")"; if [ "$APPLY" = "--apply" ]; then rm -f "$s"; fi; }; done
+ls -1t $ETC/cbb-originator.env.bak-* 2>/dev/null | tail -n +4 | while read -r f; do
+  echo "DELETE env backup $(basename "$f")"; if [ "$APPLY" = "--apply" ]; then rm -f "$f"; fi; done
+if [ "$APPLY" != "--apply" ]; then echo "(dry run: nothing deleted)"; fi
