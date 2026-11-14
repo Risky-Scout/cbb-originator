@@ -15,7 +15,7 @@ import pandas as pd
 import pytest
 
 from cbb_platform import config as C
-from cbb_platform.prod import config as PC, exports as EX, side_monitor as SD
+from cbb_platform.prod import config as PC, exports as EX, pmf_compact as PCX, side_monitor as SD
 
 LABELS = ("TEST",)
 DATE = "2026-11-04"
@@ -166,21 +166,36 @@ def test_boards_sheets_columns_membership_thresholds_and_order(full):
 
 # ---------------------------------------------------------------- 7-9 Distributions
 def test_distributions_columns_mass_and_no_negative(full, tmp_path):
-    """7 exact columns, 8 PMF mass (folded tail kept), 9 negative PMF fails."""
+    """7 summary workbook: one row per (game, player, stat) with DIST_SUMMARY_COLS; 8 PMF mass (folded tail kept) from
+    the compact PMF parquet beside it and from the on-request long derivative; 9 negative PMF fails."""
     tree, rep = full
     wb = _book(rep, "distributions")
     assert list(wb) == ["Distributions"]
     rows = wb["Distributions"]["rows"]
-    assert rows[0] == list(EX.DIST_COLS)
+    assert rows[0] == list(EX.DIST_SUMMARY_COLS)
+    assert len(rows) - 1 == 3 and len({(r[0], r[3], r[4]) for r in rows[1:]}) == 3          # one row per distribution
+    col = {c: i for i, c in enumerate(EX.DIST_SUMMARY_COLS)}
+    pm = pd.read_parquet(rep["distributions"]["pmf_path"])
+    assert len(pm) == 3 and rep["distributions"]["pmf_rows"] == 3
+    for r in pm.itertuples(index=False):
+        v = np.asarray(r.probabilities)
+        assert (v >= 0).all() and abs(v.sum() - 1) <= EX.PMF_TOL and r.support_max == len(v) - 1
+        assert r.pmf_sha256 == PCX.content_sha(0, v)
+    zed = pm[pm["player_label"] == "Zed"].iloc[0]
+    assert zed.support_max == 120 and zed.probabilities[-1] > 0                  # terminal (folded tail) outcome kept
+    zrow = next(r for r in rows[1:] if r[col["PLAYER"]] == "Zed")
+    assert zrow[col["PMF_SHA256"]] == zed.pmf_sha256 and zrow[col["MAX_OUTCOME"]] == 120
+    assert rep["distributions"]["PMF_RECONCILIATION"] == "PASS"
+    assert wb["Distributions"]["styles"][f"{EX._col(col['MEAN'])}2"] == "0.000"
+    long = EX.read_xlsx(EX.expand_distributions(DATE, tree["out_root"]))["Distributions"]["rows"]
+    assert long[0] == list(EX.DIST_COLS)
     mass = {}
-    for r in rows[1:]:
+    for r in long[1:]:
         mass[(r[0], r[2], r[3])] = mass.get((r[0], r[2], r[3]), 0) + r[6]
         assert r[6] >= 0
     assert len(mass) == 3 and all(abs(v - 1) <= EX.PMF_TOL for v in mass.values())
-    zed = [r for r in rows[1:] if r[2] == "Zed"]
-    assert zed[-1][5] == 120 and zed[-1][6] > 0                 # terminal (folded tail) outcome exported
-    assert rep["distributions"]["PMF_RECONCILIATION"] == "PASS"
-    assert wb["Distributions"]["styles"]["G2"] == "0.0000%" and wb["Distributions"]["styles"]["E2"] == "0.000"
+    lz = [r for r in long[1:] if r[2] == "Zed"]
+    assert lz[-1][5] == 120 and lz[-1][6] > 0
     bad = build_tree(tmp_path / "neg", [], [_game("G9", "2026-11-05T00:00:00+00:00", "K9", "R9")],
                      pmfs={"G9": [{"game_id": "G9", "team_id": "T", "player_id": "P", "market": "PTS", "method": "X",
                                    "projection": 1.0, "pmf": [1.2, -0.2]}]})
@@ -335,7 +350,9 @@ def test_export_date_uses_america_new_york(tmp_path):
     assert Path(rep["grades"]["path"]).parent == tree["out_root"] / "2026-11-04"
     assert EX.file_names("2026-11-04") == {"boards": "CBB_Boards_11_04_2026.xlsx",
                                            "distributions": "CBB_Distributions_11_04_2026.xlsx",
-                                           "grades": "CBB_Grades_11_04_2026.xlsx"}
+                                           "grades": "CBB_Grades_11_04_2026.xlsx",
+                                           "distribution_pmfs": "CBB_Distributions_11_04_2026_pmfs.parquet",
+                                           "distributions_long": "CBB_Distributions_11_04_2026_LONG.xlsx"}
     nxt = _run(tree, "2026-11-05")
     assert nxt["predicted_games"] == 0 and nxt["boards"]["status"] == "MISSING_EVIDENCE" and "official_rows" not in nxt
     assert EX.slate_date_of("2026-11-05T04:59:00Z") == "2026-11-04" and EX.slate_date_of("2026-11-05T05:00:00Z") == "2026-11-05"

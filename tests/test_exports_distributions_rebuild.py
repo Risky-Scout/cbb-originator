@@ -50,7 +50,12 @@ def test_changed_source_or_damaged_file_rewrites(tmp_path):
     df.to_parquet(mp, index=False)
     r = _run(tree)
     assert r["distributions"]["rewritten"] is True
-    assert 9.25 in [row[4] for row in EX.read_xlsx(p)["Distributions"]["rows"][1:]]
+    mean_col = EX.DIST_SUMMARY_COLS.index("MEAN")
+    assert 9.25 in [row[mean_col] for row in EX.read_xlsx(p)["Distributions"]["rows"][1:]]
+    pq = Path(r["distributions"]["pmf_path"])
+    pq.write_bytes(pq.read_bytes()[:-10])                           # damaged PMF parquet: rewritten too
+    assert _run(tree)["distributions"]["rewritten"] is True and len(pd.read_parquet(pq)) == r["distributions"]["pmf_rows"]
+    assert _run(tree)["distributions"]["rewritten"] is False        # unchanged evidence: no rewrite
 
 
 def test_each_pmf_file_is_read_once_and_rows_are_unchanged(tmp_path, monkeypatch):
@@ -90,8 +95,10 @@ def test_shared_display_name_is_two_distributions_not_one_key(tmp_path):
     assert d["PMF_RECONCILIATION"] == "PASS" and d["distributions"] == 2 and d["max_abs_mass_error"] <= EX.PMF_TOL
     assert d["canonical_duplicate_keys"] == 0
     assert d["display_label_collisions"] == [[["Away G1 @ Home", "Same Name", "PTS"], [["G1", "P0", "PTS"], ["G1", "P1", "PTS"]]]]
+    summ = EX.read_xlsx(Path(d["path"]))["Distributions"]["rows"][1:]
+    assert len(summ) == 2 and len({r[EX.DIST_SUMMARY_COLS.index("PMF_SHA256")] for r in summ}) == 2   # two rows
     old_style = {}
-    for r in EX.read_xlsx(Path(d["path"]))["Distributions"]["rows"][1:]:
+    for r in EX.read_xlsx(EX.expand_distributions("2026-11-04", tree["out_root"]))["Distributions"]["rows"][1:]:
         old_style[(r[0], r[2], r[3])] = old_style.get((r[0], r[2], r[3]), 0) + r[6]
     assert len(old_style) == 1 and abs(list(old_style.values())[0] - 2) < 1e-9   # what the label-keyed check summed
 
