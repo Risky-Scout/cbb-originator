@@ -170,13 +170,20 @@ def summary(el: pd.DataFrame, previous_included=()) -> dict:
 
 
 PRIOR_DAY_INCOMPLETE = "DEFERRED_PRIOR_DAY_DATA_INCOMPLETE"
-_INCOMPLETE_REASONS = ("FINAL_DATA_INCOMPLETE_AT_CUTOFF", "BOX_INCOMPLETE", "BOX_UNRECONCILED")
+PRIOR_DAY_UNRECONCILED = "DEFERRED_PRIOR_DAY_BOX_UNRECONCILED"
+_INCOMPLETE_REASONS = ("FINAL_DATA_INCOMPLETE_AT_CUTOFF", "BOX_INCOMPLETE")    # result / box rows missing at the cutoff
+_UNRECONCILED_REASONS = ("BOX_UNRECONCILED",)       # box present but player / team / game points disagree (a provider
+                                                    # inconsistency, not missing data): deferred all the same
 
 
 def prior_day_completeness(el: pd.DataFrame, day) -> dict:
     """Training-universe games of ET date day - 1 at the refit cutoff (what the morning walk-forward could train on).
     A provider-final game whose result / box had not reached the state is counted INCOMPLETE_FINAL and makes the status
-    DEFERRED_PRIOR_DAY_DATA_INCOMPLETE (those games are deferred to the next cutoff; nothing is inferred or backdated)."""
+    DEFERRED_PRIOR_DAY_DATA_INCOMPLETE; one whose box is complete but does not reconcile (player PTS sum != team box
+    points != game score) is counted UNRECONCILED_FINAL (status DEFERRED_PRIOR_DAY_BOX_UNRECONCILED when no game is
+    incomplete). Both are deferred to the next cutoff; nothing is inferred or backdated. 2026-11-14: G-450c5c43e2e730bb
+    (away players 86 vs team box 85 vs game score 85) was counted INCOMPLETE_FINAL although FINAL_WITH_COMPLETE_BOX
+    counted it complete."""
     prior = (pd.Timestamp(str(day)) - pd.Timedelta(days=1)).date()
     if len(el):
         tip_et = pd.to_datetime(el["scheduled_tip_utc"], utc=True).dt.tz_convert(WC.TZ).dt.date
@@ -186,13 +193,19 @@ def prior_day_completeness(el: pd.DataFrame, day) -> dict:
     status = g["provider_status"].fillna("") if len(g) else pd.Series(dtype=str)
     final = status == WC.FINAL_STATUS
     inc = g[g["reason"].isin(_INCOMPLETE_REASONS) & final] if len(g) else g
+    unr = g[g["reason"].isin(_UNRECONCILED_REASONS) & final] if len(g) else g
     out = {"PRIOR_DAY": str(prior), "PRIOR_DAY_GAMES": int(len(g)), "FINAL_GAMES": int(final.sum()),
            "FINAL_WITH_RESULT": int((final & g["has_result"]).sum()) if len(g) else 0,
            "FINAL_WITH_COMPLETE_BOX": int((final & g["has_result"] & g["box_complete"]).sum()) if len(g) else 0,
+           "FINAL_WITH_RECONCILED_BOX": int((final & g["has_result"] & g["box_reconciled"].fillna(False).astype(bool)).sum())
+                                        if len(g) else 0,
            "IN_PROGRESS": int((~final & ~status.isin(NOT_PLAYED_STATUSES)).sum()) if len(g) else 0,
            "INCOMPLETE_FINAL": int(len(inc)),
            "UNRESOLVED_IDENTITY": int((g["reason"] == "IDENTITY_UNRESOLVED").sum()) if len(g) else 0,
            "INCLUDED": int((g["decision"] == "INCLUDED").sum()) if len(g) else 0,
-           "INCOMPLETE_FINAL_GAME_IDS": sorted(inc["game_id"]) if len(inc) else []}
-    out["STATUS"] = PRIOR_DAY_INCOMPLETE if out["INCOMPLETE_FINAL"] else "COMPLETE"
+           "INCOMPLETE_FINAL_GAME_IDS": sorted(inc["game_id"]) if len(inc) else [],
+           "UNRECONCILED_FINAL": int(len(unr)),
+           "UNRECONCILED_FINAL_GAME_IDS": sorted(unr["game_id"]) if len(unr) else []}
+    out["STATUS"] = (PRIOR_DAY_INCOMPLETE if out["INCOMPLETE_FINAL"] else
+                     PRIOR_DAY_UNRECONCILED if out["UNRECONCILED_FINAL"] else "COMPLETE")
     return out

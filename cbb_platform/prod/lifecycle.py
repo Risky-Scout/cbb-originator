@@ -562,32 +562,47 @@ def receipt(h: dict) -> dict:
     ok = [a for a in acqs if a.get("auth") == "PASS" and a.get("news_status") == "PROCESSED"
           and a.get("snapshot_status") == "PROCESSED"]
     st = lambda k: (ex.get(k) or {}).get("status") if isinstance(ex.get(k), dict) else None
-    errors, warnings = [], []
+    errors, warnings, classes = [], [], []
+
+    def warn(text: str, cls: str) -> None:        # every warning stays in WARNINGS; the class says what it means now
+        warnings.append(text)
+        classes.append({"warning": text, "class": cls})
+
     mo = h.get("morning") or {}                    # the stage-aware morning record (prod.morning_stages.summary)
+    fo = forecast_operational(h)
     if not wf and mo.get("MORNING_WALK_FORWARD_STATUS") in (None, "NOT_STARTED"):
-        warnings.append("MORNING_NOT_RECORDED")    # no walk-forward evidence at all for this ET date (yet / killed)
+        warn("MORNING_NOT_RECORDED", ACTIVE_BLOCKER)   # no walk-forward evidence at all for this ET date (yet / killed)
     if mo and not mo.get("MORNING_COMPLETE"):
-        warnings.append(f"MORNING_INCOMPLETE: first incomplete stage {mo.get('FIRST_INCOMPLETE_STAGE')}"
-                        + (f"; INITIAL forecast {mo.get('MORNING_INITIAL_FORECAST_HISTORICAL_STATUS')}"
-                           if mo.get("MORNING_INITIAL_FORECAST_HISTORICAL_STATUS") else "")
-                        + ("; RECOVERY_REQUIRED" if mo.get("RECOVERY_REQUIRED") else ""))
+        fh = mo.get("FIRST_HISTORICAL_FAILURE") or (
+            "INITIAL_FORECAST" if mo.get("MORNING_INITIAL_FORECAST_STATUS") == "FAIL" else None)
+        warn(f"MORNING_INCOMPLETE: first incomplete stage {mo.get('FIRST_INCOMPLETE_STAGE')}"
+             + (f"; first historical failure {fh}" if fh else "")
+             + (f"; INITIAL forecast {mo.get('MORNING_INITIAL_FORECAST_HISTORICAL_STATUS')}"
+                if mo.get("MORNING_INITIAL_FORECAST_HISTORICAL_STATUS") else "")
+             + (f"; forecast {fo['STATE']} by {fo['SNAPSHOT_ID']} ({fo['WINDOW']})" if fo["STATE"] == RECOVERED else "")
+             + ("; RECOVERY_REQUIRED" if mo.get("RECOVERY_REQUIRED") else ""),
+             RECOVERED_HISTORICAL if fo["STATE"] in (PASS_STATE, RECOVERED) and not mo.get("RECOVERY_REQUIRED")
+             else ACTIVE_BLOCKER)
     for stg, m in (mo.get("STAGE_MEMORY") or {}).items():
         pk = (m or {}).get("PEAK_RSS_MB")
         if pk is not None and pk > 2800:           # above the unit MemoryHigh (2800M): reclaim throttling, low headroom
-            warnings.append(f"MEMORY_HIGH_EXCEEDED: {stg} peak RSS {pk:.0f} MB > MemoryHigh 2800 MB (MemoryMax 3200 MB)")
+            warn(f"MEMORY_HIGH_EXCEEDED: {stg} peak RSS {pk:.0f} MB > MemoryHigh 2800 MB (MemoryMax 3200 MB)",
+                 INFORMATIONAL)
     if wf.get("DAILY_REFIT_STATUS") == "FAIL":
         errors.append(f"WALK_FORWARD_FAIL: {wf.get('reason')}")
     if wf.get("DAILY_REFIT_STATUS") in RETRYABLE_DEFERRALS:
-        warnings.append(f"WALK_FORWARD_{wf.get('DAILY_REFIT_STATUS')}")
+        warn(f"WALK_FORWARD_{wf.get('DAILY_REFIT_STATUS')}", ACTIVE_BLOCKER)
     if wf.get("DAILY_REFIT_STATUS") == DEFERRED_STATE_REFRESH_FAILED:
         errors.append(f"WALK_FORWARD_{DEFERRED_STATE_REFRESH_FAILED}: {wf.get('reason')}")
     pdc = wf.get("prior_day_completeness") or {}
-    if pdc.get("STATUS") not in (None, "COMPLETE"):
-        warnings.append(f"{pdc['STATUS']}: {pdc.get('INCOMPLETE_FINAL')} of {pdc.get('FINAL_GAMES')} prior-day finals")
+    if pdc.get("STATUS") not in (None, "COMPLETE"):   # deferred to the next cutoff by design: never a blocker
+        warn(f"{pdc['STATUS']}: {pdc.get('INCOMPLETE_FINAL')} incomplete"
+             + (f", {pdc.get('UNRECONCILED_FINAL')} box-unreconciled" if "UNRECONCILED_FINAL" in pdc else "")
+             + f" of {pdc.get('FINAL_GAMES')} prior-day finals", INFORMATIONAL)
     sf = wf.get("state_freshness") or {}
     if sf.get("FAILED_RETRYABLE_REQUESTS") or sf.get("FAILED_NONRETRYABLE_REQUESTS"):
-        warnings.append(f"PRE_REFIT_REQUEST_FAILURES: {sf.get('FAILED_RETRYABLE_REQUESTS')} retryable, "
-                        f"{sf.get('FAILED_NONRETRYABLE_REQUESTS')} non-retryable completed-stage requests failed")
+        warn(f"PRE_REFIT_REQUEST_FAILURES: {sf.get('FAILED_RETRYABLE_REQUESTS')} retryable, "
+             f"{sf.get('FAILED_NONRETRYABLE_REQUESTS')} non-retryable completed-stage requests failed", INFORMATIONAL)
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
     bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}
@@ -595,11 +610,14 @@ def receipt(h: dict) -> dict:
     market = None if board is None else ("VALID_MARKETS" if valid_rows else
                                          board_status("NONE", qr, real))      # why no market field is populated
     if fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"):
-        warnings.append(f"FORECAST_{fc.get('status')}")
+        warn(f"FORECAST_{fc.get('status')}" + (f" (recovered by {fo['SNAPSHOT_ID']} {fo['WINDOW']})"
+                                               if fo["STATE"] == RECOVERED else ""),
+             RECOVERED_HISTORICAL if fo["STATE"] == RECOVERED else ACTIVE_BLOCKER)
     if last and last.get("auth") not in (None, "PASS"):
         errors.append(f"ROTOWIRE_AUTH_{last.get('auth')}")
     if last.get("news_status") == "COVERAGE_GAP":
-        warnings.append("ROTOWIRE_WEB_NEWS_COVERAGE_GAP")
+        warn("ROTOWIRE_WEB_NEWS_COVERAGE_GAP", INFORMATIONAL)
+    blockers = errors + [c["warning"] for c in classes if c["class"] == ACTIVE_BLOCKER]
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
             "MODEL_VERSION": lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION"),
             "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS") or mo.get("MORNING_REFIT_STATUS"),
@@ -628,7 +646,43 @@ def receipt(h: dict) -> dict:
                                       "MORNING_INITIAL_FORECAST_STATUS", "MORNING_EXPORTS_STATUS", "MORNING_HEALTH_STATUS",
                                       "MORNING_COMPLETE", "FIRST_INCOMPLETE_STAGE", "RECOVERY_REQUIRED", "RECOVERY_LAST_ACTION")},
             "MORNING_STAGE_MEMORY": mo.get("STAGE_MEMORY"),
+            "INITIAL_FORECAST": mo.get("INITIAL_FORECAST", mo.get("MORNING_INITIAL_FORECAST_STATUS")),
+            "FORECAST_OPERATIONAL_STATE": fo["STATE"], "FORECAST_OPERATIONAL_SNAPSHOT_ID": fo["SNAPSHOT_ID"],
+            "FORECAST_OPERATIONAL_WINDOW": fo["WINDOW"], "FORECAST_OPERATIONAL_MODEL_VERSION": fo["MODEL_VERSION"],
+            "STAGE_TERMINAL_STATES": mo.get("STAGE_TERMINAL_STATES"),
+            "MORNING_CHAIN_COMPLETE": mo.get("MORNING_CHAIN_COMPLETE", mo.get("MORNING_COMPLETE")),
+            "FIRST_HISTORICAL_FAILURE": mo.get("FIRST_HISTORICAL_FAILURE"),
+            "DAY_OPERATIONAL": fo["STATE"] in (PASS_STATE, RECOVERED) and not blockers,
+            "ACTIVE_BLOCKERS": blockers, "WARNING_CLASSES": classes,
             "ERRORS": errors, "WARNINGS": warnings, "FINAL_STATUS": "FAIL" if errors else ("DEGRADED" if warnings else "OK")}
+
+
+ACTIVE_BLOCKER, RECOVERED_HISTORICAL, INFORMATIONAL = "ACTIVE_BLOCKER", "RECOVERED_HISTORICAL", "INFORMATIONAL"
+PASS_STATE, RECOVERED = "PASS", "RECOVERED"
+
+
+def forecast_operational(h: dict) -> dict:
+    """Is there a usable forecast for the ET date, independent of how the INITIAL morning attempt ended?
+    PASS = the INITIAL forecast itself; RECOVERED = the INITIAL attempt failed and a later forecast window of the same
+    date (availability refresh / retry) persisted a snapshot on a model; FAIL = the INITIAL attempt failed and nothing
+    replaced it; None = no forecast attempted yet. INITIAL_FORECAST keeps its own (historical) status."""
+    mo = h.get("morning") or {}
+    fc = h.get("forecast") or {}
+    lf = h.get("latest_forecast") or {}
+    init = mo.get("MORNING_INITIAL_FORECAST_STATUS")
+    snap = {"SNAPSHOT_ID": None, "WINDOW": None, "MODEL_VERSION": None}
+    if init == "PASS" or (init is None and fc.get("status") == "FORECAST"):
+        return {"STATE": PASS_STATE, "SNAPSHOT_ID": mo.get("MORNING_INITIAL_SNAPSHOT_ID") or fc.get("snapshot_id"),
+                "WINDOW": fc.get("window") or INITIAL, "MODEL_VERSION": fc.get("model_version")}
+    failed = init == "FAIL" or bool(fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"))
+    if lf.get("snapshot_id") and lf.get("model_version"):
+        return {"STATE": RECOVERED if failed else PASS_STATE, "SNAPSHOT_ID": lf["snapshot_id"], "WINDOW": lf.get("window"),
+                "MODEL_VERSION": lf["model_version"]}
+    if failed:
+        return {"STATE": "FAIL", **snap}
+    if fc.get("status") == "NO_GAMES":
+        return {"STATE": "NOT_REQUIRED", **snap}
+    return {"STATE": None, **snap}
 
 
 def _rotowire_mode() -> str:
