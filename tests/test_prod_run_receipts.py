@@ -73,3 +73,39 @@ def test_retention_marks_only_old_unrecorded_runs_orphaned(tmp_path):
     SR.run(P, apply=True)
     assert RR.state(old) == "ORPHANED" and RR.state(failed) == "FAILED" and RR.state(fresh) == "IN_PROGRESS"
     assert [i for i in SR.plan(P)["items"] if i["rule"] == "ORPHAN_RUN_RECEIPT"] == []     # idempotent
+
+
+def test_terminal_state_vocabulary(tmp_path):
+    import json as _j
+    from cbb_platform.prod import run_receipts as R
+    cases = {"S": ({"readiness_state": "SHADOW_ONLY"}, None, "SUCCESS"), "D": ({"readiness_state": "BLOCKED"}, None, "DEFERRED"),
+             "F": (None, "FAILED", "FAILED"), "T": (None, "TERMINATED", "ABORTED"), "O": (None, "ORPHANED", "ABORTED"),
+             "P": (None, None, "IN_PROGRESS")}
+    for rid, (summ, fail, want) in cases.items():
+        d = tmp_path / rid
+        d.mkdir()
+        if summ is not None:
+            (d / R.SUMMARY_FILE).write_text(_j.dumps({"run_id": rid, **summ}))
+        if fail:
+            R.write_failure(d, fail, "x")
+            assert _j.loads((d / R.FAILURE_FILE).read_text())["terminal_state"] == want
+        assert R.terminal_state(d) == want, rid
+
+
+def test_failure_receipt_records_stage_model_state(tmp_path):
+    import json as _j
+    from types import SimpleNamespace
+    from cbb_platform.prod import run_receipts as R
+
+    @R.terminal
+    def daily(as_of, state_root=None, model=None):
+        d = tmp_path / "R1"
+        d.mkdir()
+        R.register(d)
+        raise ValueError("boom")
+    with pytest.raises(ValueError):
+        daily("2026-11-15T12:00Z", state_root=tmp_path / "st", model=SimpleNamespace(identity={"model_version": "M1"}))
+    rec = _j.loads((tmp_path / "R1" / R.FAILURE_FILE).read_text())
+    assert rec["terminal_state"] == "FAILED" and rec["model_version"] == "M1" and rec["as_of"] == "2026-11-15T12:00Z"
+    assert rec["state_root"] == str(tmp_path / "st") and rec["error_type"] == "ValueError" and "at" in rec
+    assert rec["stage"] is None or "daily" in rec["stage"]

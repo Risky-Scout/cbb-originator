@@ -40,9 +40,28 @@ def register(run_dir: Path) -> None:
         _active[-1] = Path(run_dir)
 
 
+TERMINAL_STATES = ("SUCCESS", "FAILED", "ABORTED", "DEFERRED")
+_TERMINAL_OF = {"FAILED": "FAILED", "TERMINATED": "ABORTED", "ORPHANED": "ABORTED"}
+
+
+def terminal_state(run_dir: Path) -> str:
+    """Exactly one of TERMINAL_STATES (or IN_PROGRESS): SUCCESS = run_summary.json with a usable readiness state;
+    DEFERRED = run_summary.json whose readiness is BLOCKED (completed, nothing priced for use); FAILED = an exception;
+    ABORTED = SIGTERM (TERMINATED) or a vanished process (ORPHANED)."""
+    run_dir = Path(run_dir)
+    try:
+        s = json.loads((run_dir / SUMMARY_FILE).read_text())
+        if s.get("run_id") == run_dir.name:
+            return "DEFERRED" if s.get("readiness_state") == "BLOCKED" else "SUCCESS"
+    except (OSError, ValueError, AttributeError):
+        pass
+    st = state(run_dir)
+    return _TERMINAL_OF.get(st, "FAILED" if st != "IN_PROGRESS" else "IN_PROGRESS")
+
+
 def write_failure(run_dir: Path, status: str, reason: str, **kw) -> Path:
     run_dir = Path(run_dir)
-    rec = {"run_id": run_dir.name, "status": status, "reason": reason,
+    rec = {"run_id": run_dir.name, "status": status, "terminal_state": _TERMINAL_OF.get(status, "FAILED"), "reason": reason,
            "at": datetime.now(timezone.utc).isoformat(), "pid": os.getpid(), **kw}
     p = run_dir / FAILURE_FILE
     tmp = run_dir / f".{FAILURE_FILE}.{os.getpid()}.tmp"
@@ -65,6 +84,27 @@ def state(run_dir: Path, now: datetime | None = None) -> str:
     return "IN_PROGRESS"
 
 
+def _context(e: BaseException, a, k) -> dict:
+    """stage (innermost cbb_platform frame), model, state root and as-of of the failed run (best effort, never raises)."""
+    out = {}
+    try:
+        tb, stage = e.__traceback__, None
+        while tb is not None:
+            f = tb.tb_frame.f_code.co_filename
+            if "cbb_platform" in f and not f.endswith("run_receipts.py"):
+                stage = f"{Path(f).parent.name}/{Path(f).name}:{tb.tb_lineno}:{tb.tb_frame.f_code.co_name}"
+            tb = tb.tb_next
+        out["stage"] = stage
+        m = k.get("model")
+        ident = getattr(m, "identity", None) or {}
+        out["model_version"] = ident.get("model_version")
+        out["state_root"] = str(k.get("state_root")) if k.get("state_root") is not None else None
+        out["as_of"] = str(a[0]) if a else str(k.get("as_of")) if k.get("as_of") is not None else None
+    except Exception:                                # noqa: BLE001 -- context is optional; the receipt is not
+        pass
+    return out
+
+
 def terminal(fn):
     """Decorator for prod/run.daily: on any exception (or SIGTERM) a run without run_summary.json gets run_failure.json."""
     @functools.wraps(fn)
@@ -84,7 +124,7 @@ def terminal(fn):
                 status = "TERMINATED" if isinstance(e, (RunTerminated, KeyboardInterrupt)) else "FAILED"
                 try:
                     write_failure(d, status, f"{type(e).__name__}: {e}"[:500], error_type=type(e).__name__,
-                                  traceback_tail=traceback.format_exc().splitlines()[-12:])
+                                  traceback_tail=traceback.format_exc().splitlines()[-12:], **_context(e, a, k))
                 except OSError:
                     pass                          # the exception below is the primary signal; never mask it
             raise
