@@ -44,10 +44,20 @@ Root tooling (in the release, `deploy/droplet/ops/`; it replaced the old `/root/
 
 Canonical sources of truth:
 
-* **PMF:** `prod/ops/ticks/<K>/pmfs.parquet` (official predictions) and `prod/ops/forecasts/<D>/<F>/pmfs.parquet`
-  (forecast snapshots), in `prod.pmf_evidence` long format. They are written once and are immutable.
-  `runs/<R>/market_pmfs.parquet` is the source a run wrote. It is a duplicate once the durable copy holds it. The
-  Distributions workbook is a report derived from these files, never the store.
+* **PMF (one physical payload per forecast state):** `prod/ops/ticks/<K>/pmfs.parquet` (official predictions) and
+  `prod/ops/forecasts/<D>/<F>/pmfs.parquet` (forecast snapshots), written once, immutable, in the COMPACT canonical
+  format (`prod.pmf_compact`, zstd Parquet): one row per snapshot x game x player x stat with `support_min`,
+  `support_max`, the complete ordered float64 vector (Arrow `list<double>`, lossless) and `pmf_sha256`, plus the
+  receipt id, run id, model version, as-of instant, mean, method and labels. The long one-row-per-outcome form is
+  DERIVED_ON_DEMAND (`pmf_evidence.read` / `pmf_compact.expand`, byte-identical) and never written by production.
+  Legacy long-schema files are read unchanged.
+  `runs/<R>/market_pmfs.parquet` is what a run writes; as soon as the snapshot / tick file holds every one of its PMFs
+  bit for bit it is replaced by `market_pmfs.ref.json` (canonical path + sha256). The Distributions export carries
+  REFERENCES (`CBB_Distributions_<D>_pmf_refs.parquet`: canonical file + `pmf_sha256` per row), never vectors.
+* **Simulation draws:** never persisted. Each game's joint draw bank lives only while that game is simulated and its
+  PMFs derived (`prod.run`: the previous game's bank and mixture tables are released before the next game); no slate
+  matrix exists. Over / under / push probabilities, fair odds and EV exist only for real quoted lines, derived from the
+  persisted PMF when the quote is priced (no hypothetical-line grid is stored).
 * **Forecast evidence:** `forecasts/<D>/<F>/snapshot.json` + `pmfs.parquet` + `forecast_players.parquet` +
   `forecast_ledger.jsonl[.gz]` (hash-chained PREDICTION rows).
 * **Official prediction / grading:** `ops/ticks/*` (sealed by `CHAIN.jsonl`), `ops/registry/` and the Grades export.
@@ -56,16 +66,28 @@ Canonical sources of truth:
 
 ## 3. Run directories (`prod/runs/<R>/`)
 
-Minimum canonical evidence of a run: `run_summary.json` (identity, state, model), `model_inputs.parquet`,
-`player_universe.csv`, `board.csv`, `bundle/`, `game_diagnostics.json`, and the durable PMFs in `ops/`. The rest is
-scratch:
+Every run ends in exactly one terminal record: `run_summary.json` (SUCCESS / DEFERRED, with its readiness state) or
+`run_failure.json` (FAILED / ABORTED / ORPHANED; `prod.run_receipts`, written by the run itself or by retention's
+ORPHAN_RUN_RECEIPT for a SIGKILLed / OOM-killed run). Retained files and their readers:
+
+| File | Reader | Retention |
+|---|---|---|
+| `run_summary.json` / `run_failure.json` | retention, receipts, lifecycle / tick (same process), audit | permanent (a few KB) |
+| `market_pmfs.ref.json` | `pmf_evidence.read_run_pmfs` (walk-forward monitor), audit | permanent (pointer; the payload is in `ops/`) |
+| `model_inputs.parquet` | lifecycle / shadow tick (same process), walk-forward monitor, audit (state / input provenance) | permanent (~70 KB) |
+| `player_universe.csv`, `board.csv` | audit / reproduction of the run's universe and board | permanent (small) |
+| `bundle/` (`predictions.json`, `SHA256SUMS`, `DEPLOYMENT_MANIFEST.json`, ...) | `bundle.verify` (same run), audit | `predictions.json` gzipped after 2 d |
+| `game_diagnostics.json` | walk-forward monitor (reads `.gz` too), audit | gzipped after 2 d |
+| `features/canonical_asof.duckdb`, `features/features_asof.duckdb` (~530 MB) | the run itself only | scratch: §4 |
+
+Scratch rules:
 
 | File | Rule |
 |---|---|
-| `features/canonical_asof.duckdb`, `features/features_asof.duckdb` (about 510 MB per run, rebuilt from state + history as of the run) | completed and PMF-verified: deleted outside the latest 2 completed runs / 24 h (`RUN_SCRATCH`). Never completed (no valid `run_summary.json`) and untouched for 24 h: deleted (`INCOMPLETE_RUN_SCRATCH`) |
-| `market_pmfs.parquet` | after 7 d, deleted only when every PMF equals the durable evidence of the same run_id outcome by outcome (`RUN_PMF_DUPLICATE`) |
+| `features/canonical_asof.duckdb`, `features/features_asof.duckdb` (about 530 MB per run, rebuilt from state + history as of the run) | completed and PMF-verified: deleted 18 h after completion (`RUN_SCRATCH`, no count floor). Never completed (no valid `run_summary.json`), untouched for 18 h: deleted after its terminal receipt (`INCOMPLETE_RUN_SCRATCH`). With the 6-hourly timer: gone within 24 h |
+| `market_pmfs.parquet` | replaced by `market_pmfs.ref.json` at write time; the backlog by `RUN_PMF_DUPLICATE` (bit-exact check) |
 
-## 4. Automatic retention (`cbb-originator-retention.timer`, 05:45 ET)
+## 4. Automatic retention (`cbb-originator-retention.timer`, every 6 h from 05:45 ET: 05:45 / 11:45 / 17:45 / 23:45)
 
 `cbb-originator-run prune-scratch --apply` runs `prod/retention.py` first, then `prod/storage_retention.py`. It holds the CBB writer lock, so no
 run, forecast, tick or export is in progress, and it never takes the heavy lock. Each pass writes a report before
@@ -75,9 +97,10 @@ inside a protected tree, is refused before the first change.
 
 | Rule | Target | Window |
 |---|---|---|
-| RUN_SCRATCH | completed, verified run feature DuckDBs | latest 2 completed / 24 h kept |
-| INCOMPLETE_RUN_SCRATCH | feature DuckDBs of runs that never completed | 24 h after the last write |
-| VALIDATION_RUN_SCRATCH | `prod/odds/validation_runs/*/*/features/*.duckdb` | 48 h |
+| RUN_SCRATCH | completed, verified run feature DuckDBs | 18 h (gone within 24 h) |
+| ORPHAN_RUN_RECEIPT | `run_failure.json` ORPHANED for a run with no terminal record, untouched 7 h | writes only |
+| INCOMPLETE_RUN_SCRATCH | feature DuckDBs of runs that never completed (after the receipt) | 18 h after the last write (gone within 24 h) |
+| VALIDATION_RUN_SCRATCH | `prod/odds/validation_runs/*/*/features/*.duckdb` | 42 h (gone within 48 h) |
 | DUCKDB_SPILL | `staging/tmp/duckdb/pid-<N>/` of an exited process | 1 h |
 | STAGING | `staging/<entry>` (not `tmp/`, not `cleanup-quarantine-*`) / `staging/tmp/<entry>` | 14 d / 2 d |
 | QA | `qa/<dir>` without `RETAIN.json` | 14 d |
@@ -85,8 +108,14 @@ inside a protected tree, is refused before the first change.
 | FORECAST_LEDGER_GZIP | `forecasts/<D>/*/forecast_ledger.jsonl` → `.jsonl.gz` (byte-exact round trip checked) | ET date at least 2 days old |
 | RAW_CACHE_SUPERSEDED | raw payload + meta superseded by a newer payload of the same request | 14 d (newest per request kept forever) |
 | ROTOWIRE_RAW_GZIP | `availability/rotowire_web/raw/<D>/*` → gzip | 14 d (never deleted) |
-| RUN_PMF_DUPLICATE | `runs/<R>/market_pmfs.parquet` equal to durable evidence | 7 d |
+| RUN_PMF_DUPLICATE | `runs/<R>/market_pmfs.parquet` bit-identical to one durable file → `market_pmfs.ref.json` | 1 h (backlog; writers do it at once) |
+| RUN_JSON_GZIP | `runs/<R>/bundle/predictions.json`, `game_diagnostics.json` of completed runs → gzip (byte-exact) | 2 d |
 | LEDGER_MIRROR_LINK | `ops/ledgers/*.jsonl` → hard link to the canonical working ledger | when it is a byte prefix |
+
+Report only, in every `<ts>-storage*.json`: `model_audit` (each model dir ACTIVE / ROLLBACK /
+REFERENCED_BY_RETAINED_FORECAST / UNREFERENCED / INCOMPLETE, duplicate payload files) and `footprint_before` /
+`footprint_after` (bytes per area, file count, free disk, every directory > 500 MiB with its reason:
+CURRENT_PRODUCTION / REQUIRED_HISTORY / REQUIRED_AUDIT / REQUIRED_ROLLBACK, or NO_REASON, which must be reduced).
 
 Never touched by retention: `prod/state`, `walkforward/`, `history/`, `secrets/`, `locks/`, `evidence/`,
 `ops/cleanup/`, `ops/ticks`, `CHAIN.jsonl`, `registry`, `markers`, `reports`, `morning`, `state_manifests`, durable
@@ -119,5 +148,7 @@ every unit logs to journald, which is managed by its own retention.
 * `prod/ops/ticks` and `forecasts`: compact Parquet + gzip; the forecast ledgers are gzipped after 2 days.
 * `walkforward/cbb-originator/training/features`: the walk-forward feature cache, about 1 GB, grows with the season.
   It is CURRENT_PRODUCTION.
-* `exports/`: about 30 to 110 MB per day, dominated by the Distributions workbook (a derived report). The compact summary
-  workbook + PMF Parquet change (`b9ab155`, not deployed as of 2026-11-14) shrinks it.
+* `exports/`: Boards + one-row-per-player-stat Distributions summary + PMF reference Parquet + Grades per day (the
+  exploded one-row-per-outcome workbook, 21–56 MB / day before 2026-11-15, is produced only by
+  `python -m cbb_platform.prod.exports expand-distributions --date D`). Pre-2026-11-15 daily folders keep their
+  exploded workbooks until they are replaced or the season ends (they are final exports of record).
