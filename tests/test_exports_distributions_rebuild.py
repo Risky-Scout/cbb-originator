@@ -52,9 +52,9 @@ def test_changed_source_or_damaged_file_rewrites(tmp_path):
     assert r["distributions"]["rewritten"] is True
     mean_col = EX.DIST_SUMMARY_COLS.index("MEAN")
     assert 9.25 in [row[mean_col] for row in EX.read_xlsx(p)["Distributions"]["rows"][1:]]
-    pq = Path(r["distributions"]["pmf_path"])
+    pq = Path(r["distributions"]["pmf_refs_path"])
     pq.write_bytes(pq.read_bytes()[:-10])                           # damaged PMF parquet: rewritten too
-    assert _run(tree)["distributions"]["rewritten"] is True and len(pd.read_parquet(pq)) == r["distributions"]["pmf_rows"]
+    assert _run(tree)["distributions"]["rewritten"] is True and len(pd.read_parquet(pq)) == r["distributions"]["pmf_refs"]
     assert _run(tree)["distributions"]["rewritten"] is False        # unchanged evidence: no rewrite
 
 

@@ -175,8 +175,11 @@ def test_distributions_columns_mass_and_no_negative(full, tmp_path):
     assert rows[0] == list(EX.DIST_SUMMARY_COLS)
     assert len(rows) - 1 == 3 and len({(r[0], r[3], r[4]) for r in rows[1:]}) == 3          # one row per distribution
     col = {c: i for i, c in enumerate(EX.DIST_SUMMARY_COLS)}
-    pm = pd.read_parquet(rep["distributions"]["pmf_path"])
-    assert len(pm) == 3 and rep["distributions"]["pmf_rows"] == 3
+    refs = pd.read_parquet(rep["distributions"]["pmf_refs_path"])
+    assert len(refs) == 3 and rep["distributions"]["pmf_refs"] == 3
+    assert "probabilities" not in refs.columns                       # references only: the payload is stored once
+    assert all(Path(p).exists() for p in refs["pmf_source"])         # ... in the canonical durable / run file
+    pm = EX.resolve_pmf_refs(refs)
     for r in pm.itertuples(index=False):
         v = np.asarray(r.probabilities)
         assert (v >= 0).all() and abs(v.sum() - 1) <= EX.PMF_TOL and r.support_max == len(v) - 1
@@ -351,7 +354,7 @@ def test_export_date_uses_america_new_york(tmp_path):
     assert EX.file_names("2026-11-04") == {"boards": "CBB_Boards_11_04_2026.xlsx",
                                            "distributions": "CBB_Distributions_11_04_2026.xlsx",
                                            "grades": "CBB_Grades_11_04_2026.xlsx",
-                                           "distribution_pmfs": "CBB_Distributions_11_04_2026_pmfs.parquet",
+                                           "distribution_pmfs": "CBB_Distributions_11_04_2026_pmf_refs.parquet",
                                            "distributions_long": "CBB_Distributions_11_04_2026_LONG.xlsx"}
     nxt = _run(tree, "2026-11-05")
     assert nxt["predicted_games"] == 0 and nxt["boards"]["status"] == "MISSING_EVIDENCE" and "official_rows" not in nxt
@@ -439,3 +442,15 @@ def test_missing_evidence_writes_nothing_and_decided_matches_tick(tmp_path):
     assert EX.main(["daily", "--date", DATE, "--ops-root", str(tree["ops_root"]), "--runs-root", str(tree["runs_root"]),
                     "--out-root", str(tree["out_root"]), "--history-db", str(tmp_path / "none.duckdb"),
                     "--state-root", str(tmp_path / "none")]) == 2
+
+
+def test_pmf_refs_detect_tampered_canonical_payload(full):
+    """A reference whose canonical vector no longer hashes to its pmf_sha256 is refused, never silently expanded."""
+    tree, rep = full
+    refs = pd.read_parquet(rep["distributions"]["pmf_refs_path"])
+    bad = refs.assign(pmf_sha256=["0" * 64] + list(refs["pmf_sha256"][1:]))
+    with pytest.raises(EX.ExportIntegrityError):
+        EX.resolve_pmf_refs(bad)
+    gone = refs.assign(pmf_source=str(tree["out_root"] / "absent.parquet"), pmf_source_rel=None)
+    with pytest.raises(EX.ExportIntegrityError):
+        EX.resolve_pmf_refs(gone)

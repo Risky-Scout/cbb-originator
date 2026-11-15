@@ -7,10 +7,11 @@ writes, for the America/New_York slate date D, into data/prod/exports/D/ (gitign
     CBB_Boards_MM_DD_YYYY.xlsx         Full Board | 60 Percent Plus | 65 Percent Plus
     CBB_Distributions_MM_DD_YYYY.xlsx  Distributions: ONE row per (game, player, stat) -- mean, median, sd, percentiles,
                                        P(play), expected minutes, availability, model version, forecast id, PMF hash
-    CBB_Distributions_MM_DD_YYYY_pmfs.parquet   the complete PMFs (prod.pmf_compact rows: exact float64 vectors), the
-                                       machine-readable full-distribution evidence the workbook summarizes
+    CBB_Distributions_MM_DD_YYYY_pmf_refs.parquet   REFERENCES, not vectors: one row per (game, player, stat) naming the
+                                       canonical durable PMF file (ticks/<tick>/pmfs.parquet or forecasts/<D>/<snapshot>/
+                                       pmfs.parquet) and the PMF content sha256. The full PMF is stored ONCE, there.
     (on request only) `exports expand-distributions --date D` writes the legacy one-row-per-outcome workbook
-    CBB_Distributions_MM_DD_YYYY_LONG.xlsx as a derivative of the parquet
+    CBB_Distributions_MM_DD_YYYY_LONG.xlsx, resolved from the references (each vector re-hashed against its sha256)
     CBB_Grades_MM_DD_YYYY.xlsx         Graded Bets | Performance Summary
 
 Read-only over evidence that production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call:
@@ -156,7 +157,7 @@ def file_names(date: str) -> dict:
     d = pd.Timestamp(date)
     tag = f"{d.month:02d}_{d.day:02d}_{d.year:04d}"
     return {"boards": f"CBB_Boards_{tag}.xlsx", "distributions": f"CBB_Distributions_{tag}.xlsx",
-            "grades": f"CBB_Grades_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmfs.parquet",
+            "grades": f"CBB_Grades_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmf_refs.parquet",
             "distributions_long": f"CBB_Distributions_{tag}_LONG.xlsx"}
 
 
@@ -820,14 +821,14 @@ def distribution_records(ops_root: Path, runs_root: Path, games: pd.DataFrame, n
                     continue
             if df is not None:
                 best = (aso or pd.Timestamp.max.tz_localize("UTC"), df, src)
-                best_src = ("OFFICIAL_TICK", str(g.tick_id), cut)
+                best_src = ("OFFICIAL_TICK", str(g.tick_id), cut, src)
             elif gid not in fsrc:
                 missing.append({"game_id": gid, "run_id": g.run_id, "looked_in": [str(p) for p in looked]})
                 continue
         for aso, cut, p in fsrc.get(gid, []):
             if best is None or (aso > best[0] and aso <= cut):
                 best = (aso, pd.DataFrame(_dists_of(p, gid, cache)), str(p))
-                best_src = ("FORECAST_SNAPSHOT", Path(p).parent.name, cut)
+                best_src = ("FORECAST_SNAPSHOT", Path(p).parent.name, cut, str(p))
         if best is None or not len(best[1]):
             continue
         df = best[1]
@@ -844,7 +845,7 @@ def distribution_records(ops_root: Path, runs_root: Path, games: pd.DataFrame, n
                          "key": (gid, r.player_id, r.stat), "pmf": pmf, "game_id": gid, "player_id": r.player_id,
                          "team_id": r.team_id, "model_version": getattr(r, "model_version", None),
                          "source_kind": best_src[0], "forecast_id": best_src[1], "method": getattr(r, "method", None),
-                         "game_label": r.game_label, "player_label": r.player_label})
+                         "game_label": r.game_label, "player_label": r.player_label, "pmf_source": best_src[3]})
             if pmf_out is not None and getattr(r, "method", None) != "NOT_PRICED":
                 pmf_out.append({"game_id": gid, "player_id": r.player_id, "team_id": r.team_id, "stat": r.stat,
                                 "mean": _f(r.mean), "pmf": pmf, "game_label": r.game_label, "player_label": r.player_label,
@@ -916,27 +917,69 @@ def summary_rows(recs: list, ctx: dict) -> list:
     return rows
 
 
-def pmf_frame(recs: list) -> pd.DataFrame:
-    """The slate's exported PMFs as compact rows (exact float64 vectors as persisted; support 0..len-1)."""
+def pmf_frame(recs: list, ops_root: Path | None = None) -> pd.DataFrame:
+    """The slate's exported PMFs as REFERENCES (no probability vectors): the canonical durable file each PMF lives in
+    (absolute, and relative to ops_root when under it) and its content sha256 (prod.pmf_compact.content_sha). The PMF
+    payload is never copied into the export tree (footprint directive section 5/6: one canonical payload)."""
     if not recs:
         return pd.DataFrame(columns=PMF_EXPORT_COLS)
+    root = Path(ops_root).resolve() if ops_root is not None else None
+
+    def rel(src):
+        if root is None or not src:
+            return None
+        try:
+            return str(Path(src).resolve().relative_to(root))
+        except ValueError:
+            return None
     return pd.DataFrame([{"game_id": x["game_id"], "player_id": x["player_id"], "team_id": x["team_id"],
                           "stat": x["market"], "game_label": x["game"], "player_label": x["player"], "team": x["team"],
                           "mean": x["mean"], "model_version": x["model_version"], "source_kind": x["source_kind"],
                           "forecast_id": x["forecast_id"], "method": x["method"], "support_min": 0,
-                          "support_max": len(x["pmf"]) - 1, "probabilities": np.asarray(x["pmf"], dtype=np.float64),
+                          "support_max": len(x["pmf"]) - 1, "pmf_source": str(x.get("pmf_source") or ""),
+                          "pmf_source_rel": rel(x.get("pmf_source")),
                           "pmf_sha256": PCX.content_sha(0, np.asarray(x["pmf"], dtype=np.float64))} for x in recs])[list(PMF_EXPORT_COLS)]
 
 
 PMF_EXPORT_COLS = ("game_id", "player_id", "team_id", "stat", "game_label", "player_label", "team", "mean",
                    "model_version", "source_kind", "forecast_id", "method", "support_min", "support_max",
-                   "probabilities", "pmf_sha256")
+                   "pmf_source", "pmf_source_rel", "pmf_sha256")
 
 
-def records_from_pmf_frame(df: pd.DataFrame) -> list:
+def resolve_pmf_refs(df: pd.DataFrame, ops_root: Path | None = None) -> pd.DataFrame:
+    """References -> the same frame plus `probabilities`, read from the canonical durable files (each file read once)
+    and re-hashed against pmf_sha256. A missing file, a missing PMF or a hash mismatch is an ExportIntegrityError."""
+    if "probabilities" in df.columns:                             # a pre-reference export (vectors stored inline)
+        return df
+    files: dict = {}
+    vecs = []
+    for r in df.itertuples(index=False):
+        cand = ([Path(ops_root) / r.pmf_source_rel] if ops_root is not None and r.pmf_source_rel else []) + \
+               ([Path(r.pmf_source)] if r.pmf_source else [])
+        src = next((p for p in cand if p.exists()), None)
+        if src is None:
+            raise ExportIntegrityError(f"canonical PMF file absent for {r.game_id} {r.player_id} {r.stat}: {cand}")
+        k = str(src)
+        if k not in files:
+            if src.name == PE.FILE:
+                files[k] = {(x["game_id"], x["player_id"], x["stat"]): x["pmf"] for x in PE.distributions(PE.read(src))}
+            else:                                                 # legacy run market_pmfs.parquet
+                mp = pd.read_parquet(src)
+                files[k] = {(m.game_id, m.player_id, m.market): np.asarray(m.pmf, dtype=float) for m in mp.itertuples()}
+        pmf = files[k].get((r.game_id, r.player_id, r.stat))
+        if pmf is None:
+            raise ExportIntegrityError(f"{src}: no PMF for {r.game_id} {r.player_id} {r.stat}")
+        pmf = np.asarray(pmf, dtype=np.float64)
+        if PCX.content_sha(0, pmf) != r.pmf_sha256:
+            raise ExportIntegrityError(f"{src}: PMF content hash mismatch for {r.game_id} {r.player_id} {r.stat}")
+        vecs.append(pmf)
+    return df.assign(probabilities=vecs)
+
+
+def records_from_pmf_frame(df: pd.DataFrame, ops_root: Path | None = None) -> list:
     """Inverse of pmf_frame for the long derivative (same order, same trimmed vectors as the daily long rows)."""
     out = []
-    for r in df.itertuples(index=False):
+    for r in resolve_pmf_refs(df, ops_root).itertuples(index=False):
         pmf = np.asarray(r.probabilities, dtype=np.float64)
         nz = np.flatnonzero(pmf)
         out.append({"game": r.game_label, "team": r.team, "player": r.player_label, "market": r.stat, "mean": r.mean,
@@ -1132,7 +1175,7 @@ def distributions_if_changed(rows: list, path: Path, frame: pd.DataFrame | None 
     rec_p = path.with_name(DIST_RECEIPT)
     want = {"file": path.name, "rows_sha256": _rows_sha(rows), "writer_sha256": _writer_sha(), "rows": len(rows)}
     if frame is not None:
-        want["pmf_content_sha256"] = hashlib.sha256("".join(frame["pmf_sha256"]).encode()).hexdigest()
+        want["pmf_content_sha256"] = hashlib.sha256("".join(frame["pmf_sha256"] + frame["pmf_source"].astype(str)).encode()).hexdigest()
     try:
         rec = json.loads(rec_p.read_text())
     except (OSError, ValueError):
@@ -1437,14 +1480,15 @@ def distributions_summary_workbook(rows: list, path: Path) -> Path:
     return write_xlsx(path, [{"name": DIST_SHEET, "blocks": [{"title": None, "columns": DIST_SUMMARY_COLS, "rows": rows}]}])
 
 
-def expand_distributions(date: str, out_root: Path = None) -> Path:
+def expand_distributions(date: str, out_root: Path = None, ops_root: Path = None) -> Path:
     """The explicitly requested long derivative: CBB_Distributions_<date>_LONG.xlsx (one row per outcome, the legacy
-    layout) rebuilt from the slate's compact PMF parquet (no evidence re-read, nothing recomputed)."""
+    layout), DERIVED ON DEMAND from the slate's PMF references resolved against the canonical durable PMF files (each
+    vector verified against its sha256; nothing recomputed)."""
     date = str(pd.Timestamp(date).date())
     out_dir = Path(out_root if out_root is not None else EXPORT_ROOT) / date
     n = file_names(date)
     df = pd.read_parquet(out_dir / n["distribution_pmfs"])
-    return distributions_workbook(long_rows(records_from_pmf_frame(df)), out_dir / n["distributions_long"])
+    return distributions_workbook(long_rows(records_from_pmf_frame(df, ops_root)), out_dir / n["distributions_long"])
 
 
 def distributions_workbook(rows: list, path: Path) -> Path:
@@ -1520,13 +1564,13 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     rows = summary_rows(recs, player_context(ops_root, date, recs)) if recs else []
     if rows and not missing:
         pq_path = out_dir / names_["distribution_pmfs"]
-        frame = pmf_frame(recs)
+        frame = pmf_frame(recs, ops_root)
         p, written = distributions_if_changed(rows, out_dir / names_["distributions"], frame, pq_path)
         mass = record_mass_check(recs)
         if audit["canonical_duplicate_keys"]:
             mass["PMF_RECONCILIATION"] = "FAIL"                  # one canonical prediction exported twice
         rep["distributions"] = {"status": "WRITTEN", "path": str(p), "rows": len(rows), "rewritten": written, **mass,
-                                "pmf_path": str(pq_path), "pmf_rows": int(len(frame)),
+                                "pmf_refs_path": str(pq_path), "pmf_refs": int(len(frame)),
                                 "outcome_rows_represented": int(sum(len(x["pmf_trimmed"]) for x in recs)),
                                 "canonical_duplicate_keys": len(audit["canonical_duplicate_keys"]),
                                 "display_label_collisions": audit["display_label_collisions"][:20]}
@@ -1635,9 +1679,10 @@ def main(argv=None) -> int:
     x = sub.add_parser("expand-distributions", help="write the long one-row-per-outcome Distributions derivative")
     x.add_argument("--date", required=True)
     x.add_argument("--out-root", default=str(EXPORT_ROOT))
+    x.add_argument("--ops-root", default=str(PC.OPS_ROOT))
     a = ap.parse_args(argv)
     if a.cmd == "expand-distributions":
-        print(expand_distributions(a.date, Path(a.out_root)))
+        print(expand_distributions(a.date, Path(a.out_root), Path(a.ops_root)))
         return 0
     rep = daily(a.date, ops_root=Path(a.ops_root), runs_root=Path(a.runs_root), out_root=Path(a.out_root),
                 history_db=Path(a.history_db), state_root=Path(a.state_root))
