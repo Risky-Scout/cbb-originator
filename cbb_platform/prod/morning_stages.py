@@ -282,6 +282,21 @@ def derive(p: dict) -> None:
     if not p["MORNING_COMPLETE"] and nxt is None and fh is None:     # never an unexplained incomplete morning
         fh = next((s for s in STAGES if term[s] not in (PASS, NOT_REQUIRED, RECOVERED)), "UNCLASSIFIED")
     p["FIRST_HISTORICAL_FAILURE"] = fh
+    p["RECOVERY_REQUIRED_REASON"] = recovery_reason(p)
+
+
+def recovery_reason(p: dict) -> str:
+    """Why RECOVERY_REQUIRED is what it is -- never a bare false."""
+    if p["RECOVERY_REQUIRED"]:
+        return f"RESUME_AT_{p['FIRST_INCOMPLETE_STAGE']}: stage has retryable / missing work today"
+    if p["MORNING_COMPLETE"] and p.get("FIRST_INCOMPLETE_STAGE") is None:
+        return "NOT_REQUIRED_MORNING_CHAIN_COMPLETE"
+    if p.get("FIRST_INCOMPLETE_STAGE") == "HEALTH":
+        return "NOT_REQUIRED_ONLY_HEALTH_AGGREGATION_PENDING (re-derived on the next health write)"
+    if p["MORNING_COMPLETE"]:
+        return "NOT_REQUIRED_MORNING_CHAIN_COMPLETE"
+    return (f"NOT_REQUIRED_SETTLED: {p.get('FIRST_HISTORICAL_FAILURE')} ended terminally with no retry left today; "
+            "the day's operational state comes from later forecast windows, never from a re-run of a settled stage")
 
 
 # ============================================================================ stage scaffolding
@@ -541,6 +556,7 @@ def summary(p: dict) -> dict:
             "MORNING_INITIAL_SNAPSHOT_ID": fc.get("SNAPSHOT_ID"), "MORNING_EXPORTS_STATUS": ex["STATUS"],
             "MORNING_HEALTH_STATUS": p["HEALTH"]["STATUS"], "MORNING_COMPLETE": p["MORNING_COMPLETE"],
             "FIRST_INCOMPLETE_STAGE": p.get("FIRST_INCOMPLETE_STAGE"), "RECOVERY_REQUIRED": p["RECOVERY_REQUIRED"],
+            "RECOVERY_REQUIRED_REASON": p.get("RECOVERY_REQUIRED_REASON") or recovery_reason(p),
             "RECOVERY_LAST_ACTION": p.get("RECOVERY_LAST_ACTION"), "STAGE_MEMORY": mem,
             "INITIAL_FORECAST": fc["STATUS"], "STAGE_TERMINAL_STATES": stage_terminal_states(p),
             "MORNING_CHAIN_COMPLETE": p["MORNING_COMPLETE"],

@@ -39,7 +39,9 @@ def _health(p, latest=True):
          "forecast": {"status": "EXCEPTION", "reason": "InvalidIndexError"}}
     if latest:
         h["latest_forecast"] = {"snapshot_id": "F20261114T180028Z-c3d88a", "window": "ROTOWIRE_1300",
-                                "model_version": "cbb-jm1-2026-27-20261114", "games_forecast": 16}
+                                "model_version": "cbb-jm1-2026-27-20261114", "games_forecast": 16, "pmfs_persisted": 5208,
+                                "executed_at": "2026-11-14T18:00:28+00:00"}
+        h["exports"] = {"boards": {"status": "WRITTEN"}, "distributions": {"status": "WRITTEN"}, "grades": {"status": "WRITTEN"}}
     return L.receipt(h)
 
 
@@ -60,6 +62,7 @@ def test_receipt_reports_recovered_operational_forecast_and_keeps_initial_fail()
     assert (r["FORECAST_OPERATIONAL_STATE"], r["FORECAST_OPERATIONAL_SNAPSHOT_ID"], r["FORECAST_OPERATIONAL_WINDOW"]) == (
         "RECOVERED", "F20261114T180028Z-c3d88a", "ROTOWIRE_1300")
     assert r["MORNING_CHAIN_COMPLETE"] is False and r["DAY_OPERATIONAL"] is True and r["ACTIVE_BLOCKERS"] == []
+    assert r["FORECAST_OPERATIONAL_AT"] == "2026-11-14T18:00:28+00:00" and all(r["DAY_OPERATIONAL_CONDITIONS"].values())
     cls = {c["warning"].split(":")[0].split(" ")[0]: c["class"] for c in r["WARNING_CLASSES"]}
     assert cls == {"MORNING_INCOMPLETE": "RECOVERED_HISTORICAL", "MEMORY_HIGH_EXCEEDED": "INFORMATIONAL",
                    EL.PRIOR_DAY_UNRECONCILED: "INFORMATIONAL", "FORECAST_EXCEPTION": "RECOVERED_HISTORICAL"}
@@ -115,3 +118,22 @@ def test_prior_day_incomplete_still_wins_when_both_occur():
                "reason": "BOX_INCOMPLETE"}])
     pdc = EL.prior_day_completeness(el, DAY)
     assert (pdc["INCOMPLETE_FINAL"], pdc["UNRECONCILED_FINAL"], pdc["STATUS"]) == (1, 1, EL.PRIOR_DAY_INCOMPLETE)
+
+
+def test_prior_day_counters_never_contradict():
+    """No game is both 'final with complete box' and INCOMPLETE_FINAL; UNRECONCILED_FINAL is exactly the complete-box,
+    non-reconciled finals; every combination of box flags / reasons keeps the counters consistent."""
+    reasons = ("", "BOX_UNRECONCILED", "BOX_INCOMPLETE", "FINAL_DATA_INCOMPLETE_AT_CUTOFF")
+    rows = []
+    for i, (has, comp, rec) in enumerate(itertools.product((True, False), repeat=3)):
+        if rec and not comp or comp and not has:
+            continue
+        reason = "" if rec else "BOX_UNRECONCILED" if comp else "BOX_INCOMPLETE" if has else "FINAL_DATA_INCOMPLETE_AT_CUTOFF"
+        assert reason in reasons
+        rows.append({"game_id": f"G-{i}", "has_result": has, "box_complete": comp, "box_reconciled": rec,
+                     "decision": "INCLUDED" if rec else "DEFERRED", "reason": reason})
+    pdc = EL.prior_day_completeness(_el(rows), DAY)
+    assert not set(pdc["INCOMPLETE_FINAL_GAME_IDS"]) & set(pdc["UNRECONCILED_FINAL_GAME_IDS"])
+    assert pdc["FINAL_WITH_COMPLETE_BOX"] + pdc["INCOMPLETE_FINAL"] == pdc["FINAL_GAMES"]
+    assert pdc["FINAL_WITH_RECONCILED_BOX"] + pdc["UNRECONCILED_FINAL"] == pdc["FINAL_WITH_COMPLETE_BOX"]
+    assert pdc["INCLUDED"] == pdc["FINAL_WITH_RECONCILED_BOX"]

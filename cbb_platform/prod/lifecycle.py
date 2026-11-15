@@ -506,7 +506,7 @@ def health_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
 
 
-FORECAST_SUMMARY = ("snapshot_id", "window", "model_version", "games_forecast", "players_forecast", "stat_predictions", "pmfs_persisted", "games_not_scored")
+FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "games_forecast", "players_forecast", "stat_predictions", "pmfs_persisted", "games_not_scored")
 
 
 def health(life: Life, day: date, **sections) -> dict:
@@ -575,8 +575,9 @@ def receipt(h: dict) -> dict:
     if mo and not mo.get("MORNING_COMPLETE"):
         fh = mo.get("FIRST_HISTORICAL_FAILURE") or (
             "INITIAL_FORECAST" if mo.get("MORNING_INITIAL_FORECAST_STATUS") == "FAIL" else None)
-        warn(f"MORNING_INCOMPLETE: first incomplete stage {mo.get('FIRST_INCOMPLETE_STAGE')}"
-             + (f"; first historical failure {fh}" if fh else "")
+        nxt = mo.get("FIRST_INCOMPLETE_STAGE")
+        warn("MORNING_INCOMPLETE: " + (f"first incomplete stage {nxt}" if nxt else "chain settled, nothing recoverable")
+             + f"; first historical failure {fh or 'UNCLASSIFIED'}"
              + (f"; INITIAL forecast {mo.get('MORNING_INITIAL_FORECAST_HISTORICAL_STATUS')}"
                 if mo.get("MORNING_INITIAL_FORECAST_HISTORICAL_STATUS") else "")
              + (f"; forecast {fo['STATE']} by {fo['SNAPSHOT_ID']} ({fo['WINDOW']})" if fo["STATE"] == RECOVERED else "")
@@ -618,8 +619,16 @@ def receipt(h: dict) -> dict:
     if last.get("news_status") == "COVERAGE_GAP":
         warn("ROTOWIRE_WEB_NEWS_COVERAGE_GAP", INFORMATIONAL)
     blockers = errors + [c["warning"] for c in classes if c["class"] == ACTIVE_BLOCKER]
+    model_version = lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION")
+    no_games = fo["STATE"] == "NOT_REQUIRED"
+    operational = {                                 # DAY_OPERATIONAL = every condition true (independent of the chain)
+        "ACTIVE_MODEL": bool(model_version),
+        "FORECAST": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
+        "PMFS": no_games or int(lf.get("pmfs_persisted") or 0) > 0,
+        "EXPORTS": no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"),
+        "NO_ACTIVE_BLOCKER": not blockers}
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
-            "MODEL_VERSION": lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION"),
+            "MODEL_VERSION": model_version,
             "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS") or mo.get("MORNING_REFIT_STATUS"),
             "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION") or mo.get("MODEL_PROMOTION"),
             "FORECAST_STATUS": fc.get("status") or ("FORECAST" if lf else None),
@@ -644,15 +653,17 @@ def receipt(h: dict) -> dict:
             "HEAVY_LOCK_STATUS": wf.get("lock_result"),
             **{k: mo.get(k) for k in ("MORNING_PREP_STATUS", "MORNING_WALK_FORWARD_STATUS", "MORNING_ACTIVE_MODEL",
                                       "MORNING_INITIAL_FORECAST_STATUS", "MORNING_EXPORTS_STATUS", "MORNING_HEALTH_STATUS",
-                                      "MORNING_COMPLETE", "FIRST_INCOMPLETE_STAGE", "RECOVERY_REQUIRED", "RECOVERY_LAST_ACTION")},
+                                      "MORNING_COMPLETE", "FIRST_INCOMPLETE_STAGE", "RECOVERY_REQUIRED",
+                                      "RECOVERY_REQUIRED_REASON", "RECOVERY_LAST_ACTION")},
             "MORNING_STAGE_MEMORY": mo.get("STAGE_MEMORY"),
             "INITIAL_FORECAST": mo.get("INITIAL_FORECAST", mo.get("MORNING_INITIAL_FORECAST_STATUS")),
             "FORECAST_OPERATIONAL_STATE": fo["STATE"], "FORECAST_OPERATIONAL_SNAPSHOT_ID": fo["SNAPSHOT_ID"],
             "FORECAST_OPERATIONAL_WINDOW": fo["WINDOW"], "FORECAST_OPERATIONAL_MODEL_VERSION": fo["MODEL_VERSION"],
+            "FORECAST_OPERATIONAL_AT": fo["AT"],
             "STAGE_TERMINAL_STATES": mo.get("STAGE_TERMINAL_STATES"),
             "MORNING_CHAIN_COMPLETE": mo.get("MORNING_CHAIN_COMPLETE", mo.get("MORNING_COMPLETE")),
             "FIRST_HISTORICAL_FAILURE": mo.get("FIRST_HISTORICAL_FAILURE"),
-            "DAY_OPERATIONAL": fo["STATE"] in (PASS_STATE, RECOVERED) and not blockers,
+            "DAY_OPERATIONAL": all(operational.values()), "DAY_OPERATIONAL_CONDITIONS": operational,
             "ACTIVE_BLOCKERS": blockers, "WARNING_CLASSES": classes,
             "ERRORS": errors, "WARNINGS": warnings, "FINAL_STATUS": "FAIL" if errors else ("DEGRADED" if warnings else "OK")}
 
@@ -670,14 +681,14 @@ def forecast_operational(h: dict) -> dict:
     fc = h.get("forecast") or {}
     lf = h.get("latest_forecast") or {}
     init = mo.get("MORNING_INITIAL_FORECAST_STATUS")
-    snap = {"SNAPSHOT_ID": None, "WINDOW": None, "MODEL_VERSION": None}
+    snap = {"SNAPSHOT_ID": None, "WINDOW": None, "MODEL_VERSION": None, "AT": None}
     if init == "PASS" or (init is None and fc.get("status") == "FORECAST"):
         return {"STATE": PASS_STATE, "SNAPSHOT_ID": mo.get("MORNING_INITIAL_SNAPSHOT_ID") or fc.get("snapshot_id"),
-                "WINDOW": fc.get("window") or INITIAL, "MODEL_VERSION": fc.get("model_version")}
+                "WINDOW": fc.get("window") or INITIAL, "MODEL_VERSION": fc.get("model_version"), "AT": fc.get("executed_at")}
     failed = init == "FAIL" or bool(fc and fc.get("status") not in (None, "FORECAST", "NO_GAMES"))
     if lf.get("snapshot_id") and lf.get("model_version"):
         return {"STATE": RECOVERED if failed else PASS_STATE, "SNAPSHOT_ID": lf["snapshot_id"], "WINDOW": lf.get("window"),
-                "MODEL_VERSION": lf["model_version"]}
+                "MODEL_VERSION": lf["model_version"], "AT": lf.get("executed_at")}
     if failed:
         return {"STATE": "FAIL", **snap}
     if fc.get("status") == "NO_GAMES":
