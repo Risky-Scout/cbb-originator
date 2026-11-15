@@ -376,6 +376,7 @@ def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
                 mm[r] = v[k]
             mm.flush()
             path.unlink()
+            _drop(mm)                                        # written + flushed: not resident until read again
             out.append((mm.view(np.ndarray), locs[order]))
         else:                                                # object / datetime-like groups: pandas' own merge
             from pandas.core.internals.managers import _merge_blocks
@@ -384,6 +385,65 @@ def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
     res = create_dataframe_from_blocks(out, index=df.index, columns=df.columns)
     if not res.dtypes.equals(df.dtypes) or not res._mgr.is_consolidated():
         raise DuckDBLimitError("spilled frame dtypes differ or the frame is not consolidated")
+    return res
+
+
+def _drop(mm) -> None:
+    import mmap as _mm
+    m = getattr(mm, "_mmap", None)
+    if m is not None and hasattr(_mm, "MADV_DONTNEED"):
+        m.madvise(_mm.MADV_DONTNEED)
+
+
+def spill_concat(parts: list) -> pd.DataFrame:
+    """== spill_frame(pd.concat(parts, ignore_index=True)) -- same values, dtypes, RangeIndex, columns and consolidated
+    block layout -- WITHOUT the anonymous concatenated copy: each numeric block of the result is a memmap filled part by
+    part, column by column (then flushed and its pages dropped). The layout is pandas' own consolidated layout of the
+    same concat (taken from a 2-row prototype: the block structure does not depend on the row count). Parts whose
+    columns or per-column dtypes differ (concat would promote) take the plain path. No-op configuration (no spill dir
+    or a small result) = the plain path."""
+    tmp = settings().get("temp_directory")
+    parts = [p for p in parts]
+    plain = lambda: spill_frame(pd.concat(parts, ignore_index=True))   # noqa: E731
+    n = sum(len(p) for p in parts)
+    if not tmp or len(parts) < 2 or n == 0:
+        return plain()
+    cols = parts[0].columns
+    if any(not p.columns.equals(cols) or not p.dtypes.equals(parts[0].dtypes) for p in parts[1:]) \
+            or not cols.is_unique:
+        return plain()
+    if sum(int(p.memory_usage(index=False, deep=False).sum()) for p in parts) < SPILL_MIN_BYTES:
+        return plain()
+    proto = pd.concat([p.iloc[:2] for p in parts], ignore_index=True).copy()
+    if not proto.dtypes.equals(parts[0].dtypes):
+        return plain()
+    out = []
+    for i, b in enumerate(proto._mgr.blocks):
+        locs = b.mgr_locs.as_array
+        v0 = b.values
+        if isinstance(v0, np.ndarray) and v0.ndim == 2 and v0.dtype != object:
+            mm, path = _memmap(tmp, proto, f"c{i}", v0.dtype, (len(locs), n))
+            for r, j in enumerate(locs):
+                off = 0
+                for p in parts:
+                    a = p.iloc[:, j].to_numpy()
+                    if a.dtype != v0.dtype:
+                        raise DuckDBLimitError(f"column {cols[j]}: part dtype {a.dtype} != {v0.dtype}")
+                    mm[r, off:off + len(a)] = a
+                    off += len(a)
+            mm.flush()
+            path.unlink()
+            _drop(mm)
+            out.append((mm.view(np.ndarray), locs))
+        else:                                                # object / extension blocks: pandas on these columns only
+            sub = pd.concat([p.iloc[:, list(locs)] for p in parts], ignore_index=True).copy()
+            if len(sub._mgr.blocks) != 1:
+                return plain()
+            sb = sub._mgr.blocks[0]
+            out.append((sb.values, locs[sb.mgr_locs.as_array]))
+    res = create_dataframe_from_blocks(out, index=pd.RangeIndex(n), columns=cols)
+    if not res.dtypes.equals(proto.dtypes) or not res._mgr.is_consolidated():
+        raise DuckDBLimitError("spill_concat: dtypes differ or the frame is not consolidated")
     return res
 
 
@@ -421,6 +481,7 @@ def _spilled(v, tmp, df, tag):
     mm[...] = v
     mm.flush()
     path.unlink()
+    _drop(mm)
     return mm.view(np.ndarray)                               # a plain ndarray (as before); the mapping is its base
 
 

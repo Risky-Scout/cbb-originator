@@ -215,9 +215,12 @@ class _Inputs:
         if k not in self._ready:
             g = next(g for g, ks in GROUPS.items() if k in ks)
             h, new = self._hist(g), self._new
+            from cbb_platform import duckdb_limits as DLM
             for kk in GROUPS[g]:
                 if not self.has_new:
                     self._ready[kk] = h.pop(kk)
+                elif kk == "frame":                  # spill_frame(concat) without the anonymous concat copy
+                    self._ready[kk] = DLM.spill_concat([h.pop(kk), new[kk]])
                 elif kk == "team":
                     self._ready[kk] = _sort_team(pd.concat([h.pop(kk), new[kk]], ignore_index=True))
                 else:
@@ -226,7 +229,7 @@ class _Inputs:
         from cbb_platform import duckdb_limits as DLM
         out = self._ready.pop(k)
         if k == "frame":                             # marginal.fit_v0 copies it (frame[mask].copy()): hand it over
-            out = DLM.spill_frame(out)               # consolidated + file-backed (identical values; no-op off-Droplet)
+            out = DLM.spill_frame(out) if not self.has_new else out   # spill_concat already did it (identical)
             DLM.release()
         return out
 

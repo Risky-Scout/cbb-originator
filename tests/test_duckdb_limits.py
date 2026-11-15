@@ -393,3 +393,38 @@ def test_table_like_df_takes_ownership_from_a_holder():
     con.close()
     assert holder == []                                   # the only reference was handed over
     pd.testing.assert_frame_equal(a, b, check_exact=True)
+
+
+@pytest.mark.parametrize("split", [1, 7, 150_000, 299_990])
+def test_spill_concat_equals_spill_frame_of_concat(monkeypatch, tmp_path, split):
+    """spill_concat([hist, new]) == spill_frame(pd.concat([hist, new], ignore_index=True)): values (exact), dtypes,
+    RangeIndex, columns and the consolidated block layout; the numeric block is file-backed, never an anon concat."""
+    df = _unconsolidated_like_walkforward_frame()
+    hist, new = df.iloc[:split].copy(), df.iloc[split:]
+    new = new.copy()                                             # a differently laid-out part (consolidated copy)
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    want = DLM.spill_frame(pd.concat([hist, new], ignore_index=True))
+    got = DLM.spill_concat([hist, new])
+    pd.testing.assert_frame_equal(got, want, check_exact=True)
+    assert got.index.equals(pd.RangeIndex(len(df))) and _ordered_layout(got) == _ordered_layout(want)
+    fl = [b for b in got._mgr.blocks if str(b.dtype) == "float64"]
+    assert len(fl) == 1 and isinstance(fl[0].values.base, np.memmap)
+    assert not [p for p in (tmp_path / "t").rglob("frame-*")]
+
+
+def test_spill_concat_falls_back_when_dtypes_differ(monkeypatch, tmp_path):
+    df = _unconsolidated_like_walkforward_frame(20_000)
+    hist, new = df.iloc[:15_000], df.iloc[15_000:].copy()
+    new["season"] = new["season"].astype(float)                  # concat would promote: plain path
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "t"))
+    pd.testing.assert_frame_equal(DLM.spill_concat([hist, new]), pd.concat([hist, new], ignore_index=True),
+                                  check_exact=True)
+
+
+def test_spill_concat_noop_without_configuration(monkeypatch):
+    monkeypatch.delenv(DLM.TMP_ENV, raising=False)
+    df = _unconsolidated_like_walkforward_frame(5_000)
+    pd.testing.assert_frame_equal(DLM.spill_concat([df.iloc[:10], df.iloc[10:]]),
+                                  pd.concat([df.iloc[:10], df.iloc[10:]], ignore_index=True), check_exact=True)
