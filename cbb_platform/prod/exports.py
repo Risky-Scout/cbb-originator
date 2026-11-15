@@ -1491,6 +1491,52 @@ def expand_distributions(date: str, out_root: Path = None, ops_root: Path = None
     return distributions_workbook(long_rows(records_from_pmf_frame(df, ops_root)), out_dir / n["distributions_long"])
 
 
+def migrate_distributions(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROOT,
+                          out_root: Path = EXPORT_ROOT, history_db: Path = PC.HISTORY_CANONICAL,
+                          state_root: Path = PC.STATE_ROOT) -> dict:
+    """Replace a past date's exploded (one-row-per-outcome) Distributions workbook by the summary workbook + PMF
+    references, ONLY when the long form derived from the references reproduces the existing workbook exactly (every
+    sheet, every cell value, in order). Built in a scratch directory first; the old workbook is replaced atomically;
+    on any difference nothing changes and MISMATCH is returned. Boards / Grades are not touched."""
+    import shutil
+    date = str(pd.Timestamp(date).date())
+    out_dir, n = Path(out_root) / date, file_names(date)
+    old = out_dir / n["distributions"]
+    if not old.exists():
+        return {"date": date, "status": "NO_WORKBOOK"}
+    first = read_xlsx(old)
+    if not first or next(iter(first.values()))["rows"][:1] != [list(DIST_COLS)]:
+        return {"date": date, "status": "ALREADY_SUMMARY"}
+    old_rows = [r for s_ in first.values() for r in s_["rows"][1:]]
+    old_bytes = old.stat().st_size
+    del first
+    games = slate_games(ops_root, date)
+    names = team_names(history_db, state_root)
+    audit: dict = {}
+    recs, missing = distribution_records(ops_root, runs_root, games, names, date, audit=audit)
+    if missing or not recs or audit["canonical_duplicate_keys"]:
+        return {"date": date, "status": "MISSING_EVIDENCE", "missing": missing[:5]}
+    tmp_root = out_dir.parent / f".migrate-{date}"
+    shutil.rmtree(tmp_root, ignore_errors=True)
+    try:
+        tdir = tmp_root / date
+        tdir.mkdir(parents=True)
+        rows = summary_rows(recs, player_context(ops_root, date, recs))
+        frame = pmf_frame(recs, ops_root)
+        distributions_if_changed(rows, tdir / n["distributions"], frame, tdir / n["distribution_pmfs"])
+        derived = read_xlsx(expand_distributions(date, tmp_root, ops_root))
+        new_rows = [r for s_ in derived.values() for r in s_["rows"][1:]]
+        if new_rows != old_rows:
+            return {"date": date, "status": "MISMATCH", "old_rows": len(old_rows), "derived_rows": len(new_rows)}
+        for f in (n["distribution_pmfs"], DIST_RECEIPT, n["distributions"]):     # the workbook last
+            os.replace(tdir / f, out_dir / f)
+        return {"date": date, "status": "MIGRATED", "long_rows_verified": len(old_rows), "summary_rows": len(rows),
+                "old_bytes": old_bytes, "new_bytes": (out_dir / n["distributions"]).stat().st_size
+                + (out_dir / n["distribution_pmfs"]).stat().st_size}
+    finally:
+        shutil.rmtree(tmp_root, ignore_errors=True)
+
+
 def distributions_workbook(rows: list, path: Path) -> Path:
     parts = distribution_sheets(rows)
     return write_xlsx(path, [{"name": DIST_SHEET if k == 0 else f"{DIST_SHEET} {k + 1}",
@@ -1680,7 +1726,18 @@ def main(argv=None) -> int:
     x.add_argument("--date", required=True)
     x.add_argument("--out-root", default=str(EXPORT_ROOT))
     x.add_argument("--ops-root", default=str(PC.OPS_ROOT))
+    m = sub.add_parser("migrate-distributions", help="replace a past exploded Distributions workbook by summary + refs "
+                                                     "(only when the derived long form equals it exactly)")
+    m.add_argument("--date", required=True)
+    for k, v in (("--ops-root", PC.OPS_ROOT), ("--runs-root", RUNS_ROOT), ("--out-root", EXPORT_ROOT),
+                 ("--history-db", PC.HISTORY_CANONICAL), ("--state-root", PC.STATE_ROOT)):
+        m.add_argument(k, default=str(v))
     a = ap.parse_args(argv)
+    if a.cmd == "migrate-distributions":
+        r = migrate_distributions(a.date, ops_root=Path(a.ops_root), runs_root=Path(a.runs_root),
+                                  out_root=Path(a.out_root), history_db=Path(a.history_db), state_root=Path(a.state_root))
+        print(json.dumps(r, default=str))
+        return 0 if r["status"] in ("MIGRATED", "ALREADY_SUMMARY", "NO_WORKBOOK") else 2
     if a.cmd == "expand-distributions":
         print(expand_distributions(a.date, Path(a.out_root), Path(a.ops_root)))
         return 0

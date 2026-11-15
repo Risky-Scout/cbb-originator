@@ -454,3 +454,30 @@ def test_pmf_refs_detect_tampered_canonical_payload(full):
     gone = refs.assign(pmf_source=str(tree["out_root"] / "absent.parquet"), pmf_source_rel=None)
     with pytest.raises(EX.ExportIntegrityError):
         EX.resolve_pmf_refs(gone)
+
+
+def test_migrate_replaces_an_exploded_workbook_only_when_derivation_matches(full):
+    """A legacy exploded Distributions workbook is replaced by summary + refs only when the long form derived from the
+    references equals it cell for cell; a workbook that differs is left untouched (MISMATCH)."""
+    tree, rep = full
+    out = tree["out_root"] / DATE
+    n = EX.file_names(DATE)
+    legacy = EX.read_xlsx(EX.expand_distributions(DATE, tree["out_root"]))       # what the old writer produced
+    rows = [r for s in legacy.values() for r in s["rows"][1:]]
+    EX.distributions_workbook(rows, out / n["distributions"])                    # an exploded workbook of record
+    (out / n["distribution_pmfs"]).unlink()
+    kw = dict(ops_root=tree["ops_root"], runs_root=tree["runs_root"], out_root=tree["out_root"],
+              history_db=tree.get("history_db"), state_root=tree.get("state_root"))
+    bad = [list(r) for r in rows]
+    bad[0][6] = bad[0][6] + 1e-12
+    EX.distributions_workbook(bad, out / n["distributions"])
+    before = (out / n["distributions"]).read_bytes()
+    assert EX.migrate_distributions(DATE, **kw)["status"] == "MISMATCH"
+    assert (out / n["distributions"]).read_bytes() == before and not (out / n["distribution_pmfs"]).exists()
+    EX.distributions_workbook(rows, out / n["distributions"])
+    r = EX.migrate_distributions(DATE, **kw)
+    assert r["status"] == "MIGRATED" and r["long_rows_verified"] == len(rows)
+    wb = EX.read_xlsx(out / n["distributions"])
+    assert wb["Distributions"]["rows"][0] == list(EX.DIST_SUMMARY_COLS) and (out / n["distribution_pmfs"]).exists()
+    assert EX.migrate_distributions(DATE, **kw)["status"] == "ALREADY_SUMMARY"
+    assert not any(p.name.startswith(".migrate-") for p in tree["out_root"].iterdir())
