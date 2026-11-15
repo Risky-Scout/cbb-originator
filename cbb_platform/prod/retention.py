@@ -10,8 +10,9 @@ run COMPLETED SUCCESSFULLY and its DURABLE outputs are VERIFIED:
     completed   run_summary.json exists and parses, its run_id equals the directory
     verified    predictions == 0, or a durable PMF evidence file (ops/ticks/*/pmfs.parquet or
                 ops/forecasts/<date>/<snapshot>/pmfs.parquet) holds rows of this run_id and reads back (prod.pmf_evidence)
-    kept        the 2 most recent completed runs and every completed run of the last 24 h (whichever keeps more); an
-                incomplete / unverified run is never touched (a run in progress has no run_summary.json yet)
+    kept        every completed run of the last 18 h (the retention timer runs every 6 h, so completed-run scratch is
+                gone no later than 24 h after completion); an incomplete / unverified run is never touched here (a run
+                in progress has no run_summary.json yet; failed-run scratch is storage_retention INCOMPLETE_RUN_SCRATCH)
 
 After this rule, the same pass runs every bounded-growth rule of prod/storage_retention.py (incomplete-run and
 validation-run scratch, dead DuckDB spills, staging / QA / temporary exports, forecast-ledger compression, superseded raw
@@ -34,8 +35,8 @@ import pandas as pd
 
 from cbb_platform.prod import config as PC, pmf_evidence as PE, run_receipts as RR
 
-KEEP_RECENT = 2
-KEEP_HOURS = 24
+KEEP_RECENT = 0                 # no count floor: completed-run scratch is never kept past the age bound
+KEEP_HOURS = 18                 # + the 6-hourly retention cadence -> deleted no later than 24 h after completion
 SCRATCH_GLOB = "features/*.duckdb"
 
 

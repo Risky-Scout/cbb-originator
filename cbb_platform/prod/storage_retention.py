@@ -13,8 +13,9 @@ Rules (BASE = the CBB state root, the parent of CBB_PROD_ROOT):
                             run_summary.json nor run_failure.json whose files are untouched > 7 h (prod/run_receipts):
                             the only non-deleting rule; every run ends in a terminal record
     INCOMPLETE_RUN_SCRATCH  prod/runs/<run>/features/*.duckdb of a run with no valid run_summary.json whose newest file is
-                            older than 24 h (a failed / killed run; nothing reads its scratch again)
-    VALIDATION_RUN_SCRATCH  prod/odds/validation_runs/<V>/<run>/features/*.duckdb older than 48 h (the validation record,
+                            older than 18 h (a failed / killed run; nothing reads its scratch again). Applied AFTER the
+                            ORPHAN_RUN_RECEIPT of the same pass, so the terminal receipt always exists first
+    VALIDATION_RUN_SCRATCH  prod/odds/validation_runs/<V>/<run>/features/*.duckdb older than 42 h (the validation record,
                             ledger and side monitor stay)
     DUCKDB_SPILL            <CBB_DUCKDB_TEMP_DIR>/pid-<N>/ whose process is gone and which is older than 1 h
     STAGING                 BASE/staging/<entry> (not tmp/, not cleanup-quarantine-*) older than 14 d;
@@ -35,9 +36,19 @@ Rules (BASE = the CBB state root, the parent of CBB_PROD_ROOT):
                             bit for bit -> replaced by market_pmfs.ref.json pointing at that canonical file
                             (prod.pmf_evidence.dereference_run; the forecast / tick writers do this at write time, the
                             rule converts the backlog). One physical PMF payload per forecast state.
+    RUN_JSON_GZIP           prod/runs/<run>/bundle/predictions.json and game_diagnostics.json of a completed run untouched
+                            > 2 d -> .gz (byte-exact round trip verified). Write-once audit copies (the ledgers carry
+                            the predictions); read only by the unscheduled walk-forward monitor, which reads .gz too
     LEDGER_MIRROR_LINK      prod/ops/ledgers/<x>.jsonl (the evidence-tree mirror written by ops_store.mirror_out) is
                             replaced by a hard link to the canonical working ledger when it is a byte prefix of it:
                             one physical copy; mirror_in / mirror_out become no-ops (both writers only append)
+
+Cadence: the retention timer runs every 6 h (05:45 / 11:45 / 17:45 / 23:45 ET), so each age window above plus 6 h is
+the guaranteed bound (run scratch 24 h, validation scratch 48 h).
+
+Report only (no change): MODEL_AUDIT classifies every walk-forward model directory (ACTIVE / ROLLBACK / REFERENCED by a
+retained forecast / UNREFERENCED / INCOMPLETE, duplicate payload files by sha256) and FOOTPRINT records the size of
+every CBB area, the file count, free disk and every directory > 500 MiB with its retention reason (NO_REASON is flagged).
 
 Never touched by any rule: the current state and every state version, the walk-forward store (models, ACTIVE,
 rollback, manifests, training cache), ops ticks / CHAIN / registry / markers / reports / morning receipts, durable PMF
@@ -62,8 +73,11 @@ import pandas as pd
 from cbb_platform.prod import config as PC, ops_store as OS, pmf_evidence as PE, run_receipts as RR
 
 ET = ZoneInfo("America/New_York")
-INCOMPLETE_HOURS = 24
-VALIDATION_HOURS = 48
+INCOMPLETE_HOURS = 18           # 18 h window + 6-hourly cadence: failed-run scratch gone within 24 h (receipt first)
+VALIDATION_HOURS = 42           # 42 h window + 6-hourly cadence: validation scratch gone within 48 h
+RUN_JSON_GZIP_DAYS = 2
+RUN_JSON_FILES = ("bundle/predictions.json", "game_diagnostics.json")
+LARGE_DIR_BYTES = 500 * 2**20
 SPILL_HOURS = 1
 STAGING_DAYS = 14
 STAGING_TMP_DAYS = 2
@@ -238,7 +252,7 @@ def plan_staging(P: Paths, now: datetime) -> list[dict]:
 def plan_qa(P: Paths, now: datetime) -> list[dict]:
     qa = P.base / "qa"
     return [_item("QA", d, "DELETE_TREE", f"QA tree without {QA_RETAIN_MARKER}, untouched > {QA_DAYS} d")
-            for d in sorted(qa.iterdir()) if qa.exists()
+            for d in (sorted(qa.iterdir()) if qa.exists() else [])
             if d.is_dir() and not (d / QA_RETAIN_MARKER).exists() and _newest(d) < now - timedelta(days=QA_DAYS)]
 
 
@@ -330,6 +344,22 @@ def plan_run_pmfs(P: Paths, now: datetime, durable: dict | None = None) -> list[
     return out
 
 
+def plan_run_json(P: Paths, now: datetime) -> list[dict]:
+    out = []
+    for d in sorted(p for p in P.runs.iterdir() if p.is_dir()) if P.runs.exists() else []:
+        try:
+            ok = json.loads((d / "run_summary.json").read_text()).get("run_id") == d.name
+        except (OSError, ValueError):
+            ok = False
+        if not ok:
+            continue
+        for rel in RUN_JSON_FILES:
+            f = d / rel
+            if f.is_file() and _mtime(f) < now - timedelta(days=RUN_JSON_GZIP_DAYS):
+                out.append(_item("RUN_JSON_GZIP", f, "GZIP", f"write-once run audit copy older than {RUN_JSON_GZIP_DAYS} d"))
+    return out
+
+
 def plan_ledger_links(P: Paths, now: datetime) -> list[dict]:
     out = []
     for rel, src in OS.ledger_mirror(P.prod).items():
@@ -348,7 +378,7 @@ def plan_ledger_links(P: Paths, now: datetime) -> list[dict]:
 
 
 PLANNERS = (plan_incomplete_runs, plan_validation_runs, plan_spill, plan_staging, plan_qa, plan_export_temp,
-            plan_forecast_ledgers, plan_raw_cache, plan_rotowire_raw, plan_run_pmfs, plan_ledger_links)
+            plan_forecast_ledgers, plan_raw_cache, plan_rotowire_raw, plan_run_pmfs, plan_run_json, plan_ledger_links)
 ALLOWED = {"ORPHAN_RUN_RECEIPT": "prod/runs/*/run_failure.json",
            "INCOMPLETE_RUN_SCRATCH": "prod/runs/*/features/*.duckdb",
            "VALIDATION_RUN_SCRATCH": "prod/odds/validation_runs/*/*/features/*.duckdb",
@@ -360,7 +390,80 @@ ALLOWED = {"ORPHAN_RUN_RECEIPT": "prod/runs/*/run_failure.json",
            "RAW_CACHE_SUPERSEDED": "prod/cache/raw/*/*/*",
            "ROTOWIRE_RAW_GZIP": "prod/availability/rotowire_web/raw/*/*",
            "RUN_PMF_DUPLICATE": "prod/runs/*/market_pmfs.parquet",
+           "RUN_JSON_GZIP": "prod/runs/*.json",
            "LEDGER_MIRROR_LINK": "prod/ops/ledgers/*.jsonl"}
+
+
+# ============================================================================ report-only audits
+def model_audit(P: Paths) -> dict:
+    """Every walk-forward model directory, classified (nothing is changed: the model store is protected)."""
+    W = P.base / "walkforward" / "cbb-originator"
+    if not W.exists():
+        return {"models": [], "candidates": [], "duplicate_payload_files": []}
+    def _j(p):
+        try:
+            return json.loads(Path(p).read_text())
+        except (OSError, ValueError):
+            return {}
+    active = _j(W / "active" / "ACTIVE_MODEL.json").get("ACTIVE_MODEL_VERSION")
+    rollback = _j(W / "rollback" / "ROLLBACK_MODEL.json").get("ROLLBACK_MODEL_VERSION")
+    referenced = set()
+    for r in OS.read_jsonl(P.ops / "forecasts" / "index.jsonl") if (P.ops / "forecasts" / "index.jsonl").exists() else []:
+        if r.get("model_version"):
+            referenced.add(r["model_version"])
+    models, shas = [], {}
+    for d in sorted(p for p in (W / "models").iterdir() if p.is_dir()) if (W / "models").exists() else []:
+        vm = _j(d / "version_manifest.json")
+        v = vm.get("model_version") or vm.get("MODEL_VERSION") or f"cbb-jm1-2026-27-{d.name.replace('-', '')}"
+        complete = (d / "MANIFEST.sha256").exists()
+        cls = ("ACTIVE" if v == active else "ROLLBACK" if v == rollback else "INCOMPLETE" if not complete
+               else "REFERENCED_BY_RETAINED_FORECAST" if v in referenced else "UNREFERENCED")
+        for f in d.iterdir():
+            if f.is_file():
+                shas.setdefault(_sha(f), []).append(str(f.relative_to(W)))
+        models.append({"dir": d.name, "model_version": v, "class": cls, "bytes": _size(d)})
+    return {"active": active, "rollback": rollback, "models": models,
+            "candidates": sorted(p.name for p in (W / "candidates").iterdir()) if (W / "candidates").exists() else [],
+            "duplicate_payload_files": sorted(v for v in shas.values() if len(v) > 1)}
+
+
+AREAS = ("prod/runs", "prod/state", "prod/ops", "prod/cache", "prod/availability", "walkforward", "history", "exports",
+         "evidence", "qa", "staging")
+REASONS = (("prod/runs", "CURRENT_PRODUCTION"), ("prod/state", "REQUIRED_HISTORY"), ("prod/ops", "REQUIRED_AUDIT"),
+           ("prod/cache", "CURRENT_PRODUCTION"), ("prod/availability", "REQUIRED_AUDIT"),
+           ("walkforward", "REQUIRED_ROLLBACK"), ("history", "REQUIRED_HISTORY"), ("exports", "REQUIRED_AUDIT"),
+           ("evidence", "REQUIRED_AUDIT"), ("prod", "CURRENT_PRODUCTION"))
+
+
+def footprint(P: Paths) -> dict:
+    """Size of every CBB area, file count, free disk, and every directory > 500 MiB with its retention reason.
+    qa/<x> is REQUIRED_AUDIT only with a RETAIN.json marker; staging and anything unlisted is NO_REASON."""
+    sizes: dict = {}
+    files = 0
+    for root, _, fs in os.walk(P.base):
+        n = 0
+        for f in fs:
+            try:
+                n += os.lstat(os.path.join(root, f)).st_size
+            except OSError:
+                pass
+        files += len(fs)
+        rel = Path(root).relative_to(P.base)
+        for k in range(len(rel.parts) + 1):
+            key = Path(*rel.parts[:k]).as_posix() if k else "."
+            sizes[key] = sizes.get(key, 0) + n
+
+    def reason(rel: str) -> str:
+        if rel.startswith("qa/") or rel == "qa":
+            q = P.base / "/".join(rel.split("/")[:2])
+            return "REQUIRED_AUDIT" if rel != "qa" and (q / QA_RETAIN_MARKER).exists() else "NO_REASON"
+        return next((r for p, r in REASONS if rel == p or rel.startswith(p + "/")), "NO_REASON")
+    large = [{"dir": k, "bytes": v, "reason": reason(k)} for k, v in sorted(sizes.items(), key=lambda kv: -kv[1])
+             if k != "." and v > LARGE_DIR_BYTES and len(Path(k).parts) <= 3]
+    du = shutil.disk_usage(P.base)
+    return {"total_bytes": sizes.get(".", 0), "files": files, "areas": {a: sizes.get(a, 0) for a in AREAS},
+            "disk_free_bytes": du.free, "disk_used_fraction": round(du.used / du.total, 4), "large_dirs": large,
+            "large_dirs_without_reason": [x["dir"] for x in large if x["reason"] == "NO_REASON"]}
 
 
 def plan(paths: Paths, now=None) -> dict:
@@ -374,7 +477,8 @@ def plan(paths: Paths, now=None) -> dict:
         b["items"] += 1
         b["bytes"] += i["bytes"]
     return {"at": now.isoformat(), "base": str(paths.base), "items": items, "by_rule": by,
-            "bytes_affected": sum(i["bytes"] for i in items)}
+            "bytes_affected": sum(i["bytes"] for i in items), "model_audit": model_audit(paths),
+            "footprint_before": footprint(paths)}
 
 
 # ============================================================================ apply
@@ -464,6 +568,11 @@ def run(paths: Paths, apply: bool = False, now=None) -> dict:
                                 **({"sha256": i["sha256"]} if i.get("sha256") else {})}, default=str) + "\n")
         f.write(json.dumps({"at": p["at"], "summary": True, "changed": out["changed"],
                             "reclaimed_bytes": out["reclaimed_bytes"], "report": str(report)}) + "\n")
+    after = footprint(paths)
+    out["footprint_after"] = {k: after[k] for k in ("total_bytes", "files", "disk_free_bytes", "large_dirs_without_reason")}
+    tmp = report.with_name(report.name + ".tmp")
+    tmp.write_text(json.dumps({**p, "mode": "APPLY", "result": out, "footprint_after": after}, indent=1, default=str) + "\n")
+    os.replace(tmp, report)
     return out
 
 

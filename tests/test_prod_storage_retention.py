@@ -4,6 +4,7 @@ report exists before any change; receipts record every change. TEST fixtures onl
 import gzip
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -241,3 +242,61 @@ def test_cli_runs_scratch_then_storage(base, capsys, monkeypatch):
     out = json.loads(capsys.readouterr().out)
     assert out["run_scratch"]["mode"] == "DRY_RUN" and out["storage"]["mode"] == "DRY_RUN"
     assert Path(out["storage"]["report"]).exists() and out["storage"]["changed"] == 0
+
+
+def test_run_json_gzip_round_trip_and_only_completed_runs(tmp_path):
+    b = tmp_path / "cbb"
+    prod = b / "prod"
+    old = datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp()
+    for rid, done in (("R-done", True), ("R-failed", False)):
+        d = prod / "runs" / rid
+        _w(d / "bundle" / "predictions.json", json.dumps({"rid": rid, "x": list(range(500))}))
+        _w(d / "game_diagnostics.json", json.dumps([{"game_id": "G1", "rid": rid}]))
+        if done:
+            _w(d / "run_summary.json", json.dumps({"run_id": rid}))
+        for f in d.rglob("*"):
+            os.utime(f, (old, old))
+    P = SR.Paths(b, prod, b / "staging" / "tmp" / "duckdb")
+    want = {p: p.read_bytes() for p in (prod / "runs" / "R-done").rglob("*.json") if p.name != "run_summary.json"}
+    out = SR.run(P, apply=True, now=NOW)
+    assert out["by_rule"]["RUN_JSON_GZIP"]["items"] == 2
+    for p, data in want.items():
+        assert not p.exists() and gzip.decompress(p.with_name(p.name + ".gz").read_bytes()) == data
+    assert (prod / "runs" / "R-failed" / "game_diagnostics.json").exists()          # not a completed run: untouched
+    assert (prod / "runs" / "R-done" / "run_summary.json").exists()
+
+
+def test_model_audit_and_footprint_are_report_only(tmp_path):
+    b = tmp_path / "cbb"
+    W = b / "walkforward" / "cbb-originator"
+    for day, complete in (("2026-11-13", True), ("2026-11-14", True), ("2026-11-15", True), ("2026-11-16", False)):
+        _w(W / "models" / day / "marginal.json", json.dumps({"d": day}))
+        if complete:
+            _w(W / "models" / day / "MANIFEST.sha256", day)
+    _w(W / "models" / "2026-11-13" / "same.bin", "identical")
+    _w(W / "models" / "2026-11-14" / "same.bin", "identical")
+    _w(W / "active" / "ACTIVE_MODEL.json", json.dumps({"ACTIVE_MODEL_VERSION": "cbb-jm1-2026-27-20261115"}))
+    _w(W / "rollback" / "ROLLBACK_MODEL.json", json.dumps({"ROLLBACK_MODEL_VERSION": "cbb-jm1-2026-27-20261114"}))
+    _w(b / "prod" / "ops" / "forecasts" / "index.jsonl", json.dumps({"model_version": "cbb-jm1-2026-27-20261113"}) + "\n")
+    _w(b / "qa" / "big" / "x.bin", "0" * 10)
+    P = SR.Paths(b, b / "prod", b / "staging" / "tmp" / "duckdb")
+    before = sorted(str(p) for p in b.rglob("*"))
+    m = SR.model_audit(P)
+    assert {x["dir"]: x["class"] for x in m["models"]} == {"2026-11-13": "REFERENCED_BY_RETAINED_FORECAST",
+                                                          "2026-11-14": "ROLLBACK", "2026-11-15": "ACTIVE",
+                                                          "2026-11-16": "INCOMPLETE"}
+    assert ["models/2026-11-13/same.bin", "models/2026-11-14/same.bin"] in m["duplicate_payload_files"]
+    fp = SR.footprint(P)
+    assert fp["files"] == len([p for p in b.rglob("*") if p.is_file()]) and fp["areas"]["walkforward"] > 0
+    import cbb_platform.prod.storage_retention as mod
+    old = mod.LARGE_DIR_BYTES
+    try:
+        mod.LARGE_DIR_BYTES = 5
+        fp = SR.footprint(P)
+        assert "qa/big" in fp["large_dirs_without_reason"]                  # no RETAIN.json -> flagged
+        _w(b / "qa" / "big" / "RETAIN.json", "{}")
+        assert "qa/big" not in SR.footprint(P)["large_dirs_without_reason"]
+    finally:
+        mod.LARGE_DIR_BYTES = old
+    (b / "qa" / "big" / "RETAIN.json").unlink()
+    assert sorted(str(p) for p in b.rglob("*")) == before                    # nothing changed

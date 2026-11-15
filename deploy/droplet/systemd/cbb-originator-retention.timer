@@ -1,10 +1,11 @@
-# CBB Originator 05:45 ET run-scratch retention timer (after the 01:30 warmup, before the 07:00 morning; no scoring
-# cutoffs in the window). systemd evaluates the zone itself (DST-correct).
+# CBB Originator retention timer: 05:45 ET (after the 01:30 warmup, before the 07:00 morning) and every 6 h after
+# (11:45, 17:45, 23:45 ET), so each retention age window holds within +6 h (run scratch <= 24 h). Writer lock only (waits
+# <= 600 s for a tick). systemd evaluates the zone itself (DST-correct).
 [Unit]
-Description=CBB Originator 05:45 ET run-scratch retention timer
+Description=CBB Originator 6-hourly storage retention timer (05:45 ET first)
 
 [Timer]
-OnCalendar=*-*-* 05:45:00 America/New_York
+OnCalendar=*-*-* 05,11,17,23:45:00 America/New_York
 AccuracySec=1s
 RandomizedDelaySec=0
 Persistent=false

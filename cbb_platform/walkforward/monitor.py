@@ -20,6 +20,7 @@ event rate and the mean predicted probability, so raw Brier is never compared ac
 """
 from __future__ import annotations
 
+import gzip
 import json
 from datetime import date, timedelta
 from pathlib import Path
@@ -116,8 +117,10 @@ def record_run(root: Path, summary: dict) -> dict:
         ev = ev.rename(columns={"canonical_game_id": "game_id"}).assign(first_run_id=summary["run_id"])
         _upsert(SO.paths(root)["predictions"] / "events.parquet", ev.astype(str), ["game_id"])
     gd = run_dir / "game_diagnostics.json"
+    gz = run_dir / "game_diagnostics.json.gz"                    # compressed by storage retention after 2 d
     known = {(r["run_id"], r["game_id"]) for r in SO.read_log(pp["diagnostics"])}
-    for d in (json.loads(gd.read_text()) if gd.exists() else []):
+    diag = json.loads(gd.read_text()) if gd.exists() else json.loads(gzip.decompress(gz.read_bytes())) if gz.exists() else []
+    for d in diag:
         if (summary["run_id"], d["game_id"]) not in known:
             SO.append_log(pp["diagnostics"], {"run_id": summary["run_id"],
                                              "model_version": summary["model_identity"]["model_version"], **d})

@@ -41,7 +41,7 @@ def tree(tmp_path):
     _run(runs, "R3-old-unverified", 80)                         # predictions but no durable PMF evidence
     _run(runs, "R4-incomplete", 70, summary=False)              # in progress / failed: never touched
     _run(runs, "R5-old-no-predictions", 60, predictions=0)      # nothing to verify: summary is the durable record
-    _run(runs, "R6-recent", 20)
+    _run(runs, "R6-recent", 15)
     _run(runs, "R7-recent", 2)
     _run(runs, "R8-recent", 1)
     _durable(ops, "K1", ["R1-old-verified", "R2-old-verified"])
@@ -61,18 +61,18 @@ def test_plan_states_and_keep_window(tree):
                  "R3-old-unverified": ("UNVERIFIED", "KEEP"),
                  "R4-incomplete": ("INCOMPLETE", "KEEP"),
                  "R5-old-no-predictions": ("COMPLETED_VERIFIED", "DELETE_SCRATCH"),
-                 "R6-recent": ("COMPLETED_VERIFIED", "KEEP"),               # within 24 h (more than the latest 2)
+                 "R6-recent": ("COMPLETED_VERIFIED", "KEEP"),               # within the 18 h window
                  "R7-recent": ("COMPLETED_VERIFIED", "KEEP"),
                  "R8-recent": ("COMPLETED_VERIFIED", "KEEP")}
 
 
-def test_latest_two_completed_kept_even_when_older_than_24h(tmp_path):
+def test_no_count_floor_old_completed_scratch_always_goes(tmp_path):
+    """Release 2026-11-15: no 'latest N' floor -- completed-run scratch never outlives the age bound."""
     runs, ops = tmp_path / "runs", tmp_path / "ops"
     for rid, h in (("A", 300), ("B", 200), ("C", 100)):
         _run(runs, rid, h)
     _durable(ops, "K", ["A", "B", "C"])
-    assert _actions(RT.plan(runs, ops, NOW)) == {"A": ("COMPLETED_VERIFIED", "DELETE_SCRATCH"),
-                                                 "B": ("COMPLETED_VERIFIED", "KEEP"), "C": ("COMPLETED_VERIFIED", "KEEP")}
+    assert _actions(RT.plan(runs, ops, NOW)) == {k: ("COMPLETED_VERIFIED", "DELETE_SCRATCH") for k in "ABC"}
 
 
 def test_dry_run_deletes_nothing_and_reports_bytes(tree):
@@ -118,10 +118,12 @@ def test_refuses_a_path_outside_run_scratch(tree, monkeypatch):
     assert (ops / "ticks" / "K1" / PE.FILE).exists()
 
 
-def test_keep_window_is_24_hours(tmp_path):
+def test_keep_window_is_18_hours_so_scratch_is_gone_within_24_hours(tmp_path):
+    """18 h window + the 6-hourly retention timer: completed-run scratch is deleted no later than 24 h after completion."""
     runs, ops = tmp_path / "runs", tmp_path / "ops"
-    for rid, h in (("A", 30), ("B", 23), ("C", 2), ("D", 1)):
+    for rid, h in (("A", 19), ("B", 17), ("C", 2), ("D", 1)):
         _run(runs, rid, h)
     _durable(ops, "K", ["A", "B", "C", "D"])
+    assert RT.KEEP_HOURS + 6 <= 24 and RT.KEEP_RECENT == 0
     assert _actions(RT.plan(runs, ops, NOW))["A"] == ("COMPLETED_VERIFIED", "DELETE_SCRATCH")
     assert _actions(RT.plan(runs, ops, NOW))["B"] == ("COMPLETED_VERIFIED", "KEEP")

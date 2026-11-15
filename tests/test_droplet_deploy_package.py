@@ -288,7 +288,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
                    "cbb-originator-features-warmup.timer": ["OnCalendar=*-*-* 01:30:00 America/New_York"],
-                   "cbb-originator-retention.timer": ["OnCalendar=*-*-* 05:45:00 America/New_York"],
+                   "cbb-originator-retention.timer": ["OnCalendar=*-*-* 05,11,17,23:45:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
     for p in (D / "systemd").glob("*.timer"):
