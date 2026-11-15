@@ -112,6 +112,33 @@ def bounded_predict_means():
         P._predict_means = _FROZEN_PREDICT_MEANS
 
 
+_FROZEN_SEASON_WEIGHTS = M.season_weights
+
+
+@contextlib.contextmanager
+def frame_released_after_copy(frame: pd.DataFrame):
+    """For ONE marginal.fit_v0 call: the frozen body copies its training rows (tr = frame[mask].copy()) and never reads
+    `frame` again; its very next statement calls marginal.season_weights. At that call the spilled frame's resident
+    file pages are dropped (duckdb_limits.drop_resident; values untouched, re-readable from the mapping), so the
+    file-backed copy of the input is not resident while _design, the normal equations and _predict_means allocate.
+    season_weights itself is the frozen function, called with the same arguments; restored in `finally`.
+    Measured 2026-11-14 (QA WF1 / WF2): fit_1 VmHWM 2,846 / 2,869 MiB with the frame pages still resident."""
+    if M.season_weights is not _FROZEN_SEASON_WEIGHTS:
+        raise WalkForwardFitError("marginal.season_weights is not the frozen function before the fit")
+    from cbb_platform import duckdb_limits as DLM
+    st = {"dropped": None}
+
+    def season_weights(*a, **k):
+        if st["dropped"] is None:
+            st["dropped"] = DLM.drop_resident(frame)
+        return _FROZEN_SEASON_WEIGHTS(*a, **k)
+    M.season_weights = season_weights
+    try:
+        yield st
+    finally:
+        M.season_weights = _FROZEN_SEASON_WEIGHTS
+
+
 def guard_state() -> dict:
     return {"structural_MAX_SEASON": S.MAX_SEASON, "frozen": FROZEN_MAX_SEASON, "guard_active": _GUARD_LOCK.locked(),
             "RESTORED": S.MAX_SEASON == FROZEN_MAX_SEASON and not _GUARD_LOCK.locked()}
@@ -264,7 +291,7 @@ def fit(cfg: dict, new: dict | None, log=print) -> dict:
     frame, finals = x.pop("frame"), x.pop("finals")
     with production_season_guard():
         _admitted()
-        with bounded_predict_means():
+        with bounded_predict_means(), frame_released_after_copy(frame):
             v0 = M.stl_policy(M.fit_v0(frame, finals, cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
     rows["frame"] = int(len(frame))
     del frame, finals

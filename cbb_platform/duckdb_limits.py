@@ -387,6 +387,28 @@ def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
     return res
 
 
+def drop_resident(df: pd.DataFrame) -> int:
+    """Drop the RESIDENT pages of every memory-mapped block of a spill_frame frame (madvise MADV_DONTNEED on the shared
+    file mapping). Values are untouched: the pages stay in the (unlinked) file / page cache and fault back in unchanged
+    if the frame is ever read again; only this process's resident set shrinks. Returns the mapped bytes advised (0 for
+    a frame without memmap blocks, or where madvise is unavailable)."""
+    import mmap as _mm
+    if not hasattr(_mm, "MADV_DONTNEED"):
+        return 0
+    seen, n = set(), 0
+    for b in df._mgr.blocks:
+        v = b.values
+        while isinstance(v, np.ndarray) and not isinstance(v, np.memmap) and isinstance(getattr(v, "base", None), np.ndarray):
+            v = v.base
+        m = getattr(v, "_mmap", None) if isinstance(v, np.memmap) else None
+        if m is None or id(m) in seen:
+            continue
+        seen.add(id(m))
+        m.madvise(_mm.MADV_DONTNEED)
+        n += len(m)
+    return n
+
+
 def _memmap(tmp, df, tag, dtype, shape, fortran=False):
     path = Path(tmp) / f"frame-{id(df)}-{tag}.npy"
     return np.lib.format.open_memmap(path, mode="w+", dtype=dtype, shape=shape, fortran_order=fortran), path
