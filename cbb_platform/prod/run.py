@@ -20,7 +20,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC, pool_grain as PG,
+from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC, pool_grain as PG, run_receipts as RR,
                                inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
                                roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
@@ -91,6 +91,7 @@ def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path, odds_ledger:
     return reasons, notes
 
 
+@RR.terminal
 def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, state_root: Path = PC.STATE_ROOT,
           history_db: Path = PC.HISTORY_CANONICAL, ledger_path: Path = PC.LEDGER_PATH, run_root: Path = PC.RUNS_ROOT,
           bundle_dir: Path | None = None, team_map: pd.DataFrame | None = None, player_map: pd.DataFrame | None = None,
@@ -110,6 +111,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     run_id = "R" + aso.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_dir = Path(run_root) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    RR.register(run_dir)                                     # any exit without run_summary.json leaves run_failure.json
     run_reasons, notes = [], []
     # ---------------------------------------------------------------- frozen model (hash-verified, never refit)
     try:
