@@ -206,6 +206,17 @@ def prior_day_completeness(el: pd.DataFrame, day) -> dict:
            "INCOMPLETE_FINAL_GAME_IDS": sorted(inc["game_id"]) if len(inc) else [],
            "UNRECONCILED_FINAL": int(len(unr)),
            "UNRECONCILED_FINAL_GAME_IDS": sorted(unr["game_id"]) if len(unr) else []}
+    # the partition of the provider-final games (disjoint sets, so both identities hold by construction; checked):
+    #   FINAL_GAMES = COMPLETE_FINAL + INCOMPLETE_FINAL,   COMPLETE_FINAL = RECONCILED_FINAL + UNRECONCILED_FINAL
+    fin_ids = set(g.loc[final, "game_id"]) if len(g) else set()
+    inc_ids = set(inc["game_id"]) if len(inc) else set()
+    unr_ids = (set(unr["game_id"]) if len(unr) else set()) - inc_ids
+    comp_ids = fin_ids - inc_ids
+    out.update(COMPLETE_FINAL=len(comp_ids), RECONCILED_FINAL=len(comp_ids - unr_ids), UNRECONCILED_FINAL=len(unr_ids),
+               UNRECONCILED_FINAL_GAME_IDS=sorted(unr_ids))
+    if not (out["FINAL_GAMES"] == out["COMPLETE_FINAL"] + out["INCOMPLETE_FINAL"]
+            and out["COMPLETE_FINAL"] == out["RECONCILED_FINAL"] + out["UNRECONCILED_FINAL"]):
+        raise ValueError(f"prior-day completeness identities violated: {out}")   # duplicate game rows; never silent
     out["STATUS"] = (PRIOR_DAY_INCOMPLETE if out["INCOMPLETE_FINAL"] else
                      PRIOR_DAY_UNRECONCILED if out["UNRECONCILED_FINAL"] else "COMPLETE")
     return out

@@ -657,6 +657,7 @@ def receipt(h: dict) -> dict:
                                       "MORNING_INITIAL_FORECAST_STATUS", "MORNING_EXPORTS_STATUS", "MORNING_HEALTH_STATUS",
                                       "MORNING_COMPLETE", "FIRST_INCOMPLETE_STAGE", "RECOVERY_REQUIRED",
                                       "RECOVERY_REQUIRED_REASON", "RECOVERY_LAST_ACTION")},
+            "RECOVERY_REASON": mo.get("RECOVERY_REQUIRED_REASON"),
             "MORNING_STAGE_MEMORY": mo.get("STAGE_MEMORY"),
             "INITIAL_FORECAST": mo.get("INITIAL_FORECAST", mo.get("MORNING_INITIAL_FORECAST_STATUS")),
             "FORECAST_OPERATIONAL_STATE": fo["STATE"], "FORECAST_OPERATIONAL_SNAPSHOT_ID": fo["SNAPSHOT_ID"],

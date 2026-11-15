@@ -5,6 +5,7 @@ import itertools
 from datetime import date
 
 import pandas as pd
+import pytest
 
 from cbb_platform.prod import lifecycle as L, morning_stages as MS
 from cbb_platform.walkforward import eligibility as EL
@@ -137,3 +138,36 @@ def test_prior_day_counters_never_contradict():
     assert pdc["FINAL_WITH_COMPLETE_BOX"] + pdc["INCOMPLETE_FINAL"] == pdc["FINAL_GAMES"]
     assert pdc["FINAL_WITH_RECONCILED_BOX"] + pdc["UNRECONCILED_FINAL"] == pdc["FINAL_WITH_COMPLETE_BOX"]
     assert pdc["INCLUDED"] == pdc["FINAL_WITH_RECONCILED_BOX"]
+
+
+@pytest.mark.parametrize("seed", range(25))
+def test_prior_day_identities_hold_for_any_row_mix(seed):
+    """FINAL_GAMES = COMPLETE_FINAL + INCOMPLETE_FINAL and COMPLETE_FINAL = RECONCILED_FINAL + UNRECONCILED_FINAL for
+    ANY mix of statuses / flags / reasons -- including rows whose flags contradict their reason -- and UNRECONCILED is
+    never counted as INCOMPLETE."""
+    import random
+    rnd = random.Random(seed)
+    rows = [{"game_id": f"G-{i}", "provider_status": rnd.choice(["final", "final", "in_progress", "scheduled", "postponed"]),
+             "has_result": rnd.random() < .8, "box_complete": rnd.random() < .7, "box_reconciled": rnd.random() < .6,
+             "decision": rnd.choice(["INCLUDED", "DEFERRED"]),
+             "reason": rnd.choice(["", "BOX_UNRECONCILED", "BOX_INCOMPLETE", "FINAL_DATA_INCOMPLETE_AT_CUTOFF",
+                                   "IDENTITY_UNRESOLVED"])} for i in range(rnd.randint(0, 40))]
+    pdc = EL.prior_day_completeness(_el(rows) if rows else _el([]).iloc[0:0], DAY)
+    assert pdc["FINAL_GAMES"] == pdc["COMPLETE_FINAL"] + pdc["INCOMPLETE_FINAL"]
+    assert pdc["COMPLETE_FINAL"] == pdc["RECONCILED_FINAL"] + pdc["UNRECONCILED_FINAL"]
+    assert not set(pdc["INCOMPLETE_FINAL_GAME_IDS"]) & set(pdc["UNRECONCILED_FINAL_GAME_IDS"])
+    fin = {r["game_id"] for r in rows if r["provider_status"] == "final"}
+    assert set(pdc["INCOMPLETE_FINAL_GAME_IDS"]) | set(pdc["UNRECONCILED_FINAL_GAME_IDS"]) <= fin
+    assert pdc["STATUS"] == (EL.PRIOR_DAY_INCOMPLETE if pdc["INCOMPLETE_FINAL"] else
+                             EL.PRIOR_DAY_UNRECONCILED if pdc["UNRECONCILED_FINAL"] else "COMPLETE")
+
+
+def test_health_never_says_stage_none_and_carries_recovery_reason():
+    h = {"et_date": "2026-11-15", "morning": {"MORNING_COMPLETE": False, "FIRST_INCOMPLETE_STAGE": None,
+                                             "FIRST_HISTORICAL_FAILURE": "INITIAL_FORECAST", "RECOVERY_REQUIRED": False,
+                                             "RECOVERY_REQUIRED_REASON": "CHAIN_SETTLED"}}
+    out = L.receipt(h)
+    assert out["WARNINGS"] and not any("stage None" in w for w in out["WARNINGS"])
+    assert out["RECOVERY_REASON"] == "CHAIN_SETTLED" and out["FIRST_HISTORICAL_FAILURE"] == "INITIAL_FORECAST"
+    assert {"MORNING_CHAIN_COMPLETE", "DAY_OPERATIONAL", "FORECAST_OPERATIONAL_STATE", "FORECAST_OPERATIONAL_AT",
+            "RECOVERY_REQUIRED"} <= set(out)
