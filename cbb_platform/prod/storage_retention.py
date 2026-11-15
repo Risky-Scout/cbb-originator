@@ -473,6 +473,15 @@ def model_audit(P: Paths) -> dict:
             "duplicate_payload_files": sorted(v for v in shas.values() if len(v) > 1)}
 
 
+def run_census(P: Paths) -> dict:
+    """Run directories by terminal state (SUCCESS / FAILED / ABORTED / DEFERRED / IN_PROGRESS)."""
+    out: dict = {}
+    for d in sorted(p for p in P.runs.iterdir() if p.is_dir()) if P.runs.exists() else []:
+        st = RR.terminal_state(d)
+        out.setdefault(st, []).append(d.name)
+    return {"counts": {k: len(v) for k, v in out.items()}, "in_progress": out.get("IN_PROGRESS", [])}
+
+
 AREAS = ("prod/runs", "prod/state", "prod/ops", "prod/cache", "prod/availability", "walkforward", "history", "exports",
          "evidence", "qa", "staging")
 REASONS = (("prod/runs", "CURRENT_PRODUCTION"), ("prod/state", "REQUIRED_HISTORY"), ("prod/ops", "REQUIRED_AUDIT"),
@@ -524,6 +533,7 @@ def plan(paths: Paths, now=None) -> dict:
         b["bytes"] += i["bytes"]
     return {"at": now.isoformat(), "base": str(paths.base), "items": items, "by_rule": by,
             "bytes_affected": sum(i["bytes"] for i in items), "model_audit": model_audit(paths),
+            "run_terminal_states": run_census(paths),
             "footprint_before": footprint(paths)}
 
 
