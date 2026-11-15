@@ -78,6 +78,8 @@ jobs:
         run: python -m pytest -q -rs tests/test_droplet_deploy_package.py tests/test_prod_retention.py tests/test_prod_storage_retention.py
       - name: Production grain (one row per game x player; cross-team pool resolution by frozen EVIDENCE_RANK) + terminal run receipts
         run: python -m pytest -q -rs tests/test_prod_pool_grain.py tests/test_prod_run_receipts.py
+      - name: Morning state machine / 08:00 recovery / health semantics (terminal stage states, operational forecast, DAY_OPERATIONAL, prior-day completeness counters)
+        run: python -m pytest -q -rs tests/test_prod_morning_state_semantics.py tests/test_prod_morning_recovery_semantics.py
       - name: Availability refresh Phase A / Phase B split (acquisition outside the writer lock, bounded Phase B watchdog, real-process lock contention / process death, old-vs-split prediction equivalence; fixtures, no network)
         run: python -m pytest -q -rs tests/test_availability_refresh_split.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
