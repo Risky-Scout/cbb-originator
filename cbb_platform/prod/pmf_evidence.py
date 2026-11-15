@@ -83,6 +83,7 @@ def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, g
 
 RUN_FILE = "market_pmfs.parquet"
 RUN_REF = "market_pmfs.ref.json"
+MIGRATION_SUFFIX = ".migration.json"            # pmfs.parquet.migration.json: legacy long -> compact (retention)
 
 
 def run_copy_verified(run_dir: Path, run_id: str, durable: Path) -> tuple[bool, str]:
@@ -138,8 +139,12 @@ def read_run_pmfs(run_dir: Path) -> pd.DataFrame:
     if not ref_p.exists():
         return pd.DataFrame(columns=["game_id", "team_id", "player_id", "market", "method", "projection", "pmf"])
     ref = json.loads(ref_p.read_text())
-    if sha256(ref["canonical"]) != ref["canonical_sha256"]:
-        raise PMFEvidenceError(f"{ref['canonical']}: canonical PMF file changed since {ref_p} was written")
+    cur = sha256(ref["canonical"])
+    if cur != ref["canonical_sha256"]:
+        mig = Path(ref["canonical"] + MIGRATION_SUFFIX)          # compacted since: the verified old -> new link
+        m = json.loads(mig.read_text()) if mig.exists() else {}
+        if not (m.get("old_sha256") == ref["canonical_sha256"] and m.get("new_sha256") == cur):
+            raise PMFEvidenceError(f"{ref['canonical']}: canonical PMF file changed since {ref_p} was written")
     c = read_compact(Path(ref["canonical"]))
     c = c[c["run_id"].astype(str) == ref["run_id"]]
     return pd.DataFrame({"game_id": c["game_id"].to_numpy(), "team_id": c["team_id"].to_numpy(),

@@ -300,3 +300,33 @@ def test_model_audit_and_footprint_are_report_only(tmp_path):
         mod.LARGE_DIR_BYTES = old
     (b / "qa" / "big" / "RETAIN.json").unlink()
     assert sorted(str(p) for p in b.rglob("*")) == before                    # nothing changed
+
+
+def test_legacy_long_forecast_pmfs_become_compact_with_audit_link(tmp_path):
+    """A legacy LONG forecast pmfs.parquet is rewritten compact only when it reads back identically; the sidecar links
+    the sha256 recorded in snapshot.json to the new file, and a run reference made against the old file still resolves.
+    Tick PMF files are never rewritten."""
+    b = tmp_path / "cbb"
+    prod, ops = b / "prod", b / "prod" / "ops"
+    d = prod / "runs" / "R1"
+    d.mkdir(parents=True)
+    pd.DataFrame({"game_id": ["G1", "G1"], "player_id": ["P1", "P2"], "market": ["PTS", "REB"], "team_id": ["T", "T"],
+                  "projection": [1.0, 0.9], "method": ["m", "m"], "pmf": [[0.25, 0.5, 0.25], [0.1, 0.9]]}
+                 ).to_parquet(d / PE.RUN_FILE, index=False)
+    (d / "run_summary.json").write_text(json.dumps({"run_id": "R1"}))
+    long = PE.from_run(d, "R1", "2026-11-04T18:00:00Z", "M")
+    for f in (ops / "forecasts" / "2026-11-04" / "F1" / PE.FILE, ops / "ticks" / "K1" / PE.FILE):
+        f.parent.mkdir(parents=True)
+        long.to_parquet(f, index=False)                              # the legacy long schema
+        os.utime(f, (0, 0))
+    fc = ops / "forecasts" / "2026-11-04" / "F1" / PE.FILE
+    old_sha = PE.sha256(fc)
+    assert PE.dereference_run(d, "R1", fc)["status"] == "REFERENCED"
+    P = SR.Paths(b, prod, b / "staging" / "tmp" / "duckdb")
+    out = SR.run(P, apply=True, now=NOW)
+    assert out["by_rule"]["PMF_LONG_TO_COMPACT"]["items"] == 1
+    assert "probabilities" in pd.read_parquet(fc).columns and PE.read(fc).equals(long)
+    side = json.loads((fc.parent / (PE.FILE + PE.MIGRATION_SUFFIX)).read_text())
+    assert side["old_sha256"] == old_sha and side["new_sha256"] == PE.sha256(fc)
+    assert "probabilities" not in pd.read_parquet(ops / "ticks" / "K1" / PE.FILE).columns   # sealed: untouched
+    assert len(PE.read_run_pmfs(d)) == 2

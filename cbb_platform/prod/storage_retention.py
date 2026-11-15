@@ -39,6 +39,9 @@ Rules (BASE = the CBB state root, the parent of CBB_PROD_ROOT):
     RUN_JSON_GZIP           prod/runs/<run>/bundle/predictions.json and game_diagnostics.json of a completed run untouched
                             > 2 d -> .gz (byte-exact round trip verified). Write-once audit copies (the ledgers carry
                             the predictions); read only by the unscheduled walk-forward monitor, which reads .gz too
+    PMF_LONG_TO_COMPACT     prod/ops/forecasts/<D>/<F>/pmfs.parquet still in the legacy LONG schema -> the compact canonical
+                            form, replaced only when it reads back as the identical long frame; old / new sha256 in
+                            the receipt. Tick PMF files are never rewritten (sha256 sealed in CHAIN.jsonl)
     LEDGER_MIRROR_LINK      prod/ops/ledgers/<x>.jsonl (the evidence-tree mirror written by ops_store.mirror_out) is
                             replaced by a hard link to the canonical working ledger when it is a byte prefix of it:
                             one physical copy; mirror_in / mirror_out become no-ops (both writers only append)
@@ -344,6 +347,48 @@ def plan_run_pmfs(P: Paths, now: datetime, durable: dict | None = None) -> list[
     return out
 
 
+def plan_pmf_compact(P: Paths, now: datetime) -> list[dict]:
+    """Legacy LONG forecast-snapshot pmfs.parquet (written before the compact format) older than 1 h. Tick PMF files are
+    never rewritten: their sha256 is sealed in CHAIN.jsonl / tick.json (prod/ops/ticks is protected)."""
+    out = []
+    for f in sorted((P.ops / "forecasts").glob(f"*/*/{PE.FILE}")):
+        if _mtime(f) >= now - timedelta(hours=1):
+            continue
+        try:
+            import pyarrow.parquet as pq
+            if "probabilities" in pq.read_schema(f).names:
+                continue
+        except Exception:                                  # noqa: BLE001 -- unreadable: never touched
+            continue
+        out.append(_item("PMF_LONG_TO_COMPACT", f, "COMPACT", "legacy long-format forecast PMF file -> compact "
+                         "canonical form (replaced only when it reads back as the identical long frame)", sha256=_sha(f)))
+    return out
+
+
+def _compact_verified(f: Path) -> int:
+    """f (long) -> compact, replaced only when PE.read(compact) equals the original long frame exactly. Returns saved."""
+    old = PE.read(f)
+    tmp = f.with_name(f.name + ".compact.tmp")
+    tmp.write_bytes(PE._bytes(old))
+    try:
+        back = PE.read(tmp)
+        if not (back.equals(old) and list(back.dtypes) == list(old.dtypes)):
+            raise RuntimeError(f"{f}: compact round trip differs: refused")
+        PE.read_compact(tmp)                                 # every vector re-hashed
+    except Exception:
+        tmp.unlink()
+        raise
+    saved = f.stat().st_size - tmp.stat().st_size
+    side = f.with_name(f.name + PE.MIGRATION_SUFFIX)          # the audit link: snapshot.json records the OLD sha256
+    side.write_text(json.dumps({"rule": "PMF_LONG_TO_COMPACT", "at": _now().isoformat(), "old_sha256": _sha(f),
+                                "new_sha256": _sha(tmp), "old_bytes": f.stat().st_size, "new_bytes": tmp.stat().st_size,
+                                "verification": "pmf_evidence.read(new) equals the original long frame exactly "
+                                                "(values, dtypes, order); every vector re-hashed"}, indent=1) + "\n")
+    shutil.copystat(f, tmp)
+    os.replace(tmp, f)
+    return saved
+
+
 def plan_run_json(P: Paths, now: datetime) -> list[dict]:
     out = []
     for d in sorted(p for p in P.runs.iterdir() if p.is_dir()) if P.runs.exists() else []:
@@ -378,7 +423,7 @@ def plan_ledger_links(P: Paths, now: datetime) -> list[dict]:
 
 
 PLANNERS = (plan_incomplete_runs, plan_validation_runs, plan_spill, plan_staging, plan_qa, plan_export_temp,
-            plan_forecast_ledgers, plan_raw_cache, plan_rotowire_raw, plan_run_pmfs, plan_run_json, plan_ledger_links)
+            plan_forecast_ledgers, plan_raw_cache, plan_rotowire_raw, plan_run_pmfs, plan_run_json, plan_pmf_compact, plan_ledger_links)
 ALLOWED = {"ORPHAN_RUN_RECEIPT": "prod/runs/*/run_failure.json",
            "INCOMPLETE_RUN_SCRATCH": "prod/runs/*/features/*.duckdb",
            "VALIDATION_RUN_SCRATCH": "prod/odds/validation_runs/*/*/features/*.duckdb",
@@ -391,6 +436,7 @@ ALLOWED = {"ORPHAN_RUN_RECEIPT": "prod/runs/*/run_failure.json",
            "ROTOWIRE_RAW_GZIP": "prod/availability/rotowire_web/raw/*/*",
            "RUN_PMF_DUPLICATE": "prod/runs/*/market_pmfs.parquet",
            "RUN_JSON_GZIP": "prod/runs/*.json",
+           "PMF_LONG_TO_COMPACT": "prod/ops/forecasts/*/*/pmfs.parquet",
            "LEDGER_MIRROR_LINK": "prod/ops/ledgers/*.jsonl"}
 
 
@@ -551,6 +597,11 @@ def run(paths: Paths, apply: bool = False, now=None) -> dict:
                 shutil.rmtree(t) if t.is_dir() else t.unlink()
             elif i["action"] == "GZIP":
                 saved = _gzip_verified(t)
+            elif i["action"] == "COMPACT":
+                if _sha(t) != i["sha256"]:
+                    continue                                  # changed since planning: left for the next pass
+                saved = _compact_verified(t)
+                i["new_sha256"] = _sha(t)
             elif i["action"] == "DEREFERENCE":
                 r = PE.dereference_run(t.parent, i["run_id"], Path(i["canonical"]))
                 if r["status"] != "REFERENCED":
@@ -565,7 +616,8 @@ def run(paths: Paths, apply: bool = False, now=None) -> dict:
             out["changed"] += 1
             f.write(json.dumps({"at": p["at"], "rule": i["rule"], "action": i["action"], "path": i["path"],
                                 "bytes": i["bytes"], "reclaimed": saved, "report": str(report),
-                                **({"sha256": i["sha256"]} if i.get("sha256") else {})}, default=str) + "\n")
+                                **({"sha256": i["sha256"]} if i.get("sha256") else {}),
+                                **({"new_sha256": i["new_sha256"]} if i.get("new_sha256") else {})}, default=str) + "\n")
         f.write(json.dumps({"at": p["at"], "summary": True, "changed": out["changed"],
                             "reclaimed_bytes": out["reclaimed_bytes"], "report": str(report)}) + "\n")
     after = footprint(paths)
