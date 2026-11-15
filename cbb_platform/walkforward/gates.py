@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform import config as C
-from cbb_platform.prod import config as PC, fixtures as FX, run as RN, state as ST
+from cbb_platform.prod import config as PC, fixtures as FX, run as RN, simulate as SM, state as ST
 from cbb_platform.v2 import jm1_final as F, jm1_final_production as JP, joint_minutes_v2 as JM, latent as L
 from cbb_platform.walkforward import config as WC, fit as WF, store as SO
 
@@ -80,6 +80,20 @@ def golden_smoke(model, work: Path) -> dict:
                                          and b.get("training_cutoff") == model.identity["training_cutoff"] for b in preds),
            "draws_per_game": all(v["priced_players"] > 0 for v in r["banks"].values())}
     return {"checks": out, "predictions": len(preds), "PASS": _all(out.values())}
+
+
+def bounded_integrity_checks(prod: dict) -> dict:
+    """The frozen jm1_final_production.integrity_checks with the production scorer's bounded mixture tables
+    (prod.simulate._bounded_tables: structural.mixture_tables computed in 2-player blocks, identical pmf / thr arrays,
+    the never-read cdf table not kept -- the same scope simulate_game scores every production game in).
+    Measured 2026-11-15 (QA gate probe, accepted 2026-11-14 candidate): the unbounded call held pmf + cdf + thr
+    (3 x 254,102 x 121 float64) while latent.ndtri ran on all 13.2 M cells (~6 x 100 MB temporaries): +1,922 MiB.
+    The frozen function is restored afterwards and the restoration verified."""
+    with SM._bounded_tables():
+        out = JP.integrity_checks(prod, lambda s: None)
+    if JP.S.mixture_tables is not SM._FROZEN_MIXTURE_TABLES:
+        raise RuntimeError("structural.mixture_tables not restored after the bounded integrity checks")
+    return out
 
 
 def evaluate(cand_dir: Path, version: str, ctx: dict, log=print) -> dict:
@@ -152,7 +166,7 @@ def evaluate(cand_dir: Path, version: str, ctx: dict, log=print) -> dict:
     try:
         if model is None:
             raise RuntimeError("artifact unreadable")
-        integ = JP.integrity_checks(model.jm1, lambda s: None)
+        integ = bounded_integrity_checks(model.jm1)
         ck = integ["checks"]
         g["PMF_NORMALIZED_NONNEGATIVE"] = {"PASS": ck["pmf_normalized"]}
         g["PSD_DEPENDENCE"] = {"PASS": ck["psd_game_correlation"], "per_game": integ["per_game"]}
