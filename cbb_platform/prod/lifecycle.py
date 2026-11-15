@@ -286,6 +286,8 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     run_dir = Path(s.get("run_dir") or life.runs / s["run_id"])
     pe = PE.from_run(run_dir, s["run_id"], now, ident["model_version"], rec["games"])
     w = PE.write(sdir / PE.FILE, pe) if len(pe) else {"pmfs": 0}
+    if len(pe):                                       # the snapshot file is the one canonical payload
+        w["run_copy"] = PE.dereference_run(run_dir, s["run_id"], sdir / PE.FILE)["status"]
     players = pd.DataFrame(columns=PLAYER_COLS)
     if (run_dir / "model_inputs.parquet").exists():
         mi = pd.read_parquet(run_dir / "model_inputs.parquet")

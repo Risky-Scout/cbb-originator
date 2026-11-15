@@ -691,6 +691,7 @@ def scoring_evidence(ctx: Ctx, tdir: Path, s: dict, timing: dict, sch: pd.DataFr
         w = PE.write(tdir / PE.FILE, pe)
         out["pmfs"] = w.get("pmfs", int(pe["prediction_receipt_id"].nunique()))
         out["pmfs_sha256"] = w["sha256"]
+        out["pmfs_run_copy"] = PE.dereference_run(run_dir, s["run_id"], tdir / PE.FILE)["status"]
     if len(preds):
         base = preds.drop_duplicates(["game_id", "player_id", "market"])
         proj = base.set_index(["game_id", "player_id", "team_id", "market"])["projection"].astype(float).unstack(

@@ -90,3 +90,37 @@ def test_refuses_non_contiguous_or_varying_pmfs():
 def test_empty_frames():
     assert PCX.compact(pd.DataFrame(columns=PE.COLUMNS)).empty
     assert list(PCX.expand(pd.DataFrame(columns=PCX.PMF_COLUMNS)).columns) == PCX.LONG_COLUMNS
+
+
+def _deref_case(tmp_path, tamper=None, drop=False):
+    from cbb_platform.prod import pmf_evidence as PE
+    d = tmp_path / "R1"
+    d.mkdir()
+    pm = [np.array([0.25, 0.5, 0.25]), np.array([0.1, 0.9])]
+    pd.DataFrame({"game_id": ["G1", "G1"], "player_id": ["P1", "P2"], "market": ["PTS", "REB"], "team_id": ["T", "T"],
+                  "projection": [1.0, 0.9], "method": ["m", "m"], "pmf": [a.tolist() for a in pm]}
+                 ).to_parquet(d / PE.RUN_FILE, index=False)
+    ev = PE.from_run(d, "R1", "2026-11-04T18:00:00Z", "M")
+    if tamper:
+        ev.loc[ev.index[-1], "probability"], ev.loc[ev.index[-2], "probability"] = 0.8, 0.2
+    if drop:
+        ev = ev[ev["player_id"] == "P1"]
+    PE.write(tmp_path / "tick" / PE.FILE, ev)
+    return PE, d, tmp_path / "tick" / PE.FILE
+
+
+def test_run_copy_becomes_a_reference_only_when_bit_identical(tmp_path):
+    PE, d, durable = _deref_case(tmp_path)
+    before = pd.read_parquet(d / PE.RUN_FILE)
+    r = PE.dereference_run(d, "R1", durable)
+    assert r["status"] == "REFERENCED" and not (d / PE.RUN_FILE).exists() and (d / PE.RUN_REF).exists()
+    after = PE.read_run_pmfs(d)
+    assert [np.asarray(v).tobytes() for v in after["pmf"]] == [np.asarray(v, dtype=float).tobytes() for v in before["pmf"]]
+    assert PE.dereference_run(d, "R1", durable)["status"] == "ABSENT"          # idempotent
+
+
+@pytest.mark.parametrize("kw", [{"tamper": True}, {"drop": True}])
+def test_run_copy_kept_when_durable_differs_or_is_partial(tmp_path, kw):
+    PE, d, durable = _deref_case(tmp_path, **kw)
+    r = PE.dereference_run(d, "R1", durable)
+    assert r["status"] == "KEPT" and (d / PE.RUN_FILE).exists() and not (d / PE.RUN_REF).exists()

@@ -81,8 +81,14 @@ def test_shadow_tick_persists_the_pmfs_it_used_and_exports_survive_runner_teardo
         assert set(g["game_id"]) <= set(pe["game_id"])
         run = g["run_id"].iat[0]
         assert (pe["run_id"] == run).all() and (pe["prediction_as_of"] == pd.Timestamp(g["prediction_as_of"].iat[0]).isoformat()).all()
-        # the persisted PMFs are exactly the run's PMFs (never recomputed)
-        mp = pd.read_parquet(life["w"] / "prod" / "runs" / run / "market_pmfs.parquet")
+        # the persisted PMFs are exactly the run's PMFs (never recomputed): verified bit for bit at write time, after
+        # which the run copy is a reference to the tick file (one physical payload)
+        rdir = life["w"] / "prod" / "runs" / run
+        assert not (rdir / PE.RUN_FILE).exists()
+        ref = json.loads((rdir / PE.RUN_REF).read_text())
+        assert ref["canonical"] == str(tdir / PE.FILE) and ref["canonical_sha256"] == PE.sha256(tdir / PE.FILE)
+        assert json.loads((tdir / "tick.json").read_text())["scoring"]["evidence"]["pmfs_run_copy"] == "REFERENCED"
+        mp = PE.read_run_pmfs(rdir)
         mp = mp[mp["game_id"].isin(g["game_id"])]
         got = {(x["game_id"], x["player_id"], x["stat"]): x["pmf"] for x in PE.distributions(pe)}
         assert len(got) == len(mp)

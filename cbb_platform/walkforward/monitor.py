@@ -99,7 +99,8 @@ def record_run(root: Path, summary: dict) -> dict:
             df[c] = None
     df = df[keep].astype({c: str for c in ("prediction_as_of", "feature_cutoff", "quote_available_at",
                                             "collector_received_at", "projection")})
-    pm = pd.read_parquet(run_dir / "market_pmfs.parquet") if (run_dir / "market_pmfs.parquet").exists() else pd.DataFrame()
+    from cbb_platform.prod import pmf_evidence as PE
+    pm = PE.read_run_pmfs(run_dir)
     if len(pm):
         pm = pm.assign(run_id=summary["run_id"], model_version=summary["model_identity"]["model_version"],
                        training_cutoff=summary["model_identity"].get("training_cutoff"))

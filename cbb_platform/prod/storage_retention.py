@@ -30,9 +30,11 @@ Rules (BASE = the CBB state root, the parent of CBB_PROD_ROOT):
                             keep every payload's sha256
     ROTOWIRE_RAW_GZIP       prod/availability/rotowire_web/raw/<D>/ pages of a day older than 14 d -> gzip in place
                             (immutable availability evidence: compressed, never deleted)
-    RUN_PMF_DUPLICATE       prod/runs/<run>/market_pmfs.parquet of a completed run older than 7 d when EVERY PMF in it
-                            equals the durable evidence (ops/ticks/*/pmfs.parquet, ops/forecasts/*/*/pmfs.parquet) of
-                            the same run_id, outcome by outcome (the durable copy is canonical; exports read it first)
+    RUN_PMF_DUPLICATE       prod/runs/<run>/market_pmfs.parquet of a completed run (untouched > 1 h) whose EVERY PMF is
+                            in one durable evidence file (ops/ticks/*/pmfs.parquet or ops/forecasts/*/*/pmfs.parquet)
+                            bit for bit -> replaced by market_pmfs.ref.json pointing at that canonical file
+                            (prod.pmf_evidence.dereference_run; the forecast / tick writers do this at write time, the
+                            rule converts the backlog). One physical PMF payload per forecast state.
     LEDGER_MIRROR_LINK      prod/ops/ledgers/<x>.jsonl (the evidence-tree mirror written by ops_store.mirror_out) is
                             replaced by a hard link to the canonical working ledger when it is a byte prefix of it:
                             one physical copy; mirror_in / mirror_out become no-ops (both writers only append)
@@ -70,7 +72,7 @@ EXPORT_TEMP_DAYS = 1
 FORECAST_LEDGER_MIN_AGE_DAYS = 2
 RAW_DAYS = 14
 ROTOWIRE_RAW_DAYS = 14
-RUN_PMF_DAYS = 7
+RUN_PMF_HOURS = 1                                  # the writer dereferences at once; this catches the backlog
 EXPORT_TEMP_PATTERNS = ("*.tmp", "*.partial", "~$*", ".~lock*", "*.bak")
 QA_RETAIN_MARKER = "RETAIN.json"
 QUARANTINE_PREFIX = "cleanup-quarantine-"
@@ -306,47 +308,26 @@ def plan_rotowire_raw(P: Paths, now: datetime) -> list[dict]:
     return out
 
 
-def _durable_frames(files: list[str]) -> pd.DataFrame:
-    cols = ["run_id", "game_id", "player_id", "stat", "outcome", "probability"]
-    return pd.concat([pd.read_parquet(f, columns=cols) for f in files], ignore_index=True) if files else \
-        pd.DataFrame(columns=cols)
-
-
 def plan_run_pmfs(P: Paths, now: datetime, durable: dict | None = None) -> list[dict]:
     from cbb_platform.prod import retention as RT
     durable = RT.durable_runs(P.ops) if durable is None else durable
     out = []
     for d in sorted(p for p in P.runs.iterdir() if p.is_dir()) if P.runs.exists() else []:
-        mp = d / "market_pmfs.parquet"
+        mp = d / PE.RUN_FILE
         if not mp.exists() or d.name not in durable:
             continue
         try:
             s = json.loads((d / "run_summary.json").read_text())
         except (OSError, ValueError):
             continue
-        if s.get("run_id") != d.name or _utc(s.get("prediction_as_of") or _mtime(mp)) >= now - timedelta(days=RUN_PMF_DAYS):
+        if s.get("run_id") != d.name or _mtime(mp) >= now - timedelta(hours=RUN_PMF_HOURS):
             continue
-        ok, why = pmfs_duplicated(mp, d.name, durable[d.name])
-        if ok:
-            out.append(_item("RUN_PMF_DUPLICATE", mp, "DELETE", why, canonical=durable[d.name]))
+        for f in durable[d.name]:
+            ok, why = PE.run_copy_verified(d, d.name, Path(f))
+            if ok:
+                out.append(_item("RUN_PMF_DUPLICATE", mp, "DEREFERENCE", why, canonical=str(f), run_id=d.name))
+                break
     return out
-
-
-def pmfs_duplicated(market_pmfs: Path, run_id: str, durable_files: list[str]) -> tuple[bool, str]:
-    """True only when every PMF of the run file equals (outcome by outcome) the durable evidence of the same run."""
-    mp = pd.read_parquet(market_pmfs, columns=["game_id", "player_id", "market", "pmf"])
-    ev = _durable_frames(durable_files)
-    ev = ev[ev["run_id"].astype(str) == run_id]
-    if not len(mp):
-        return False, "empty run PMF file: kept"
-    have = {k: g.sort_values("outcome")["probability"].to_numpy(dtype=float)
-            for k, g in ev.groupby(["game_id", "player_id", "stat"], sort=False)}
-    for r in mp.itertuples(index=False):
-        a = have.get((r.game_id, r.player_id, r.market))
-        b = np.asarray(r.pmf, dtype=float)
-        if a is None or len(a) != len(b) or not np.array_equal(a, b):
-            return False, f"{r.game_id} {r.player_id} {r.market} differs from / is missing in durable evidence: kept"
-    return True, f"all {len(mp)} PMFs equal the durable evidence of {run_id}"
 
 
 def plan_ledger_links(P: Paths, now: datetime) -> list[dict]:
@@ -466,6 +447,11 @@ def run(paths: Paths, apply: bool = False, now=None) -> dict:
                 shutil.rmtree(t) if t.is_dir() else t.unlink()
             elif i["action"] == "GZIP":
                 saved = _gzip_verified(t)
+            elif i["action"] == "DEREFERENCE":
+                r = PE.dereference_run(t.parent, i["run_id"], Path(i["canonical"]))
+                if r["status"] != "REFERENCED":
+                    continue
+                saved = r["replaced_bytes"] - (t.parent / PE.RUN_REF).stat().st_size
             elif i["action"] == "HARDLINK":
                 saved = t.stat().st_size
                 _hardlink(t, Path(i["canonical"]))

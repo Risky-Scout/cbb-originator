@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -77,6 +79,74 @@ def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, g
                                  "game_label": gl if isinstance(gl, str) else r.game_id,
                                  "player_label": pl if isinstance(pl, str) else r.player_id}))
     return pd.concat(out, ignore_index=True)[COLUMNS] if out else pd.DataFrame(columns=COLUMNS)
+
+
+RUN_FILE = "market_pmfs.parquet"
+RUN_REF = "market_pmfs.ref.json"
+
+
+def run_copy_verified(run_dir: Path, run_id: str, durable: Path) -> tuple[bool, str]:
+    """True only when the durable evidence file holds EVERY PMF of runs/<run_id>/market_pmfs.parquet bit for bit (same
+    receipt id, support 0..k, identical float64 bytes)."""
+    src, durable = Path(run_dir) / RUN_FILE, Path(durable)
+    if not src.exists():
+        return False, "run PMF file absent"
+    if not durable.exists():
+        return False, "durable evidence absent"
+    have = {r.prediction_receipt_id: (int(r.support_min), np.asarray(r.probabilities, dtype=np.float64))
+            for r in read_compact(durable).itertuples(index=False)}
+    mp = pd.read_parquet(src, columns=["game_id", "player_id", "market", "pmf"])
+    if not len(mp):
+        return False, "empty run PMF file"
+    for r in mp.itertuples(index=False):
+        got = have.get(receipt_id(run_id, r.game_id, r.player_id, r.market))
+        want = np.asarray(r.pmf, dtype=np.float64)
+        if got is None or got[0] != 0 or got[1].shape != want.shape or got[1].tobytes() != want.tobytes():
+            return False, f"{r.game_id} {r.player_id} {r.market} not in {durable} bit for bit"
+    return True, f"all {len(mp)} PMFs of {run_id} are in {durable} bit for bit"
+
+
+def dereference_run(run_dir: Path, run_id: str, durable: Path) -> dict:
+    """ONE physical PMF payload per forecast state: once run_copy_verified, runs/<run_id>/market_pmfs.parquet is replaced
+    by market_pmfs.ref.json (canonical path, its sha256, PMF count, the replaced file's sha256). Otherwise the run file
+    is kept and the reason returned (never a partial reference)."""
+    run_dir, durable = Path(run_dir), Path(durable)
+    src = run_dir / RUN_FILE
+    if not src.exists():
+        return {"status": "ABSENT"}
+    ok, why = run_copy_verified(run_dir, run_id, durable)
+    if not ok:
+        return {"status": "KEPT", "reason": why}
+    ref = {"run_id": run_id, "format": "REFERENCE", "canonical": str(durable), "canonical_sha256": sha256(durable),
+           "pmfs": int(len(pd.read_parquet(src, columns=["game_id"]))), "replaced_bytes": src.stat().st_size,
+           "replaced_sha256": sha256(src)}
+    tmp = run_dir / (RUN_REF + ".tmp")
+    tmp.write_text(json.dumps(ref, indent=1) + "\n")
+    os.replace(tmp, run_dir / RUN_REF)
+    src.unlink()
+    return {"status": "REFERENCED", **ref}
+
+
+def read_run_pmfs(run_dir: Path) -> pd.DataFrame:
+    """The run's PMFs in the market_pmfs.parquet shape (game_id, team_id, player_id, market, method, projection, pmf,
+    game_label, player_label), from the run file or, once dereferenced, from its canonical durable file (filtered to
+    the run; the canonical sha256 is re-checked). Empty frame when the run priced nothing."""
+    run_dir = Path(run_dir)
+    if (run_dir / RUN_FILE).exists():
+        return pd.read_parquet(run_dir / RUN_FILE)
+    ref_p = run_dir / RUN_REF
+    if not ref_p.exists():
+        return pd.DataFrame(columns=["game_id", "team_id", "player_id", "market", "method", "projection", "pmf"])
+    ref = json.loads(ref_p.read_text())
+    if sha256(ref["canonical"]) != ref["canonical_sha256"]:
+        raise PMFEvidenceError(f"{ref['canonical']}: canonical PMF file changed since {ref_p} was written")
+    c = read_compact(Path(ref["canonical"]))
+    c = c[c["run_id"].astype(str) == ref["run_id"]]
+    return pd.DataFrame({"game_id": c["game_id"].to_numpy(), "team_id": c["team_id"].to_numpy(),
+                         "player_id": c["player_id"].to_numpy(), "market": c["stat"].to_numpy(),
+                         "method": c["method"].to_numpy(), "projection": c["mean"].to_numpy(),
+                         "pmf": [np.asarray(v, dtype=np.float64) for v in c["probabilities"]],
+                         "game_label": c["game_label"].to_numpy(), "player_label": c["player_label"].to_numpy()})
 
 
 def check(pmf: np.ndarray, what: str = "") -> None:

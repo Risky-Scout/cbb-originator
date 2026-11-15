@@ -112,7 +112,7 @@ def base(tmp_path):
     _w(ops / "ledgers" / "cbbd_production_requests.jsonl", '{"a":1}\n')
     _w(prod / "sync" / "sync_log.jsonl", '{"s":1}\n')
     _w(ops / "ledgers" / "sync_log.jsonl", '{"DIVERGED":1}\n')
-    # run PMFs: old duplicated (deleted), old differing (kept), recent duplicated (kept)
+    # run PMFs: duplicated (-> reference, whatever the age), differing (kept)
     _pmf_run(prod / "runs", ops, "R-pmf-dup", 10)
     _pmf_run(prod / "runs", ops, "R-pmf-diff", 10, durable_equal=False)
     _pmf_run(prod / "runs", ops, "R-pmf-recent", 2)
@@ -138,6 +138,7 @@ def test_plan_selects_exactly_the_expected_targets(base):
         ("RAW_CACHE_SUPERSEDED", "prod/cache/raw/cbbd/games/20261101T000000000000Z__k1.json.meta.json"),
         ("ROTOWIRE_RAW_GZIP", "prod/availability/rotowire_web/raw/2026-11-02/page.html"),
         ("RUN_PMF_DUPLICATE", "prod/runs/R-pmf-dup/market_pmfs.parquet"),
+        ("RUN_PMF_DUPLICATE", "prod/runs/R-pmf-recent/market_pmfs.parquet"),
         ("LEDGER_MIRROR_LINK", "prod/ops/ledgers/cbbd_production_requests.jsonl"),
     }
 
@@ -155,7 +156,7 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
     led = (ops / "forecasts" / "2026-11-20" / "F1" / "forecast_ledger.jsonl").read_bytes()
     page = (prod / "availability" / "rotowire_web" / "raw" / "2026-11-02" / "page.html").read_bytes()
     out = SR.run(base, apply=True, now=NOW)
-    assert out["changed"] == 14
+    assert out["changed"] == 15
     rec = json.loads((prod / "runs" / "R-old-incomplete" / RR.FAILURE_FILE).read_text())
     assert rec["status"] == "ORPHANED" and rec["run_id"] == "R-old-incomplete" and rec["detected_by"] == "storage_retention"
     assert RR.state(prod / "runs" / "R-old-incomplete") == "ORPHANED"
@@ -168,7 +169,8 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
               f"staging/tmp/duckdb/pid-{os.getpid()}/spill.tmp", "staging/recent/x.py", "staging/cleanup-quarantine-2026-11-14/x",
               "qa/accepted/result.json", "qa/fresh/x", "prod/ops/forecasts/2026-11-29/F2/forecast_ledger.jsonl",
               f"prod/ops/forecasts/2026-11-20/F1/{PE.FILE}", "prod/runs/R-pmf-diff/market_pmfs.parquet",
-              "prod/runs/R-pmf-recent/market_pmfs.parquet", "prod/runs/R-pmf-dup/run_summary.json",
+              "prod/runs/R-pmf-recent/market_pmfs.ref.json", "prod/runs/R-pmf-dup/run_summary.json",
+              "prod/runs/R-pmf-dup/market_pmfs.ref.json",
               "prod/cache/raw/cbbd/games/20261102T000000000000Z__k1.json",          # newest of its request
               "prod/cache/raw/cbbd/games/20261103T000000000000Z__k2.json",          # only payload of its request
               "prod/cache/raw/cbbd/games/20261125T000000000000Z__k3.json",          # superseded but recent
@@ -176,6 +178,7 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
         assert (b / p).exists(), p
     for p in ("prod/runs/R-old-incomplete/features/features_asof.duckdb", "staging/equiv", "qa/old-probe",
               "staging/tmp/duckdb/pid-999999999", "prod/runs/R-pmf-dup/market_pmfs.parquet",
+              "prod/runs/R-pmf-recent/market_pmfs.parquet",
               "prod/cache/raw/cbbd/games/20261101T000000000000Z__k1.json",
               "prod/cache/raw/cbbd/games/20261101T000000000000Z__k1.json.meta.json",
               "exports/2026-11-01/CBB_Distributions_11_01_2026.xlsx.tmp"):
@@ -192,7 +195,10 @@ def test_apply_changes_only_targets_and_keeps_protected_trees(base):
     OS.mirror_in(ops, prod)
     assert os.path.samefile(a, m)
     rec = [json.loads(l) for l in (ops / "retention" / "storage_retention.jsonl").read_text().splitlines()]
-    assert rec[-1]["summary"] and rec[-1]["changed"] == 14 and len(rec) == 15
+    assert rec[-1]["summary"] and rec[-1]["changed"] == 15 and len(rec) == 16
+    for rid in ("R-pmf-dup", "R-pmf-recent"):                     # the reference resolves to the same PMFs
+        got = PE.read_run_pmfs(prod / "runs" / rid)
+        assert [list(v) for v in got.sort_values(["player_id"])["pmf"]] == [[0.25, 0.5, 0.25], [0.1, 0.9]]
     again = SR.run(base, apply=True, now=NOW)                      # idempotent
     assert again["changed"] == 0
 
