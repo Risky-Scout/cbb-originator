@@ -1,12 +1,13 @@
 """Terminal run receipts (prod/run_receipts.py): a run ends in run_summary.json or run_failure.json; SIGTERM and
-exceptions are recorded and still propagate. TEST fixtures only."""
+exceptions are recorded and still propagate; retention writes ORPHANED for killed runs. TEST fixtures only."""
 import json
 import os
 import signal
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from cbb_platform.prod import run_receipts as RR
+from cbb_platform.prod import run_receipts as RR, storage_retention as SR
 
 
 def _fake_daily(root, behaviour):
@@ -51,3 +52,24 @@ def test_write_failure_marks_an_orphan_explicitly(tmp_path):
     assert RR.state(d) == "IN_PROGRESS"
     RR.write_failure(d, "ORPHANED", "OOM kill", evidence="journal")
     assert RR.state(d) == "ORPHANED"
+
+
+def test_retention_marks_only_old_unrecorded_runs_orphaned(tmp_path):
+    runs = tmp_path / "prod" / "runs"
+    for d in ("qa", "staging/tmp/duckdb", "exports", "prod/ops"):
+        (tmp_path / d).mkdir(parents=True)
+    old, fresh, failed = (runs / n for n in ("R-killed", "R-running", "R-failed"))
+    for d in (old, fresh, failed):
+        (d / "features").mkdir(parents=True)
+        (d / "model_inputs.parquet").write_bytes(b"x")
+    RR.write_failure(failed, "FAILED", "x")
+    t = (datetime.now(timezone.utc) - timedelta(hours=RR.ORPHAN_HOURS + 1)).timestamp()
+    for d in (old, failed):
+        for f in [d, *d.rglob("*")]:
+            os.utime(f, (t, t))
+    P = SR.Paths(tmp_path)
+    items = [i for i in SR.plan(P)["items"] if i["rule"] == "ORPHAN_RUN_RECEIPT"]
+    assert [i["path"] for i in items] == [str(old / RR.FAILURE_FILE)]
+    SR.run(P, apply=True)
+    assert RR.state(old) == "ORPHANED" and RR.state(failed) == "FAILED" and RR.state(fresh) == "IN_PROGRESS"
+    assert [i for i in SR.plan(P)["items"] if i["rule"] == "ORPHAN_RUN_RECEIPT"] == []     # idempotent

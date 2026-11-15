@@ -5,12 +5,12 @@
         FAILED     an exception inside daily (traceback tail, exception type) -- written by terminal() before re-raising
         TERMINATED SIGTERM (systemd TimeoutStartSec / stop) -- terminal() turns SIGTERM into RunTerminated for the run's
                    duration, so the receipt is written and the process still exits non-zero
-        ORPHANED   the process vanished without either record (SIGKILL / OOM kill / host stop): nothing can be
-                   written in-process; such a run is reconciled explicitly (write_failure) once it is older than
+        ORPHANED   the process vanished without either record (SIGKILL / OOM kill / host stop): written by the 05:45
+                   retention pass (prod/storage_retention: ORPHAN_RUN_RECEIPT) once the run is older than
                    ORPHAN_HOURS, longer than the longest CBB unit timeout, so no live run is ever marked
 
 A run directory with neither record and younger than ORPHAN_HOURS is IN_PROGRESS. Receipts never change a prediction;
-they make the run's end auditable.
+they make the run's end auditable and let retention bound its scratch (INCOMPLETE_RUN_SCRATCH).
 """
 from __future__ import annotations
 

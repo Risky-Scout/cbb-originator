@@ -9,6 +9,9 @@ ops/retention/storage_retention.jsonl.
 
 Rules (BASE = the CBB state root, the parent of CBB_PROD_ROOT):
 
+    ORPHAN_RUN_RECEIPT      prod/runs/<run>/run_failure.json (status ORPHANED) WRITTEN for a run with neither
+                            run_summary.json nor run_failure.json whose files are untouched > 7 h (prod/run_receipts):
+                            the only non-deleting rule; every run ends in a terminal record
     INCOMPLETE_RUN_SCRATCH  prod/runs/<run>/features/*.duckdb of a run with no valid run_summary.json whose newest file is
                             older than 24 h (a failed / killed run; nothing reads its scratch again)
     VALIDATION_RUN_SCRATCH  prod/odds/validation_runs/<V>/<run>/features/*.duckdb older than 48 h (the validation record,
@@ -54,7 +57,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import config as PC, ops_store as OS, pmf_evidence as PE
+from cbb_platform.prod import config as PC, ops_store as OS, pmf_evidence as PE, run_receipts as RR
 
 ET = ZoneInfo("America/New_York")
 INCOMPLETE_HOURS = 24
@@ -102,6 +105,21 @@ def _newest(p: Path) -> datetime:
                 except OSError:
                     pass
     return datetime.fromtimestamp(best, timezone.utc)
+
+
+def _run_activity(d: Path) -> datetime:
+    """Newest mtime of the files a run itself wrote (a retention receipt is not run activity)."""
+    best = None
+    for root, _, files in os.walk(d):
+        for n in files:
+            if n == RR.FAILURE_FILE or n.startswith(f".{RR.FAILURE_FILE}"):
+                continue
+            try:
+                m = os.lstat(os.path.join(root, n)).st_mtime
+            except OSError:
+                continue
+            best = m if best is None else max(best, m)
+    return datetime.fromtimestamp(best if best is not None else d.stat().st_mtime, timezone.utc)
 
 
 def _size(p: Path) -> int:
@@ -162,8 +180,16 @@ def plan_incomplete_runs(P: Paths, now: datetime) -> list[dict]:
             ok = json.loads((d / "run_summary.json").read_text()).get("run_id") == d.name
         except (OSError, ValueError):
             ok = False
+        if ok:
+            continue
+        newest = _run_activity(d)
+        if not (d / RR.FAILURE_FILE).exists() and newest < now - timedelta(hours=RR.ORPHAN_HOURS):
+            out.append(_item("ORPHAN_RUN_RECEIPT", d / RR.FAILURE_FILE, "WRITE_RECEIPT",
+                             f"run {d.name} has neither run_summary.json nor run_failure.json and is untouched > "
+                             f"{RR.ORPHAN_HOURS} h (longer than any CBB unit timeout): process ended without a record "
+                             f"(SIGKILL / OOM / host stop)", newest_mtime=newest.isoformat()))
         scratch = sorted(d.glob("features/*.duckdb"))
-        if ok or not scratch or _newest(d) >= now - timedelta(hours=INCOMPLETE_HOURS):
+        if not scratch or newest >= now - timedelta(hours=INCOMPLETE_HOURS):
             continue
         for f in scratch:
             out.append(_item("INCOMPLETE_RUN_SCRATCH", f, "DELETE",
@@ -342,7 +368,8 @@ def plan_ledger_links(P: Paths, now: datetime) -> list[dict]:
 
 PLANNERS = (plan_incomplete_runs, plan_validation_runs, plan_spill, plan_staging, plan_qa, plan_export_temp,
             plan_forecast_ledgers, plan_raw_cache, plan_rotowire_raw, plan_run_pmfs, plan_ledger_links)
-ALLOWED = {"INCOMPLETE_RUN_SCRATCH": "prod/runs/*/features/*.duckdb",
+ALLOWED = {"ORPHAN_RUN_RECEIPT": "prod/runs/*/run_failure.json",
+           "INCOMPLETE_RUN_SCRATCH": "prod/runs/*/features/*.duckdb",
            "VALIDATION_RUN_SCRATCH": "prod/odds/validation_runs/*/*/features/*.duckdb",
            "DUCKDB_SPILL": "*/pid-*",
            "STAGING": "staging/*",
@@ -420,6 +447,15 @@ def run(paths: Paths, apply: bool = False, now=None) -> dict:
     with open(log, "a") as f:
         for i in p["items"]:
             t = Path(i["path"])
+            if i["action"] == "WRITE_RECEIPT":
+                if t.exists():
+                    continue
+                RR.write_failure(t.parent, "ORPHANED", i["reason"], detected_by="storage_retention",
+                                 newest_mtime=i.get("newest_mtime"))
+                out["changed"] += 1
+                f.write(json.dumps({"at": p["at"], "rule": i["rule"], "action": i["action"], "path": i["path"],
+                                    "bytes": 0, "reclaimed": 0, "report": str(report)}) + "\n")
+                continue
             if not t.exists():
                 continue
             if i["action"] == "DELETE":

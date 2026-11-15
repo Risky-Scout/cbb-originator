@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import config as PC, pmf_evidence as PE
+from cbb_platform.prod import config as PC, pmf_evidence as PE, run_receipts as RR
 
 KEEP_RECENT = 2
 KEEP_HOURS = 24
@@ -80,7 +80,8 @@ def plan(runs_root: Path, ops_root: Path, now=None) -> dict:
         except (OSError, ValueError):
             s = None
         if not s or s.get("run_id") != d.name:
-            rec.update(state="INCOMPLETE", reason="no valid run_summary.json (in progress or failed): never touched")
+            rec.update(state="INCOMPLETE", terminal=RR.state(d),       # IN_PROGRESS / FAILED / TERMINATED / ORPHANED
+                       reason="no valid run_summary.json (in progress or failed): never touched by this rule")
             runs.append(rec)
             continue
         rec["completed_at"] = str(_utc(s.get("prediction_as_of")) or pd.Timestamp((d / "run_summary.json").stat().st_mtime,
