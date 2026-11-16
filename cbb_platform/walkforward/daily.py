@@ -313,6 +313,7 @@ def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_R
             history_db: Path | None = None, now=None, log=print) -> dict:
     """history_db None: the selected history source (history_source.history_db: the frozen canonical under CONTROL)."""
     from cbb_platform import duckdb_limits as DLM
+    DLM.fixed_mmap_threshold()                       # resource-only: large arrays are returned to the OS when freed
     with HS.active(), DLM.page_cache_bounded():      # resource-only: file cache charged to the cgroup stays bounded
         return _morning(day, root, state_root, HS.history_db() if history_db is None else history_db, now, log)
 

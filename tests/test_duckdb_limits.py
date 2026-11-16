@@ -463,3 +463,11 @@ def test_advise_out_keeps_memmap_values(tmp_path):
     mm.flush()
     DLM._drop(mm)
     assert np.array_equal(mm, np.arange(mm.size, dtype="f8"))
+
+
+def test_fixed_mmap_threshold_is_placement_only():
+    import sys
+    ok = DLM.fixed_mmap_threshold()
+    assert ok is sys.platform.startswith("linux")           # glibc: applied; macOS: documented no-op
+    a = np.random.default_rng(5).normal(size=(1 << 18, 5))
+    assert np.array_equal(a.copy(), a)

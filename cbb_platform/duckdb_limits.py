@@ -471,6 +471,27 @@ def spill_concat(parts: list) -> pd.DataFrame:
     return res
 
 
+# ============================================================================ allocator: fixed mmap threshold
+M_MMAP_THRESHOLD = -3                                    # glibc mallopt parameter
+MMAP_THRESHOLD_BYTES = 1 << 20
+
+
+def fixed_mmap_threshold(nbytes: int = MMAP_THRESHOLD_BYTES) -> bool:
+    """Resource-only: pin glibc's mmap threshold (mallopt M_MMAP_THRESHOLD), which also disables its DYNAMIC
+    adjustment. By default the threshold climbs to as much as 32 MiB after the first large free, after which the
+    frozen fit's per-column arrays (~10.6 MiB each, 46 live at once in props_v0._design) are carved from the heap,
+    fragment it and stay resident after free: the same code peaked at 2,398 / 2,427 / 2,609 / 2,678 MiB anonymous in
+    four fits (QA 2026-11-16). Pinned, every allocation >= nbytes is its own mapping, returned to the OS exactly when
+    freed. Placement only -- no value can change. False (no-op) off glibc."""
+    import sys
+    if not sys.platform.startswith("linux"):
+        return False
+    try:
+        return bool(ctypes.CDLL("libc.so.6").mallopt(ctypes.c_int(M_MMAP_THRESHOLD), ctypes.c_int(int(nbytes))))
+    except (OSError, AttributeError):
+        return False
+
+
 # ============================================================================ page-cache bound (cgroup charge)
 PAGE_CACHE_INTERVAL_S = 0.25
 
