@@ -428,3 +428,38 @@ def test_spill_concat_noop_without_configuration(monkeypatch):
     df = _unconsolidated_like_walkforward_frame(5_000)
     pd.testing.assert_frame_equal(DLM.spill_concat([df.iloc[:10], df.iloc[10:]]),
                                   pd.concat([df.iloc[:10], df.iloc[10:]], ignore_index=True), check_exact=True)
+
+
+def test_page_cache_bounded_advises_open_files_and_changes_no_value(tmp_path, monkeypatch):
+    """Resource-only: re-advises every open regular file; contents read back identical; one final pass on exit."""
+    import sys
+    import time
+    p = tmp_path / "x.bin"
+    data = np.random.default_rng(3).bytes(4 << 20)
+    p.write_bytes(data)
+    calls = []
+    if sys.platform.startswith("linux"):
+        real = os.posix_fadvise
+        monkeypatch.setattr(os, "posix_fadvise", lambda fd, o, n, a: (calls.append(fd), real(fd, o, n, a))[1])
+    with open(p, "rb") as f, DLM.page_cache_bounded(interval=0.01) as st:
+        time.sleep(0.2)
+        assert f.read() == data
+    if sys.platform.startswith("linux"):
+        assert st["passes"] > 0 and st["files"] > 0 and calls
+    else:                                                     # macOS: documented no-op
+        assert st == {"passes": 0, "files": 0}
+
+
+def test_page_cache_bounded_can_be_disabled(monkeypatch):
+    monkeypatch.setenv("CBB_PAGE_CACHE_BOUND", "0")
+    with DLM.page_cache_bounded(interval=0.001) as st:
+        pass
+    assert st == {"passes": 0, "files": 0}
+
+
+def test_advise_out_keeps_memmap_values(tmp_path):
+    mm = np.lib.format.open_memmap(tmp_path / "m.npy", mode="w+", dtype="f8", shape=(1 << 18,))
+    mm[...] = np.arange(mm.size, dtype="f8")
+    mm.flush()
+    DLM._drop(mm)
+    assert np.array_equal(mm, np.arange(mm.size, dtype="f8"))

@@ -388,11 +388,35 @@ def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
     return res
 
 
-def _drop(mm) -> None:
+# Linux MADV_PAGEOUT (5.4+; the Python mmap module does not export the constant). MADV_DONTNEED only unmaps a shared
+# file page from this process: the clean page stays in the page cache and stays CHARGED to the unit's cgroup
+# (memory.current), so the cgroup -- not the process -- reached MemoryHigh (QA 2026-11-15: 256 MiB spill, file 257 MiB
+# after DONTNEED, 0 after PAGEOUT). PAGEOUT reclaims the clean pages; a later read faults them back, unchanged, from
+# the (unlinked) file.
+MADV_PAGEOUT = 21
+
+
+def _advise_out(m) -> bool:
+    """Reclaim a mapping's pages (cgroup charge included). False where neither advice is available (macOS: PAGEOUT
+    unknown, DONTNEED is used as before)."""
     import mmap as _mm
-    m = getattr(mm, "_mmap", None)
-    if m is not None and hasattr(_mm, "MADV_DONTNEED"):
+    import sys
+    if sys.platform.startswith("linux"):
+        try:
+            m.madvise(MADV_PAGEOUT)
+            return True
+        except OSError:                                  # kernel without PAGEOUT: as before
+            pass
+    if hasattr(_mm, "MADV_DONTNEED"):
         m.madvise(_mm.MADV_DONTNEED)
+        return True
+    return False
+
+
+def _drop(mm) -> None:
+    m = getattr(mm, "_mmap", None)
+    if m is not None:
+        _advise_out(m)
 
 
 def spill_concat(parts: list) -> pd.DataFrame:
@@ -447,14 +471,69 @@ def spill_concat(parts: list) -> pd.DataFrame:
     return res
 
 
-def drop_resident(df: pd.DataFrame) -> int:
-    """Drop the RESIDENT pages of every memory-mapped block of a spill_frame frame (madvise MADV_DONTNEED on the shared
-    file mapping). Values are untouched: the pages stay in the (unlinked) file / page cache and fault back in unchanged
-    if the frame is ever read again; only this process's resident set shrinks. Returns the mapped bytes advised (0 for
-    a frame without memmap blocks, or where madvise is unavailable)."""
-    import mmap as _mm
-    if not hasattr(_mm, "MADV_DONTNEED"):
+# ============================================================================ page-cache bound (cgroup charge)
+PAGE_CACHE_INTERVAL_S = 0.25
+
+
+def _fadvise_open_files() -> int:
+    """posix_fadvise(DONTNEED) on every regular file this process has open (DuckDB databases, DuckDB temp files,
+    scratch work files). Drops only CLEAN cached pages; the kernel keeps every read coherent, so no value can change --
+    a later read is served from disk instead of the cache. Dirty pages are left to writeback (dropped next pass).
+    Returns the number of files advised."""
+    n = 0
+    try:
+        fds = os.listdir("/proc/self/fd")
+    except OSError:
         return 0
+    for name in fds:
+        try:
+            fd = int(name)
+            st = os.fstat(fd)
+            if (st.st_mode & 0o170000) != 0o100000 or st.st_size == 0:
+                continue
+            os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+            n += 1
+        except (OSError, ValueError):                    # closed / reused between listdir and fstat: nothing to do
+            continue
+    return n
+
+
+@contextlib.contextmanager
+def page_cache_bounded(interval: float | None = None):
+    """Resource-only: keep the page cache this job's file I/O charges to its cgroup (memory.current / memory.peak)
+    bounded while the body runs. Measured 2026-11-16 (QA M1, MemoryHigh removed): the walk-forward's label build
+    charged 2,274 MiB of clean file cache next to 1,077 MiB anonymous memory, so the cgroup -- not the process --
+    sat at MemoryHigh. A daemon thread re-advises every open regular file each `interval` seconds; on exit one final
+    pass. No-op off Linux (no posix_fadvise / /proc) and when CBB_PAGE_CACHE_BOUND=0. Yields the pass counter."""
+    import sys
+    import threading
+    st = {"passes": 0, "files": 0}
+    if not sys.platform.startswith("linux") or not hasattr(os, "posix_fadvise") \
+            or os.environ.get("CBB_PAGE_CACHE_BOUND", "1") == "0":
+        yield st
+        return
+    stop = threading.Event()
+    every = PAGE_CACHE_INTERVAL_S if interval is None else interval
+
+    def run():
+        while not stop.wait(every):
+            st["files"] += _fadvise_open_files()
+            st["passes"] += 1
+    t = threading.Thread(target=run, name="cbb-page-cache-bound", daemon=True)
+    t.start()
+    try:
+        yield st
+    finally:
+        stop.set()
+        t.join(timeout=5)
+        _fadvise_open_files()
+
+
+def drop_resident(df: pd.DataFrame) -> int:
+    """Reclaim the resident pages of every memory-mapped block of a spill_frame frame (madvise MADV_PAGEOUT on Linux:
+    the page-cache pages and their cgroup charge go; MADV_DONTNEED elsewhere). Values are untouched: the pages fault
+    back in unchanged from the (unlinked) file if the frame is ever read again. Returns the mapped bytes advised (0 for
+    a frame without memmap blocks, or where madvise is unavailable)."""
     seen, n = set(), 0
     for b in df._mgr.blocks:
         v = b.values
@@ -464,8 +543,8 @@ def drop_resident(df: pd.DataFrame) -> int:
         if m is None or id(m) in seen:
             continue
         seen.add(id(m))
-        m.madvise(_mm.MADV_DONTNEED)
-        n += len(m)
+        if _advise_out(m):
+            n += len(m)
     return n
 
 

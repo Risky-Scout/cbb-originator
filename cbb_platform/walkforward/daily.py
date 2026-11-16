@@ -312,7 +312,8 @@ def corrections(root: Path, prev_version: str | None, state: dict, vid: str, sta
 def morning(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.STATE_ROOT,
             history_db: Path | None = None, now=None, log=print) -> dict:
     """history_db None: the selected history source (history_source.history_db: the frozen canonical under CONTROL)."""
-    with HS.active():
+    from cbb_platform import duckdb_limits as DLM
+    with HS.active(), DLM.page_cache_bounded():      # resource-only: file cache charged to the cgroup stays bounded
         return _morning(day, root, state_root, HS.history_db() if history_db is None else history_db, now, log)
 
 
