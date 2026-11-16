@@ -83,3 +83,54 @@ def test_fit_v0_on_spilled_frame_with_release_is_bit_identical(monkeypatch, tmp_
         got = M.fit_v0(sp, finals, cfg, 2026, policy, "TEST")
     assert st["dropped"] and st["dropped"] > 0
     assert json.dumps(got, sort_keys=True, default=str) == json.dumps(ref, sort_keys=True, default=str)
+
+
+def test_spill_in_place_same_object_same_values(monkeypatch, tmp_path):
+    df = pd.DataFrame({"a": np.arange(300_000, dtype=float), "b": np.arange(300_000, dtype=np.int64), "c": "x"})
+    df["d"] = df["a"] * 2.0                                      # unconsolidated float group, as tr after tr["_w"] = ...
+    want = df.copy()
+    monkeypatch.setenv(DLM.TMP_ENV, str(tmp_path / "spill"))
+    monkeypatch.setattr(DLM, "SPILL_MIN_BYTES", 1)
+    monkeypatch.setattr(DLM, "SPILL_FLUSH_ROWS", 1)
+    ident = id(df)
+    maps = DLM.spill_in_place(df)
+    assert id(df) == ident and maps and df._mgr.is_consolidated()
+    pd.testing.assert_frame_equal(df, want)
+    with DLM.kept_paged_out(maps) as entry:
+        assert DLM._pageout_kept() > 0
+    assert entry == [] and DLM._KEPT_OUT == []
+    pd.testing.assert_frame_equal(df, want)                     # pages fault back in unchanged
+
+
+def test_spill_in_place_noop_without_configuration(monkeypatch):
+    monkeypatch.delenv(DLM.TMP_ENV, raising=False)
+    df = pd.DataFrame({"a": np.arange(10, dtype=float)})
+    mgr = df._mgr
+    assert DLM.spill_in_place(df) == [] and df._mgr is mgr
+
+
+def test_training_rows_spilled_restores_and_refuses(monkeypatch):
+    frozen = P._design
+    with pytest.raises(RuntimeError):
+        with WF.training_rows_spilled():
+            raise RuntimeError("fit failed")
+    assert P._design is frozen
+    monkeypatch.setattr(P, "_design", lambda *a, **k: None)
+    with pytest.raises(WF.WalkForwardFitError):
+        with WF.training_rows_spilled():
+            pass
+
+
+def test_fit_v0_with_training_rows_spilled_is_bit_identical(monkeypatch, tmp_path):
+    df, cfg = _train_frame()
+    finals = pd.DataFrame({"season": [2025] * 50, "min": np.linspace(10, 35, 50), "pos": ["G"] * 50,
+                           **{t: np.linspace(1, 9, 50) for t in cfg["count_targets"].values()}})
+    policy = next(iter(M.REFERENCE))
+    ref = M.fit_v0(df.copy(), finals, cfg, 2026, policy, "TEST")
+    sp = _spilled(monkeypatch, tmp_path, df.copy())
+    monkeypatch.setattr(DLM, "SPILL_FLUSH_ROWS", 3)
+    monkeypatch.setattr(WF, "PREDICT_CHUNK_ROWS", 1_024)
+    with WF.bounded_predict_means(), WF.frame_released_after_copy(sp), WF.training_rows_spilled() as st:
+        got = M.fit_v0(sp, finals, cfg, 2026, policy, "TEST")
+    assert st["spilled"] and st["spilled"] > 0 and P._design is WF._FROZEN_DESIGN and DLM._KEPT_OUT == []
+    assert json.dumps(got, sort_keys=True, default=str) == json.dumps(ref, sort_keys=True, default=str)

@@ -139,6 +139,39 @@ def frame_released_after_copy(frame: pd.DataFrame):
         M.season_weights = _FROZEN_SEASON_WEIGHTS
 
 
+_FROZEN_DESIGN = P._design
+
+
+@contextlib.contextmanager
+def training_rows_spilled():
+    """For ONE marginal.fit_v0 call: its first props_v0._design call receives the frozen body's training rows `tr`
+    (frame[mask].copy() plus `_w`) -- held for the whole fit, read column by column, never copied whole. Before that
+    call tr's large blocks move IN PLACE into spill memmaps (duckdb_limits.spill_in_place: same object, columns, index,
+    dtypes and values); after it their resident pages are reclaimed, and while the fit runs page_cache_bounded keeps
+    reclaiming them (duckdb_limits.kept_paged_out). The frozen _design runs unchanged on every call; restored in
+    `finally`. Measured 2026-11-16 (QA FP4): the fit_2 high-water (marginal.py:206, the normal equations) held tr's
+    724 MiB float64 copy in anonymous memory next to X and X * w."""
+    if P._design is not _FROZEN_DESIGN:
+        raise WalkForwardFitError("props_v0._design is not the frozen function before the fit")
+    from cbb_platform import duckdb_limits as DLM
+    st = {"spilled": None}
+    with contextlib.ExitStack() as es:
+        def _design(df, *a, **k):
+            if st["spilled"] is not None:
+                return _FROZEN_DESIGN(df, *a, **k)
+            maps = DLM.spill_in_place(df)
+            st["spilled"] = sum(len(m) for m in maps)
+            es.enter_context(DLM.kept_paged_out(maps))
+            out = _FROZEN_DESIGN(df, *a, **k)
+            DLM._pageout_kept()
+            return out
+        P._design = _design
+        try:
+            yield st
+        finally:
+            P._design = _FROZEN_DESIGN
+
+
 def guard_state() -> dict:
     return {"structural_MAX_SEASON": S.MAX_SEASON, "frozen": FROZEN_MAX_SEASON, "guard_active": _GUARD_LOCK.locked(),
             "RESTORED": S.MAX_SEASON == FROZEN_MAX_SEASON and not _GUARD_LOCK.locked()}
@@ -294,7 +327,7 @@ def fit(cfg: dict, new: dict | None, log=print) -> dict:
     frame, finals = x.pop("frame"), x.pop("finals")
     with production_season_guard():
         _admitted()
-        with bounded_predict_means(), frame_released_after_copy(frame):
+        with bounded_predict_means(), frame_released_after_copy(frame), training_rows_spilled():
             v0 = M.stl_policy(M.fit_v0(frame, finals, cfg, T, B.POLICY, "WALK_FORWARD"), cfg)
     rows["frame"] = int(len(frame))
     del frame, finals

@@ -339,6 +339,9 @@ def low_memory_fetch(spool_dir: Path | str | None = None):
 
 
 SPILL_MIN_BYTES = 64 * 2**20
+# spill_frame writes a dtype group one column at a time; every SPILL_FLUSH_ROWS columns the written part is flushed and
+# its page-cache pages reclaimed, so the dirty file cache charged to the cgroup while spilling stays ~this many columns
+SPILL_FLUSH_ROWS = 8
 
 
 def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -374,6 +377,9 @@ def spill_frame(df: pd.DataFrame) -> pd.DataFrame:
             for r, j in enumerate(order):                    # one column at a time into its final position
                 v, k = rows[j]
                 mm[r] = v[k]
+                if (r + 1) % SPILL_FLUSH_ROWS == 0:          # bounded dirty cache while writing (values unchanged)
+                    mm.flush()
+                    _drop(mm)
             mm.flush()
             path.unlink()
             _drop(mm)                                        # written + flushed: not resident until read again
@@ -539,6 +545,7 @@ def page_cache_bounded(interval: float | None = None):
     def run():
         while not stop.wait(every):
             st["files"] += _fadvise_open_files()
+            _pageout_kept()
             st["passes"] += 1
     t = threading.Thread(target=run, name="cbb-page-cache-bound", daemon=True)
     t.start()
@@ -548,6 +555,60 @@ def page_cache_bounded(interval: float | None = None):
         stop.set()
         t.join(timeout=5)
         _fadvise_open_files()
+
+
+def spill_in_place(df: pd.DataFrame) -> list:
+    """Resource-only: move `df`'s large NumPy blocks into spill memmaps IN PLACE (the same object keeps the same
+    columns, index, dtypes and values; its block manager becomes spill_frame's consolidated one), so a caller that holds
+    `df` -- a frozen function's local -- holds file-backed, reclaimable pages instead of anonymous memory. Returns the
+    mappings now backing `df` (empty: no-op, spill not configured or `df` small)."""
+    res = spill_frame(df)
+    if res is df:
+        return []
+    if not (res.columns.equals(df.columns) and res.index is df.index and res.dtypes.equals(df.dtypes)):
+        raise DuckDBLimitError("spill_in_place: spilled frame differs in columns / index / dtypes")
+    object.__setattr__(df, "_mgr", res._mgr)
+    return _mappings(df)
+
+
+def _mappings(df: pd.DataFrame) -> list:
+    seen, out = set(), []
+    for b in df._mgr.blocks:
+        v = b.values
+        while isinstance(v, np.ndarray) and not isinstance(v, np.memmap) and isinstance(getattr(v, "base", None), np.ndarray):
+            v = v.base
+        m = getattr(v, "_mmap", None) if isinstance(v, np.memmap) else None
+        if m is not None and id(m) not in seen:
+            seen.add(id(m))
+            out.append(m)
+    return out
+
+
+_KEPT_OUT: list = []                                     # mappings page_cache_bounded also reclaims each pass
+
+
+@contextlib.contextmanager
+def kept_paged_out(maps: list):
+    """While the body runs, page_cache_bounded's thread also reclaims these mappings' resident pages (MADV_PAGEOUT)
+    each pass; values are untouched (a read faults them back from the file). The mappings are released on exit."""
+    entry = list(maps)
+    _KEPT_OUT.append(entry)
+    try:
+        yield entry
+    finally:
+        _KEPT_OUT.remove(entry)
+        entry.clear()
+
+
+def _pageout_kept() -> int:
+    n = 0
+    for entry in list(_KEPT_OUT):
+        for m in list(entry):
+            try:
+                n += len(m) if _advise_out(m) else 0
+            except (ValueError, OSError):                # closed mapping: nothing resident
+                continue
+    return n
 
 
 def drop_resident(df: pd.DataFrame) -> int:
