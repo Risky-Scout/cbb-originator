@@ -347,6 +347,13 @@ def plan_run_pmfs(P: Paths, now: datetime, durable: dict | None = None) -> list[
     return out
 
 
+# PMF_LONG_TO_COMPACT holds the long frame twice plus the compact bytes while it verifies (QA 2026-11-16: 1,383,541 long
+# rows -> > 1.5 GB). The retention unit runs at MemoryHigh=500M / MemoryMax=800M, so it compacts only files up to this
+# many long rows (~1.9 kB/row at the verification peak); a larger legacy file is KEPT (unchanged, still read by
+# pmf_evidence.read) and reported for a one-off migration in a unit with the heavy-job memory limits.
+PMF_COMPACT_MAX_LONG_ROWS = 100_000
+
+
 def plan_pmf_compact(P: Paths, now: datetime) -> list[dict]:
     """Legacy LONG forecast-snapshot pmfs.parquet (written before the compact format) older than 1 h. Tick PMF files are
     never rewritten: their sha256 is sealed in CHAIN.jsonl / tick.json (prod/ops/ticks is protected)."""
@@ -358,7 +365,13 @@ def plan_pmf_compact(P: Paths, now: datetime) -> list[dict]:
             import pyarrow.parquet as pq
             if "probabilities" in pq.read_schema(f).names:
                 continue
+            rows = pq.ParquetFile(f).metadata.num_rows
         except Exception:                                  # noqa: BLE001 -- unreadable: never touched
+            continue
+        if rows > PMF_COMPACT_MAX_LONG_ROWS:
+            out.append(_item("PMF_LONG_TO_COMPACT", f, "KEEP", f"legacy long-format file of {rows} rows exceeds the "
+                             f"retention unit's memory budget ({PMF_COMPACT_MAX_LONG_ROWS} rows): kept unchanged; "
+                             "one-off migration with the heavy-job memory limits", long_rows=rows))
             continue
         out.append(_item("PMF_LONG_TO_COMPACT", f, "COMPACT", "legacy long-format forecast PMF file -> compact "
                          "canonical form (replaced only when it reads back as the identical long frame)", sha256=_sha(f)))
@@ -526,12 +539,14 @@ def plan(paths: Paths, now=None) -> dict:
     items = []
     for fn in PLANNERS:
         items += fn(paths, now)
+    kept = [i for i in items if i["action"] == "KEEP"]          # reported, never acted on
+    items = [i for i in items if i["action"] != "KEEP"]
     by = {}
     for i in items:
         b = by.setdefault(i["rule"], {"items": 0, "bytes": 0})
         b["items"] += 1
         b["bytes"] += i["bytes"]
-    return {"at": now.isoformat(), "base": str(paths.base), "items": items, "by_rule": by,
+    return {"at": now.isoformat(), "base": str(paths.base), "items": items, "kept": kept, "by_rule": by,
             "bytes_affected": sum(i["bytes"] for i in items), "model_audit": model_audit(paths),
             "run_terminal_states": run_census(paths),
             "footprint_before": footprint(paths)}

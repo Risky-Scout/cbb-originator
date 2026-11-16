@@ -86,6 +86,58 @@ RUN_REF = "market_pmfs.ref.json"
 MIGRATION_SUFFIX = ".migration.json"            # pmfs.parquet.migration.json: legacy long -> compact (retention)
 
 
+STREAM_BATCH_ROWS = 65_536
+
+
+def _durable_vectors(durable: Path, run_id: str) -> dict:
+    """receipt -> (support_min, float64 vector) of run_id's PMFs in a durable evidence file. A legacy LONG file is read
+    as three columns only (receipt, outcome, probability: QA 2026-11-16, the 14-column read of a 1.38M-row file held
+    ~950 MB inside the 500M retention unit); its vectors are cut exactly as pmf_compact.compact cuts them (contiguous
+    receipt rows, contiguous ascending outcomes -- anything else refuses)."""
+    import pyarrow.parquet as pq
+    flt = [("run_id", "==", run_id)]
+    if "probabilities" in pq.read_schema(durable).names:
+        return {r.prediction_receipt_id: (int(r.support_min), np.asarray(r.probabilities, dtype=np.float64))
+                for r in read_compact(durable, run_id=run_id).itertuples(index=False)}
+    import pyarrow.compute as pc
+    out, done = {}, set()
+    cur, outs, probs = None, [], []
+
+    def close():
+        o = np.concatenate(outs)
+        if not (np.diff(o) == 1).all():
+            raise PMFEvidenceError(f"{durable}: {cur}: outcomes are not a contiguous ascending support")
+        out[cur] = (int(o[0]), np.concatenate(probs).astype(np.float64, copy=False))
+        done.add(cur)
+    pf = pq.ParquetFile(durable)                              # streamed: memory ~ one batch + this run's vectors
+    for bt in pf.iter_batches(batch_size=STREAM_BATCH_ROWS,
+                              columns=["prediction_receipt_id", "outcome", "probability", "run_id"]):
+        bt = bt.filter(pc.equal(bt.column("run_id"), run_id))
+        n = bt.num_rows
+        if not n:
+            continue
+        rid = bt.column("prediction_receipt_id")
+        if hasattr(rid, "dictionary_decode"):
+            rid = rid.dictionary_decode()
+        outc = bt.column("outcome").to_numpy()
+        prob = bt.column("probability").to_numpy()
+        change = pc.not_equal(rid.slice(1), rid.slice(0, n - 1)).to_numpy(zero_copy_only=False)
+        starts = np.flatnonzero(np.r_[True, change])
+        keys = rid.take(starts).to_pylist()
+        for k, a, b in zip(keys, starts, np.r_[starts[1:], n]):
+            if k != cur:
+                if cur is not None:
+                    close()
+                if k in done:
+                    raise PMFEvidenceError(f"{durable}: a PMF's rows are not contiguous in the long frame")
+                cur, outs, probs = k, [], []
+            outs.append(outc[a:b].copy())
+            probs.append(prob[a:b].copy())
+    if cur is not None:
+        close()
+    return out
+
+
 def run_copy_verified(run_dir: Path, run_id: str, durable: Path) -> tuple[bool, str]:
     """True only when the durable evidence file holds EVERY PMF of runs/<run_id>/market_pmfs.parquet bit for bit (same
     receipt id, support 0..k, identical float64 bytes)."""
@@ -94,8 +146,7 @@ def run_copy_verified(run_dir: Path, run_id: str, durable: Path) -> tuple[bool, 
         return False, "run PMF file absent"
     if not durable.exists():
         return False, "durable evidence absent"
-    have = {r.prediction_receipt_id: (int(r.support_min), np.asarray(r.probabilities, dtype=np.float64))
-            for r in read_compact(durable).itertuples(index=False)}
+    have = _durable_vectors(durable, run_id)
     mp = pd.read_parquet(src, columns=["game_id", "player_id", "market", "pmf"])
     if not len(mp):
         return False, "empty run PMF file"
@@ -184,9 +235,11 @@ def write(path: Path, df: pd.DataFrame) -> dict:
             "pmfs": int(df["prediction_receipt_id"].nunique()) if len(df) else 0, "format": "COMPACT"}
 
 
-def read_compact(path: Path) -> pd.DataFrame:
-    """The compact canonical rows (a legacy long-schema file is compacted on read)."""
-    df = pd.read_parquet(path)
+def read_compact(path: Path, run_id: str | None = None) -> pd.DataFrame:
+    """The compact canonical rows (a legacy long-schema file is compacted on read). run_id: only that run's rows (a
+    parquet row filter -- every row of one receipt carries the receipt's run_id, so whole PMFs are kept), so verifying
+    one run never materializes a whole multi-run evidence file (retention runs at MemoryHigh=500M)."""
+    df = pd.read_parquet(path, filters=[("run_id", "==", run_id)]) if run_id is not None else pd.read_parquet(path)
     if "probabilities" in df.columns:
         miss = [c for c in PCX.PMF_COLUMNS if c not in df.columns]
         if miss:

@@ -330,3 +330,73 @@ def test_legacy_long_forecast_pmfs_become_compact_with_audit_link(tmp_path):
     assert side["old_sha256"] == old_sha and side["new_sha256"] == PE.sha256(fc)
     assert "probabilities" not in pd.read_parquet(ops / "ticks" / "K1" / PE.FILE).columns   # sealed: untouched
     assert len(PE.read_run_pmfs(d)) == 2
+
+
+def test_legacy_long_file_over_the_memory_budget_is_kept_and_reported(tmp_path, monkeypatch):
+    """PMF_LONG_TO_COMPACT only compacts files the 500M retention unit can verify; a larger legacy file is kept
+    byte-for-byte, listed under `kept`, and never counted as affected bytes."""
+    b = tmp_path / "cbb"
+    prod, ops = b / "prod", b / "prod" / "ops"
+    d = prod / "runs" / "R1"
+    d.mkdir(parents=True)
+    pd.DataFrame({"game_id": ["G1"], "player_id": ["P1"], "market": ["PTS"], "team_id": ["T"], "projection": [1.0],
+                  "method": ["m"], "pmf": [[0.25, 0.5, 0.25]]}).to_parquet(d / PE.RUN_FILE, index=False)
+    fc = ops / "forecasts" / "2026-11-04" / "F1" / PE.FILE
+    fc.parent.mkdir(parents=True)
+    PE.from_run(d, "R1", "2026-11-04T18:00:00Z", "M").to_parquet(fc, index=False)
+    os.utime(fc, (0, 0))
+    before = PE.sha256(fc)
+    monkeypatch.setattr(SR, "PMF_COMPACT_MAX_LONG_ROWS", 2)
+    P = SR.Paths(b, prod, b / "staging" / "tmp" / "duckdb")
+    p = SR.plan(P, now=NOW)
+    assert "PMF_LONG_TO_COMPACT" not in p["by_rule"]
+    assert [(k["rule"], k["action"], k["long_rows"]) for k in p["kept"]] == [("PMF_LONG_TO_COMPACT", "KEEP", 3)]
+    SR.run(P, apply=True, now=NOW)
+    assert PE.sha256(fc) == before and not (fc.parent / (PE.FILE + PE.MIGRATION_SUFFIX)).exists()
+
+
+def test_run_copy_verified_reads_only_the_runs_rows(tmp_path):
+    """A durable file holding several runs verifies each run from its own rows only (parquet run_id filter); a durable
+    file holding only another run's PMFs never verifies."""
+    runs, ops = tmp_path / "runs", tmp_path / "ops"
+    a = _pmf_run(runs, ops, "RA", 3)
+    bdir = _pmf_run(runs, ops, "RB", 3)
+    both = pd.concat([pd.read_parquet(ops / "ticks" / f"K-{r}" / PE.FILE) for r in ("RA", "RB")], ignore_index=True)
+    f = ops / "ticks" / "K-both" / PE.FILE
+    f.parent.mkdir(parents=True)
+    both.to_parquet(f, index=False)
+    assert PE.run_copy_verified(a, "RA", f)[0] and PE.run_copy_verified(bdir, "RB", f)[0]
+    only_b = ops / "ticks" / "K-RB" / PE.FILE
+    assert not PE.run_copy_verified(a, "RA", only_b)[0]
+    assert len(PE.read_compact(f, run_id="RA")) == 2 and len(PE.read_compact(f)) == 4
+
+
+def test_durable_vectors_long_equals_compact(tmp_path):
+    """The three-column legacy-long read yields exactly the vectors of the compact form of the same file."""
+    runs, ops = tmp_path / "runs", tmp_path / "ops"
+    _pmf_run(runs, ops, "RA", 3)
+    f = ops / "ticks" / "K-RA" / PE.FILE
+    long_v = PE._durable_vectors(f, "RA")
+    g = tmp_path / "compact.parquet"
+    g.write_bytes(PE._bytes(PE.read(f)))
+    comp_v = PE._durable_vectors(g, "RA")
+    assert long_v.keys() == comp_v.keys() and len(long_v) == 2
+    assert all(long_v[k][0] == comp_v[k][0] and long_v[k][1].tobytes() == comp_v[k][1].tobytes() for k in long_v)
+    assert PE._durable_vectors(f, "OTHER") == {}
+
+
+def test_durable_vectors_stream_across_batches(tmp_path, monkeypatch):
+    """Batch boundaries inside a PMF give the same vectors; a PMF split by another receipt refuses."""
+    runs, ops = tmp_path / "runs", tmp_path / "ops"
+    _pmf_run(runs, ops, "RA", 3)
+    f = ops / "ticks" / "K-RA" / PE.FILE
+    want = PE._durable_vectors(f, "RA")
+    monkeypatch.setattr(PE, "STREAM_BATCH_ROWS", 1)
+    got = PE._durable_vectors(f, "RA")
+    assert got.keys() == want.keys() and all(got[k][1].tobytes() == want[k][1].tobytes() for k in got)
+    lg = pd.read_parquet(f)
+    bad = pd.concat([lg.iloc[:1], lg.iloc[3:4], lg.iloc[1:3], lg.iloc[4:]], ignore_index=True)
+    g = tmp_path / "bad.parquet"
+    bad.to_parquet(g, index=False)
+    with pytest.raises(PE.PMFEvidenceError):
+        PE._durable_vectors(g, "RA")
