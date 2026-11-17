@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -103,6 +104,38 @@ def test_extra_file_in_release_is_refused(app):
     (app["rel"] / "pkg" / "planted.py").write_text("import os\n")
     r = _run(app, "preflight")
     assert r.returncode == 3 and "outside its manifest" in r.stderr
+
+
+def _tree_digest(root: Path) -> dict:
+    import hashlib
+    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def test_stray_bytecode_cache_in_release_is_refused_and_release_left_unchanged(app):
+    """Recurrence guard for the 2026-11-16 17:09Z incident: an operator ran the release's Python as root from inside the
+    release without -B / PYTHONDONTWRITEBYTECODE, which wrote unmanifested __pycache__/*.pyc files; every wrapped unit
+    then refused (exit 3). Reproduced with a REAL import (not a hand-planted file) in an isolated temporary release."""
+    rel, man = app["rel"], app["rel"].parent / f"{app['sha']}.sha256sums"
+    manifested, man_bytes = _tree_digest(rel), man.read_bytes()
+    assert _run(app, "preflight").returncode == 0
+
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")}
+    # control: the safe form (-B, as the units and runbook require) writes nothing and the release still verifies
+    subprocess.run([sys.executable, "-B", "-c", "import pkg.m"], cwd=rel, env=env, check=True, timeout=60)
+    assert _tree_digest(rel) == manifested and _run(app, "preflight").returncode == 0
+    # the incident form: same import without -B leaves cached bytecode inside the release
+    subprocess.run([sys.executable, "-c", "import pkg.m"], cwd=rel, env=env, check=True, timeout=60)
+    stray = sorted(str(p.relative_to(rel)) for p in rel.rglob("*.pyc"))
+    assert stray and all(s.startswith("pkg/__pycache__/m.") for s in stray)
+
+    for cmd in (["preflight"], ["tick"], ["morning-stage", "forecast"]):
+        r = _run(app, *cmd, CBB_SCHEDULER_ROLE="PRIMARY_WRITER")
+        assert r.returncode == 3 and "holds files outside its manifest" in r.stderr, (cmd, r.stderr)
+
+    # the refusal is read-only: manifested files, the manifest and the stray cache are exactly as they were
+    after = _tree_digest(rel)
+    assert {k: v for k, v in after.items() if k not in stray} == manifested
+    assert man.read_bytes() == man_bytes and sorted(k for k in after if k.endswith(".pyc")) == stray
 
 
 def test_missing_release_manifest_is_refused(app):
