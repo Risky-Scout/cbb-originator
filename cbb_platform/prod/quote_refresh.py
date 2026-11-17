@@ -189,12 +189,26 @@ def price_collection(game: dict, src: dict, collection: Path, slate: pd.DataFram
     dist, expo, cands, info = _dist_and_exposure(src, gid)
     out = {"game_id": gid, "pmf_source": src["kind"], "pmf_source_id": src["id"], "pmfs": int(len(dist)), "receipts": 0}
     q = QT.load_collected(collection)
+    # PRICING INSTANT = the moment the quote is in hand: max(run start, collector_received_at). Freshness measured at the
+    # run start made every quote received during this run POST_CUTOFF_QUOTE (2026-11-12 certification FAIL: 10 valid
+    # quotes, 0 priced). No look-ahead: the PMF (src.prediction_as_of <= run start) predates the quote; the boundary is
+    # the game's OFFICIAL CUTOFF (not tip): a quote received at / after the cutoff is never a pre-cutoff offer.
+    priced_at = max(now, _utc(json.loads(Path(collection).read_text())["collector_received_at"]))
+    out["priced_at"] = priced_at.isoformat()
     if len(q):
         q = MT.match_games(q, slate, tidx)
         q = MT.match_players(q, cands, None)
-        q = BO.quote_freshness(q, now, slate.set_index("canonical_game_id")["start_time"].to_dict())
+        q = BO.quote_freshness(q, priced_at, {gid: _utc(game["cutoff"])})
     out["quote_rows"] = int(len(q))
     out["valid_quote_rows"] = int((q["quote_status"] == "VALID").sum()) if len(q) else 0
+    props = q[q["stat"].notna()] if len(q) else q
+    pm = props["canonical_player_id"].map(lambda v: isinstance(v, str)) if len(props) else pd.Series(dtype=bool)
+    out["prop_quote_rows"] = int(len(props))
+    out["player_quotes_matched"] = int(pm.sum()) if len(props) else 0
+    out["player_quotes_unmatched"] = int((~pm).sum()) if len(props) else 0
+    out["unmatched_players"] = sorted(props.loc[~pm, "provider_player_name"].astype(str).unique().tolist())[:50] if len(props) else []
+    out["quote_parse_errors"] = int((q["suppression_reason"] == "INVALID_QUOTE").sum()) if len(q) else 0
+    out["post_cutoff_quotes"] = int((q["suppression_reason"] == "POST_CUTOFF_QUOTE").sum()) if len(q) else 0
     if not len(dist):
         return {**out, "status": "NO_PMF_ROWS"}, [], q
     meta = {"run_id": refresh_id, "prediction_as_of": src["prediction_as_of"], "model_version": info["model_version"],
@@ -202,7 +216,7 @@ def price_collection(game: dict, src: dict, collection: Path, slate: pd.DataFram
     bodies = SD.quote_side_records(dist, q, expo, meta)
     rid = dist.set_index(["player_id", "market"])["prediction_receipt_id"].to_dict()
     for b in bodies:
-        b.update({"quote_refresh_id": refresh_id, "quote_refresh_version": QR_VERSION, "priced_at": now.isoformat(),
+        b.update({"quote_refresh_id": refresh_id, "quote_refresh_version": QR_VERSION, "priced_at": priced_at.isoformat(),
                   "tier": request["tier"], "tip_utc": _utc(game["scheduled_tip_utc"]).isoformat(),
                   "cutoff_utc": _utc(game["cutoff"]).isoformat(), "window": PC.VALIDATED_PREDICTION_CUTOFF,
                   "pmf_source_kind": src["kind"], "pmf_source_id": src["id"], "pmf_sha256": info["pmf_sha256"],
@@ -234,7 +248,7 @@ def reprice(ops_root: Path, game: dict, src: dict, collection: Path, slate: pd.D
 
 # ============================================================================ quote-integration certification
 CERT_DISCOVERY_BATCH_SIZE = 8    # market discovery (1 credit each) on at most this many candidates per region pass
-CERT_DISCOVERY_REGIONS = (PC.ODDS_REGIONS, "us2")   # `us` first; `us2` ONLY when `us` showed no supported market
+CERT_DISCOVERY_REGIONS = (OF.BOOKS,)   # ONE pass with the explicit approved bookmakers (us + us2 books in one request)
 CERT_STRONG_MARKETS = 3          # early-stop discovery once a candidate advertises >= 3 supported markets
 CERT_STRONG_BOOKS = 2            #   ... on >= 2 bookmakers (stop rule only: weaker supported candidates stay selectable)
 CERT_MAX_ODDS_EVENTS = 2         # event-odds requests per attempt (the top-ranked event; one more if it returned none)
@@ -369,6 +383,7 @@ def _accounting(rep: dict, session: OA.Session) -> dict:
             "counts_toward_certification_limit": counts,
             "us_market_discovery_calls": sum(1 for e in mk if (e.get("params") or {}).get("regions") == "us"),
             "us2_market_discovery_calls": sum(1 for e in mk if (e.get("params") or {}).get("regions") == "us2"),
+            "bookmaker_market_discovery_calls": sum(1 for e in mk if (e.get("params") or {}).get("bookmakers")),
             "supported_markets_found": sum(1 for r in rep.get("discovery") or [] if r.get("supported_market_count")),
             "requests": _reqs(session)}
 
@@ -464,6 +479,74 @@ def _reqs(session: OA.Session) -> list[dict]:
 
 
 # ============================================================================ one scheduler wake
+# ============================================================================ ingestion diagnostics (one receipt per run)
+INGESTION_FILE = "ingestion_receipts.jsonl"
+ZERO_MARKET_CAUSES = ("NO_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE", "API_ERROR",
+                      "QUOTE_PARSE_ERROR", "CUTOFF_PASSED")
+
+
+def zero_market_cause(row: dict, req: dict | None) -> str:
+    """Why one due game ended this run with no priced market (never a generic NO_MARKET). MARKETS_PRICED otherwise;
+    NO_VALID_PRICED_QUOTE only when quotes matched and parsed but none could be priced (counts are in the receipt)."""
+    res = row.get("result")
+    if row.get("reason") == "NO_MATCHED_ODDS_EVENT":
+        return "EVENT_MAPPING_FAILURE"
+    if res in ("FAILED", "BUDGET_EXHAUSTED") or (req or {}).get("status") in ("FAILED", "BUDGET_EXHAUSTED"):
+        return "API_ERROR"
+    if not isinstance(res, dict):
+        return "API_ERROR"
+    if res.get("receipts", 0) > 0:
+        return "MARKETS_PRICED"
+    if (req or {}).get("discovery_status") == OF.NO_SUPPORTED or not res.get("prop_quote_rows"):
+        return "NO_PROP_MARKETS_POSTED"
+    if res.get("quote_parse_errors", 0) >= res.get("prop_quote_rows", 0):
+        return "QUOTE_PARSE_ERROR"
+    if not res.get("player_quotes_matched"):
+        return "PLAYER_MAPPING_FAILURE"
+    if res.get("post_cutoff_quotes", 0) >= res.get("player_quotes_matched", 0):
+        return "CUTOFF_PASSED"
+    return "NO_VALID_PRICED_QUOTE"
+
+
+def ingestion_receipt(ops_root: Path, rep: dict, reqs: list[dict], listed: int, matched: dict, session, now) -> dict:
+    """The per-run quote-ingestion receipt (appended to quotes/<ET date>/ingestion_receipts.jsonl) with the daily quota
+    telemetry: credits this run, credits today (this file + this run), provider quota headers."""
+    by_game = {r["game_id"]: r for r in reqs}
+    due = [g for g in rep["games"] if g.get("due") or g.get("reason") == "NO_MATCHED_ODDS_EVENT"]
+    causes = {g["game_id"]: zero_market_cause(g, by_game.get(g["game_id"])) for g in due}
+    res = [g["result"] for g in due if isinstance(g.get("result"), dict)]
+    live = lambda st: st in LIVE_STATUSES                                     # noqa: E731
+    day = _utc(now).tz_convert("America/New_York").date().isoformat()
+    path = Path(ops_root) / "quotes" / day / INGESTION_FILE
+    prior = sum(int(json.loads(l).get("credits_this_run") or 0) for l in path.read_text().splitlines() if l.strip()) \
+        if path.exists() else 0
+    credits = sum(int(r.get("credits") or 0) for r in reqs)
+    zero = sorted({c for c in causes.values() if c != "MARKETS_PRICED"})
+    out = {"record_type": "QUOTE_INGESTION_RECEIPT", "version": QR_VERSION, "refresh_id": rep["refresh_id"],
+           "at": _utc(now).isoformat(), "et_date": day, "bookmakers_requested": list(PC.ODDS_BOOKMAKERS),
+           "events_discovered": int(listed), "canonical_games_matched": len(matched),
+           "due_games": len(due), "unmatched_games": sorted(g for g, c in causes.items() if c == "EVENT_MAPPING_FAILURE"),
+           "market_discovery_calls": sum(live(r.get("markets_status")) for r in reqs),
+           "market_discovery_cache_hits": sum(r.get("markets_status") == "CACHE_HIT" for r in reqs),
+           "games_with_supported_props": sum(r.get("discovery_status") == OF.DISCOVERED for r in reqs),
+           "games_with_zero_supported_props": sum(r.get("discovery_status") == OF.NO_SUPPORTED for r in reqs),
+           "event_odds_calls": sum(live(r.get("odds_status")) for r in reqs),
+           "quote_rows_returned": sum(int(x.get("prop_quote_rows") or 0) for x in res),
+           "player_quotes_matched": sum(int(x.get("player_quotes_matched") or 0) for x in res),
+           "player_quotes_unmatched": sum(int(x.get("player_quotes_unmatched") or 0) for x in res),
+           "unmatched_players": sorted({n for x in res for n in x.get("unmatched_players") or []})[:100],
+           "books_observed": sorted({b for r in reqs for b in r.get("books_observed") or []}),
+           "markets_observed": sorted({m for r in reqs for m in r.get("markets_observed") or []}),
+           "priced_receipts": sum(int(x.get("receipts") or 0) for x in res),
+           "game_causes": causes, "zero_market_causes": zero,
+           "BOARD_MARKET_CAUSE": "MARKETS_PRICED" if "MARKETS_PRICED" in causes.values() else (zero or ["NO_DUE_GAME"]),
+           "credits_this_run": credits, "credits_today": prior + credits,
+           "quota_used": getattr(session, "quota_used", None), "quota_remaining": getattr(session, "quota_remaining", None),
+           "quota_last": next((r.get("quota_last") for r in reversed(reqs) if r.get("quota_last") is not None), None)}
+    OS.append_jsonl(path, [out])
+    return out
+
+
 def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     """One wake of the quote scheduler. Requests only due games; reprices; never fits or simulates."""
     now = ctx.now()
@@ -551,6 +634,8 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     rep["credits"] = sum(int(r.get("credits") or 0) for r in reqs)
     rep["receipts"] = sum(int((x.get("result") or {}).get("receipts", 0)) for x in rep["games"] if isinstance(x.get("result"), dict))
     rep["status"] = "RAN"
+    listed = lst.get("events") if lst else None
+    rep["ingestion"] = ingestion_receipt(ctx.ops_root, rep, reqs, 0 if listed is None else len(listed), ev, session, now)
     return rep
 
 

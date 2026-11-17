@@ -157,10 +157,11 @@ def _snapshot(ops: Path, sid: str, aso: pd.Timestamp, lam: float) -> Path:
     return d / PE.FILE
 
 
-def _collection(root: Path, now: pd.Timestamp, line: float, over: int, under: int, book="fanduel") -> Path:
+def _collection(root: Path, now: pd.Timestamp, line: float, over: int, under: int, book="fanduel",
+                received: pd.Timestamp | None = None) -> Path:
     upd = (now - pd.Timedelta(minutes=3)).isoformat()
     ev = {"id": "E1", "home_team": "Home U", "away_team": "Away U", "commence_time": TIP.isoformat(),
-          "collector_received_at": (now - pd.Timedelta(minutes=1)).isoformat(),
+          "collector_received_at": (received if received is not None else now - pd.Timedelta(minutes=1)).isoformat(),
           "bookmakers": [{"key": book, "title": book, "last_update": upd, "markets": [
               {"key": "player_points", "last_update": upd, "outcomes": [
                   {"name": "Over", "description": "John Smith", "price": over, "point": line},
@@ -209,6 +210,89 @@ def test_reprice_uses_persisted_pmf_exactly_and_never_refits(tmp_path, monkeypat
     assert o["cutoff_utc"] == CUT.isoformat() and o["sportsbook"] == "fanduel" and o["line"] == 14.5
     assert PE.sha256(f) == before                                          # the PMF is never rewritten
     assert EX.REFRESH_RECEIPTS == QR.REFRESH_FILE
+
+
+def test_quote_received_during_the_run_is_priced_at_receipt_not_suppressed(tmp_path, monkeypatch):
+    """Regression (2026-11-12 certification FAIL, production QUOTE_INTEGRATION_UNVALIDATED since): the run's clock is
+    read BEFORE the request, so every real quote arrives a few seconds AFTER `now`. Freshness measured at `now` marked
+    all of them POST_CUTOFF_QUOTE and nothing was ever priced. The pricing instant is the receipt instant."""
+    _no_model_work(monkeypatch)
+    ops = tmp_path / "ops"
+    _snapshot(ops, "F1", T(400), 15.0)
+    now = T(200)
+    src = QR.latest_pmf_source(ops, "G-1", CUT, now)
+    rx = now + pd.Timedelta(seconds=4)                                     # the provider answered 4 s into the run
+    col = _collection(tmp_path / "col", now, 14.5, -115, -105, received=rx)
+    out, bodies, q = QR.price_collection(GAME, src, col, SLATE, TIDX, now, "Q1", {"tier": "T6H_T2H", "event_id": "E1"})
+    assert out["status"] == "REPRICED" and out["receipts"] == 2 and out["post_cutoff_quotes"] == 0
+    assert (q["quote_status"] == "VALID").all() and out["priced_at"] == rx.isoformat()
+    assert {b["priced_at"] for b in bodies} == {rx.isoformat()}
+    assert {b["prediction_as_of"] for b in bodies} <= {T(400).isoformat(), str(T(400))}    # PMF predates the quote
+    assert out["player_quotes_matched"] == 2 and out["player_quotes_unmatched"] == 0
+
+
+def test_quote_received_at_or_after_the_official_cutoff_is_never_priced(tmp_path, monkeypatch):
+    _no_model_work(monkeypatch)
+    ops = tmp_path / "ops"
+    _snapshot(ops, "F1", T(400), 15.0)
+    now = T(1)
+    src = QR.latest_pmf_source(ops, "G-1", CUT, now)
+    for rx in (CUT, CUT + pd.Timedelta(seconds=1)):                         # before tip, but at / after the cutoff
+        col = _collection(tmp_path / f"col{rx.second}", now, 14.5, -115, -105, received=rx)
+        out, bodies, q = QR.price_collection(GAME, src, col, SLATE, TIDX, now, "Q1", {"tier": "T30M_CUTOFF", "event_id": "E1"})
+        assert not bodies and out["status"] == "NO_MATCHED_VALID_QUOTE" and out["post_cutoff_quotes"] == 2
+        assert set(q["suppression_reason"]) == {"POST_CUTOFF_QUOTE"}
+        assert QR.zero_market_cause({"due": True, "result": out}, {"discovery_status": "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"}) \
+            == "CUTOFF_PASSED"
+
+
+@pytest.mark.parametrize("row,req,cause", [
+    ({"due": False, "reason": "NO_MATCHED_ODDS_EVENT"}, None, "EVENT_MAPPING_FAILURE"),
+    ({"due": True, "result": "FAILED"}, {"status": "FAILED"}, "API_ERROR"),
+    ({"due": True, "result": "BUDGET_EXHAUSTED"}, {"status": "BUDGET_EXHAUSTED"}, "API_ERROR"),
+    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 0}}, {"discovery_status": "NO_SUPPORTED_PLAYER_PROP_MARKETS"},
+     "NO_PROP_MARKETS_POSTED"),
+    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "quote_parse_errors": 6}}, {}, "QUOTE_PARSE_ERROR"),
+    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "player_quotes_matched": 0}}, {}, "PLAYER_MAPPING_FAILURE"),
+    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "player_quotes_matched": 6, "post_cutoff_quotes": 6}}, {},
+     "CUTOFF_PASSED"),
+    ({"due": True, "result": {"receipts": 4, "prop_quote_rows": 6}}, {}, "MARKETS_PRICED"),
+])
+def test_zero_market_causes_are_distinct_never_generic(row, req, cause):
+    assert QR.zero_market_cause(row, req) == cause
+    assert set(QR.ZERO_MARKET_CAUSES) == {"NO_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE",
+                                          "API_ERROR", "QUOTE_PARSE_ERROR", "CUTOFF_PASSED"}
+
+
+def test_ingestion_receipt_reports_every_diagnostic_and_accumulates_daily_credits(tmp_path):
+    ops = tmp_path / "ops"
+
+    class S:
+        quota_used, quota_remaining = 120, 4_999_880
+    rep = {"refresh_id": "Q1", "games": [
+        {"game_id": "G-1", "due": True, "result": {"receipts": 2, "prop_quote_rows": 4, "player_quotes_matched": 3,
+                                                   "player_quotes_unmatched": 1, "unmatched_players": ["Jon Doe"]}},
+        {"game_id": "G-2", "due": True, "result": {"receipts": 0, "prop_quote_rows": 0}},
+        {"game_id": "G-3", "due": False, "reason": "NO_MATCHED_ODDS_EVENT"}]}
+    reqs = [{"game_id": "G-1", "markets_status": "FETCHED", "odds_status": "FETCHED", "credits": 4, "quota_last": 3,
+             "discovery_status": "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED", "books_observed": ["draftkings", "fanduel"],
+             "markets_observed": ["player_points"]},
+            {"game_id": "G-2", "markets_status": "FETCHED", "odds_status": None, "credits": 1,
+             "discovery_status": "NO_SUPPORTED_PLAYER_PROP_MARKETS", "books_observed": [], "markets_observed": []}]
+    now = T(200)
+    r = QR.ingestion_receipt(ops, rep, reqs, 40, {"G-1": "E1", "G-2": "E2"}, S(), now)
+    want = {"events_discovered": 40, "canonical_games_matched": 2, "unmatched_games": ["G-3"], "market_discovery_calls": 2,
+            "games_with_supported_props": 1, "games_with_zero_supported_props": 1, "event_odds_calls": 1,
+            "quote_rows_returned": 4, "player_quotes_matched": 3, "player_quotes_unmatched": 1,
+            "unmatched_players": ["Jon Doe"], "books_observed": ["draftkings", "fanduel"], "markets_observed": ["player_points"],
+            "quota_used": 120, "quota_remaining": 4_999_880, "quota_last": 3, "credits_this_run": 5, "credits_today": 5,
+            "game_causes": {"G-1": "MARKETS_PRICED", "G-2": "NO_PROP_MARKETS_POSTED", "G-3": "EVENT_MAPPING_FAILURE"},
+            "BOARD_MARKET_CAUSE": "MARKETS_PRICED", "bookmakers_requested": list(PC.ODDS_BOOKMAKERS)}
+    assert {k: r[k] for k in want} == want
+    r2 = QR.ingestion_receipt(ops, {**rep, "games": rep["games"][1:]}, reqs[1:], 40, {"G-2": "E2"}, S(), now)
+    assert r2["credits_today"] == 6 and r2["BOARD_MARKET_CAUSE"] == ["EVENT_MAPPING_FAILURE", "NO_PROP_MARKETS_POSTED"]
+    lines = (ops / "quotes" / DAY / QR.INGESTION_FILE).read_text().splitlines()
+    assert len(lines) == 2 and json.loads(lines[0])["record_type"] == "QUOTE_INGESTION_RECEIPT"
 
 
 def test_latest_pmf_is_used_and_post_cutoff_snapshot_ignored(tmp_path):

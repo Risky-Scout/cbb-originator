@@ -71,7 +71,12 @@ def test_3_4_discovery_first_and_only_advertised_markets_requested(tmp_path):
     assert paths[1:] == ["/v4/sports/basketball_ncaab/events/e1/markets", "/v4/sports/basketball_ncaab/events/e1/odds"]
     odds_params = fake.calls[-1][1]
     assert odds_params["markets"] == "player_points,player_rebounds"         # the advertised subset, production order
-    assert odds_params["regions"] == "us" and "apiKey" in odds_params
+    books = ",".join(OA.PC.ODDS_BOOKMAKERS)                                    # explicit approved books, never regions
+    assert odds_params["bookmakers"] == books and "regions" not in odds_params and "apiKey" in odds_params
+    assert fake.calls[1][1]["bookmakers"] == books and "regions" not in fake.calls[1][1]
+    rc = OF.collection_receipt(p)
+    assert rc["books_observed"] == ["draftkings", "fanduel"] and rc["bookmakers_requested"] == list(OA.PC.ODDS_BOOKMAKERS)
+    assert rc["markets_observed"] == ["player_points", "player_rebounds"] and rc["odds_credits"] == 2
     doc = json.loads(p.read_text())
     assert doc["market_discovery"]["requested_markets"] == ["player_points", "player_rebounds"]
     assert doc["market_discovery"]["bookmakers_advertising"] == 2

@@ -55,6 +55,12 @@ def event_odds(ev: dict, books: list[dict]) -> dict:
     return {**ev, "bookmakers": books}
 
 
+def _wanted(b: dict, params: dict) -> bool:
+    """The provider returns only the bookmakers requested with bookmakers=...; regions=... returns every book."""
+    keys = params.get("bookmakers")
+    return not keys or b.get("key") in set(str(keys).split(","))
+
+
 class FakeOdds:
     """Stands in for requests.get against The Odds API: serves the events listing, per-event market discovery (the
     keys each bookmaker of the event's odds payload carries; 1 credit) and per-event odds, charges the documented cost
@@ -88,8 +94,9 @@ class FakeOdds:
             body = {k: src.get(k) for k in ("id", "sport_key", "sport_title", "commence_time", "home_team", "away_team")}
             body["bookmakers"] = [{"key": b["key"], "title": b.get("title"), "last_update": b.get("last_update"),
                                    "markets": [{"key": m["key"], "last_update": m.get("last_update")}
-                                               for m in b.get("markets", [])]} for b in src.get("bookmakers", [])]
-            return _Resp(200, body, self._hdr(1))
+                                               for m in b.get("markets", [])]} for b in src.get("bookmakers", [])
+                                 if _wanted(b, params)]
+            return _Resp(200, body, self._hdr(OA.region_equivalents(params) or 1))
         eid = path[len(pre):-len("/odds")]
         if eid not in self.odds:
             return _Resp(404, {"message": "Event not found"}, self._hdr(0))
@@ -97,8 +104,8 @@ class FakeOdds:
         want = set(params.get("markets", "").split(","))
         for b in body.get("bookmakers", []):
             b["markets"] = [m for m in b["markets"] if m["key"] in want]
-        body["bookmakers"] = [b for b in body.get("bookmakers", []) if b["markets"]]
-        cost = len({m["key"] for b in body["bookmakers"] for m in b["markets"]}) * len(params["regions"].split(","))
+        body["bookmakers"] = [b for b in body.get("bookmakers", []) if b["markets"] and _wanted(b, params)]
+        cost = len({m["key"] for b in body["bookmakers"] for m in b["markets"]}) * OA.region_equivalents(params)
         return _Resp(200, body, self._hdr(cost))
 
     def _hdr(self, cost: int) -> dict:

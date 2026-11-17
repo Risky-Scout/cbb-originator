@@ -95,6 +95,13 @@ ODDS_COLLECTIONS = ODDS_ROOT / "collections"                 # load_collected()-
 ODDS_VALIDATION_RECORD = ODDS_ROOT / "integration_validation.json"
 ODDS_TEAM_MAP = Path(__file__).with_name("odds_team_map.csv")  # curated provider team name -> canonical team (committed)
 ODDS_REGIONS = "us"                                          # exactly one region: cost = markets returned x 1
+# Approved sportsbooks, requested EXPLICITLY (bookmakers=..., never regions=...) on both per-event endpoints. Keys checked
+# 2026-11-17 against the provider's bookmaker list (the-odds-api.com/sports-odds-data/bookmaker-apis.html) and the
+# bookmakers seen in production event-markets payloads: Caesars is `williamhill_us` (not "caesars"); `espnbet` is now
+# titled theScore Bet; hardrockbet / espnbet / fliff are us2 books. The provider bills every 10 bookmakers as 1 region.
+ODDS_BOOKMAKERS = ("draftkings", "fanduel", "betmgm", "williamhill_us", "betrivers", "hardrockbet", "espnbet", "bovada",
+                   "betonlineag", "fliff")
+ODDS_BOOKMAKERS_PER_REGION = 10
 ODDS_MAX_LIVE_REQUESTS_PER_STAGE = 20    # same architect ceiling as CBBD: a stage that needs more STOPs first
 ODDS_MAX_CREDITS_PER_STAGE = 60          # worst case 5 events x 12 documented markets x 1 region
 ODDS_QUOTA_RESERVE = 500                 # never start a paid call that could leave fewer credits than this

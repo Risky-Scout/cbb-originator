@@ -491,8 +491,18 @@ at a line an actual sportsbook quoted for that player. A market an event does no
 
 * **Endpoints.** Only two: `events` (0 credits, documented) and `event_odds`. There are no featured `/odds` calls, no
   historical endpoint and no other sport.
-* **Parameters.** `regions=us` (one region), `oddsFormat=american`, `dateFormat=iso`, `includeLinks=true` and
-  `includeSids=true`. `markets` must be documented NCAAB base keys.
+* **Parameters.** `bookmakers=` the explicit approved list `PC.ODDS_BOOKMAKERS` (<= 10 books = 1 region-equivalent;
+  exactly one of `bookmakers` / `regions` per request, production never sends `regions`), `oddsFormat=american`,
+  `dateFormat=iso`, `includeLinks=true` and `includeSids=true`. `markets` must be documented NCAAB base keys and only
+  those `/markets` discovery advertised for the event.
+* **Pricing instant.** A quote refresh prices a quote at the moment it is in hand (max(run start,
+  collector_received_at)); quotes received at / after the game's official cutoff (tip - 1 h) are POST_CUTOFF_QUOTE.
+* **Ingestion receipt.** Every quote-refresh run that reaches the request stage appends one
+  `QUOTE_INGESTION_RECEIPT` to `ops/quotes/<ET date>/ingestion_receipts.jsonl`: events discovered, games matched /
+  unmatched, discovery and event-odds calls, games with / without supported props, quote rows, player quotes matched /
+  unmatched, books and markets observed, credits this run and today, provider quota headers, and per game one cause:
+  MARKETS_PRICED, NO_PROP_MARKETS_POSTED, EVENT_MAPPING_FAILURE, PLAYER_MAPPING_FAILURE, API_ERROR, QUOTE_PARSE_ERROR or
+  CUTOFF_PASSED (never a generic NO_MARKET).
 * **Events.** The `eventId` must come from an events listing already acquired inside 2026-27. The call must fall
   within `ODDS_PROP_WINDOW_HOURS` (36) before the listed commence time, never after it.
 * **Cost control.** Each paid call is costed before it is made, with an upper bound of markets requested × 1 region

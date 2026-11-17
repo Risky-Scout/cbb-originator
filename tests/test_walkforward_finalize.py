@@ -273,14 +273,14 @@ def _snapshot_store(tmp_path):
                           "feature_cutoff": "2026-11-10T23:30:00+00:00", "model_version": "cbb-jm1-2026-27-20261110",
                           "training_cutoff": "2026-11-10T11:00:00+00:00", "game_id": "G-1", "team_id": "T-1",
                           "player_id": "P-1", "player": "Jon Doe", "market": "PTS", "line": 14.5, "side": s,
-                          "probability": p, "p_nonpush": 1.0, "sportsbook": "bk"} for s, p in (("OVER", 0.55), ("UNDER", 0.45))])
+                          "probability": p, "p_nonpush": 1.0, "sportsbook": "draftkings"} for s, p in (("OVER", 0.55), ("UNDER", 0.45))])
     prov.to_parquet(pp["provenance"], index=False)
     pd.DataFrame([{"game_id": "G-1", "provider_event_id": "evt-1", "provider_commence_time": TIP, "first_run_id": "R1"}]
                  ).to_parquet(NT.paths(root)["events"], index=False)
     base = {k: None for k in SD.QUOTE_SIDE_FIELDS}
     SD.append([{"record_type": "QUOTE_SIDE", "body": {**base, "record_id": f"r-{s}", "run_id": "R1", "game_id": "G-1",
                                                       "player_id": "P-1", "market": "PTS", "line": 14.5, "side": s,
-                                                      "sportsbook": "bk", "book_decimal_odds": d,
+                                                      "sportsbook": "draftkings", "book_decimal_odds": d,
                                                       "model_version": "cbb-jm1-2026-27-20261110", "two_sided": True}}
                for s, d in (("OVER", 1.95), ("UNDER", 1.87))], pp["sides"])
     return root
@@ -297,7 +297,7 @@ def _odds_session(tmp_path, fake, now):
 def test_near_tip_snapshot_records_prices_and_preceding_prediction_without_rescoring(tmp_path):
     root = _snapshot_store(tmp_path)
     ev = OX.event("evt-1", "Home", "Away", TIP)
-    odds = OX.event_odds(ev, [OX.book("bk", "Bk", [OX.market("player_points", OX.ou("Jon Doe", 14.5, -120, +100),
+    odds = OX.event_odds(ev, [OX.book("draftkings", "DraftKings", [OX.market("player_points", OX.ou("Jon Doe", 14.5, -120, +100),
                                                              "2026-11-11T00:19:00Z")])])
     fake = OX.FakeOdds([ev], {"evt-1": odds}, remaining=1000)
     assert NT.due(root, "2026-11-10T23:00:00Z").empty                         # outside the T-10m window
@@ -307,7 +307,7 @@ def test_near_tip_snapshot_records_prices_and_preceding_prediction_without_resco
     assert r["due"] == 1 and r["rows"] == 1
     snap = pd.read_parquet(NT.paths(root)["snapshots"]).iloc[0]
     assert snap["label"] == "NEAR_TIP_CLOSE_PROXY_T10M" and not snap["exact_market_close"]
-    assert (snap["game_id"], snap["player_id"], snap["market"], snap["line"], snap["sportsbook"]) == ("G-1", "P-1", "PTS", 14.5, "bk")
+    assert (snap["game_id"], snap["player_id"], snap["market"], snap["line"], snap["sportsbook"]) == ("G-1", "P-1", "PTS", 14.5, "draftkings")
     assert np.isclose(snap["over_decimal"], 1 + 100 / 120) and np.isclose(snap["under_decimal"], 2.0)
     assert snap["quote_available_at"].startswith("2026-11-11 00:19") and snap["collector_received_at"] != "None"
     assert snap["preceding_model_version"] == "cbb-jm1-2026-27-20261110" and np.isclose(snap["preceding_p_over_nonpush"], 0.55)

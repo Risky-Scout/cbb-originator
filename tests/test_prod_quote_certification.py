@@ -1,9 +1,10 @@
 """Certification accounting + discovery efficiency (prod.quote_refresh.certify, prod.shadow_tick validation state).
 
 A discovery-only run (/markets, no event odds) never consumes one of the day's 3 certification attempts; an empty one
-starts a 60-minute discovery cooldown. Discovery scans at most 8 candidates per region, `us` first, stopping at the
-first strong candidate (>=3 markets on >=2 books); `us2` only when `us` showed nothing; event odds use the region the
-selected candidate was discovered in, for exactly its advertised markets. No network: provider pieces are faked."""
+starts a 60-minute discovery cooldown. Discovery is ONE pass over at most 8 candidates with the explicit approved
+bookmakers (bookmakers=PC.ODDS_BOOKMAKERS, us + us2 books in one request; never regions=), stopping at the first strong
+candidate (>=3 markets on >=2 books); event odds use the same bookmakers, for exactly the advertised markets. No
+network: provider pieces are faked."""
 from __future__ import annotations
 
 import json
@@ -42,6 +43,7 @@ def _cand(i: int) -> dict:
 
 
 ALL = list(QR.QT.REQUEST_MARKETS)
+B = QR.OF.BOOKS                                   # the production request source (explicit approved bookmakers)
 
 
 @pytest.fixture
@@ -54,9 +56,9 @@ def env(tmp_path, monkeypatch):
         st["sessions"].append(s)
         return s
 
-    def discover(session, event_id, region="us"):
-        session.entries.append({"endpoint": "event_markets", "params": {"eventId": event_id, "regions": region},
-                                "status": "FETCHED", "cost": 1})
+    def discover(session, event_id, region=B):
+        session.entries.append({"endpoint": "event_markets", "source": region, "status": "FETCHED", "cost": 1,
+                                "params": {"eventId": event_id, **QR.OF.source_params(region)}})
         m, b = st["adv"].get((region, event_id), (0, 0))
         sup = ALL[:m]
         return {"supported_markets": sup, "supported_market_count": m, "bookmakers_advertising": b if m else 0,
@@ -66,7 +68,7 @@ def env(tmp_path, monkeypatch):
     def collect(session, eids, out_dir, discovered=None, **kw):
         d = discovered[eids[0]]
         session.entries.append({"endpoint": "event_odds", "status": "FETCHED", "cost": d["supported_market_count"],
-                                "params": {"eventId": eids[0], "regions": d["region"],
+                                "source": d["region"], "params": {"eventId": eids[0], **QR.OF.source_params(d["region"]),
                                            "markets": ",".join(d["supported_markets"])}})
         out_dir.mkdir(parents=True, exist_ok=True)
         p = out_dir / f"{eids[0]}_{len(session.entries)}.json"
@@ -99,7 +101,7 @@ def env(tmp_path, monkeypatch):
 
 def _calls(env, endpoint, region=None):
     return [e for s in env["sessions"] for e in s.entries if e["endpoint"] == endpoint
-            and (region is None or e["params"].get("regions") == region)]
+            and (region is None or e.get("source") == region)]
 
 
 def _attempts(env):
@@ -114,14 +116,14 @@ def _eligible(env):
     return TK.validation_eligible(_state(env), env["ctx"])
 
 
-def test_a_empty_us_and_us2_is_discovery_only_and_starts_cooldown(env):
+def test_a_empty_discovery_is_discovery_only_and_starts_cooldown(env):
     assert TK.step_validate(env["ctx"], env["st"], {}) == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
     assert len(_calls(env, "event_odds")) == 0
-    assert len(_calls(env, "event_markets", "us")) == 3 and len(_calls(env, "event_markets", "us2")) == 3
+    assert len(_calls(env, "event_markets", B)) == 3 == len(_calls(env, "event_markets"))      # one pass, no us2 pass
     a = _attempts(env)[-1]
     assert a["counts_toward_certification_limit"] is False and a["discovery_only"] is True
     assert a["discovery_run"] is True and a["event_odds_request_count"] == 0
-    assert a["us_market_discovery_calls"] == 3 and a["us2_market_discovery_calls"] == 3
+    assert a["us_market_discovery_calls"] == 0 and a["us2_market_discovery_calls"] == 0
     v = _state(env)
     assert v["certification_attempts_today"] == 0 and v["discovery_cooldown_active"]
     assert v["last_discovery_status"] == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
@@ -143,7 +145,7 @@ def test_c_wake_60_minutes_later_may_discover_again(env):
 
 
 def test_d_weak_first_candidate_does_not_stop_discovery(env):
-    env["adv"] = {("us", "ev00"): (1, 1), ("us", "ev02"): (4, 3)}
+    env["adv"] = {(B, "ev00"): (1, 1), (B, "ev02"): (4, 3)}
     env["props"] = {"ev02": 4}
     out = QR.certify(env["ctx"], env["st"], T0)
     assert out["status"] == "PASS" and out["event_id"] == "ev02"
@@ -153,7 +155,7 @@ def test_d_weak_first_candidate_does_not_stop_discovery(env):
 
 def test_e_strong_candidate_stops_discovery_early(env):
     env["n"] = 8
-    env["adv"] = {("us", "ev01"): (3, 2), ("us", "ev05"): (12, 9)}
+    env["adv"] = {(B, "ev01"): (3, 2), (B, "ev05"): (12, 9)}
     env["props"] = {"ev01": 2}
     out = QR.certify(env["ctx"], env["st"], T0)
     assert [e["params"]["eventId"] for e in _calls(env, "event_markets")] == ["ev00", "ev01"]   # ev05 never scanned
@@ -164,36 +166,35 @@ def test_e_strong_candidate_stops_discovery_early(env):
 
 def test_f_bounded_batch_without_strong_candidate_still_selects_best(env):
     env["n"] = 12
-    env["adv"] = {("us", "ev03"): (1, 2), ("us", "ev06"): (2, 2), ("us", "ev07"): (2, 1)}
+    env["adv"] = {(B, "ev03"): (1, 2), (B, "ev06"): (2, 2), (B, "ev07"): (2, 1)}
     env["props"] = {"ev06": 1}
     out = QR.certify(env["ctx"], env["st"], T0)
     assert len(_calls(env, "event_markets")) == QR.CERT_DISCOVERY_BATCH_SIZE == 8                  # never > 8
     assert out["discovery_truncated"] == 4 and "discovery_early_stop" not in out
-    assert out["event_id"] == "ev06" and out["status"] == "PASS" and out["selected_region"] == "us"
-    assert not _calls(env, "event_markets", "us2")
+    assert out["event_id"] == "ev06" and out["status"] == "PASS" and out["selected_region"] == B
+    assert not any("regions" in e["params"] for e in _calls(env, "event_markets"))
 
 
-def test_g_us2_fallback_only_when_us_is_empty_and_odds_follow_region(env):
-    env["adv"] = {("us2", "ev01"): (3, 2)}                    # strong in us2: the us2 pass stops after ev01
+def test_g_one_explicit_bookmaker_pass_and_odds_use_the_same_books(env):
+    env["adv"] = {(B, "ev01"): (3, 2)}                        # strong: discovery stops after ev01
     env["props"] = {"ev01": 3}
     out = QR.certify(env["ctx"], env["st"], T0)
-    assert len(_calls(env, "event_markets", "us")) == 3 and len(_calls(env, "event_markets", "us2")) == 2
-    assert out["selected_region"] == "us2" and out["status"] == "PASS"
+    mk = _calls(env, "event_markets")
+    assert [e["params"]["eventId"] for e in mk] == ["ev00", "ev01"] and out["status"] == "PASS"
+    books = ",".join(QR.PC.ODDS_BOOKMAKERS)
+    assert all(e["params"] == {"eventId": e["params"]["eventId"], "bookmakers": books} for e in mk)
     odds = _calls(env, "event_odds")
-    assert len(odds) == 1 and odds[0]["params"]["regions"] == "us2"
-    assert out["us2_market_discovery_calls"] == 2 and out["event_odds_request_count"] == 1
+    assert len(odds) == 1 and odds[0]["params"]["bookmakers"] == books and "regions" not in odds[0]["params"]
+    assert out["selected_region"] == B and out["event_odds_request_count"] == 1
+    assert out["bookmaker_market_discovery_calls"] == 2 and out["us_market_discovery_calls"] == 0
 
 
-def test_h_us_supported_candidate_never_queries_us2(env):
-    env["adv"] = {("us", "ev02"): (1, 1), ("us2", "ev00"): (12, 9)}
-    env["props"] = {"ev02": 1}
-    out = QR.certify(env["ctx"], env["st"], T0)
-    assert not _calls(env, "event_markets", "us2") and out["selected_region"] == "us"
-    assert _calls(env, "event_odds")[0]["params"]["regions"] == "us"
+def test_h_no_regions_fallback_pass_exists():
+    assert QR.CERT_DISCOVERY_REGIONS == (B,)
 
 
 def test_i_one_odds_request_counts_one_attempt(env):
-    env["adv"] = {("us", "ev00"): (2, 1)}                      # advertised, but returns no prop rows
+    env["adv"] = {(B, "ev00"): (2, 1)}                      # advertised, but returns no prop rows
     assert TK.step_validate(env["ctx"], env["st"], {}) == "INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED"
     a = _attempts(env)[-1]
     assert a["event_odds_request_count"] == 1 and a["counts_toward_certification_limit"] is True
@@ -202,7 +203,7 @@ def test_i_one_odds_request_counts_one_attempt(env):
 
 
 def test_j_second_ranked_fallback_still_counts_one_attempt(env):
-    env["adv"] = {("us", "ev00"): (2, 1), ("us", "ev01"): (1, 1)}
+    env["adv"] = {(B, "ev00"): (2, 1), (B, "ev01"): (1, 1)}
     assert TK.step_validate(env["ctx"], env["st"], {}) == "INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED"
     assert len(_calls(env, "event_odds")) == 2
     assert _attempts(env)[-1]["event_odds_request_count"] == 2
@@ -210,7 +211,7 @@ def test_j_second_ranked_fallback_still_counts_one_attempt(env):
 
 
 def test_k_three_real_attempts_exhaust_the_day(env):
-    env["adv"] = {("us", "ev00"): (2, 1)}
+    env["adv"] = {(B, "ev00"): (2, 1)}
     for _ in range(3):
         assert _eligible(env)
         TK.step_validate(env["ctx"], env["st"], {})
@@ -232,7 +233,7 @@ def test_l_three_empty_discoveries_consume_no_attempts(env):
 
 
 def test_crash_after_odds_started_still_counts(env, monkeypatch):
-    env["adv"] = {("us", "ev00"): (2, 1)}
+    env["adv"] = {(B, "ev00"): (2, 1)}
     monkeypatch.setattr(QR, "price_collection", lambda *a, **k: 1 / 0)
     assert TK.step_validate(env["ctx"], env["st"], {}) == "ERROR"
     assert _attempts(env)[-1]["counts_toward_certification_limit"] is True
@@ -250,6 +251,23 @@ def test_legacy_records_judged_by_their_request_log(env):
     v = _state(env)
     assert v["certification_attempts_today"] == 1 and v["discovery_only_runs_today"] == 1
     assert v["discovery_cooldown_active"]
+
+
+def test_guard_bookmakers_explicit_approved_and_never_with_regions():
+    kw = {"event_commence": lambda e: T0 + pd.Timedelta(hours=3), "now": T0}
+    books = ",".join(QR.PC.ODDS_BOOKMAKERS)
+    OA.check_request("event_markets", {"eventId": "e", "bookmakers": books, "dateFormat": "iso"}, **kw)
+    OA.check_request("event_odds", {"eventId": "e", "bookmakers": books, "markets": "player_points",
+                                    "oddsFormat": "american", "dateFormat": "iso"}, **kw)
+    for bad in ({"bookmakers": books, "regions": "us"}, {}, {"bookmakers": "caesars"}, {"bookmakers": "draftkings,draftkings"},
+                {"bookmakers": books + ",fanatics"}):
+        with pytest.raises(OA.OddsGuardViolation):
+            OA.check_request("event_markets", {"eventId": "e", "dateFormat": "iso", **bad}, **kw)
+    assert QR.PC.ODDS_BOOKMAKERS[3] == "williamhill_us" and "caesars" not in QR.PC.ODDS_BOOKMAKERS
+    assert len(QR.PC.ODDS_BOOKMAKERS) == 10 == len(set(QR.PC.ODDS_BOOKMAKERS))
+    # billing: <= 10 books = 1 region-equivalent; markets x region-equivalents for event odds
+    assert OA.estimated_cost("event_markets", {"bookmakers": books}) == 1
+    assert OA.estimated_cost("event_odds", {"bookmakers": books, "markets": "player_points,player_rebounds"}) == 2
 
 
 def test_guard_allows_one_sportsbook_region_only():

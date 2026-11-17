@@ -6,11 +6,13 @@ Provider support for NCAAB player props is DOCUMENTED (sport `basketball_ncaab`;
     events       GET /v4/sports/basketball_ncaab/events                   0 credits (documented)
                  params: dateFormat=iso, commenceTimeFrom, commenceTimeTo (both required, inside 2026-08-01..2027-07-31)
     event_markets GET /v4/sports/basketball_ncaab/events/{eventId}/markets 1 credit (documented)
-                 params: eventId, regions=us (us2: certification fallback only), dateFormat=iso, [bookmakers]: the market keys each bookmaker currently
-                 advertises for the event. ALWAYS called before event_odds (odds_feed.collect); same event guards.
-    event_odds   GET /v4/sports/basketball_ncaab/events/{eventId}/odds    cost = markets returned x regions (documented)
-                 params: eventId, regions=us, markets (the advertised subset of quotes.REQUEST_MARKETS only),
-                 oddsFormat=american, dateFormat=iso, includeLinks=true, includeSids=true, [bookmakers]
+                 params: eventId, bookmakers=PC.ODDS_BOOKMAKERS (explicit approved books; the legacy regions=us is still
+                 accepted but never sent), dateFormat=iso: the market keys each bookmaker currently advertises for the
+                 event. ALWAYS called before event_odds (odds_feed.collect); same event guards.
+    event_odds   GET /v4/sports/basketball_ncaab/events/{eventId}/odds    cost = markets returned x region-equivalents
+                 params: eventId, bookmakers (as above; every 10 books = 1 region-equivalent), markets (the advertised
+                 subset of quotes.REQUEST_MARKETS only), oddsFormat=american, dateFormat=iso, includeLinks=true,
+                 includeSids=true. Exactly one of bookmakers / regions per request.
                  eventId must be in an events listing already acquired (inside the season) and the call must fall
                  inside ODDS_PROP_WINDOW_HOURS before that listed commence time (props are posted near tip);
                  never after commence.
@@ -51,8 +53,8 @@ ALLOWED = {
                    "bookmakers"},
 }
 REQUIRED = {"events": {"dateFormat", "commenceTimeFrom", "commenceTimeTo"},
-            "event_markets": {"eventId", "regions", "dateFormat"},
-            "event_odds": {"eventId", "regions", "markets", "oddsFormat", "dateFormat"}}
+            "event_markets": {"eventId", "dateFormat"},
+            "event_odds": {"eventId", "markets", "oddsFormat", "dateFormat"}}   # + exactly one of regions / bookmakers
 FIXED = {"dateFormat": "iso", "oddsFormat": "american", "includeLinks": "true", "includeSids": "true"}
 # exactly ONE sportsbook region per request: production `us`; `us2` only as the certification discovery fallback
 # (prod.quote_refresh.certify). DFS regions (us_dfs) and combined regions are never requested.
@@ -94,13 +96,23 @@ def _markets(v) -> list[str]:
     return [m.strip() for m in str(v).split(",") if m.strip()]
 
 
+def region_equivalents(params: dict) -> int:
+    """Billing regions of one request: the regions listed, or ceil(bookmakers / 10) (documented: every group of 10
+    bookmakers is billed as one region)."""
+    if params.get("bookmakers"):
+        n = len(set(_markets(params["bookmakers"])))
+        return -(-n // PC.ODDS_BOOKMAKERS_PER_REGION)
+    return len(_markets(params.get("regions", "")))
+
+
 def estimated_cost(endpoint: str, params: dict) -> int:
-    """Documented upper bound: unique markets requested x regions (events listing: 0; event markets: 1)."""
+    """Documented upper bound: unique markets requested x region-equivalents (events listing: 0; event markets: 1 per
+    region-equivalent)."""
     if endpoint == "event_markets":
-        return 1
+        return max(1, region_equivalents(params))
     if endpoint != "event_odds":
         return 0
-    return len(set(_markets(params.get("markets", "")))) * len(_markets(params.get("regions", "")))
+    return len(set(_markets(params.get("markets", "")))) * region_equivalents(params)
 
 
 # ============================================================================ guard (2026-27 NCAAB only)
@@ -120,6 +132,15 @@ def check_request(endpoint: str, params: dict, event_commence=None, now=None) ->
             raise OddsGuardViolation(f"ODDS_GUARD: {k} must be {v!r}; got {params[k]!r}")
     if "regions" in params and str(params["regions"]) not in ALLOWED_REGIONS:
         raise OddsGuardViolation(f"ODDS_GUARD: regions must be one of {ALLOWED_REGIONS}; got {params['regions']!r}")
+    if endpoint in EVENT_ENDPOINTS:
+        if ("regions" in params) == ("bookmakers" in params):
+            raise OddsGuardViolation(f"ODDS_GUARD: {endpoint} needs exactly one of regions / bookmakers")
+        if "bookmakers" in params:
+            bk = _markets(params["bookmakers"])
+            bad = [b for b in bk if b not in PC.ODDS_BOOKMAKERS]
+            if not bk or bad or len(bk) != len(set(bk)) or len(bk) > PC.ODDS_BOOKMAKERS_PER_REGION:
+                raise OddsGuardViolation(f"ODDS_GUARD: bookmakers must be <= {PC.ODDS_BOOKMAKERS_PER_REGION} distinct "
+                                         f"approved keys (PC.ODDS_BOOKMAKERS); bad={bad}")
     a, b = _season_window()
     if endpoint == "events":
         try:

@@ -176,11 +176,12 @@ Every live request's `x-requests-last / -used / -remaining` is in `prod/cache/od
 the collection file's `requests` receipt.
 
 **Certification** (`quote_refresh.certify`, run by a due scoring tick while not certified). Discovery: today's
-forecasted pre-tip games with a persisted PMF, in tip order, at most 8 `/markets` calls per region pass; `regions=us`
-first, stopping right after the first strong candidate (>= 3 supported markets on >= 2 bookmakers: a stop rule
-only); `regions=us2` ONLY when the `us` pass showed no supported market at all (never `us_dfs`, never both at once).
-The best discovered supported candidate (supported markets, then bookmakers, then tip, then game id) gets ONE
-event-odds request in the SAME region for exactly its advertised keys (one more, next-ranked, only if it returned no
+forecasted pre-tip games with a persisted PMF, in tip order, at most 8 `/markets` calls in ONE pass with the explicit
+approved bookmakers (`bookmakers=` `PC.ODDS_BOOKMAKERS`: draftkings, fanduel, betmgm, williamhill_us (Caesars),
+betrivers, hardrockbet, espnbet (theScore Bet), bovada, betonlineag, fliff; 10 books = 1 region-equivalent; never
+`regions=`), stopping right after the first strong candidate (>= 3 supported markets on >= 2 bookmakers: a stop rule
+only). The best discovered supported candidate (supported markets, then bookmakers, then tip, then game id) gets ONE
+event-odds request with the SAME bookmakers for exactly its advertised keys (one more, next-ranked, only if it returned no
 prop rows). Nine checks on those real quotes priced at the persisted PMF (no simulation): GAME_MATCH, PLAYER_MATCH,
 STAT_MATCH, LINE_VALIDATION, PRICE_VALIDATION, FRESHNESS_VALIDATION, PMF_LOOKUP, PRICING_VALIDATION,
 RAW_EVIDENCE_PERSISTENCE. Receipt: `prod/odds/validation_runs/<id>/certification.json`; a PASS is appended to

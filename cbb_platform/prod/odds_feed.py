@@ -98,6 +98,16 @@ def match_events(events: pd.DataFrame, slate: pd.DataFrame, tidx: dict) -> pd.Da
 
 # ============================================================================ collection (paid)
 NO_SUPPORTED = "NO_SUPPORTED_PLAYER_PROP_MARKETS"
+# The request source of both per-event endpoints. Production: the explicit approved bookmaker list (PC.ODDS_BOOKMAKERS;
+# <= 10 books = 1 region-equivalent). A literal region ("us" / "us2") is still accepted for legacy evidence and tests.
+BOOKS = "approved_bookmakers"
+
+
+def source_params(source: str = BOOKS) -> dict:
+    """bookmakers=<approved keys> for BOOKS, otherwise regions=<source>. Never both."""
+    if source == BOOKS:
+        return {"bookmakers": ",".join(PC.ODDS_BOOKMAKERS)}
+    return {"regions": source}
 DISCOVERED = "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"
 
 
@@ -127,10 +137,10 @@ def advertised(body: dict) -> dict:
             "status": DISCOVERED if supported else NO_SUPPORTED}
 
 
-def discover(session: OA.Session, event_id: str, region: str = PC.ODDS_REGIONS) -> dict:
+def discover(session: OA.Session, event_id: str, region: str = BOOKS) -> dict:
     """GET events/{id}/markets (1 credit; a recent cached answer is reused) -> advertised() + the request receipt.
-    `region`: production `us`; `us2` only for the certification discovery fallback."""
-    params = {"eventId": event_id, "regions": region, "dateFormat": "iso"}
+    `region`: the request source (source_params): production = the explicit approved bookmakers (BOOKS)."""
+    params = {"eventId": event_id, **source_params(region), "dateFormat": "iso"}
     e = session.get("event_markets", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
                     purpose="player-prop market discovery (1 credit)")
     return {**advertised(e["body"]), "event_id": event_id, "region": region, "body": e["body"], "request": _brief(e)}
@@ -162,7 +172,7 @@ def collect(session: OA.Session, event_ids, out_dir: Path | None = None, markets
                    "requests": {"event_markets": d["request"], "event_odds": None},
                    "events": [{**ev, "bookmakers": [], "collector_received_at": rx}]}
         else:
-            params = {"eventId": eid, "regions": d.get("region", PC.ODDS_REGIONS), "markets": ",".join(want), "oddsFormat": "american",
+            params = {"eventId": eid, **source_params(d.get("region", BOOKS)), "markets": ",".join(want), "oddsFormat": "american",
                       "dateFormat": "iso", "includeLinks": "true", "includeSids": "true"}
             e = session.get("event_odds", params, max_age_seconds=PC.ODDS_EVENT_ODDS_MAX_AGE_MINUTES * 60,
                             purpose="player props")
@@ -195,7 +205,12 @@ def collection_receipt(path: Path) -> dict:
             "markets_response_sha256": (em or {}).get("response_sha256"),
             "quota_remaining": last.get("quota_remaining"), "quota_used": last.get("quota_used"),
             "markets_returned": len({m.get("key") for b in books for m in b.get("markets") or []}),
-            "bookmakers": len(books)}
+            "bookmakers": len(books),
+            "bookmakers_requested": str(((eo or em or {}).get("params") or {}).get("bookmakers") or "").split(",") if
+            ((eo or em or {}).get("params") or {}).get("bookmakers") else [],
+            "books_observed": sorted({str(b.get("key") or "").lower() for b in books if b.get("key")}),
+            "markets_observed": sorted({m.get("key") for b in books for m in b.get("markets") or [] if m.get("key")}),
+            "quota_last": last.get("cost")}                          # x-requests-last of the latest request
 
 
 def collections(as_of, root: Path | None = None) -> list[Path]:

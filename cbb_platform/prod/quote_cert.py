@@ -49,6 +49,7 @@ def _utc(x) -> pd.Timestamp:
 def fingerprint_parts() -> dict:
     from cbb_platform.prod import odds_acquire as OA, quotes as QT     # late: keep this module import-light
     return {"provider": QT.PROVIDER, "base": OA.BASE, "sport": QT.SPORT_KEY, "paths": OA.PATHS, "fixed": OA.FIXED, "regions": OA.ALLOWED_REGIONS,
+            "bookmakers": list(OA.PC.ODDS_BOOKMAKERS),
             "markets": list(QT.REQUEST_MARKETS), "key_to_stat": dict(sorted(QT.KEY_TO_STAT.items())),
             "sources": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in FINGERPRINT_SOURCES}}
 
