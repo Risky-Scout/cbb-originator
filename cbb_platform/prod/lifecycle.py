@@ -628,6 +628,7 @@ def receipt(h: dict) -> dict:
         "FORECAST": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
         "PMFS": no_games or int(lf.get("pmfs_persisted") or 0) > 0,
         "EXPORTS": no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"),
+        "PERFORMANCE": st("performance") == "WRITTEN" if "performance" in ex else True,   # evidence only, never quality
         "NO_ACTIVE_BLOCKER": not blockers}
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
             "MODEL_VERSION": model_version,
@@ -648,6 +649,11 @@ def receipt(h: dict) -> dict:
             "FALLBACK_REASON": (wf.get("note") or wf.get("reason") or wf.get("DAILY_REFIT_STATUS"))
                                if wf and wf.get("DAILY_REFIT_STATUS") not in ("PASS", "NO_NEW_DATA") else None,
             "DISTRIBUTIONS_STATUS": st("distributions"), "GRADES_STATUS": st("grades"),
+            "PERFORMANCE_EXPORT_STATUS": st("performance"),
+            "PERFORMANCE_STATUS": (ex.get("performance") or {}).get("PERFORMANCE_STATUS")
+                                  if isinstance(ex.get("performance"), dict) else None,
+            "PERFORMANCE_EVIDENCE": ((ex.get("performance") or {}).get("verification") or {}).get("PERFORMANCE_EVIDENCE")
+                                    if isinstance(ex.get("performance"), dict) else None,
             "IDENTITY_BLOCKED_GAMES": sum(1 for r in ((lf.get("games_not_scored") if lf else None)
                                                       or fc.get("games_not_scored") or {}).values()
                                           if r and "AVAILABILITY_IDENTITY_UNRESOLVED" in r),
@@ -951,8 +957,9 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
 def _brief(rep: dict) -> dict:
     return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing", "rewritten", "rows_with_valid_market",
                                          "rows_with_no_valid_market", "unique_player_stat_keys", "duplicate_keys",
-                                         "GRADE_STATUS") if kk in v} if isinstance(v, dict) else v
-            for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "predicted_games",
+                                         "GRADE_STATUS", "PERFORMANCE_STATUS", "verification") if kk in v}
+            if isinstance(v, dict) else v
+            for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "performance", "predicted_games",
                                              "raw_quote_rows", "official_rows", "official_frozen_rows")}
 
 

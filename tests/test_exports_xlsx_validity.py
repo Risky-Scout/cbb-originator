@@ -173,3 +173,25 @@ def test_daily_distributions_workbook_valid_and_matches_source_without_model_cha
     assert got == [[g, t, pl, pr, m, o, pv] for g, t, pl, pr, m, o, pv in src]
     assert (tree["runs_root"] / "R1" / "market_pmfs.parquet").read_bytes() == src_bytes          # source untouched
     assert {k: hashlib.sha256((C.PROJECT_ROOT / p).read_bytes()).hexdigest() for k, (p, _) in PC.ARTIFACTS.items()} == arts
+
+
+def test_performance_workbook_excel_valid_and_openpyxl_reads_every_tab(tmp_path):
+    """CBB_Performance: six tabs, titled filtered tables on Overall, numeric cells finite, openpyxl == module reader."""
+    from cbb_platform.prod import performance as PF
+    from tests.test_prod_performance import AFTER1, D1, _daily, _obs, _two_day_tree
+    from tests.test_prod_exports import _sett
+    tree = _two_day_tree(tmp_path, [_sett("z_o", "WIN", 20.0), _sett("a_u", "PUSH", 5.5)])
+    _obs(tree, D1, "G1", "2026-11-04T23:40:00+00:00", [("Zed", "PTS", 17.5, "OVER", "bookb", 100),
+                                                       ("Zed", "PTS", 17.5, "UNDER", "bookb", -130)])
+    p = Path(_daily(tree, D1, AFTER1)["performance"]["path"])
+    counts = _structural(p)
+    assert tuple(counts) == PF.SHEETS
+    mine = {n: s["rows"] for n, s in EX.read_xlsx(p).items()}
+    theirs = _openpyxl_rows(p)
+    assert list(theirs) == list(PF.SHEETS)
+    for name in PF.SHEETS:
+        a = [[None if v == "" else v for v in r] for r in mine[name]]
+        b = [list(r) for r in theirs[name]]
+        width = max([len(r) for r in a + b] or [0])
+        pad = lambda rows: [r + [None] * (width - len(r)) for r in rows if any(v is not None for v in r)]
+        assert pad(a) == pad(b), name

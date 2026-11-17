@@ -13,6 +13,9 @@ writes, for the America/New_York slate date D, into data/prod/exports/D/ (gitign
     (on request only) `exports expand-distributions --date D` writes the legacy one-row-per-outcome workbook
     CBB_Distributions_MM_DD_YYYY_LONG.xlsx, resolved from the references (each vector re-hashed against its sha256)
     CBB_Grades_MM_DD_YYYY.xlsx         Graded Bets | Performance Summary
+    CBB_Performance_MM_DD_YYYY.xlsx    REQUIRED, cumulative: Overall | By Stat | By Player Role | Stat x Role | Daily |
+                                       Selections, derived from the ONE canonical dataset ops/performance/
+                                       cbb_performance.parquet (prod.performance) + performance_receipt.json
 
 Read-only over evidence that production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call:
 the module imports no network or acquisition code; tests run it with every socket entry point refused):
@@ -157,7 +160,7 @@ def file_names(date: str) -> dict:
     d = pd.Timestamp(date)
     tag = f"{d.month:02d}_{d.day:02d}_{d.year:04d}"
     return {"boards": f"CBB_Boards_{tag}.xlsx", "distributions": f"CBB_Distributions_{tag}.xlsx",
-            "grades": f"CBB_Grades_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmf_refs.parquet",
+            "grades": f"CBB_Grades_{tag}.xlsx", "performance": f"CBB_Performance_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmf_refs.parquet",
             "distributions_long": f"CBB_Distributions_{tag}_LONG.xlsx"}
 
 
@@ -1292,7 +1295,8 @@ def write_xlsx(path: Path, sheets: list[dict]) -> Path:
                                                        for i, c in enumerate(cols)) + "</row>")
             for i, c in enumerate(cols):
                 widths[i] = max(widths.get(i, 0), len(c))
-            xf = [styles.xf(FORMATS.get(c)) for c in cols]
+            fm = {**FORMATS, **(b.get("formats") or {})}                   # block-level formats (Performance)
+            xf = [styles.xf(fm.get(c)) for c in cols]
             for row in b["rows"]:
                 r += 1
                 rows_xml.append(f'<row r="{r}">' + "".join(_cell(f"{_col(i)}{r}", v, xf[i] if v is not None else 0)
@@ -1690,6 +1694,7 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     if graded is None and not pmfs:
         rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game and no persisted PMF "
                                                                   f"for ET slate date {date}"}
+        rep["performance"] = _performance(date, ops_root, out_dir, at)
         return rep
     if graded is None:
         graded = offers(pd.DataFrame(), pd.DataFrame(), names)[0]
@@ -1709,13 +1714,20 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         tmp = sidecar.with_name(sidecar.name + ".tmp")
         tmp.write_text(json.dumps({"date": date, "receipts": _immutable(graded)}, sort_keys=True, indent=0, default=str))
         os.replace(tmp, sidecar)
+    rep["performance"] = _performance(date, ops_root, out_dir, at)        # after Grades: today's frozen selections
     return rep
+
+
+def _performance(date: str, ops_root: Path, out_dir: Path, at) -> dict:
+    """CBB_Performance (prod.performance): cumulative, from the canonical dataset; an explicit status, never omitted."""
+    from cbb_platform.prod import performance as PF
+    return PF.export(date, ops_root, out_dir, at)
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m cbb_platform.prod.exports")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    d = sub.add_parser("daily", help="write the Boards, Distributions and Grades workbooks of one slate date")
+    d = sub.add_parser("daily", help="write the Boards, Distributions, Grades and Performance workbooks of one slate date")
     d.add_argument("--date", required=True, help="slate date YYYY-MM-DD (America/New_York)")
     d.add_argument("--ops-root", default=str(PC.OPS_ROOT))
     d.add_argument("--runs-root", default=str(RUNS_ROOT))
@@ -1744,7 +1756,7 @@ def main(argv=None) -> int:
     rep = daily(a.date, ops_root=Path(a.ops_root), runs_root=Path(a.runs_root), out_root=Path(a.out_root),
                 history_db=Path(a.history_db), state_root=Path(a.state_root))
     print(json.dumps(rep, indent=1, default=str))
-    return 0 if all(rep[k]["status"] == "WRITTEN" for k in ("boards", "distributions", "grades")) else 2
+    return 0 if all(rep[k]["status"] == "WRITTEN" for k in ("boards", "distributions", "grades", "performance")) else 2
 
 
 if __name__ == "__main__":

@@ -354,6 +354,7 @@ def test_export_date_uses_america_new_york(tmp_path):
     assert EX.file_names("2026-11-04") == {"boards": "CBB_Boards_11_04_2026.xlsx",
                                            "distributions": "CBB_Distributions_11_04_2026.xlsx",
                                            "grades": "CBB_Grades_11_04_2026.xlsx",
+                                           "performance": "CBB_Performance_11_04_2026.xlsx",
                                            "distribution_pmfs": "CBB_Distributions_11_04_2026_pmf_refs.parquet",
                                            "distributions_long": "CBB_Distributions_11_04_2026_LONG.xlsx"}
     nxt = _run(tree, "2026-11-05")
@@ -436,7 +437,9 @@ def test_missing_evidence_writes_nothing_and_decided_matches_tick(tmp_path):
     rep = _run(tree)
     assert all(rep[k]["status"] == "MISSING_EVIDENCE" for k in ("boards", "distributions"))
     assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"
-    assert [p.name for p in (tree["out_root"] / DATE).glob("*.xlsx")] == ["CBB_Grades_11_04_2026.xlsx"]
+    assert sorted(p.name for p in (tree["out_root"] / DATE).glob("*.xlsx")) == ["CBB_Grades_11_04_2026.xlsx",
+                                                                                "CBB_Performance_11_04_2026.xlsx"]
+    assert rep["performance"]["status"] == "WRITTEN"            # REQUIRED: cumulative, written even without evidence
     from cbb_platform.prod import shadow_tick as TK
     assert EX.DECIDED == TK.DECIDED
     assert EX.main(["daily", "--date", DATE, "--ops-root", str(tree["ops_root"]), "--runs-root", str(tree["runs_root"]),

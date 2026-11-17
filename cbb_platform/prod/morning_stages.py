@@ -507,6 +507,9 @@ def exports_evidence_key(p: dict) -> str | None:
 def _export_ok(ex: dict) -> tuple[bool, str | None]:
     bad = [f"{k}={(ex.get(k) or {}).get('status')}" for k in ("boards", "distributions", "grades")
            if isinstance(ex.get(k), dict) and str((ex.get(k) or {}).get("status") or "").startswith(("ABORTED", "FAIL", "ERROR"))]
+    pf = ex.get("performance") if isinstance(ex.get("performance"), dict) else {}
+    if pf.get("status") != "WRITTEN":           # CBB_Performance is REQUIRED (cumulative: always buildable, even empty)
+        bad.append(f"performance={pf.get('status') or 'PERFORMANCE_MISSING'}")
     return (not bad), ("; ".join(bad) or None)
 
 
@@ -536,7 +539,8 @@ def run_exports(life, day: date) -> tuple[int, dict]:
     st = lambda k: (out.get(k) or {}).get("status") if isinstance(out.get(k), dict) else None
     with locked(life.ops_root, day) as p:
         _end(p, "EXPORTS", PASS if ok else FAIL, 0 if ok else 1, BOARDS_STATUS=st("boards"),
-             DISTRIBUTIONS_STATUS=st("distributions"), GRADES_STATUS=st("grades"), EVIDENCE_KEY=key, DETAIL=out,
+             DISTRIBUTIONS_STATUS=st("distributions"), GRADES_STATUS=st("grades"),
+             PERFORMANCE_STATUS=st("performance"), EVIDENCE_KEY=key, DETAIL=out,
              RETRYABLE=(not ok) and p["EXPORTS"]["ATTEMPTS"] < MAX_ATTEMPTS,
              **({} if ok else {"ERROR_TYPE": "EXPORT_FAILED", "ERROR_DETAIL": why}))
     return (0 if ok else 1), {"stage": "EXPORTS", "status": PASS if ok else FAIL}

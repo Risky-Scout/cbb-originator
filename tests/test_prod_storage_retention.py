@@ -25,10 +25,14 @@ def _age(p: Path, days: float):
 
 
 def _w(p: Path, data=b"x" * 100, days=None):
+    fresh = not p.parent.exists()
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_bytes(data) if isinstance(data, bytes) else p.write_text(data)
     if days is not None:
         _age(p, days)
+        if fresh:                         # the directory this call created is as old as its file (not wall-clock now:
+            t = (NOW - pd.Timedelta(days=days)).timestamp()      # NOW is fixed; a wall-clock dir mtime aged into it)
+            os.utime(p.parent, (t, t))
     return p
 
 
