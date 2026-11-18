@@ -1,10 +1,10 @@
 # CBB Originator 08:00 ET morning recovery: evaluates the FULL durable morning state machine (ops/morning/<D>/progress.json).
 # Complete -> ALREADY_COMPLETE (no work). Otherwise it resumes the chain at the first incomplete stage; a promoted same-day
-# model is never refit. Ordered After= every morning stage: it never overlaps a 07:00 stage (no concurrent CBB writers).
+# model is never refit. Ordered After= every morning stage: it never overlaps a morning stage (no concurrent CBB writers).
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
 Description=CBB Originator 08:00 ET morning recovery
-After=cbb-originator-morning-prep.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service cbb-originator-morning-health.service cbb-originator-morning.target
+After=cbb-originator-morning-prep.service cbb-originator-morning-warmup.service cbb-originator-walkforward.service cbb-originator-morning-forecast.service cbb-originator-morning-exports.service cbb-originator-morning-health.service cbb-originator-morning.target
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/etc/sports-models/cbb-originator.env

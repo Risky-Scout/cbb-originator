@@ -58,8 +58,13 @@ from cbb_platform.prod import (config as PC, history_extract as HX, loader as LD
 
 LIFECYCLE_VERSION = "cbb-prod-daily-lifecycle-1.0.0"
 TZ = "America/New_York"
-MORNING_TIME_ET = "07:00"
-FEATURES_WARMUP_TIME_ET = "01:30"     # ends (budget 150 min) before NBA daily 04:37 ET and the 07:00 morning
+# The morning chain starts AFTER the 06:00 ET training cutoff (walkforward.config.refit_cutoff): by then the as-of state
+# the fit trains on is frozen (no later sync can change it), so the chain's FEATURE_WARMUP stage prepares exactly that
+# state. Measured 2026-11-16..18: D-1 finals reach the state 01:53-04:23 ET; NBA daily holds the shared heavy lock
+# ~04:37-05:28 ET; the post-final pregame-feature backlog is 35-49 min. The old 01:30 ET warmup ran BEFORE the late
+# finals, so the 07:00 walk-forward deferred on the backlog and INITIAL ran on the D-2 model (11-17, 11-18).
+MORNING_TIME_ET = "06:10"
+FEATURES_WARMUP_TIME_ET = None        # no standalone timer: the warmup is morning stage 2/6 (FEATURE_WARMUP)
 ROTOWIRE_REFRESH_TIMES_ET = ("10:00", "13:00", "16:00", "18:00")       # exactly four; no other fixed refresh time
 ROTOWIRE_LIGHT_POLL_TIMES_ET = ("08:30",)   # acquisition ONLY (no forecast / fit / simulation / PMF); writer lock only
 SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") for t in ROTOWIRE_REFRESH_TIMES_ET)
@@ -122,18 +127,24 @@ def schedule_spec() -> dict:
     return {"timezone": TZ, "morning_recovery": {"at": REFIT_RETRY_TIME_ET, "steps": [
         "evaluate the durable morning state machine (ops/morning/<D>/progress.json); complete -> ALREADY_COMPLETE",
         "else resume the first incomplete stage (the same chain; PASS stages are skipped; never a refit after a promotion)"]},
-        "morning": {"at": MORNING_TIME_ET, "stage_units": ["cbb-originator-morning-prep", "cbb-originator-walkforward",
+        "morning": {"at": MORNING_TIME_ET, "stage_units": ["cbb-originator-morning-prep", "cbb-originator-morning-warmup",
+                    "cbb-originator-walkforward",
                     "cbb-originator-morning-forecast", "cbb-originator-morning-exports", "cbb-originator-morning-health"],
                     "steps": [
         "prior-day settlement (shadow tick: CBBD sync of final games, settlement)", "prior-day Grades export",
-        "daily walk-forward update (existing gates; last-known-good retained on failure)", "INITIAL forecast snapshot",
+        "pregame feature warmup over the frozen training-cutoff state (FEATURE_WARMUP)",
+        "daily walk-forward update (existing gates; last-known-good retained on failure)",
+        "INITIAL forecast snapshot ONLY on a same-day model decision (a retryable walk-forward deferral holds INITIAL "
+        "for the 08:00 recovery instead of forecasting on the D-2 model)",
         "Distributions export", "Boards export (forecast universe; market consensus when quotes exist)"]},
         "rotowire_refresh": {"at": list(ROTOWIRE_REFRESH_TIMES_ET), "steps": [
             "RotoWire availability refresh (BLOCKED_NO_KEY without ROTOWIRE_API_KEY)",
             "re-forecast only games with an availability change and a future cutoff", "PMFs persisted",
             "Boards / Distributions regenerated"]},
-        "features_warmup": {"at": [FEATURES_WARMUP_TIME_ET], "steps": [
-            "pre-build the immutable per-game pregame feature cache the next 07:00 walk-forward reads (same code path)",
+        "features_warmup": {"at": [], "stage_of": "morning", "steps": [
+            "morning stage FEATURE_WARMUP, after PREP (D-1 sync, settlement, reconciliation, Grades) and after the "
+            "training cutoff: pre-build the immutable per-game pregame feature cache over the frozen as-of state the "
+            "walk-forward then fits (same code path)",
             "shared heavy lock, hard time budget; no refit / promotion / forecast / simulation / PMF; no writer lock"]},
         "rotowire_light_poll": {"at": list(ROTOWIRE_LIGHT_POLL_TIMES_ET), "steps": [
             "RotoWire WEB acquisition only (snapshot + injury news into the event store; narrows the overnight news gap)",
@@ -356,20 +367,25 @@ WARMUP_BUDGET_ENV, WARMUP_WAIT_ENV = "CBB_WARMUP_BUDGET_MIN", "CBB_WARMUP_HEAVY_
 
 
 def warmup_day(now) -> date:
-    """The morning a warmup serves: today's if it runs before the 07:00 ET morning, else tomorrow's."""
+    """The morning a manual `features-warmup` serves: today's if it runs before the morning chain, else tomorrow's."""
     t = SH._utc(now).tz_convert(TZ)
     return t.date() if t.strftime("%H:%M") < MORNING_TIME_ET else (t + pd.Timedelta(days=1)).date()
 
 
-def features_warmup(life: Life, budget_min: float | None = None, runner=None) -> dict:
-    """Overnight pregame-feature warmup (walkforward.daily.warm_features): fills the immutable per-game feature cache the
-    next morning's walk-forward reads, under the shared heavy lock, inside a hard time budget. Scheduling only: no
-    refit, no promotion, no forecast, no simulation, no PMF, no ops-state write (CBB writer lock not taken)."""
+def features_warmup(life: Life, budget_min: float | None = None, runner=None, day: date | None = None) -> dict:
+    """Pregame-feature warmup (walkforward.daily.warm_features): fills the immutable per-game feature cache the day's
+    walk-forward reads, under the shared heavy lock, inside a hard time budget. Scheduling only: no refit, no
+    promotion, no forecast, no simulation, no PMF, no ops-state write (CBB writer lock not taken). `day` is explicit
+    for the morning FEATURE_WARMUP stage; STATE_FROZEN records whether it ran after the training cutoff (only then is
+    the as-of state it builds over final -- the exact state the fit trains on)."""
+    from cbb_platform.walkforward import config as WC
     budget = float(budget_min if budget_min is not None else os.environ.get(WARMUP_BUDGET_ENV, "150")) * 60.0
     lock, wait = os.environ.get(HEAVY_LOCK_ENV), float(os.environ.get(WARMUP_WAIT_ENV, "900"))
-    day = warmup_day(life.now())
+    day = day or warmup_day(life.now())
+    cut = pd.Timestamp(WC.refit_cutoff(day))
     rec = {"lifecycle": "FEATURES_WARMUP", "serves_morning": day.isoformat(), "started_at": life.now().isoformat(),
-           "heavy_lock": lock, "budget_s": budget}
+           "heavy_lock": lock, "budget_s": budget, "training_cutoff": cut.isoformat(),
+           "STATE_FROZEN": bool(life.now() >= cut)}
     fd, t0 = None, time.monotonic()
     if lock:
         fd = acquire_heavy_lock(lock, wait)
@@ -382,7 +398,7 @@ def features_warmup(life: Life, budget_min: float | None = None, runner=None) ->
     else:
         rec["lock_result"] = "NOT_CONFIGURED"
     try:
-        from cbb_platform.walkforward import config as WC, daily as WD
+        from cbb_platform.walkforward import daily as WD
         run = runner or WD.warm_features
         try:
             rec["warmup"] = run(day, root=Path(life.model_root or WC.STORE_ROOT), state_root=life.state_root,
@@ -523,6 +539,34 @@ def training_freshness(life: Life, day: date) -> dict:
                 "reason": f"EVALUATION_ERROR {type(e).__name__}: {e}"[:300]}
 
 
+RETENTION_MAX_AGE_H = 26.0              # the retention timer runs every 6 h; one missed day is visible, not silent
+
+
+def retention_state(life: Life) -> dict:
+    """The latest storage-retention summary record (ops/retention/storage_retention.jsonl) and its age."""
+    try:
+        recs = [r for r in OS.read_jsonl(Path(life.ops_root) / "retention" / "storage_retention.jsonl") if r.get("summary")]
+    except Exception as e:                         # noqa: BLE001
+        return {"RETENTION_STATE": "FAIL", "reason": f"{type(e).__name__}: {e}"[:200]}
+    if not recs:
+        return {"RETENTION_STATE": "NOT_RECORDED"}
+    last = recs[-1]
+    age = (life.now() - SH._utc(last["at"])).total_seconds() / 3600.0
+    return {"RETENTION_STATE": "PASS" if age <= RETENTION_MAX_AGE_H else "STALE", "LAST_AT": last.get("at"),
+            "AGE_H": round(age, 1), "CHANGED": last.get("changed"), "RECLAIMED_BYTES": last.get("reclaimed_bytes")}
+
+
+def availability_state(h: dict) -> dict:
+    """Every availability window recorded today (08:30 poll + refresh windows): its status; FAIL-like -> DEGRADED."""
+    wins = {k: v for k, v in h.items() if k.startswith("availability_") and isinstance(v, dict)}
+    good = ("FORECAST", "NO_CHANGE", "NO_AVAILABILITY_CHANGE", "NO_GAMES", "NO_FORECAST_DUE", "OK", "PASS", None)
+    st = {k.removeprefix("availability_"): v.get("status") or (v.get("forecast") or {}).get("status")
+          if isinstance(v.get("forecast"), dict) else v.get("status") for k, v in wins.items()}
+    bad = {k: v for k, v in st.items() if v not in good}
+    return {"AVAILABILITY_STATE": "NONE_YET" if not wins else ("DEGRADED" if bad else "PASS"), "WINDOWS": st,
+            "FAILED_WINDOWS": bad}
+
+
 def health(life: Life, day: date, **sections) -> dict:
     """Merge this step's machine-readable summary into <prod_root>/health/<D>.json (one file per ET date)."""
     p = health_path(life, day)
@@ -533,6 +577,7 @@ def health(life: Life, day: date, **sections) -> dict:
     for k, v in sections.items():
         h[k] = v
     h["training_freshness"] = training_freshness(life, day)   # durable model store + forecast index (never a fit)
+    h["retention"] = retention_state(life)
     for k, v in sections.items():                  # the newest forecast of the day (morning, retry or refresh)
         if isinstance(v, dict) and v.get("status") == "FORECAST" and (k == "forecast" or v.get("snapshot_id")):
             h["latest_forecast"] = {k: v.get(k) for k in FORECAST_SUMMARY}
@@ -661,7 +706,39 @@ def receipt(h: dict) -> dict:
         "PERFORMANCE": st("performance") == "WRITTEN" if "performance" in ex else True,   # evidence only, never quality
         "TRAINING_FRESHNESS": tfs != "FAIL",       # NOT_EVALUATED only without a model store (no ACTIVE to judge)
         "NO_ACTIVE_BLOCKER": not blockers}
-    return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
+    av = availability_state(h)
+    rt = h.get("retention") or {}
+    fw = mo.get("FEATURE_WARMUP") or {}
+    lin = mo.get("WARMUP_LINEAGE") or {}
+    normal_path = (fw.get("STATUS") == "PASS" and lin.get("WARMUP_STATE_MATCHES_FIT") is True
+                   and wf.get("DAILY_MODEL_PROMOTION") == "PROMOTED" and wf.get("attempt") == "MORNING_0700"
+                   and mo.get("INITIAL_ON_SAME_DAY_MODEL") is True and not mo.get("REFIT_RETRY_USED"))
+    contract = {                                   # the concise daily health contract (Release A: player lifecycle)
+        "PREP_COMPLETE": mo.get("MORNING_PREP_STATUS") == "PASS",
+        "D_MINUS_1_COMPLETE": tf.get("PREVIOUS_DAY_STATUS"),
+        "TRAINING_FRESHNESS": tfs,
+        "PLAYER_MODEL_ACTIVE": model_version,
+        "TEAM_RATINGS_FRESH": "NOT_DEPLOYED",
+        "PLAYER_FORECAST_COMPLETE": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
+        "GAME_FORECAST_COMPLETE": "NOT_DEPLOYED",
+        "PLAYER_MARKETS_STATE": market,
+        "GAME_MARKETS_STATE": "NOT_DEPLOYED",
+        "EXPORTS_COMPLETE": operational["EXPORTS"],
+        "GRADES_COMPLETE": st("grades") == "WRITTEN",
+        "PERFORMANCE_COMPLETE": st("performance") == "WRITTEN",
+        "AVAILABILITY_STATE": av["AVAILABILITY_STATE"],
+        "RETENTION_STATE": rt.get("RETENTION_STATE"),
+        "NORMAL_MORNING_PATH": normal_path,
+        "DAY_OPERATIONAL": all(operational.values()),
+        "ACTIVE_BLOCKER": (tf.get("ACTIVE_BLOCKER") or "STALE_TRAINING_MODEL") if tfs == "FAIL"
+                          else (blockers[0].split(":")[0] if blockers else None)}
+    return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"), "HEALTH_CONTRACT": contract,
+            "FEATURE_WARMUP_STATUS": fw.get("STATUS"), "WARMUP_STATE_VERSION": lin.get("WARMUP_STATE_VERSION"),
+            "FIT_STATE_VERSION": lin.get("FIT_STATE_VERSION"), "WARMUP_STATE_MATCHES_FIT": lin.get("WARMUP_STATE_MATCHES_FIT"),
+            "INITIAL_ON_SAME_DAY_MODEL": mo.get("INITIAL_ON_SAME_DAY_MODEL"),
+            "INITIAL_HELD_AWAITING_FRESH_MODEL": mo.get("INITIAL_HELD_AWAITING_FRESH_MODEL"),
+            "REFIT_RETRY_USED": mo.get("REFIT_RETRY_USED"), "NORMAL_MORNING_PATH": normal_path,
+            "AVAILABILITY_WINDOWS": av["WINDOWS"], "RETENTION": rt,
             "MODEL_VERSION": model_version,
             "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS") or mo.get("MORNING_REFIT_STATUS"),
             "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION") or mo.get("MODEL_PROMOTION"),

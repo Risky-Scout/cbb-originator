@@ -1,11 +1,11 @@
-# CBB Originator 07:00 ET morning stage 2/5 WALK_FORWARD: PIT legality, feature catch-up, fit 1, fit 2, deterministic
+# CBB Originator morning stage 3/6 WALK_FORWARD: PIT legality, feature catch-up, fit 1, fit 2, deterministic
 # repeat gate, hard gates, atomic promotion / incumbent retention, durable receipt. THE ONLY CBB unit that takes the
 # shared heavy lock. Its process exits (memory reclaimed with this cgroup) before the forecast stage starts.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator morning stage 2/5: daily walk-forward
+Description=CBB Originator morning stage 3/6: daily walk-forward
 Requires=cbb-originator-morning-prep.service
-After=cbb-originator-morning-prep.service
+After=cbb-originator-morning-prep.service cbb-originator-morning-warmup.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env
 
 [Service]

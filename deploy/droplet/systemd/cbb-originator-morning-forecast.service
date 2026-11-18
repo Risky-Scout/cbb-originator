@@ -1,8 +1,8 @@
-# CBB Originator 07:00 ET morning stage 3/5 INITIAL_FORECAST: the ACTIVE model loaded fresh after the walk-forward
+# CBB Originator morning stage 4/6 INITIAL_FORECAST: the ACTIVE model loaded fresh after the walk-forward
 # process exited; INITIAL forecast of the eligible slate, immutable snapshot + PMFs. No refit, no quotes, no heavy lock.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator morning stage 3/5: INITIAL forecast
+Description=CBB Originator morning stage 4/6: INITIAL forecast
 Requires=cbb-originator-walkforward.service
 After=cbb-originator-walkforward.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env

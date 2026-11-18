@@ -476,6 +476,11 @@ def test_workspace_baseline_history_is_preserved_and_drift_is_accounted():
             assert d["classification"] == "PRE_EXISTING_WORKSPACE_DRIFT", n
 
 
+# OBSOLETE_PRE_CLEANUP_CONTRACT (Part XXVI): the 7.6 GB Oct-6 project zip was deleted in the user-approved 2026-11-17
+# workspace cleanup. Absent is accepted; a present zip must still match its recorded size / mtime exactly.
+CLEANUP_REMOVED = frozenset({"CBB_Originator_Model.zip"})
+
+
 def test_no_unrelated_project_was_modified():
     """Relocation accommodation (architect ruling P / option 1, 2026-10-16), for the known project move only: the recorded
     sibling names are stat'ed at the same names under the current parent -- metadata only (existence, size, mtime; the
@@ -492,6 +497,8 @@ def test_no_unrelated_project_was_modified():
         assert RL.starter_pack_identity()["pass"]                        # content identity, not the recorded path
     for name, s in snap["entries"].items():
         p = parent / name
+        if name in CLEANUP_REMOVED and not p.exists():
+            continue                         # Part XXVI: deleted by the user-approved 2026-11-17 cleanup (not modified)
         assert p.exists(), name
         if s["type"] == "file":
             assert (p.stat().st_size, p.stat().st_mtime_ns) == (s["size"], s["mtime_ns"]), name

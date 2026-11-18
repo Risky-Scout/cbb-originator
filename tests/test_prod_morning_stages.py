@@ -1,4 +1,4 @@
-"""The 07:00 ET morning as five resumable, memory-isolated stages (prod/morning_stages.py) and the 08:00 ET recovery.
+"""The morning as six resumable, memory-isolated stages (prod/morning_stages.py) and the 08:00 ET recovery.
 
 Incident 2026-11-13: the monolithic morning process promoted cbb-jm1-2026-27-20261113 at 12:40Z, then was OOM-killed in
 the INITIAL forecast at 13:08Z; the 08:00 retry returned NO_OP ("the 07:00 walk-forward was not deferred"). These tests
@@ -73,7 +73,13 @@ def env(tmp_path, monkeypatch):
 
     monkeypatch.setattr(L.SH, "tick", tick)
     monkeypatch.setattr(L, "exports_for", exports_for)
+    def features_warmup(lf, budget_min=None, runner=None, day=None):
+        calls["warmup"] = calls.get("warmup", 0) + 1
+        return {"status": "COMPLETE", "STATE_FROZEN": True, "warmup": {"state_version": "S-x", "cutoffs_built": 0,
+                                                                         "games_built": 0, "status": "COMPLETE"}}
+
     monkeypatch.setattr(L, "forecast", forecast)
+    monkeypatch.setattr(L, "features_warmup", features_warmup)
     return {"life": life, "clock": clock, "calls": calls, "tmp": tmp_path}
 
 
@@ -133,8 +139,9 @@ def test_25_normal_morning_completes_and_0800_recovery_is_already_complete(env, 
     monkeypatch.setattr(L, "walk_forward", _wrap_wf(env))
     codes = [c for c, _ in _chain(env)]
     p = _p(env)
-    assert codes == [0, 0, 0, 0, 0]
-    assert [p[s]["STATUS"] for s in MS.STAGES] == [MS.PASS] * 5 and p["MORNING_COMPLETE"] is True
+    assert codes == [0, 0, 0, 0, 0, 0]
+    assert [p[s]["STATUS"] for s in MS.STAGES] == [MS.PASS] * 6 and p["MORNING_COMPLETE"] is True
+    assert p["INITIAL_FORECAST"]["INITIAL_ON_SAME_DAY_MODEL"] is True and not p["INITIAL_FORECAST"]["MODEL_FALLBACK_USED"]
     assert p["WALK_FORWARD"]["RUN_ID"] == "WF-20261113-x" and p["WALK_FORWARD"]["ACTIVE_MODEL_VERSION"] == "cbb-jm1-2026-27-20261113"
     assert p["INITIAL_FORECAST"]["GAME_COUNT"] == 22 and p["INITIAL_FORECAST"]["PMF_COUNT"] == 7464
     for k in ("DATE", "CODE_COMMIT", "TRAINING_CUTOFF_UTC", "CREATED_AT", "UPDATED_AT"):
@@ -282,7 +289,7 @@ def test_29_forecast_oom_recovery_runs_the_forecast_only(env, monkeypatch):
     _incumbent(env)
     monkeypatch.setattr(L, "walk_forward", _wrap_wf(env))
     env["calls"]["fail_forecast"] = True
-    assert [c for c, _ in _chain(env)][:3] == [0, 0, 1]
+    assert [c for c, _ in _chain(env)][:4] == [0, 0, 0, 1]
     p = _p(env)
     assert p["INITIAL_FORECAST"]["STATUS"] == MS.FAIL and p["INITIAL_FORECAST"]["RETRYABLE"] and not p["MORNING_COMPLETE"]
     assert p["EXPORTS"]["STATUS"] == MS.NOT_STARTED                               # no cascading false PASS
@@ -298,7 +305,7 @@ def test_30_export_failure_recovery_runs_exports_only(env, monkeypatch):
     _incumbent(env)
     monkeypatch.setattr(L, "walk_forward", _wrap_wf(env))
     env["calls"]["fail_exports"] = True
-    assert [c for c, _ in _chain(env)] == [0, 0, 0, 1, 0]
+    assert [c for c, _ in _chain(env)] == [0, 0, 0, 0, 1, 0]
     p = _p(env)
     assert p["EXPORTS"]["STATUS"] == MS.FAIL and p["HEALTH"]["STATUS"] == MS.PASS and not p["MORNING_COMPLETE"]
     h = json.loads(L.health_path(env["life"], D).read_text())["receipt"]
@@ -337,12 +344,16 @@ def test_shared_lock_deferral_is_retried_once_then_settles_on_the_incumbent(env,
         "DAILY_REFIT_STATUS": L.DEFERRED_SHARED_LOCK, "DAILY_MODEL_PROMOTION": "NOT_ATTEMPTED", "attempt": attempt})
     _chain(env)
     p = _p(env)
-    assert p["WALK_FORWARD"]["STATUS"] == MS.DEFERRED and p["WALK_FORWARD"]["RETRYABLE"] and env["calls"]["forecast"] == [L.INITIAL]
+    assert p["WALK_FORWARD"]["STATUS"] == MS.DEFERRED and p["WALK_FORWARD"]["RETRYABLE"]
+    # 2026-11-18: a retryable deferral HOLDS INITIAL (never a D-2-model INITIAL while a retry remains)
+    assert env["calls"]["forecast"] == [] and p["INITIAL_FORECAST"]["STATUS"] == MS.DEFERRED
+    assert p["INITIAL_FORECAST"]["ERROR_TYPE"] == MS.AWAITING_FRESH_MODEL and p["EXPORTS"]["STATUS"] != MS.PASS
     env["clock"].t = T0800
     assert MS.recover(env["life"], D)["action"] == "RESUME_AT_WALK_FORWARD"     # CASE 2
     _chain(env)
     p = _p(env)
     assert p["WALK_FORWARD"]["ATTEMPTS"] == 2 and p["WALK_FORWARD"]["RETRYABLE"] is False and p["MORNING_COMPLETE"]
+    assert env["calls"]["forecast"] == [L.INITIAL] and p["INITIAL_FORECAST"]["MODEL_FALLBACK_USED"] is True
 
 
 def test_walk_forward_exception_blocks_the_normal_forecast_and_exhaustion_falls_back(env, monkeypatch):
@@ -350,12 +361,12 @@ def test_walk_forward_exception_blocks_the_normal_forecast_and_exhaustion_falls_
     monkeypatch.setattr(L, "walk_forward", lambda life, day, attempt="MORNING_0700", **k: {
         "DAILY_REFIT_STATUS": "FAIL", "DAILY_MODEL_PROMOTION": "NOT_PROMOTED", "reason": "ValueError: boom"})
     codes = [c for c, _ in _chain(env)]
-    assert codes[1] == 1 and codes[2] == 1 and env["calls"]["forecast"] == []    # no usable decision: no forecast
+    assert codes[2] == 1 and codes[3] == 1 and env["calls"]["forecast"] == []    # no usable decision: no forecast
     env["clock"].t = T0800
     MS.recover(env["life"], D)
     codes = [c for c, _ in _chain(env)]
     p = _p(env)
-    assert codes[1] == 0 and p["WALK_FORWARD"]["MODEL_DECISION"] == "INCUMBENT_RETAINED" and not p["WALK_FORWARD"]["RETRYABLE"]
+    assert codes[2] == 0 and p["WALK_FORWARD"]["MODEL_DECISION"] == "INCUMBENT_RETAINED" and not p["WALK_FORWARD"]["RETRYABLE"]
     assert env["calls"]["forecast"] == [L.INITIAL] and p["MORNING_COMPLETE"] is True
 
 
@@ -432,15 +443,15 @@ def test_33_34_each_stage_is_its_own_process_and_the_walk_forward_memory_is_gone
     walk-forward's resident memory (a 600 MB touched allocation here) is NOT carried into the forecast process -- OS-level
     reclamation by process exit, not gc.collect()."""
     pids = {}
-    for st in ("prep", "walkforward", "forecast", "exports", "health"):
+    for st in ("prep", "warmup", "walkforward", "forecast", "exports", "health"):
         args = ["stage", st, "--mode", "fake"] + (["--alloc-mb", "600"] if st == "walkforward" else [])
         r = _h(tmp_path, T0700, *args)
         assert r["code"] == 0, r["stderr"]
         pids[st] = r["pid"]
         assert not MS.pid_alive(r["pid"])                                       # exited before the next stage starts
-    assert len(set(pids.values())) == 5
+    assert len(set(pids.values())) == 6
     p = MS.load(tmp_path / "ops", D)
-    assert [p[s]["PID"] for s in MS.STAGES[:-1]] == [pids[s] for s in ("prep", "walkforward", "forecast", "exports")]
+    assert [p[s]["PID"] for s in MS.STAGES[:-1]] == [pids[s] for s in ("prep", "warmup", "walkforward", "forecast", "exports")]
     assert p["WALK_FORWARD"]["PREV_STAGE_PID_EXITED"] and p["INITIAL_FORECAST"]["PREV_STAGE_PID_EXITED"]
     assert p["EXPORTS"]["PREV_STAGE_PID_EXITED"]
     wf_peak, fc_start = p["WALK_FORWARD"]["PEAK_RSS_MB"], p["INITIAL_FORECAST"]["START_RSS_MB"]
@@ -490,14 +501,19 @@ def test_32_only_the_walk_forward_stage_takes_the_shared_heavy_lock(env, monkeyp
         code, wf = MS.run_walkforward(env["life"], D, runner=_promoting_runner(env))
         assert code == 0 and wf["status"] == MS.DEFERRED and wf["DAILY_REFIT_STATUS"] == L.DEFERRED_SHARED_LOCK
         assert env["calls"]["fit"] == 0
-        for st in ("INITIAL_FORECAST", "EXPORTS", "HEALTH"):                    # never blocked by the heavy lock
-            assert MS.run_stage(env["life"], D, st)[0] == 0
+        # never blocked by the heavy lock: INITIAL is HELD (exit 0, no forecast) awaiting the same-day model, exports
+        # are blocked on the missing INITIAL (exit 1 -> recovery), health always records
+        assert MS.run_stage(env["life"], D, "INITIAL_FORECAST") == (0, {
+            "stage": "INITIAL_FORECAST", "action": "HELD_AWAITING_FRESH_MODEL", "walk_forward": MS.DEFERRED,
+            "walk_forward_error": L.DEFERRED_SHARED_LOCK})
+        assert MS.run_stage(env["life"], D, "EXPORTS")[0] == 1
+        assert MS.run_stage(env["life"], D, "HEALTH")[0] == 0
         assert time.monotonic() - t0 < 5
     finally:
         os.close(holder)
     run = (C.PROJECT_ROOT / "deploy" / "droplet" / "bin" / "cbb-originator-run").read_text()
     blk = run[run.index("morning-stage)     RUN="):run.index("morning-finalize)  RUN=")]
-    assert '[ "$2" = "walkforward" ] || unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC' in blk
+    assert 'case "$2" in walkforward|warmup) ;; *) unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;; esac' in blk
     for u in ("morning-prep", "morning-forecast", "morning-exports", "morning-health", "morning-recover"):
         body = "\n".join(l for l in (SD / f"cbb-originator-{u}.service").read_text().splitlines() if not l.startswith("#"))
         assert "heavy" not in body and "/run/lock" not in body, u
@@ -515,32 +531,35 @@ def _directives(name: str) -> dict:
 
 
 def test_systemd_chain_is_one_entrypoint_with_requires_after_and_separate_cgroups():
-    P, W, F, E, H = ("cbb-originator-morning-prep.service", "cbb-originator-walkforward.service",
-                     "cbb-originator-morning-forecast.service", "cbb-originator-morning-exports.service",
-                     "cbb-originator-morning-health.service")
+    P, U, W, F, E, H = ("cbb-originator-morning-prep.service", "cbb-originator-morning-warmup.service",
+                        "cbb-originator-walkforward.service", "cbb-originator-morning-forecast.service",
+                        "cbb-originator-morning-exports.service", "cbb-originator-morning-health.service")
     assert _directives("cbb-originator-morning.timer")["Unit"] == ["cbb-originator-morning.target"]
     t = _directives("cbb-originator-morning.target")
-    assert t["Wants"][0].split() == [P, W, F, E, H] and t["After"][0].split() == [P, W, F, E, H]
+    assert t["Wants"][0].split() == [P, U, W, F, E, H] and t["After"][0].split() == [P, U, W, F, E, H]
     assert t["StopWhenUnneeded"] == ["yes"]                                     # re-triggerable every morning
-    for prev, nxt in ((P, W), (W, F), (F, E)):
+    for prev, nxt in ((P, U), (W, F), (F, E)):
         d = _directives(nxt)
         assert d["Requires"] == [prev] and d["After"] == [prev], nxt
+    w = _directives(W)                         # ordered after the advisory warmup, but never Requires= it
+    assert w["Requires"] == [P] and w["After"][0].split() == [P, U]
     h = _directives(H)
-    assert h["Wants"][0].split() == [P, W, F, E] and h["After"][0].split() == [P, W, F, E] and "Requires" not in h
-    for u, st in ((P, "prep"), (W, "walkforward"), (F, "forecast"), (E, "exports"), (H, "health")):
+    assert h["Wants"][0].split() == [P, U, W, F, E] and h["After"][0].split() == [P, U, W, F, E] and "Requires" not in h
+    for u, st in ((P, "prep"), (U, "warmup"), (W, "walkforward"), (F, "forecast"), (E, "exports"), (H, "health")):
         d = _directives(u)
         assert d["Type"] == ["oneshot"] and d["Restart"] == ["no"] and "RemainAfterExit" not in d
         assert d["ExecStart"] == [f"/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-stage {st}"]
         assert d["ExecStopPost"] == [f"/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-finalize {st}"]
         assert d["MemorySwapMax"] == ["0"]
-    for u in (P, W, F, E):
+    for u in (P, U, W, F, E):
         assert _directives(u)["MemoryHigh"] == ["2800M"] and _directives(u)["MemoryMax"] == ["3200M"]
     r = _directives("cbb-originator-morning-recover.service")
-    assert set(" ".join(r["After"]).split()) >= {P, W, F, E, H, "cbb-originator-morning.target"}
+    assert set(" ".join(r["After"]).split()) >= {P, U, W, F, E, H, "cbb-originator-morning.target"}
     assert r["ExecStartPost"] == ["+/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-morning-resume"]
     assert _directives("cbb-originator-morning-recover.timer")["Unit"] == ["cbb-originator-morning-recover.service"]
-    timers = [p.name for p in SD.glob("*.timer") if "07:00:00" in p.read_text()]
-    assert timers == ["cbb-originator-morning.timer"]                           # exactly ONE 07:00 entrypoint
+    timers = [p.name for p in SD.glob("*.timer") if f"{L.MORNING_TIME_ET}:00" in p.read_text()]
+    assert timers == ["cbb-originator-morning.timer"]                           # exactly ONE morning entrypoint
+    assert not (SD / "cbb-originator-features-warmup.timer").exists()           # 01:30 ET warmup retired
     assert not (SD / "cbb-originator-morning.service").exists() and not (SD / "cbb-originator-refit-retry.timer").exists()
 
 

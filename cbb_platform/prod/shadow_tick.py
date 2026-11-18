@@ -723,6 +723,14 @@ def scoring_evidence(ctx: Ctx, tdir: Path, s: dict, timing: dict, sch: pd.DataFr
         proj["priced"] = proj["distribution_method"] != "NOT_PRICED"
         proj.to_parquet(tdir / "projections.parquet", index=False)
         out["projections"] = int(len(proj))
+        if len(inputs):                    # the per-player context exports read (same contract as a forecast snapshot)
+            cols = ["game_id", "team_id", "player_id", "min_mu", "min_sigma", "p_play", "availability_status",
+                    "availability_received_at", "player_suppression", "cold_start_class", "role_diagnostic"]
+            fp = inputs[[c for c in cols if c in inputs.columns]].drop_duplicates(["game_id", "player_id"])
+            fp = fp[fp["game_id"].isin(set(base["game_id"]))].assign(tick_id=tdir.name, run_id=s["run_id"],
+                                                                      prediction_as_of=str(s["prediction_as_of"]))
+            fp.to_parquet(tdir / "forecast_players.parquet", index=False)
+            out["forecast_players"] = int(len(fp))
         q = preds[preds["line"].notna() & preds["side"].notna()].copy()
         if len(q):
             q = q.merge(tim, on="game_id", how="left")

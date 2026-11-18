@@ -3,12 +3,13 @@
 # docs/operations/CBB_DROPLET_DEPLOYMENT_PACKAGE.md.
 #
 #   cbb-originator-run preflight                safety + identity checks only (no lock, no model work)
-#   cbb-originator-run morning-stage STAGE      07:00 ET chain (cbb-originator-morning.target; prod/morning_stages.py),
+#   cbb-originator-run morning-stage STAGE      06:10 ET chain (cbb-originator-morning.target; prod/morning_stages.py),
 #                                               ONE stage per systemd unit / cgroup / process, in order:
-#                                               prep | walkforward | forecast | exports | health. Each stage takes the
-#                                               CBB writer lock itself (wait <= CBB_MORNING_WRITER_LOCK_WAIT_SEC); ONLY
-#                                               walkforward keeps the shared heavy lock (held by the fit step only,
-#                                               wait <= 30 min; busy -> DEFERRED_SHARED_LOCK, last-known-good kept)
+#                                               prep | warmup | walkforward | forecast | exports | health. Each stage
+#                                               except warmup takes the CBB writer lock (wait <=
+#                                               CBB_MORNING_WRITER_LOCK_WAIT_SEC); warmup takes ONLY the shared heavy
+#                                               lock (feature cache + stage receipt); walkforward keeps the heavy lock
+#                                               (fit step only, wait <= 30 min; busy -> DEFERRED_SHARED_LOCK)
 #   cbb-originator-run morning-finalize STAGE   the stage unit's ExecStopPost: records SERVICE_RESULT (oom-kill /
 #                                               timeout / signal) + the cgroup memory.peak (progress lock only)
 #   cbb-originator-run morning-recover          08:00 ET: full morning state-machine recovery (writer lock): complete ->
@@ -23,7 +24,8 @@
 #                                               Phase B only.
 #   cbb-originator-run availability-poll HH:MM  08:30 ET light RotoWire poll: acquisition only (writer lock; NEVER the
 #                                               heavy lock; no forecast / refit / simulation / PMF)
-#   cbb-originator-run features-warmup         01:30 ET: pre-build the per-game pregame feature cache for the next 07:00
+#   cbb-originator-run features-warmup         MANUAL ONLY (no timer since 2026-11-18; the morning warmup stage replaces
+#                                               it): pre-build the per-game pregame feature cache for the next
 #                                               walk-forward (shared heavy lock, budget CBB_WARMUP_BUDGET_MIN; NO writer
 #                                               lock: writes only the immutable walk-forward feature cache; no fit/forecast)
 #   cbb-originator-run prune-scratch [--apply]  05:45 ET run-scratch retention (prod/retention.py): dry-run report, then
@@ -66,7 +68,7 @@ log() { echo "cbb-originator-run[$CMD]: $*" >&2; }
 refuse() { log "REFUSED: $*"; exit 3; }
 
 case "$CMD" in preflight|morning-recover|features-warmup|tick) ;;
-  morning-stage|morning-finalize) case "${2:-}" in prep|walkforward|forecast|exports|health) ;; *) echo "$CMD needs one of prep walkforward forecast exports health" >&2; exit 3 ;; esac ;;
+  morning-stage|morning-finalize) case "${2:-}" in prep|warmup|walkforward|forecast|exports|health) ;; *) echo "$CMD needs one of prep warmup walkforward forecast exports health" >&2; exit 3 ;; esac ;;
   morning-reconcile) [[ "${2:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "morning-reconcile needs YYYY-MM-DD" >&2; exit 3; } ;;
   lifecycle-refresh) case "${2:-}" in 10:00|13:00|16:00|18:00) ;; *) echo "lifecycle-refresh needs one of 10:00 13:00 16:00 18:00" >&2; exit 3 ;; esac ;;
   availability-poll) case "${2:-}" in 08:30) ;; *) echo "availability-poll needs 08:30" >&2; exit 3 ;; esac ;;
@@ -149,7 +151,7 @@ fi
 
 case "$CMD" in
   morning-stage)     RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" morning-stage --stage "$2")
-                     [ "$2" = "walkforward" ] || unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC   # heavy lock: walk-forward only
+                     case "$2" in walkforward|warmup) ;; *) unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;; esac   # heavy lock: walk-forward + warmup only
                      WRITER_WAIT_SEC="${CBB_MORNING_WRITER_LOCK_WAIT_SEC:-1500}" ;;
   morning-finalize)  RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" morning-finalize --stage "$2")
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;
@@ -177,6 +179,10 @@ if [ "$DRY" = "1" ] && [ "$CMD" = "lifecycle-refresh" ]; then
   log "DRY RUN: Phase A without the CBB writer lock; Phase B takes $WRITER_LOCK (wait <= 300 s) inside the orchestrator; run: ${RUN[*]}"
   exit 0
 fi
+if [ "$CMD" = "morning-stage" ] && [ "${2:-}" = "warmup" ] && [ "$DRY" = "1" ]; then
+  log "DRY RUN: no CBB writer lock; heavy lock ${CBB_HEAVY_LOCK:-NONE} for the whole warmup stage (budget ${CBB_WARMUP_BUDGET_MIN:-150} min), run: ${RUN[*]}"
+  exit 0
+fi
 if [ "$DRY" = "1" ]; then
   EXTRA=""; [ "$CMD" = "tick" ] && EXTRA=" (only when due_check says due); then: $PY -m cbb_platform.prod.lifecycle quotes (tiered quote refresh + exports)"
   log "DRY RUN: would take $WRITER_LOCK (heavy lock ${CBB_HEAVY_LOCK:-NONE} only inside the walk-forward step), run: ${RUN[*]}$EXTRA; duckdb memory_limit $CBB_DUCKDB_MEMORY_LIMIT (history $CBB_DUCKDB_HISTORY_MEMORY_LIMIT) spill $CBB_DUCKDB_TEMP_DIR"
@@ -186,7 +192,7 @@ if [ "$DRY" = "1" ] && [ "$CMD" = "morning-finalize" ]; then
   log "DRY RUN: no CBB writer lock, heavy lock NONE (ExecStopPost: progress lock only), run: ${RUN[*]}"
   exit 0
 fi
-if [ "$CMD" = "features-warmup" ] || [ "$CMD" = "morning-finalize" ]; then
+if [ "$CMD" = "features-warmup" ] || [ "$CMD" = "morning-finalize" ] || { [ "$CMD" = "morning-stage" ] && [ "${2:-}" = "warmup" ]; }; then
   exec "${RUN[@]}"                       # no CBB writer lock: the feature cache / the stage receipt (own flock) only
 fi
 mkdir -p "$LOCK_DIR"

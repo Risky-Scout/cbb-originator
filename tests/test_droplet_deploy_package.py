@@ -241,8 +241,8 @@ def test_prod_root_env_relocates_every_mutable_production_path(tmp_path):
 
 
 # ------------------------------------------------------------------ systemd units
-HEAVY_UNITS = ("cbb-originator-walkforward.service", "cbb-originator-features-warmup.service")
-# the 07:00 chain's other stages: own unit / cgroup each, CBB writer lock (taken by the stage), NEVER the heavy lock
+HEAVY_UNITS = ("cbb-originator-walkforward.service", "cbb-originator-morning-warmup.service")
+# the morning chain's other stages: own unit / cgroup each, CBB writer lock (taken by the stage), NEVER the heavy lock
 STAGE_UNITS = ("cbb-originator-morning-prep.service", "cbb-originator-morning-forecast.service",
                "cbb-originator-morning-exports.service")
 SMALL_UNITS = ("cbb-originator-morning-health.service", "cbb-originator-morning-recover.service")
@@ -262,7 +262,7 @@ def test_units_are_isolated_and_hold_no_secrets():
                                        "cbb-originator-retention.timer", "cbb-originator-morning.timer",
                                        "cbb-originator-morning.target", "cbb-originator-morning-recover.timer",
                                        "cbb-originator-quotes.timer",
-                                       "cbb-originator-availability-0830.timer", "cbb-originator-features-warmup.timer",
+                                       "cbb-originator-availability-0830.timer",
                                        *(f"cbb-originator-availability-{t}.timer" for t in ("1000", "1300", "1600", "1800"))}
     for u in UNITS:
         s = u.read_text()
@@ -316,11 +316,10 @@ def test_units_are_isolated_and_hold_no_secrets():
 def test_timers_are_dst_correct_and_match_the_approved_schedule():
     cal = {p.name: [ln for ln in p.read_text().splitlines() if ln.startswith("OnCalendar=")]
            for p in (D / "systemd").glob("*.timer")}
-    assert cal == {"cbb-originator-morning.timer": ["OnCalendar=*-*-* 07:00:00 America/New_York"],
+    assert cal == {"cbb-originator-morning.timer": ["OnCalendar=*-*-* 06:10:00 America/New_York"],
                    "cbb-originator-morning-recover.timer": ["OnCalendar=*-*-* 08:00:00 America/New_York"],
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
-                   "cbb-originator-features-warmup.timer": ["OnCalendar=*-*-* 01:30:00 America/New_York"],
                    "cbb-originator-retention.timer": ["OnCalendar=*-*-* 05,11,17,23:45:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
@@ -413,12 +412,19 @@ def test_0830_light_poll_unit_never_touches_the_heavy_lock_and_only_acquires(app
 
 
 def test_features_warmup_is_heavy_locked_writer_lock_free_and_bounded(app):
-    s = (D / "systemd" / "cbb-originator-features-warmup.service").read_text()
-    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run features-warmup" in s
-    t = (D / "systemd" / "cbb-originator-features-warmup.timer").read_text()
-    assert "Unit=cbb-originator-features-warmup.service" in t and "Persistent=false" in t
+    """2026-11-18: the warmup is morning stage FEATURE_WARMUP (after PREP, after the training cutoff); the 01:30 ET
+    standalone timer + service are retired. `features-warmup` stays as a manual command."""
+    s = (D / "systemd" / "cbb-originator-morning-warmup.service").read_text()
+    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-stage warmup" in s
+    assert "Requires=cbb-originator-morning-prep.service" in s and "After=cbb-originator-morning-prep.service" in s
+    assert not (D / "systemd" / "cbb-originator-features-warmup.timer").exists()
+    assert not (D / "systemd" / "cbb-originator-features-warmup.service").exists()
     timeout = int(re.search(r"^TimeoutStartSec=(\d+)min$", s, re.M).group(1))
-    assert 150 < timeout <= 180                        # budget 150 min + one cutoff group; ends before NBA 04:37 ET
+    assert 150 < timeout <= 180                        # budget 150 min + one cutoff group
+    r = _run(app, "morning-stage", "warmup", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    assert r.returncode == 0, r.stderr
+    assert "no CBB writer lock" in r.stderr and "morning-stage --stage warmup" in r.stderr
+    assert "writer.lock" not in r.stderr and str(app["env"]["CBB_HEAVY_LOCK"]) in r.stderr
     r = _run(app, "features-warmup", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
     assert r.returncode == 0, r.stderr
     assert "no CBB writer lock" in r.stderr and "lifecycle --ops-root" in r.stderr and "features-warmup" in r.stderr

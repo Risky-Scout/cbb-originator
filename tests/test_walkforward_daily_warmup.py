@@ -73,7 +73,7 @@ def test_lifecycle_warmup_takes_the_heavy_lock_and_defers_when_busy(monkeypatch,
     log = (tmp_path / "prod" / "walkforward_attempts" / "warmup-2026-11-10.jsonl").read_text().splitlines()
     assert [json.loads(x)["status"] for x in log] == ["COMPLETE", "DEFERRED_SHARED_LOCK"]
     assert L.warmup_day(pd.Timestamp("2026-11-10T13:00:00Z")) == date(2026, 11, 11)   # 08:00 ET -> next morning
-    assert L.schedule_spec()["features_warmup"]["at"] == ["01:30"]
+    assert L.schedule_spec()["features_warmup"]["at"] == [] and L.schedule_spec()["features_warmup"]["stage_of"] == "morning"
 
 
 def test_daily_receipt_summarizes_recorded_sections_only(monkeypatch, tmp_path):

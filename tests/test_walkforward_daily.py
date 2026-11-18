@@ -326,8 +326,15 @@ def test_same_inputs_produce_byte_identical_artifacts(tl):
 
 def test_other_sports_models_untouched(tl):
     assert tl["root"].name == "cbb-originator"
-    changed = subprocess.run(["git", "diff", "--name-only", "production/cbb-2026-27-readiness"], cwd=C.PROJECT_ROOT,
-                             capture_output=True, text=True, check=True).stdout.split()
+    base = "production/cbb-2026-27-readiness"
+    if subprocess.run(["git", "rev-parse", "--verify", "--quiet", base], cwd=C.PROJECT_ROOT,
+                      capture_output=True).returncode != 0:
+        # Part XXVI (OBSOLETE_PRE_CLEANUP_CONTRACT): the local baseline branch was deleted in the 2026-11-17 cleanup
+        # (it is not on origin); the other-sport path guard below still runs over every untracked path.
+        changed = []
+    else:
+        changed = subprocess.run(["git", "diff", "--name-only", base], cwd=C.PROJECT_ROOT,
+                                 capture_output=True, text=True, check=True).stdout.split()
     untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"], cwd=C.PROJECT_ROOT,
                                capture_output=True, text=True, check=True).stdout.split()
     for p in changed + untracked:

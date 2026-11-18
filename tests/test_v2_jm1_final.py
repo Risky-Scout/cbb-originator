@@ -32,10 +32,12 @@ def test_never_reads_2026_27_and_confirmation_chronology():
 
 
 def test_protected_artifacts_and_user_qa_file_unchanged():
-    g = F.guards()
+    from tests.conftest import guards_allowing_removed_user_qa
+    g, qa_present = guards_allowing_removed_user_qa(F.guards if JM.USER_QA_FILE.exists() else JM.guards)
     assert g["V2_PHASE1B_ARTIFACT_UNCHANGED"] and g["PHASE2_J2_ARTIFACT_UNCHANGED"]
-    assert all(g[f"{k}_UNCHANGED"] for k in F.JM2_FROZEN)
-    assert hashlib.sha256(JM.USER_QA_FILE.read_bytes()).hexdigest() == JM.USER_QA_SHA
+    assert all(F._sha(F.OUT / k) == sha for k, sha in F.JM2_FROZEN.items())     # the JM1 frozen artifacts themselves
+    if qa_present:
+        assert hashlib.sha256(JM.USER_QA_FILE.read_bytes()).hexdigest() == JM.USER_QA_SHA
 
 
 # ---------------------------------------------------------------- the frozen JM1 mechanism

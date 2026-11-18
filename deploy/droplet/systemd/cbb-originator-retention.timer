@@ -1,4 +1,4 @@
-# CBB Originator retention timer: 05:45 ET (after the 01:30 warmup, before the 07:00 morning) and every 6 h after
+# CBB Originator retention timer: 05:45 ET (before the 06:10 morning chain) and every 6 h after
 # (11:45, 17:45, 23:45 ET), so each retention age window holds within +6 h (run scratch <= 24 h). Writer lock only (waits
 # <= 600 s for a tick). systemd evaluates the zone itself (DST-correct).
 [Unit]

@@ -51,8 +51,8 @@ def test_nov14_progress_names_the_historical_failure():
     assert p["MORNING_COMPLETE"] is False and p["MORNING_CHAIN_COMPLETE"] is False
     assert p["FIRST_INCOMPLETE_STAGE"] is None and p["RECOVERY_REQUIRED"] is False     # nothing retryable remains
     assert p["FIRST_HISTORICAL_FAILURE"] == "INITIAL_FORECAST"
-    assert p["STAGE_TERMINAL_STATES"] == {"PREP": "PASS", "WALK_FORWARD": "PASS", "INITIAL_FORECAST": "FAIL",
-                                          "EXPORTS": "DEFERRED", "HEALTH": "PASS"}
+    assert p["STAGE_TERMINAL_STATES"] == {"PREP": "PASS", "FEATURE_WARMUP": "NOT_REQUIRED", "WALK_FORWARD": "PASS",
+                                          "INITIAL_FORECAST": "FAIL", "EXPORTS": "DEFERRED", "HEALTH": "PASS"}
     s = MS.summary(p)
     assert s["INITIAL_FORECAST"] == "FAIL" and s["FIRST_HISTORICAL_FAILURE"] == "INITIAL_FORECAST"
 

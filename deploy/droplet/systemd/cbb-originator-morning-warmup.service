@@ -1,9 +1,14 @@
-# CBB Originator: 07:00 ET daily lifecycle: settlement, prior-day Grades, walk-forward under the shared heavy lock, INITIAL forecast, exports, health
+# CBB Originator morning stage 2/6 FEATURE_WARMUP: after PREP (D-1 sync, settlement, box + identity reconciliation,
+# prior-day Grades) and after the 06:00 ET training cutoff, pre-build the immutable per-game pregame feature cache over the
+# FROZEN as-of state the walk-forward then fits (same builder). Shared heavy lock (budget CBB_WARMUP_BUDGET_MIN, default
+# 150 min); NO CBB writer lock (writes only the walk-forward feature cache + its stage receipt). Advisory: always exits 0;
+# the walk-forward keeps its own bounded catch-up as the safety net. Replaces the 01:30 ET standalone warmup, which ran
+# before the late D-1 finals existed (2026-11-17/18: walk-forward DEFERRED_FEATURE_BACKLOG, INITIAL on the D-2 model).
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator 01:30 ET pregame feature-cache warmup
-After=network-online.target
-Wants=network-online.target
+Description=CBB Originator morning stage 2/6: pregame feature warmup (frozen training-cutoff state)
+Requires=cbb-originator-morning-prep.service
+After=cbb-originator-morning-prep.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env
 
 [Service]
@@ -23,12 +28,13 @@ Environment=CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports
 Environment=CBB_LOCK_DIR=/var/lib/sports-models/cbb-originator/locks
 Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock
 Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
-ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run features-warmup
+ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-stage warmup
+ExecStopPost=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run morning-finalize warmup
 Restart=no
 TimeoutStartSec=170min
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=cbb-originator-features-warmup
+SyslogIdentifier=cbb-originator-morning-warmup
 MemoryHigh=2800M
 MemoryMax=3200M
 MemorySwapMax=0

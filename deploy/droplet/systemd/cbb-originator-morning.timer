@@ -1,9 +1,9 @@
-# CBB Originator 07:00 ET morning timer: starts the five-stage chain (cbb-originator-morning.target). systemd evaluates the zone itself (DST-correct).
+# CBB Originator 06:10 ET morning timer (10 min after the 06:00 ET training cutoff: the as-of training state is frozen): starts the six-stage chain (cbb-originator-morning.target). systemd evaluates the zone itself (DST-correct).
 [Unit]
-Description=CBB Originator 07:00 ET daily lifecycle timer
+Description=CBB Originator 06:10 ET daily lifecycle timer (after the 06:00 ET training cutoff)
 
 [Timer]
-OnCalendar=*-*-* 07:00:00 America/New_York
+OnCalendar=*-*-* 06:10:00 America/New_York
 AccuracySec=1s
 RandomizedDelaySec=0
 Persistent=false

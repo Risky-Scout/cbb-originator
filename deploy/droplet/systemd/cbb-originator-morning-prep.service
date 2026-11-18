@@ -1,8 +1,8 @@
-# CBB Originator 07:00 ET morning stage 1/5 PREP: prior-night CBBD sync + settlement (shadow tick), prior-day Grades.
+# CBB Originator 06:10 ET morning stage 1/6 PREP: prior-night CBBD sync + settlement (shadow tick), prior-day Grades.
 # Own process + cgroup; no fit, no simulation, no PMF; CBB writer lock (taken by the stage); NEVER the shared heavy lock.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator morning stage 1/5: prep (settlement, prior-day Grades)
+Description=CBB Originator morning stage 1/6: prep (settlement, prior-day Grades)
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/etc/sports-models/cbb-originator.env

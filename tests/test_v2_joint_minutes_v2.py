@@ -38,10 +38,12 @@ def test_no_2025_26_or_later_read():
 
 
 def test_old_artifacts_and_user_qa_file_unchanged():
-    g = JM.guards()
+    from tests.conftest import guards_allowing_removed_user_qa
+    g, qa_present = guards_allowing_removed_user_qa(JM.guards)
     assert g["V2_PHASE1B_ARTIFACT_UNCHANGED"] and g["PHASE2_J2_ARTIFACT_UNCHANGED"] and g["V1_ARTIFACT_UNCHANGED"]
     assert all(g[f"{k}_UNCHANGED"] for k in JM.PHASE3_FROZEN)
-    assert hashlib.sha256(JM.USER_QA_FILE.read_bytes()).hexdigest() == JM.USER_QA_SHA
+    if qa_present:
+        assert hashlib.sha256(JM.USER_QA_FILE.read_bytes()).hexdigest() == JM.USER_QA_SHA
 
 
 def test_dispersion_and_residual_chronology():

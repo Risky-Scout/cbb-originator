@@ -49,6 +49,7 @@ from xml.sax.saxutils import escape
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 from cbb_platform.prod import config as PC, pmf_compact as PCX, pmf_evidence as PE
 
@@ -439,16 +440,20 @@ def pmf_summary(pmf: np.ndarray) -> dict:
 
 def player_context(ops_root: Path, date: str | None, recs: list) -> dict:
     """(forecast_id, player_id) -> {p_play, min_mu, availability_status} from the forecast snapshot (or official tick)
-    the exported PMF came from; absent fields stay blank (never estimated)."""
+    the exported PMF came from; absent fields stay blank (never estimated). An official tick persists its per-player
+    context in forecast_players.parquet (ticks since 2026-11-18) or, before that, in its own projections.parquet (the
+    same run's model_inputs min_mu / p_play) -- the context of THAT prediction, never another snapshot's."""
     out: dict = {}
     for fid in {(x["source_kind"], x["forecast_id"]) for x in recs}:
         kind, f = fid
         base = (Path(ops_root) / "forecasts" / str(date) / str(f)) if kind == "FORECAST_SNAPSHOT" else Path(ops_root) / "ticks" / str(f)
         p = base / "forecast_players.parquet"
+        if not p.exists() and kind != "FORECAST_SNAPSHOT":
+            p = base / "projections.parquet"
         if not p.exists():
             continue
-        fp = pd.read_parquet(p, columns=[c for c in ("player_id", "p_play", "min_mu", "availability_status")
-                                         if c in pd.read_parquet(p).columns])
+        have = set(pq.read_schema(p).names)
+        fp = pd.read_parquet(p, columns=[c for c in ("player_id", "p_play", "min_mu", "availability_status") if c in have])
         for r in fp.drop_duplicates("player_id").itertuples(index=False):
             out[(f, r.player_id)] = r._asdict()
     return out

@@ -41,9 +41,19 @@ import pandas as pd
 
 from cbb_platform.prod import ops_store as OS
 
-STAGES = ("PREP", "WALK_FORWARD", "INITIAL_FORECAST", "EXPORTS", "HEALTH")
-CLI_STAGES = {"prep": "PREP", "walkforward": "WALK_FORWARD", "forecast": "INITIAL_FORECAST", "exports": "EXPORTS",
-              "health": "HEALTH"}
+STAGES = ("PREP", "FEATURE_WARMUP", "WALK_FORWARD", "INITIAL_FORECAST", "EXPORTS", "HEALTH")
+CLI_STAGES = {"prep": "PREP", "warmup": "FEATURE_WARMUP", "walkforward": "WALK_FORWARD", "forecast": "INITIAL_FORECAST",
+              "exports": "EXPORTS", "health": "HEALTH"}
+# FEATURE_WARMUP is ADVISORY: it pre-builds the pregame feature cache over the frozen training-cutoff state so the
+# walk-forward only fits; it never blocks the chain (the walk-forward keeps its own bounded catch-up as the safety net)
+# and is never required for MORNING_COMPLETE.
+ADVISORY_STAGES = ("FEATURE_WARMUP",)
+# INITIAL is held (DEFERRED, AWAITING_FRESH_MODEL) when the walk-forward ended in a RETRYABLE deferral / failure outside
+# a recovery pass: the 08:00 recovery (queued behind any running stage unit by its After=) retries the walk-forward and
+# INITIAL then runs on the same-day model. INITIAL is never knowingly made on the D-2 model while a retry remains; once
+# the retries are exhausted the incumbent forecast is made and flagged (MODEL_FALLBACK_USED, health STALE_TRAINING_MODEL).
+AWAITING_FRESH_MODEL = "AWAITING_FRESH_MODEL"
+INITIAL_HOLD_UNTIL_ET = "09:30"          # a chain started by hand after this never waits for a recovery that won't come
 NOT_STARTED, RUNNING, PASS, DEFERRED, FAIL = "NOT_STARTED", "RUNNING", "PASS", "DEFERRED", "FAIL"
 STATUSES = (NOT_STARTED, RUNNING, PASS, DEFERRED, FAIL)
 # terminal stage states (summary / health; derived, never stored as STATUS): RECOVERED = the stage's outcome was
@@ -61,6 +71,7 @@ MODEL_GATE_FAIL = "MODEL_GATE_FAIL"
 RESUME_REQUEST = "RESUME_REQUEST"        # <ops_root>/morning/RESUME_REQUEST: the root ExecStartPost re-starts the chain
 STAGE_FIELDS = {
     "PREP": (),
+    "FEATURE_WARMUP": ("WARMUP_STATUS", "STATE_VERSION", "STATE_FROZEN", "CUTOFFS_BUILT", "GAMES_BUILT"),
     "WALK_FORWARD": ("RUN_ID", "DAILY_REFIT_STATUS", "DAILY_MODEL_PROMOTION", "ACTIVE_MODEL_VERSION"),
     "INITIAL_FORECAST": ("SNAPSHOT_ID", "MODEL_VERSION", "GAME_COUNT", "PLAYER_COUNT", "PMF_COUNT"),
     "EXPORTS": ("BOARDS_STATUS", "DISTRIBUTIONS_STATUS", "GRADES_STATUS"),
@@ -247,10 +258,15 @@ def complete(p: dict) -> bool:
 def stage_terminal_states(p: dict) -> dict:
     """Per stage: PASS | FAIL | DEFERRED | RECOVERED | NOT_REQUIRED, or NOT_STARTED / RUNNING while not terminal."""
     out = {}
+    upstream_deferred = False
     for s in STAGES:
         st = p[s]
         S = st["STATUS"]
-        if S in (NOT_STARTED, RUNNING):
+        if s in ADVISORY_STAGES and S == NOT_STARTED and p["WALK_FORWARD"]["STATUS"] != NOT_STARTED:
+            out[s] = NOT_REQUIRED                # legacy day (pre-warmup-stage chain) or a recovery that skipped it
+        elif S == NOT_STARTED and upstream_deferred and s != "HEALTH":
+            out[s] = DEFERRED                    # blocked by a deferred upstream stage (e.g. EXPORTS behind a held INITIAL)
+        elif S in (NOT_STARTED, RUNNING):
             out[s] = S
         elif s == "WALK_FORWARD" and S == PASS and st.get("RECOVERED_FROM"):
             out[s] = RECOVERED
@@ -261,13 +277,15 @@ def stage_terminal_states(p: dict) -> dict:
             out[s] = DEFERRED
         else:
             out[s] = S
+        if s not in ADVISORY_STAGES and out[s] == DEFERRED:
+            upstream_deferred = True
     return out
 
 
 def first_historical_failure(p: dict, terminal: dict | None = None) -> str | None:
     """The first stage, in chain order, whose terminal state is FAIL (settled: nothing left to retry today)."""
     terminal = terminal or stage_terminal_states(p)
-    return next((s for s in STAGES if terminal[s] == FAIL), None)
+    return next((s for s in STAGES if terminal[s] == FAIL and s not in ADVISORY_STAGES), None)
 
 
 def derive(p: dict) -> None:
@@ -280,7 +298,8 @@ def derive(p: dict) -> None:
     p["MORNING_CHAIN_COMPLETE"] = p["MORNING_COMPLETE"]
     fh = first_historical_failure(p, term)
     if not p["MORNING_COMPLETE"] and nxt is None and fh is None:     # never an unexplained incomplete morning
-        fh = next((s for s in STAGES if term[s] not in (PASS, NOT_REQUIRED, RECOVERED)), "UNCLASSIFIED")
+        fh = next((s for s in STAGES if s not in ADVISORY_STAGES and term[s] not in (PASS, NOT_REQUIRED, RECOVERED)),
+                  "UNCLASSIFIED")
     p["FIRST_HISTORICAL_FAILURE"] = fh
     p["RECOVERY_REQUIRED_REASON"] = recovery_reason(p)
 
@@ -383,6 +402,65 @@ def run_prep(life, day: date) -> tuple[int, dict]:
     return 0, {"stage": "PREP", "status": PASS, "tick": tick}
 
 
+def classify_warmup(rec: dict, attempts: int) -> tuple[str, dict]:
+    """lifecycle.features_warmup record -> (stage status, fields). Advisory: the exit code is always 0."""
+    w = rec.get("warmup") or {}
+    ws = rec.get("status")
+    f = {"WARMUP_STATUS": ws, "STATE_VERSION": w.get("state_version"), "STATE_FROZEN": rec.get("STATE_FROZEN"),
+         "CUTOFFS_BUILT": w.get("cutoffs_built"), "GAMES_BUILT": w.get("games_built"),
+         "RECORD": {k: rec.get(k) for k in ("serves_morning", "training_cutoff", "STATE_FROZEN", "lock_result",
+                                            "lock_wait_s", "budget_s", "started_at", "finished_at", "reason")
+                    if rec.get(k) is not None} | {"warmup": {k: w.get(k) for k in (
+                        "state_version", "included_games", "cached_before", "cutoffs_todo", "cutoffs_built",
+                        "games_built", "elapsed_s", "status") if k in w}}}
+    if ws in ("COMPLETE", "NOTHING_TO_BUILD"):
+        return PASS, {**f, "RETRYABLE": False}
+    retry = attempts < MAX_ATTEMPTS
+    if ws in ("BUDGET_EXHAUSTED", "DEFERRED_SHARED_LOCK"):
+        return DEFERRED, {**f, "RETRYABLE": retry, "ERROR_TYPE": ws,
+                          "ERROR_DETAIL": "walk-forward catch-up continues from the persisted cache"}
+    return FAIL, {**f, "RETRYABLE": retry, "ERROR_TYPE": ws or "EXCEPTION", "ERROR_DETAIL": str(rec.get("reason"))[:400]}
+
+
+def run_warmup(life, day: date, warm_runner=None) -> tuple[int, dict]:
+    """Stage 2/6 FEATURE_WARMUP: after PREP (D-1 sync, settlement, box + identity reconciliation, Grades) and after the
+    training cutoff, pre-build the pregame feature cache over the frozen as-of state the walk-forward fits. Shared heavy
+    lock (taken by lifecycle.features_warmup), NO writer lock (quote ticks keep running). Always exits 0."""
+    from cbb_platform.prod import lifecycle as L
+    with locked(life.ops_root, day) as p:
+        st = p["FEATURE_WARMUP"]
+        if st["STATUS"] == PASS:
+            return _skip(life.ops_root, day, "FEATURE_WARMUP", "SKIP_ALREADY_PASS", state=st.get("STATE_VERSION"))
+        if wf_settled(p["WALK_FORWARD"]):
+            return _skip(life.ops_root, day, "FEATURE_WARMUP", "SKIP_WALK_FORWARD_SETTLED",
+                         walk_forward=p["WALK_FORWARD"]["STATUS"])
+        if int(st.get("ATTEMPTS") or 0) >= MAX_ATTEMPTS:
+            return _skip(life.ops_root, day, "FEATURE_WARMUP", "SKIP_ATTEMPTS_EXHAUSTED")
+        _begin(p, "FEATURE_WARMUP", "PREP")
+        attempts = p["FEATURE_WARMUP"]["ATTEMPTS"]
+    log_event(life.ops_root, day, {"stage": "FEATURE_WARMUP", "action": "RUN"})
+    try:
+        rec = L.features_warmup(life, runner=warm_runner, day=day)
+    except Exception as e:                                       # noqa: BLE001 -- the cache is append-only
+        rec = {"status": "FAIL", "reason": _err(e)}
+    status, fields = classify_warmup(rec, attempts)
+    with locked(life.ops_root, day) as p:
+        _end(p, "FEATURE_WARMUP", status, 0, **fields)
+    return 0, {"stage": "FEATURE_WARMUP", "status": status, "warmup_status": fields["WARMUP_STATUS"],
+               "state_version": fields["STATE_VERSION"], "games_built": fields["GAMES_BUILT"]}
+
+
+def warmup_lineage(p: dict, rec: dict) -> dict:
+    """Did the warmup prepare the exact state the walk-forward trained on? (receipt only; never gates the fit)"""
+    w = p.get("FEATURE_WARMUP") or {}
+    fit_state = (rec.get("state_freshness") or {}).get("state_version")
+    fc = rec.get("feature_catchup") or {}
+    return {"WARMUP_STATE_VERSION": w.get("STATE_VERSION"), "FIT_STATE_VERSION": fit_state,
+            "WARMUP_STATE_MATCHES_FIT": (w.get("STATE_VERSION") == fit_state) if w.get("STATE_VERSION") and fit_state
+            else None, "WARMUP_STATE_FROZEN": w.get("STATE_FROZEN"),
+            "CATCHUP_CUTOFFS_AFTER_WARMUP": fc.get("cutoffs_todo"), "CATCHUP_ELAPSED_S": fc.get("elapsed_s")}
+
+
 def classify_walk_forward(rec: dict, attempts: int) -> tuple[str, int, dict]:
     """lifecycle.walk_forward record -> (stage status, exit code, fields). Exit 0 = a usable model decision exists
     (new ACTIVE or the retained incumbent): the forecast may run. Exit 1 = a retryable failure before a decision."""
@@ -440,15 +518,29 @@ def run_walkforward(life, day: date, runner=None, warm_runner=None) -> tuple[int
             wf.update(RETRYABLE=False, MODEL_DECISION="INCUMBENT_RETAINED",
                       ERROR_DETAIL=f"{wf.get('ERROR_DETAIL') or ''} [retries exhausted after {wf['ATTEMPTS']}]"[:400])
             return _skip(life.ops_root, day, "WALK_FORWARD", "SKIP_ATTEMPTS_EXHAUSTED_INCUMBENT_RETAINED")
-        _begin(p, "WALK_FORWARD", "PREP")
+        _begin(p, "WALK_FORWARD", "FEATURE_WARMUP" if p["FEATURE_WARMUP"].get("PID") else "PREP")
         attempts = p["WALK_FORWARD"]["ATTEMPTS"]
     label = "MORNING_0700" if attempts == 1 else f"RECOVERY_{attempts}"
     log_event(life.ops_root, day, {"stage": "WALK_FORWARD", "action": "RUN", "attempt": label})
     rec = L.walk_forward(life, day, label, runner=runner, warm_runner=warm_runner)   # training cutoff = refit_cutoff(D)
     status, code, fields = classify_walk_forward(rec, attempts)
     with locked(life.ops_root, day) as p:                        # the PASS receipt is durable BEFORE this process exits
-        _end(p, "WALK_FORWARD", status, code, **fields)
+        _end(p, "WALK_FORWARD", status, code, **fields, WARMUP_LINEAGE=warmup_lineage(p, rec))
     return code, {"stage": "WALK_FORWARD", "status": status, **{k: fields.get(k) for k in STAGE_FIELDS["WALK_FORWARD"]}}
+
+
+def hold_initial(p: dict, life=None) -> bool:
+    """True when INITIAL must wait for a same-day model: the walk-forward has a retryable outcome (a later attempt can
+    still promote), this is not already a recovery pass, INITIAL has not run, and it is early enough that the 08:00
+    recovery is still ahead (or queued behind the running chain)."""
+    from cbb_platform.prod import lifecycle as L
+    wf, fc = p["WALK_FORWARD"], p["INITIAL_FORECAST"]
+    if fc["STATUS"] == PASS or wf["STATUS"] == PASS or not wf.get("RETRYABLE") or (p.get("RECOVERY") or {}).get("ACTIVE"):
+        return False
+    if wf["STATUS"] not in (DEFERRED, FAIL):
+        return False
+    now = life.now() if life is not None and hasattr(life, "now") else pd.Timestamp.now(tz="UTC")
+    return pd.Timestamp(now).tz_convert(L.TZ).strftime("%H:%M") < INITIAL_HOLD_UNTIL_ET
 
 
 def run_forecast(life, day: date) -> tuple[int, dict]:
@@ -461,6 +553,15 @@ def run_forecast(life, day: date) -> tuple[int, dict]:
             return 1, rec
         if fc.get("RECONCILED_TERMINAL"):
             return _skip(life.ops_root, day, "INITIAL_FORECAST", "SKIP_RECONCILED_TERMINAL", error=fc.get("ERROR_TYPE"))
+        if hold_initial(p, life):
+            fc.update(STATUS=DEFERRED, ERROR_TYPE=AWAITING_FRESH_MODEL, RETRYABLE=True, FINISHED_AT=_now_iso(),
+                      ERROR_DETAIL=f"walk-forward {wf['STATUS']} ({wf.get('ERROR_TYPE') or wf.get('DAILY_REFIT_STATUS')}) "
+                                   "is retryable: INITIAL held for the 08:00 recovery instead of forecasting on the "
+                                   "D-2 model", HELD_AT=_now_iso())
+            rec = {"stage": "INITIAL_FORECAST", "action": "HELD_AWAITING_FRESH_MODEL", "walk_forward": wf["STATUS"],
+                   "walk_forward_error": wf.get("ERROR_TYPE")}
+            log_event(life.ops_root, day, rec)
+            return 0, rec
         window = L.INITIAL
         if fc["STATUS"] == PASS:
             if not forecast_stale(p):
@@ -487,7 +588,11 @@ def run_forecast(life, day: date) -> tuple[int, dict]:
                 p["INITIAL_FORECAST"].update(REFIT_RETRY_MODEL_VERSION=p["WALK_FORWARD"]["ACTIVE_MODEL_VERSION"],
                                              REFIT_RETRY_RECORD=brief)       # one attempt only; INITIAL stands
         elif ok:
+            wfp = p["WALK_FORWARD"]
+            same_day = wfp["STATUS"] == PASS and wfp.get("MODEL_DECISION") == "PROMOTED" \
+                and rec.get("model_version") == wfp.get("ACTIVE_MODEL_VERSION")
             _end(p, "INITIAL_FORECAST", PASS, 0, SNAPSHOT_ID=rec.get("snapshot_id"),
+                 INITIAL_ON_SAME_DAY_MODEL=same_day, MODEL_FALLBACK_USED=not same_day and rec.get("status") == "FORECAST",
                  MODEL_VERSION=rec.get("model_version"), GAME_COUNT=rec.get("games_forecast", 0),
                  PLAYER_COUNT=rec.get("players_forecast", 0), PMF_COUNT=rec.get("pmfs_persisted", 0), RETRYABLE=False,
                  FORECAST_STATUS=rec.get("status"), RECORD=brief)
@@ -558,7 +663,14 @@ def summary(p: dict) -> dict:
     wf, fc, ex = p["WALK_FORWARD"], p["INITIAL_FORECAST"], p["EXPORTS"]
     mem = {s: {k: p[s].get(k) for k in TELEMETRY + ("PREV_STAGE_PID_EXITED", "SERVICE_RESULT")} for s in STAGES[:-1]}
     return {"DATE": p["DATE"], "TRAINING_CUTOFF_UTC": p["TRAINING_CUTOFF_UTC"], "CODE_COMMIT": p.get("CODE_COMMIT"),
-            "MORNING_PREP_STATUS": p["PREP"]["STATUS"], "MORNING_WALK_FORWARD_STATUS": wf["STATUS"],
+            "MORNING_PREP_STATUS": p["PREP"]["STATUS"], "MORNING_FEATURE_WARMUP_STATUS": p["FEATURE_WARMUP"]["STATUS"],
+            "FEATURE_WARMUP": {k: p["FEATURE_WARMUP"].get(k) for k in ("STATUS", "WARMUP_STATUS", "STATE_VERSION",
+                                                                       "STATE_FROZEN", "GAMES_BUILT", "STARTED_AT",
+                                                                       "FINISHED_AT")},
+            "WARMUP_LINEAGE": wf.get("WARMUP_LINEAGE"), "INITIAL_ON_SAME_DAY_MODEL": fc.get("INITIAL_ON_SAME_DAY_MODEL"),
+            "INITIAL_HELD_AWAITING_FRESH_MODEL": bool(fc.get("HELD_AT")),
+            "REFIT_RETRY_USED": bool(fc.get("REFIT_RETRY_SNAPSHOT_ID") or fc.get("REFIT_RETRY_MODEL_VERSION")),
+            "MORNING_WALK_FORWARD_STATUS": wf["STATUS"],
             "MORNING_REFIT_STATUS": wf.get("DAILY_REFIT_STATUS"), "MODEL_PROMOTION": wf.get("DAILY_MODEL_PROMOTION"),
             "MORNING_ACTIVE_MODEL": wf.get("ACTIVE_MODEL_VERSION"), "MORNING_RUN_ID": wf.get("RUN_ID"),
             "MORNING_MODEL_DECISION": wf.get("MODEL_DECISION"), "MORNING_WALK_FORWARD_ERROR": wf.get("ERROR_TYPE"),
@@ -625,8 +737,8 @@ def run_health(life, day: date) -> tuple[int, dict]:
 
 
 def run_stage(life, day: date, stage: str, **kw) -> tuple[int, dict]:
-    return {"PREP": run_prep, "WALK_FORWARD": run_walkforward, "INITIAL_FORECAST": run_forecast, "EXPORTS": run_exports,
-            "HEALTH": run_health}[stage](life, day, **kw)
+    return {"PREP": run_prep, "FEATURE_WARMUP": run_warmup, "WALK_FORWARD": run_walkforward,
+            "INITIAL_FORECAST": run_forecast, "EXPORTS": run_exports, "HEALTH": run_health}[stage](life, day, **kw)
 
 
 # ============================================================================ ExecStopPost: how did the stage end?

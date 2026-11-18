@@ -59,6 +59,8 @@ def _fakes(alloc_mb: int, fail: str | None) -> dict:
     MS_shadow.tick = tick
     L.exports_for = exports_for
     L.forecast = forecast
+    L.features_warmup = lambda life, budget_min=None, runner=None, day=None: {
+        "status": "COMPLETE", "STATE_FROZEN": True, "warmup": {"state_version": "S-fake", "status": "COMPLETE"}}
     return {"runner": wf_runner}
 
 

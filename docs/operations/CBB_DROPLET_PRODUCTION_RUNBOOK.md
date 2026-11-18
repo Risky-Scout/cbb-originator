@@ -33,13 +33,13 @@ are out of scope. CBB units list them under `InaccessiblePaths=` and never touch
 
 | unit (timer) | when | locks | memory (High / Max) |
 |---|---|---|---|
-| `cbb-originator-features-warmup` | 01:30 | heavy lock only (150-min budget; no fit / forecast / manifest) | 2800M / 3200M |
-| `cbb-originator-morning.target` (`cbb-originator-morning` timer) | 07:00 | the five-stage chain below (Requires= + After=) | per stage |
-| `cbb-originator-morning-prep` | stage 1/5 | writer lock (taken by the stage), never heavy; tick + prior-day Grades | 2800M / 3200M |
-| `cbb-originator-walkforward` | stage 2/5 | writer lock; THE ONLY CBB unit with the heavy lock (fit step only) | 2800M / 3200M |
-| `cbb-originator-morning-forecast` | stage 3/5 | writer lock, never heavy; INITIAL forecast on the ACTIVE model | 2800M / 3200M |
-| `cbb-originator-morning-exports` | stage 4/5 | writer lock, never heavy; exports from persisted evidence | 2800M / 3200M |
-| `cbb-originator-morning-health` | stage 5/5 | writer lock, never heavy; Wants= (always runs) | 600M / 800M |
+| `cbb-originator-morning.target` (`cbb-originator-morning` timer) | 06:10 | the six-stage chain below (Requires= + After=), 10 min after the 06:00 training cutoff | per stage |
+| `cbb-originator-morning-prep` | stage 1/6 | writer lock (taken by the stage), never heavy; D-1 sync + settlement tick, prior-day Grades | 2800M / 3200M |
+| `cbb-originator-morning-warmup` | stage 2/6 | heavy lock ONLY (no writer lock; 150-min budget); feature cache over the frozen cutoff state; advisory (always exit 0) | 2800M / 3200M |
+| `cbb-originator-walkforward` | stage 3/6 | writer lock + heavy lock (fit step only); After= warmup, Requires= prep only | 2800M / 3200M |
+| `cbb-originator-morning-forecast` | stage 4/6 | writer lock, never heavy; INITIAL on the same-day model, HELD while a walk-forward retry remains | 2800M / 3200M |
+| `cbb-originator-morning-exports` | stage 5/6 | writer lock, never heavy; exports from persisted evidence | 2800M / 3200M |
+| `cbb-originator-morning-health` | stage 6/6 | writer lock, never heavy; Wants= (always runs) | 600M / 800M |
 | `cbb-originator-morning-recover` | 08:00 | writer lock, never heavy; After= every stage (never overlaps) | 600M / 800M |
 | `cbb-originator-availability-poll` (`-0830` timer) | 08:30 | writer lock; RotoWire acquisition only | 1000M / 1400M |
 | `cbb-originator-availability@1000/1300/1600/1800` | 10:00, 13:00, 16:00, 18:00 | writer lock, never heavy | 2800M / 3200M |
@@ -73,7 +73,8 @@ health receipt.
 Availability refreshes re-forecast only pre-cutoff games whose availability changed (the targeted reforecast path).
 They never retrain. The quotes tick and the availability refreshes build full-state pregame features before scoring. They
 carry the heavy-unit memory ceiling (2026-11-09: a 1800M/2200M quotes cgroup throttled, then OOM-killed after the
-season state grew). Writer-lock holders never overlap one another. The 01:30 warmup window has no scoring cutoffs.
+season state grew). Writer-lock holders never overlap one another. The 06:10-07:30 warmup window has no scoring cutoffs (earliest T-60
+official predictions are ~10:00 ET), so a warmup and a quotes tick never both build full-state features.
 
 Run-scratch retention (`cbb_platform/prod/retention.py`, `cbb-originator-run prune-scratch [--apply]`): deletes ONLY
 `prod/runs/<run>/features/*.duckdb` (~530 MB per run) of runs that completed (valid `run_summary.json`) and whose PMFs
@@ -268,9 +269,15 @@ at most 60 min stale, at / after the entry; CLV statuses EXACT_LINE, SAME_LINE_N
 movement, no probability CLV), NO_DEVIG_PAIR, NO_CLOSE_QUOTE. Export health requires Boards, Grades and Performance;
 Distributions is supporting. No automatic historical-odds calls.
 
-## 9. Bounded 07:00 feature catch-up (DEFERRED_FEATURE_BACKLOG)
+## 9. Morning feature warmup and the bounded catch-up (DEFERRED_FEATURE_BACKLOG)
 
-The 01:30 ET warmup fills the immutable per-game pregame feature cache (150 min budget). The 07:00 walk-forward first
+Since 2026-11-18 (Release A) the warmup is morning stage 2/6 (`FEATURE_WARMUP`), after PREP and after the 06:00 ET
+training cutoff, so it builds over exactly the frozen as-of state the fit trains on (`WARMUP_LINEAGE.
+WARMUP_STATE_MATCHES_FIT`). The retired 01:30 ET warmup ran before the late D-1 finals reached the state (01:53-04:23 ET
+measured 11-16..18), so the 07:00 walk-forward deferred on a 35-49 min backlog and INITIAL ran on the D-2 model.
+A retryable walk-forward deferral now HOLDS INITIAL (`AWAITING_FRESH_MODEL`) for the 08:00 recovery; REFIT_RETRY is
+recovery-only (INITIAL already made on the incumbent after `INITIAL_HOLD_UNTIL_ET` 09:30). The historical text below
+describes the earlier mechanism. The walk-forward first
 runs the same builder inside `CBB_MORNING_FEATURE_BUDGET_MIN` (default 30). If the backlog is not finished the refit is
 DEFERRED_FEATURE_BACKLOG: nothing is fitted or promoted, the ACTIVE model is kept and today's 07:00 forecast is made
 with it; every cutoff already built stays cached. The 08:00 retry retries a deferred morning once (NO_OP after a

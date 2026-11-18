@@ -1,8 +1,8 @@
-# CBB Originator 07:00 ET morning stage 4/5 EXPORTS: rebuild the day's Boards / Distributions / Grades from persisted
+# CBB Originator morning stage 5/6 EXPORTS: rebuild the day's Boards / Distributions / Grades from persisted
 # evidence. No fit, no simulation, no network, no heavy lock.
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
-Description=CBB Originator morning stage 4/5: exports
+Description=CBB Originator morning stage 5/6: exports
 Requires=cbb-originator-morning-forecast.service
 After=cbb-originator-morning-forecast.service
 ConditionPathExists=/etc/sports-models/cbb-originator.env
