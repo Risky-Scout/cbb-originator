@@ -189,6 +189,10 @@ def evaluate(cand_dir: Path, version: str, ctx: dict, log=print) -> dict:
     except Exception:                                           # noqa: BLE001
         ok = False
     g["ROLLBACK_AVAILABLE"] = {"PASS": bool(ok), "previous_active": prev}
+    if ctx.get("candidate_inputs_check") is not None:           # training freshness (walkforward.freshness)
+        cic = ctx["candidate_inputs_check"]
+        g["TRAINING_FRESHNESS"] = {"PASS": bool(cic["PASS"]), **cic["checks"],
+                                   "PREVIOUS_DAY_STATUS": cic.get("PREVIOUS_DAY_STATUS")}
     return {"gates": g, "ALL_PASS": _all(v["PASS"] for v in g.values()),
             "POINT_IN_TIME_LEGALITY": "PASS" if g["POINT_IN_TIME_LEGALITY"]["PASS"] else "FAIL",
             "TARGET_GAME_FEATURE_LEAKAGE_DETECTED": tgt_feat, "TARGET_GAME_OUTCOME_LEAKAGE_DETECTED": tgt_out,

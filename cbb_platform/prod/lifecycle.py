@@ -511,6 +511,18 @@ def health_path(life: Life, day: date) -> Path:
 FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "games_forecast", "players_forecast", "stat_predictions", "pmfs_persisted", "games_not_scored")
 
 
+def training_freshness(life: Life, day: date) -> dict:
+    """TRAINING_FRESHNESS of D (walkforward.freshness.evaluate): ACTIVE_MODEL_TRAINING_THROUGH vs D-1, the D-1
+    partition, and whether the latest full-slate forecast of D ran on that model. Any read error -> FAIL."""
+    from cbb_platform.walkforward import config as WC, freshness as FR
+    try:
+        return FR.evaluate(Path(life.model_root or WC.STORE_ROOT), day, Path(life.ops_root))
+    except Exception as e:                         # noqa: BLE001 -- an unreadable store must never look fresh
+        return {"TRAINING_FRESHNESS": FR.FAIL, "EXPECTED_TRAINING_THROUGH": FR.expected_training_through(day).isoformat(),
+                "ACTIVE_MODEL_TRAINING_THROUGH": None, "ACTIVE_BLOCKER": FR.STALE_TRAINING_MODEL,
+                "reason": f"EVALUATION_ERROR {type(e).__name__}: {e}"[:300]}
+
+
 def health(life: Life, day: date, **sections) -> dict:
     """Merge this step's machine-readable summary into <prod_root>/health/<D>.json (one file per ET date)."""
     p = health_path(life, day)
@@ -520,6 +532,7 @@ def health(life: Life, day: date, **sections) -> dict:
               "automatic_wagering": "DISABLED", "wizardofodds_publication": "DISABLED"})
     for k, v in sections.items():
         h[k] = v
+    h["training_freshness"] = training_freshness(life, day)   # durable model store + forecast index (never a fit)
     for k, v in sections.items():                  # the newest forecast of the day (morning, retry or refresh)
         if isinstance(v, dict) and v.get("status") == "FORECAST" and (k == "forecast" or v.get("snapshot_id")):
             h["latest_forecast"] = {k: v.get(k) for k in FORECAST_SUMMARY}
@@ -606,6 +619,22 @@ def receipt(h: dict) -> dict:
     if sf.get("FAILED_RETRYABLE_REQUESTS") or sf.get("FAILED_NONRETRYABLE_REQUESTS"):
         warn(f"PRE_REFIT_REQUEST_FAILURES: {sf.get('FAILED_RETRYABLE_REQUESTS')} retryable, "
              f"{sf.get('FAILED_NONRETRYABLE_REQUESTS')} non-retryable completed-stage requests failed", INFORMATIONAL)
+    tf = h.get("training_freshness") or {}
+    tfs = tf.get("TRAINING_FRESHNESS")
+    if tfs == "FAIL":                              # hard gate: a stale fit never looks healthy
+        warn(f"{tf.get('ACTIVE_BLOCKER') or 'STALE_TRAINING_MODEL'}: ACTIVE {tf.get('ACTIVE_MODEL_VERSION')} trained "
+             f"through {tf.get('ACTIVE_MODEL_TRAINING_THROUGH')}, expected {tf.get('EXPECTED_TRAINING_THROUGH')}"
+             + (f"; full-slate forecast {(tf.get('FULL_SLATE_FORECAST') or {}).get('snapshot_id')} on "
+                f"{(tf.get('FULL_SLATE_FORECAST') or {}).get('model_version')}"
+                if tf.get("FULL_SLATE_FORECAST_ON_FRESH_MODEL") is False else "")
+             + (f"; unaccepted D-1 gaps {tf.get('UNACCEPTED_GAPS')}" if tf.get("UNACCEPTED_GAPS") else "")
+             + (f"; {tf.get('reason')}" if tf.get("reason") else ""), ACTIVE_BLOCKER)
+    elif tfs == "PASS" and not tf.get("PREVIOUS_DAY_CLASSIFICATION_RECORDED"):
+        warn("PREVIOUS_DAY_CLASSIFICATION_NOT_RECORDED", INFORMATIONAL)
+    if tfs == "PASS" and tf.get("TRAINING_DATA_LAG"):
+        warn(f"TRAINING_DATA_LAG: all {tf.get('PREVIOUS_DAY_FINAL_GAMES')} in-scope {tf.get('PREVIOUS_DAY_DATE')} games "
+             f"deferred ({tf.get('PREVIOUS_DAY_EXCLUSION_REASONS')}); latest included game date "
+             f"{tf.get('LATEST_GAME_DATE_INCLUDED')}", INFORMATIONAL)
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
     bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}
@@ -630,6 +659,7 @@ def receipt(h: dict) -> dict:
         "EXPORTS": (no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"))
                    and st("grades") == "WRITTEN",
         "PERFORMANCE": st("performance") == "WRITTEN" if "performance" in ex else True,   # evidence only, never quality
+        "TRAINING_FRESHNESS": tfs != "FAIL",       # NOT_EVALUATED only without a model store (no ACTIVE to judge)
         "NO_ACTIVE_BLOCKER": not blockers}
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
             "MODEL_VERSION": model_version,
@@ -673,6 +703,15 @@ def receipt(h: dict) -> dict:
             "STAGE_TERMINAL_STATES": mo.get("STAGE_TERMINAL_STATES"),
             "MORNING_CHAIN_COMPLETE": mo.get("MORNING_CHAIN_COMPLETE", mo.get("MORNING_COMPLETE")),
             "FIRST_HISTORICAL_FAILURE": mo.get("FIRST_HISTORICAL_FAILURE"),
+            "TRAINING_FRESHNESS": tfs, "ACTIVE_MODEL_TRAINING_THROUGH": tf.get("ACTIVE_MODEL_TRAINING_THROUGH"),
+            "EXPECTED_TRAINING_THROUGH": tf.get("EXPECTED_TRAINING_THROUGH"),
+            "TRAINING_THROUGH_BASIS": tf.get("TRAINING_THROUGH_BASIS"),
+            "PREVIOUS_DAY_STATUS": tf.get("PREVIOUS_DAY_STATUS"),
+            "PREVIOUS_DAY_FINAL_GAMES": tf.get("PREVIOUS_DAY_FINAL_GAMES"),
+            "PREVIOUS_DAY_INCLUDED_GAMES": tf.get("PREVIOUS_DAY_INCLUDED_GAMES"),
+            "PREVIOUS_DAY_EXCLUDED_GAMES": tf.get("PREVIOUS_DAY_EXCLUDED_GAMES"),
+            "ACTIVE_BLOCKER": (tf.get("ACTIVE_BLOCKER") or "STALE_TRAINING_MODEL") if tfs == "FAIL"
+                              else (blockers[0].split(":")[0] if blockers else None),
             "DAY_OPERATIONAL": all(operational.values()), "DAY_OPERATIONAL_CONDITIONS": operational,
             "ACTIVE_BLOCKERS": blockers, "WARNING_CLASSES": classes,
             "ERRORS": errors, "WARNINGS": warnings, "FINAL_STATUS": "FAIL" if errors else ("DEGRADED" if warnings else "OK")}

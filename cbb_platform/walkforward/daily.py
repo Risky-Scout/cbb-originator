@@ -39,7 +39,7 @@ from cbb_platform import props_v0 as P, props_v1_refit as R
 from cbb_platform.prod import config as PC, run as RN, state as ST
 from cbb_platform.v2 import phase2 as P2
 from cbb_platform.walkforward import config as WC, corrections as CR, eligibility as EL, fit as WF, gates as GT, monitor as MON
-from cbb_platform.walkforward import history_source as HS, store as SO, training_rows as TR
+from cbb_platform.walkforward import freshness as FR, history_source as HS, store as SO, training_rows as TR
 
 
 class MorningJobLocked(RuntimeError):
@@ -352,6 +352,16 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
             prev_inc = pe.loc[pe["decision"] == "INCLUDED", "game_id"].tolist()
         rec["eligibility"] = EL.summary(ts["eligibility"], prev_inc)
         rec["prior_day_completeness"] = EL.prior_day_completeness(ts["eligibility"], day)
+        # TRAINING FRESHNESS (receipt / gate only): the candidate must be built from THE latest state as-of D's cutoff,
+        # train every eligibility-INCLUDED game, and classify every D-1 game; otherwise it is refused before any fit
+        # (and a stale input can never be certified NO_NEW_DATA)
+        cic = FR.candidate_inputs_check(ts, state_root, day)
+        rec["candidate_inputs_check"] = {k: v for k, v in cic.items() if k != "previous_day"}
+        rec["previous_day_partition"] = {k: cic["previous_day"].get(k) for k in (
+            "PREVIOUS_DAY_DATE", "PREVIOUS_DAY_STATUS", "PREVIOUS_DAY_FINAL_GAMES", "PREVIOUS_DAY_INCLUDED_GAMES",
+            "PREVIOUS_DAY_EXCLUDED_GAMES", "PREVIOUS_DAY_EXCLUDED_GAME_IDS", "PREVIOUS_DAY_EXCLUSION_REASONS",
+            "PREVIOUS_DAY_OUT_OF_SCOPE", "COUNTERS_RECONCILE")}
+        stale_inputs = not cic["PASS"] and not (ts["state"] is None and cic["STATE_LATEST_AS_OF_CUTOFF"] is None)
         ident = {"code": SO.code_commit(), "config_hash": config_hash(cfg), "training": ts["identity"]}
         ident["sha"] = _sha({"training": ts["identity"], "code": ident["code"]["commit"], "config": ident["config_hash"]})
         vdir = SO.version_dir(root, day)
@@ -364,7 +374,11 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
         run_id = run_id_of(day, rid)
         rec.update(run_id=run_id, run_identity=rid, CANDIDATE_MODEL_VERSION=None,
                    ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"))
-        if ts["identity"]["current_season"] is None:
+        if stale_inputs:
+            rec.update(DAILY_REFIT_STATUS="FAIL", DAILY_MODEL_PROMOTION="REFUSED",
+                       reason="STALE_TRAINING_INPUT: " + ", ".join(k for k, v in cic["checks"].items() if not v)
+                              + "; last-known-good ACTIVE retained")
+        elif ts["identity"]["current_season"] is None:
             rec.update(DAILY_REFIT_STATUS="NO_NEW_DATA", DAILY_MODEL_PROMOTION="NOT_REQUIRED",
                        note="no 2026-27 game passes training eligibility at this cutoff: ACTIVE carries forward")
         elif pm.get("INPUT_IDENTITY_SHA") == ident["sha"]:
@@ -394,7 +408,8 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
             opening = {"art": json.loads((opening_dir / SO.FILES["jm1_final"]).read_text()),
                        "marg": json.loads((opening_dir / SO.FILES["marginal"]).read_text())}
             gres = GT.evaluate(c["dir"], c["version"], {"training": ts, "training_cutoff": cut, "fit_content_sha": c["fit_content_sha"],
-                                                        "opening": opening, "previous_active": prev_active, "root": root}, log)
+                                                        "opening": opening, "previous_active": prev_active, "root": root,
+                                                        "candidate_inputs_check": cic}, log)
             rec["timings"]["artifact_validation_s"] = time.time() - t
             SO.write_json(Path(c["dir"]) / "gates.json", gres)
             _stage("promotion", done="gates")
@@ -420,6 +435,11 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
                    ROLLBACK_MODEL_VERSION=(SO.rollback_pointer(root) or {}).get("ROLLBACK_MODEL_VERSION"),
                    total_s=time.time() - t0, peak_rss_gb=_rss_gb(), memory_mb={**PROGRESS["memory_mb"], "end": _mem_mb()},
                    disk_bytes_training_cache=_du(SO.paths(root)["training"]))
+        try:                                                     # the freshness manifest of D (receipt only)
+            rec["training_freshness"] = {k: v for k, v in FR.write_run_receipt(
+                root, day, rec, ts, SO.manifest(root, a["ACTIVE_MODEL_VERSION"])).items() if k != "PREVIOUS_DAY"}
+        except Exception as e:                                   # noqa: BLE001 -- health then reports NOT_RECORDED
+            rec["training_freshness"] = {"error": f"{type(e).__name__}: {e}"[:300]}
         runs = SO.read_log(SO.paths(root)["manifests"] / "runs.jsonl")
         if not any(r["run_id"] == run_id for r in runs):          # a run id = its inputs: the first record stands
             SO.append_log(SO.paths(root)["manifests"] / "runs.jsonl", rec)
