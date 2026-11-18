@@ -72,9 +72,11 @@ jobs:
           sparse-checkout-cone-mode: false
       - name: Is work due? (standard library only)
         id: due
+        env:
+          FORCE: ${{ inputs.force }}
         run: |
           python3 src/cbb_platform/prod/due_check.py ops | tee -a "$GITHUB_OUTPUT"
-          if [ "${{ inputs.force }}" = "true" ]; then echo "due=true" >> "$GITHUB_OUTPUT"; fi
+          if [ "$FORCE" = "true" ]; then echo "due=true" >> "$GITHUB_OUTPUT"; fi
       - name: Full source checkout
         if: steps.due.outputs.due == 'true'
         run: git -C src sparse-checkout disable
@@ -105,9 +107,10 @@ jobs:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           CBB_OPS_ENCRYPTION_KEY: ${{ secrets.CBB_OPS_ENCRYPTION_KEY }}
           GH_TOKEN: ${{ github.token }}
+          ALLOW_REVALIDATION: ${{ inputs.allow_revalidation }}
         run: |
           git -C ../ops config user.name "cbb-shadow-tick"
           git -C ../ops config user.email "cbb-shadow-tick@users.noreply.github.com"
           extra=""
-          if [ "${{ inputs.allow_revalidation }}" = "true" ]; then extra="--allow-revalidation"; fi
+          if [ "$ALLOW_REVALIDATION" = "true" ]; then extra="--allow-revalidation"; fi
           python -m cbb_platform.prod.shadow_tick --ops-root ../ops --restore --persist --commit --push $extra
