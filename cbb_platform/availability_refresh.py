@@ -13,12 +13,12 @@ Phase A (child process: lifecycle availability-acquire): the RotoWire acquisitio
     ACQUISITION_TIMEOUT / ACQUISITION_FAILED -> no Phase B: the prior forecast and exports stand.
 Phase B (child process: lifecycle availability-publish, the lock fd inherited): taken only AFTER Phase A, waiting at most
     PHASE_B_WRITER_WAIT_MAX_SEC (300 s). Busy -> DEFERRED_WRITER_LOCK, retried at +5 / +10 / +15 min after the first
-    deferral (max 3, each only if it still fits the unit's 40-min budget); a receipt older than 15 min is replaced by a
+    deferral (max 3, each only if it still fits the unit's 45-min budget); a receipt older than 15 min is replaced by a
     fresh Phase A (outside the lock) first. Under the lock it re-reads state / ACTIVE / snapshots, forecasts (PMFs ->
     forecast_players -> snapshot.json -> index LAST), exports, health.
-    WATCHDOG (bounded lock hold): early non-fatal stack dump (SIGUSR1) at PHASE_B_EARLY_DUMP_SEC (720 s), abort
-    (SIGABRT: faulthandler dumps every thread, then the process dies) at PHASE_B_WATCHDOG_SEC (900 s = 15 min;
-    healthy refreshes take 7-11 min), SIGKILL 30 s later. Nothing in model / PMF / simulation logic changes: an aborted
+    WATCHDOG (bounded lock hold): early non-fatal stack dump (SIGUSR1) at PHASE_B_EARLY_DUMP_SEC (1500 s), abort
+    (SIGABRT: faulthandler dumps every thread, then the process dies) at PHASE_B_WATCHDOG_SEC (1800 s = 30 min;
+    forecast time grows with the slate: 7,536 rows ~9 min, 19,032 rows ~15 min), SIGKILL 30 s later. Nothing in model / PMF / simulation logic changes: an aborted
     Phase B never appended its index line, so the prior snapshots remain the latest; every workbook is replaced
     atomically, so the prior exports stay valid. The abort (with the stack file) is recorded in the health file while
     the lock is still held, then the lock is released.
@@ -67,10 +67,10 @@ class Limits:
     writer_wait_max_sec: float = 300.0            # PHASE_B_WRITER_WAIT_MAX_SEC
     retry_delay_sec: float = 5 * 60               # PHASE_B_RETRY_DELAY_MIN = 5 -> retries at +5 / +10 / +15 min
     max_retries: int = 3                          # PHASE_B_MAX_RETRIES
-    watchdog_sec: float = field(default_factory=lambda: _env_f("CBB_PHASE_B_WATCHDOG_SEC", 900))
-    early_dump_sec: float = field(default_factory=lambda: _env_f("CBB_PHASE_B_EARLY_DUMP_SEC", 720))
+    watchdog_sec: float = field(default_factory=lambda: _env_f("CBB_PHASE_B_WATCHDOG_SEC", 1800))
+    early_dump_sec: float = field(default_factory=lambda: _env_f("CBB_PHASE_B_EARLY_DUMP_SEC", 1500))
     kill_grace_sec: float = 30.0
-    unit_budget_sec: float = 2400.0               # == the unit's TimeoutStartSec=40min (test-asserted); never changed
+    unit_budget_sec: float = 2700.0               # == the unit's TimeoutStartSec=45min (test-asserted)
     margin_sec: float = 60.0
     min_lock_wait_sec: float = 10.0
     poll_sec: float = 1.0

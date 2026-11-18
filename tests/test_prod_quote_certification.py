@@ -62,7 +62,7 @@ def env(tmp_path, monkeypatch):
         m, b = st["adv"].get((region, event_id), (0, 0))
         sup = ALL[:m]
         return {"supported_markets": sup, "supported_market_count": m, "bookmakers_advertising": b if m else 0,
-                "status": "DISCOVERED" if m else "NO_SUPPORTED_PLAYER_PROP_MARKETS", "event_id": event_id,
+                "status": "DISCOVERED" if m else "NO_SUPPORTED_PROP_MARKETS_POSTED", "event_id": event_id,
                 "region": region, "body": {}, "request": {"received_at": T0.isoformat()}}
 
     def collect(session, eids, out_dir, discovered=None, **kw):
@@ -117,7 +117,7 @@ def _eligible(env):
 
 
 def test_a_empty_discovery_is_discovery_only_and_starts_cooldown(env):
-    assert TK.step_validate(env["ctx"], env["st"], {}) == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
+    assert TK.step_validate(env["ctx"], env["st"], {}) == "INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED"
     assert len(_calls(env, "event_odds")) == 0
     assert len(_calls(env, "event_markets", B)) == 3 == len(_calls(env, "event_markets"))      # one pass, no us2 pass
     a = _attempts(env)[-1]
@@ -126,7 +126,7 @@ def test_a_empty_discovery_is_discovery_only_and_starts_cooldown(env):
     assert a["us_market_discovery_calls"] == 0 and a["us2_market_discovery_calls"] == 0
     v = _state(env)
     assert v["certification_attempts_today"] == 0 and v["discovery_cooldown_active"]
-    assert v["last_discovery_status"] == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
+    assert v["last_discovery_status"] == "INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED"
     assert v["last_discovery_event_odds_request_count"] == 0 and v["last_discovery_supported_markets_found"] == 0
 
 
@@ -245,7 +245,7 @@ def test_legacy_records_judged_by_their_request_log(env):
     rows = [{"attempted_at": T0.isoformat(), "status": "INCONCLUSIVE_NO_PLAYER_PROPS_RETURNED",
              "requests": [{"endpoint": "events"}, {"endpoint": "event_odds"}]},
             {"attempted_at": (T0 + pd.Timedelta(minutes=1)).isoformat(),
-             "status": "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS",
+             "status": "INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED",
              "requests": [{"endpoint": "events"}, {"endpoint": "event_markets"}]}]
     p.write_text("".join(json.dumps(r) + "\n" for r in rows))
     v = _state(env)

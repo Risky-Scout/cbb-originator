@@ -1,55 +1,42 @@
-"""CBB daily Excel exports: Boards, Distributions, Grades (+ Performance Summary). REPORTING ONLY.
+"""CBB daily Excel exports: Boards, Distributions, Grades, Performance. REPORTING ONLY.
 
-    PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.exports daily --date YYYY-MM-DD
+    PYTHONPATH=. .venv/bin/python -B -m cbb_platform.prod.exports daily --date YYYY-MM-DD
 
-writes, for the America/New_York slate date D, into data/prod/exports/D/ (gitignored):
+writes, for the America/New_York slate date D, into <export root>/D/:
 
-    CBB_Boards_MM_DD_YYYY.xlsx         Full Board | 60 Percent Plus | 65 Percent Plus
-    CBB_Distributions_MM_DD_YYYY.xlsx  Distributions: ONE row per (game, player, stat) -- mean, median, sd, percentiles,
+    CBB_Boards_MM_DD_YYYY.xlsx         REQUIRED. Full Board | 60 Percent Plus | 65 Percent Plus | Model Coverage
+                                       (prod.market_exports: ONE row per game x player x stat, asserted; every book x
+                                       line x side priced at its exact line from the persisted PMF by prod.market_eval;
+                                       Full Board = rows with a real pre-cutoff market, Model Coverage = model-only rows)
+                                       + boards_receipt.json (row / side / tier counts, quote-ingestion and quota totals)
+    CBB_Distributions_MM_DD_YYYY.xlsx  supporting. ONE row per (game, player, stat) -- mean, median, sd, percentiles,
                                        P(play), expected minutes, availability, model version, forecast id, PMF hash
-    CBB_Distributions_MM_DD_YYYY_pmf_refs.parquet   REFERENCES, not vectors: one row per (game, player, stat) naming the
-                                       canonical durable PMF file (ticks/<tick>/pmfs.parquet or forecasts/<D>/<snapshot>/
-                                       pmfs.parquet) and the PMF content sha256. The full PMF is stored ONCE, there.
+    CBB_Distributions_MM_DD_YYYY_pmf_refs.parquet   REFERENCES, not vectors (the full PMF is stored ONCE, in
+                                       ticks/<tick>/pmfs.parquet or forecasts/<D>/<snapshot>/pmfs.parquet)
     (on request only) `exports expand-distributions --date D` writes the legacy one-row-per-outcome workbook
-    CBB_Distributions_MM_DD_YYYY_LONG.xlsx, resolved from the references (each vector re-hashed against its sha256)
-    CBB_Grades_MM_DD_YYYY.xlsx         Graded Bets | Performance Summary
-    CBB_Performance_MM_DD_YYYY.xlsx    REQUIRED, cumulative: Overall | By Stat | By Player Role | Stat x Role | Daily |
-                                       Selections, derived from the ONE canonical dataset ops/performance/
-                                       cbb_performance.parquet (prod.performance) + performance_receipt.json
+    CBB_Grades_MM_DD_YYYY.xlsx         REQUIRED. Grades the D-1 ET slate (never a blank same-day workbook): every frozen
+                                       pre-cutoff market evaluation (PASS_NO_EDGE included) against the exact persisted
+                                       line. Graded Predictions | By Stat | By Player Role | Stat x Role | By Side |
+                                       By Selection Tier | Status
+    CBB_Performance_MM_DD_YYYY.xlsx    REQUIRED, cumulative (prod.performance): Overall | By Stat | By Player Role |
+                                       Stat x Role | By Side | By Selection Tier | Daily | Calibration | Selections
 
-Read-only over evidence that production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call:
-the module imports no network or acquisition code; tests run it with every socket entry point refused):
+Read-only over evidence production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call: the
+module imports no network or acquisition code):
 
-    ops evidence tree   registry/games.jsonl (the decided PREDICTED row of each game: tick, run, scheduled tip, cutoff
-                        rule), ticks/<tick>/side_monitor.jsonl.gz (the hash-chained QUOTE_SIDE receipts: one per
-                        prediction x sportsbook offer, prediction-time fields only, written by prod.side_monitor),
-                        ticks/*/side_settlements.parquet (settlement against the CBBD final box), ticks/<tick>/
-                        projections.parquet (labels)
     durable PMFs        ticks/<tick>/pmfs.parquet (the official prediction's PMFs, prod.pmf_evidence) and
-                        forecasts/<D>/<snapshot>/pmfs.parquet (line-independent forecast snapshots, prod.lifecycle);
-                        per game the LATEST prediction made before the game's production cutoff is exported. Legacy
-                        fallback: runs/<run_id>/market_pmfs.parquet (ephemeral on a GitHub runner)
-    names               core.teams of the frozen history store + the current 2026-27 state increment (read-only)
-
-Field sources (no new convention is introduced; every figure is copied from the receipt or uses an existing formula):
-    PROJ / MEAN   receipt projection / PMF row projection (official prediction mean)
-    MODEL%        p_side_nonpush = P(side) / (1 - P(push)) (prod.pricing: a push refunds the stake)
-    MARKET%       the same book's two-sided no-vig probability (1/d_side) / (1/d_over + 1/d_under), the prospective
-                  monitor's market-benchmark normalization (prod.prospective_monitor.line_table); blank when the book
-                  did not quote both sides of the line
-    EV            model_edge = P(win)(d - 1) - P(lose) (prod.pricing.expected_value; computed at prediction time)
-    WINDOW        the receipt's prediction-cutoff rule (registry cutoff_rule: TIP_MINUS_1H / ET_GAME_DATE_START)
-    CAPTURE_UTC   collector_received_at of the quote (always <= prediction_as_of < scheduled tip)
-    PLAYER_ROLE   from predicted_minutes (= the min_mu the official prediction used, recorded in the receipt at
-                  prediction time); never realized minutes
-    RESULT        WIN / LOSS / PUSH from the side settlement; NO_ACTION (DNP or game not played) -> VOID; no settlement
-                  yet -> PENDING; invalid American odds (|odds| < 100, missing, non-finite) or a side other than
-                  OVER / UNDER -> UNSUPPORTED
+                        forecasts/<D>/<snapshot>/pmfs.parquet (forecast snapshots, prod.lifecycle); per game the LATEST
+                        prediction made before the game's production cutoff
+    quotes              quotes/<D>/observations.jsonl (+ parquet): every normalized, matched, freshness-checked quote
+                        row of each collection (prod.quote_obs); the Board uses the latest observation before the cutoff
+    evaluations         evaluations/<D>/market_evaluations.jsonl (write-once frozen market evaluations, written here
+                        once a game's cutoff has passed)
+    outcomes            ticks/*/actuals.parquet (final box settlement by prod.shadow_tick)
+    names               core.teams of the history store + the current 2026-27 state increment (read-only)
 """
 from __future__ import annotations
 
 import argparse
-import contextlib
 import gzip
 import hashlib
 import json
@@ -65,7 +52,7 @@ import pandas as pd
 
 from cbb_platform.prod import config as PC, pmf_compact as PCX, pmf_evidence as PE
 
-EXPORT_VERSION = "cbb-prod-daily-exports-1.1.0"
+EXPORT_VERSION = "cbb-prod-daily-exports-2.0.0"
 TZ = "America/New_York"
 EXPORT_ROOT = Path(os.environ.get("CBB_EXPORT_ROOT") or (PC.PROD_ROOT / "exports"))   # <root>/<YYYY-MM-DD>/CBB_*.xlsx
 RUNS_ROOT = PC.RUNS_ROOT
@@ -74,19 +61,6 @@ LIVE_LABELS = ("LIVE",)
 DECIDED = ("PREDICTED", "EXCLUDED", "MISSED_PREDICTION_CUTOFF", "NOT_SCORED_AT_CUTOFF")   # = shadow_tick.DECIDED (tested)
 SIDES = ("OVER", "UNDER")
 
-BOARD_SHEETS = ("Full Board", "60 Percent Plus", "65 Percent Plus")
-BOARD_THRESHOLDS = {"Full Board": None, "60 Percent Plus": 0.60, "65 Percent Plus": 0.65}
-# the official best-offer selection (one offer per GAME x PLAYER x PROP; drives Grades), reported as rows in daily()
-SELECTION_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PROJ", "ΔLINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK",
-                  "ODDS", "EV", "WINDOW", "CAPTURE_UTC")
-# CBB_Boards: the forecast universe, EXACTLY one row per GAME x PLAYER x STAT (12 production stats), market consensus
-BOARD_KEY = ("Canonical Game ID", "Canonical Player ID", "Stat")
-BOARD_COLS = ("Game Date", "Canonical Game ID", "Game", "Tip Time ET", "Player", "Canonical Player ID", "Team",
-              "Opponent", "Stat", "Model Projection", "Consensus Line", "Model Over %", "Market Over %", "Over Edge",
-              "Consensus Over Odds", "Model Under %", "Market Under %", "Under Edge", "Consensus Under Odds",
-              "Preferred Side", "Preferred EV", "Best Book", "Best Odds", "Raw Book Count", "Consensus Book Count",
-              "Outlier Book Count", "Consensus Confidence", "Market Status", "Quote Freshness Seconds",
-              "Quote Captured UTC", "Forecast ID", "Model Version")
 BOARD_RECEIPT = "boards_receipt.json"
 BOARD_AUDIT = "board_quote_audit.jsonl.gz"
 GRADE_RECEIPT = "grades_receipt.json"
@@ -98,36 +72,11 @@ DIST_SUMMARY_COLS = ("GAME", "TEAM", "OPPONENT", "PLAYER", "PROP", "MEAN", "MEDI
                      "MAX_OUTCOME", "P_PLAY", "EXP_MINUTES", "AVAILABILITY", "MODEL_VERSION", "SOURCE", "FORECAST_ID",
                      "PMF_SHA256")
 DIST_PERCENTILES = (0.10, 0.25, 0.50, 0.75, 0.90)   # smallest outcome k with CDF(k) >= q
-GRADE_SHEETS = ("Graded Bets", "Performance Summary", "Status")
-GRADE_STATUS_COLS = ("GRADE_STATUS", "OFFICIAL_SELECTIONS", "SETTLED", "PENDING")
-GRADE_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK", "ODDS", "RESULT",
-              "REALIZED", "PROFIT")
-RESULTS = ("WIN", "LOSS", "PUSH", "VOID", "PENDING", "UNSUPPORTED")
-IMMUTABLE_FIELDS = ("GAME", "TEAM", "PLAYER", "PROP", "LINE", "PICK", "MODEL%", "MARKET%", "EDGE", "BOOK", "ODDS")
-
 ROLES = ("CORE_30_PLUS", "ROTATION_20_TO_30", "LIMITED_UNDER_20", "NO_EXPECTED_MINUTES", "UNKNOWN_ROLE")
 BANDS = (("<50%", None, 0.50), ("50-55%", 0.50, 0.55), ("55-60%", 0.55, 0.60), ("60-65%", 0.60, 0.65),
          ("65-70%", 0.65, 0.70), ("70%+", 0.70, None))
-SOURCE_TEXT = ("Every official pre-tip CBB Originator selection (one best offer per game x player x prop) settled against "
-               "authoritative final player outcomes.")
-SECTIONS = ("Overall Performance", "Performance by Stat", "Performance by Player Role",
-            "Performance by Stat × Player Role", "Performance by Side", "Performance by Model Probability")
-OVERALL_COLS = ("NIGHT", "SOURCE", "BETS", "WINS", "LOSSES", "PUSHES", "VOIDS", "PENDING", "UNSUPPORTED", "DECISIONS",
-                "HIT_RATE", "PROFIT", "ROI")
-GROUP_METRICS = ("BETS", "DECISIONS", "WINS", "LOSSES", "PUSHES", "VOIDS", "HIT_RATE", "PROFIT", "ROI", "AVG_MODEL%",
-                 "AVG_MARKET%", "AVG_EDGE")
-BAND_COLS = ("MODEL_BAND", "BETS", "DECISIONS", "WINS", "LOSSES", "HIT_RATE", "AVG_MODEL%", "REALIZED_WIN_RATE",
-             "CALIBRATION_ERROR", "PROFIT", "ROI")
-
-FORMATS = {"MODEL%": "0.0%", "MARKET%": "0.0%", "EDGE": "0.0%", "HIT_RATE": "0.0%", "ROI": "0.0%",
-           "AVG_MODEL%": "0.0%", "AVG_MARKET%": "0.0%", "AVG_EDGE": "0.0%", "REALIZED_WIN_RATE": "0.0%",
-           "CALIBRATION_ERROR": "0.0%", "LINE": "0.0", "PROJ": "0.00", "ΔLINE": "0.00", "MEAN": "0.000",
-           "PROBABILITY": "0.0000%", "EV": "0.000", "REALIZED": "0.0###", "PROFIT": "0.000", "ODDS": "0",
-           "OUTCOME": "0", "SD": "0.000", "P_PLAY": "0.0%", "EXP_MINUTES": "0.0",
-           "Model Projection": "0.00", "Consensus Line": "0.0", "Model Over %": "0.0%", "Market Over %": "0.0%",
-           "Over Edge": "0.0%", "Consensus Over Odds": "0", "Model Under %": "0.0%", "Market Under %": "0.0%",
-           "Under Edge": "0.0%", "Consensus Under Odds": "0", "Preferred EV": "0.000", "Best Odds": "0",
-           "Quote Freshness Seconds": "0"}
+FORMATS = {"MEAN": "0.000", "PROBABILITY": "0.0000%", "OUTCOME": "0", "SD": "0.000", "P_PLAY": "0.0%",
+           "EXP_MINUTES": "0.0"}                                  # Distributions; Boards / Grades / Performance carry their own
 
 
 class ExportIntegrityError(RuntimeError):
@@ -271,61 +220,7 @@ def slate_games(ops_root: Path, date: str) -> pd.DataFrame:
     return r[cols + ["tip_utc", "cutoff_utc"]].reset_index(drop=True)
 
 
-def receipts(ops_root: Path, games: pd.DataFrame, labels=LIVE_LABELS) -> pd.DataFrame:
-    """QUOTE_SIDE receipts (prediction x sportsbook offer) of the decided prediction tick of each slate game."""
-    out = []
-    for g in games.itertuples(index=False):
-        tdir = Path(ops_root) / "ticks" / str(g.tick_id)
-        src = tdir / "side_monitor.jsonl.gz"
-        if not src.exists() and (tdir / "side_monitor.jsonl").exists():
-            src = tdir / "side_monitor.jsonl"
-        if src.exists():
-            recs = _jsonl(src)
-            _verify_chain(recs, src)
-            body = [r["body"] for r in recs if r.get("record_type") == "QUOTE_SIDE"]
-            df = pd.DataFrame(body)
-        elif (tdir / "quote_sides.parquet").exists():
-            df = pd.read_parquet(tdir / "quote_sides.parquet")
-        else:
-            continue
-        if not len(df):
-            continue
-        df = df[(df["game_id"] == g.game_id) & (df["run_id"] == g.run_id) & df["data_label"].isin(labels)].copy()
-        df["tip_utc"] = g.tip_utc
-        df["window"] = g.cutoff_rule
-        df["tick_id"] = g.tick_id
-        out.append(df)
-    if not out:
-        return pd.DataFrame()
-    return pd.concat(out, ignore_index=True).drop_duplicates("record_id", keep="first").reset_index(drop=True)
-
-
 REFRESH_RECEIPTS = "reprice_side_monitor.jsonl"        # = prod.quote_refresh.REFRESH_FILE (tested)
-
-
-def refresh_receipts(ops_root: Path, date: str, labels=LIVE_LABELS) -> pd.DataFrame:
-    """QUOTE_SIDE receipts of the tiered quote refresh (prod.quote_refresh) for ET slate date `date`: the persisted PMF
-    of the game repriced at a later real quote (no refit, no simulation). Each carries its own tip and cutoff."""
-    src = Path(ops_root) / "quotes" / date / REFRESH_RECEIPTS
-    recs = _jsonl(src)
-    if not recs:
-        return pd.DataFrame()
-    _verify_chain(recs, src)
-    df = pd.DataFrame([r["body"] for r in recs if r.get("record_type") == "QUOTE_SIDE"])
-    if not len(df):
-        return df
-    df = df[df["data_label"].isin(labels)].copy()
-    df["tip_utc"] = df["tip_utc"].map(_utc)
-    df["tick_id"] = None
-    return df.drop_duplicates("record_id", keep="first").reset_index(drop=True)
-
-
-def side_settlements(ops_root: Path) -> pd.DataFrame:
-    parts = [pd.read_parquet(p) for p in sorted(Path(ops_root, "ticks").glob("*/side_settlements.parquet"))]
-    if not parts:
-        return pd.DataFrame(columns=["record_id", "result", "actual"])
-    s = pd.concat(parts, ignore_index=True)
-    return s.drop_duplicates("record_id", keep="first")          # append-only: a record is settled once
 
 
 def team_names(history_db: Path | None, state_root: Path | None) -> dict:
@@ -358,71 +253,6 @@ def team_names(history_db: Path | None, state_root: Path | None) -> dict:
 
 
 # ============================================================================ offers (Boards + Grades population)
-def offers(rc: pd.DataFrame, settlements: pd.DataFrame, names: dict) -> tuple[pd.DataFrame, dict]:
-    """One row per pre-tip priced receipt (prediction x sportsbook offer side). Returns (frame, leakage report)."""
-    cols = ["record_id", "tip_utc", "game", "team", "player", "prop", "line", "proj", "dline", "pick", "model_p",
-            "market_p", "edge", "book", "odds", "ev", "window", "capture_utc", "expected_minutes", "role", "result",
-            "realized", "profit", "game_id", "player_id", "team_id", "model_version", "prediction_as_of", "run_id",
-            "tick_id"]
-    leak = {"receipts": int(len(rc)), "post_tip_excluded": 0}
-    if not len(rc):
-        return pd.DataFrame(columns=cols), leak
-    rc = rc.copy()
-    tip = rc["tip_utc"].map(_utc)
-    aso = rc["prediction_as_of"].map(_utc)
-    cap = rc["collector_received_at"].map(_utc)
-    qav = rc["quote_available_at"].map(_utc)
-    ok = [t is not None and a is not None and a < t and (c is None or c < t) and (q is None or q < t)
-          for t, a, c, q in zip(tip, aso, cap, qav)]
-    leak["post_tip_excluded"] = int(len(rc) - sum(ok))
-    rc = rc[ok].copy()
-    # same-book other side at the same line (two-sided no-vig)
-    key = ["run_id", "game_id", "player_id", "market", "line", "sportsbook"]
-    other = rc.set_index(key + ["side"])["book_decimal_odds"].to_dict()
-    st = settlements.set_index("record_id") if len(settlements) else pd.DataFrame()
-    rows = []
-    for r in rc.itertuples(index=False):
-        k = tuple(getattr(r, c) for c in key)
-        opp = "UNDER" if r.side == "OVER" else "OVER"
-        mp = _f(r.p_side_nonpush)
-        mk = no_vig(r.side, r.book_decimal_odds, other.get(k + (opp,))) if r.side in SIDES else None
-        s = st.loc[r.record_id] if len(st) and r.record_id in st.index else None
-        res = grade_result(r.side, r.book_american_odds, None if s is None else s.get("result"))
-        realized = None if s is None else _f(s.get("actual"))
-        odds = _f(r.book_american_odds)
-        proj, line = _f(r.projection), _f(r.line)
-        rows.append({"record_id": r.record_id, "tip_utc": _utc(r.tip_utc), "game": r.game,
-                     "team": names.get(r.team_id, r.team_id), "player": r.player, "prop": r.market, "line": line,
-                     "proj": proj, "dline": None if proj is None or line is None else proj - line, "pick": r.side,
-                     "model_p": mp, "market_p": mk, "edge": None if mp is None or mk is None else mp - mk,
-                     "book": r.sportsbook, "odds": None if odds is None else int(round(odds)), "ev": _f(r.model_edge),
-                     "window": r.window, "capture_utc": None if _utc(r.collector_received_at) is None
-                     else _utc(r.collector_received_at).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                     "expected_minutes": _f(r.predicted_minutes), "role": player_role(r.predicted_minutes),
-                     "result": res, "realized": realized,
-                     "profit": profit(res, odds) if res not in ("PENDING", "UNSUPPORTED") else None,
-                     "game_id": r.game_id, "player_id": r.player_id, "team_id": r.team_id,
-                     "model_version": getattr(r, "model_version", None),
-                     "prediction_as_of": None if _utc(r.prediction_as_of) is None else _utc(r.prediction_as_of).isoformat(),
-                     "run_id": r.run_id, "tick_id": getattr(r, "tick_id", None)})
-    df = pd.DataFrame(rows, columns=cols)
-    df = df.sort_values(["tip_utc", "game", "player", "prop", "line", "pick", "book"], kind="mergesort",
-                        na_position="last").reset_index(drop=True)
-    return df, leak
-
-
-# ============================================================================ official best-offer selection
-OFFICIAL_KEY = ("game_id", "player_id", "prop")              # Board / Grade grain: GAME x PLAYER x PROP (BOOK, LINE not)
-SELECTION_VERSION = "cbb-best-offer-selection-2.0.0"
-PROVISIONAL, FROZEN = "PROVISIONAL", "OFFICIAL_FROZEN"
-TIE_ORDER = ("MAX_EV", "MODEL%", "BETTOR_FAVORABLE_LINE_WHEN_SAME_SIDE", "DECIMAL_ODDS", "EDGE", "OVER_BEFORE_UNDER",
-             "BOOK_ALPHA")
-CONTENT_FIELDS = ("selection_version", "record_id", "game_id", "player_id", "team_id", "stat", "pick", "line", "book",
-                  "odds", "model_p", "market_p", "edge", "ev", "model_version", "expected_minutes", "role",
-                  "forecast_snapshot_id", "prediction_as_of", "capture_utc", "window", "cutoff_utc", "tick_id",
-                  "run_id", "game", "team", "player", "proj", "dline", "candidate_offers")
-
-
 def decimal_odds(american) -> float | None:
     """Exact bettor-facing decimal payout of American odds (None when not a valid American price)."""
     if not valid_american(american):
@@ -435,286 +265,6 @@ def norm_book(b) -> str:
     return "" if b is None or (not isinstance(b, str) and pd.isna(b)) else str(b).strip().lower()
 
 
-def eligible_offers(of: pd.DataFrame, cutoffs: dict | None = None, at=None) -> pd.DataFrame:
-    """Valid executable offers: OVER / UNDER, valid American odds, finite MODEL% / EV / LINE, a quote timestamp, quote
-    and prediction strictly before the game's cutoff (and the tip, enforced in offers()) and not after `at`."""
-    if not len(of):
-        return of.iloc[0:0]
-    cutoffs = cutoffs or {}
-    at = _utc(at)
-
-    def timely(r):
-        cap, aso, cut = _utc(r["capture_utc"]), _utc(r["prediction_as_of"]), _utc(cutoffs.get(r["game_id"]))
-        if cap is None:
-            return False
-        if cut is not None and (cap >= cut or (aso is not None and aso > cut)):
-            return False
-        return at is None or cap <= at
-    ok = of["pick"].isin(SIDES) & of["odds"].map(valid_american) & of["model_p"].map(lambda v: _f(v) is not None) & \
-        of["ev"].map(lambda v: _f(v) is not None) & of["line"].map(lambda v: _f(v) is not None) & \
-        of.apply(timely, axis=1)
-    return latest_observation(of[ok])
-
-
-def latest_observation(el: pd.DataFrame) -> pd.DataFrame:
-    """Per game, only the offers of its LATEST quote observation (the receipts of one pricing run: the official tick
-    or one tiered quote refresh): an earlier observation superseded by a newer quote of the same game is no longer an
-    executable offer. Latest = max capture instant, then max prediction_as_of, then run_id. One observation per game
-    (the official-tick-only case) is unchanged."""
-    if not len(el):
-        return el
-    k = el.assign(_cap=el["capture_utc"].map(_utc), _aso=el["prediction_as_of"].map(_utc))
-    b = k.groupby(["game_id", "run_id"], sort=True).agg(_cap=("_cap", "max"), _aso=("_aso", "max")).reset_index()
-    b = b.sort_values(["game_id", "_cap", "_aso", "run_id"], kind="mergesort").drop_duplicates("game_id", keep="last")
-    keep = set(zip(b["game_id"], b["run_id"]))
-    return el[[(g, r) in keep for g, r in zip(el["game_id"], el["run_id"])]]
-
-
-def select_best(g: pd.DataFrame) -> pd.Series:
-    """The single official offer of one GAME x PLAYER x PROP: MAXIMUM model EV across every book, line and side.
-    EXACT EV comparison (no rounding, no tolerance); exact ties only are broken, in this order, by: higher MODEL%; the bettor-favorable line when every
-    remaining candidate has the same PICK (OVER lower, UNDER higher; skipped when PICKs differ); higher decimal odds;
-    higher EDGE; OVER before UNDER; normalized BOOK ascending. Sequential filtering: input-order independent."""
-    c = g.assign(_ev=g["ev"].map(float), _mp=g["model_p"].map(float),
-                 _dec=g["odds"].map(decimal_odds), _edge=g["edge"].map(lambda v: -math.inf if _f(v) is None else float(v)),
-                 _book=g["book"].map(norm_book))
-    c = c[c["_ev"] == c["_ev"].max()]
-    c = c[c["_mp"] == c["_mp"].max()]
-    if c["pick"].nunique() == 1 and len(c) > 1:
-        best = c["line"].min() if c["pick"].iloc[0] == "OVER" else c["line"].max()
-        c = c[c["line"] == best]
-    c = c[c["_dec"] == c["_dec"].max()]
-    c = c[c["_edge"] == c["_edge"].max()]
-    if (c["pick"] == "OVER").any():
-        c = c[c["pick"] == "OVER"]
-    c = c[c["_book"] == c["_book"].min()]
-    c = c.sort_values(["line", "record_id"], kind="mergesort")      # only identical offers remain: stable identity
-    return c.iloc[0].drop(["_ev", "_mp", "_dec", "_edge", "_book"])
-
-
-def select_official(of: pd.DataFrame, cutoffs: dict | None = None, at=None) -> pd.DataFrame:
-    """Exactly one selected row per GAME x PLAYER x PROP that has at least one valid executable offer."""
-    el = eligible_offers(of, cutoffs, at)
-    if not len(el):
-        return of.iloc[0:0].assign(candidate_offers=pd.Series(dtype="int64"))
-    rows = []
-    for _, g in el.groupby(list(OFFICIAL_KEY), sort=True):
-        r = select_best(g)
-        r["candidate_offers"] = int(len(g))
-        rows.append(r)
-    out = pd.DataFrame(rows).reset_index(drop=True)
-    assert_unique(out)
-    return out.sort_values(["tip_utc", "game", "player", "prop"], kind="mergesort", na_position="last").reset_index(drop=True)
-
-
-def assert_unique(df: pd.DataFrame, cols=OFFICIAL_KEY) -> None:
-    if len(df) and int(df.duplicated(list(cols)).sum()):
-        raise ExportIntegrityError(f"duplicate GAME x PLAYER x PROP rows: {int(df.duplicated(list(cols)).sum())}")
-
-
-def selections_path(ops_root: Path, date: str) -> Path:
-    return Path(ops_root) / "selections" / date / "official_selections.jsonl"
-
-
-def _hash(d: dict) -> str:
-    return hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
-
-
-def _key(r: dict) -> tuple:
-    return r["game_id"], r["player_id"], r["stat"]
-
-
-def load_selections(path: Path) -> dict:
-    """key -> {"provisional": latest PROVISIONAL receipt | None, "frozen": OFFICIAL_FROZEN receipt | None}. Every
-    receipt's content and receipt hashes are verified; any receipt after a key's frozen receipt fails."""
-    out: dict = {}
-    for r in _jsonl(path):
-        body = {f: r.get(f) for f in CONTENT_FIELDS}
-        full = {k: v for k, v in r.items() if k != "receipt_hash"}
-        if _hash(body) != r.get("content_hash") or _hash(full) != r.get("receipt_hash"):
-            raise ExportIntegrityError(f"{path}: selection receipt {_key(r)} altered")
-        st = out.setdefault(_key(r), {"provisional": None, "frozen": None})
-        if st["frozen"] is not None:
-            raise ExportIntegrityError(f"{path}: receipt written after the frozen selection of {_key(r)}")
-        st["frozen" if r["state"] == FROZEN else "provisional"] = r
-    return out
-
-
-def selection_receipt(r: dict, state: str, at: str, cutoff) -> dict:
-    def v(x):
-        return None if x is None or (not isinstance(x, str) and pd.isna(x)) else x
-    body = {"selection_version": SELECTION_VERSION, "record_id": r["record_id"], "game_id": r["game_id"],
-            "player_id": r["player_id"], "team_id": v(r["team_id"]), "stat": r["prop"], "pick": r["pick"],
-            "line": float(r["line"]), "book": r["book"], "odds": int(r["odds"]), "model_p": _f(r["model_p"]),
-            "market_p": _f(r["market_p"]), "edge": _f(r["edge"]), "ev": _f(r["ev"]),
-            "model_version": v(r["model_version"]), "expected_minutes": _f(r["expected_minutes"]), "role": r["role"],
-            "forecast_snapshot_id": v(r["run_id"]), "prediction_as_of": v(r["prediction_as_of"]),
-            "capture_utc": v(r["capture_utc"]), "window": v(r["window"]),
-            "cutoff_utc": None if _utc(cutoff) is None else _utc(cutoff).isoformat(), "tick_id": v(r["tick_id"]),
-            "run_id": v(r["run_id"]), "game": v(r["game"]), "team": v(r["team"]), "player": v(r["player"]),
-            "proj": _f(r["proj"]), "dline": _f(r["dline"]), "candidate_offers": int(r["candidate_offers"])}
-    body = json.loads(json.dumps(body, default=str))
-    rec = {**body, "content_hash": _hash(body), "state": state, "selected_at": at}
-    return {**rec, "receipt_hash": _hash(rec)}
-
-
-def write_receipt(path: Path, rec: dict, have: dict) -> bool:
-    """Write-once per state. Same content again: idempotent (False, nothing written). A frozen key with different
-    content: ExportIntegrityError. A changed provisional selection before the cutoff: a new PROVISIONAL receipt."""
-    st = have.get(_key(rec), {"provisional": None, "frozen": None})
-    if st["frozen"] is not None:
-        if st["frozen"]["content_hash"] != rec["content_hash"]:
-            raise ExportIntegrityError(f"frozen selection of {_key(rec)} may not change")
-        return False
-    if rec["state"] == PROVISIONAL and st["provisional"] is not None and \
-            st["provisional"]["content_hash"] == rec["content_hash"]:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a") as f:
-        f.write(json.dumps(rec, sort_keys=True, default=str) + "\n")
-    st[("frozen" if rec["state"] == FROZEN else "provisional")] = rec
-    have[_key(rec)] = st
-    return True
-
-
-def official(of: pd.DataFrame, path: Path, cutoffs: dict | None = None, now=None) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    """(board rows, graded rows, report). Per GAME x PLAYER x PROP:
-      frozen receipt exists        -> it is used as written; never reselected (a later / better quote cannot change it)
-      no frozen, now >= cutoff     -> the selection over the offers valid before the cutoff is frozen (OFFICIAL_FROZEN)
-      no frozen, now <  cutoff     -> the current best offer is a PROVISIONAL receipt (superseded by a later refresh)
-    Board rows: frozen + provisional; graded rows: OFFICIAL_FROZEN only."""
-    path, cutoffs = Path(path), cutoffs or {}
-    now = _utc(now) or pd.Timestamp.now(tz="UTC")
-    have = load_selections(path)
-    sel = select_official(of, cutoffs, now)
-    written = {PROVISIONAL: 0, FROZEN: 0}
-    for r in sel.to_dict(orient="records"):
-        k = (r["game_id"], r["player_id"], r["prop"])
-        if have.get(k, {}).get("frozen") is not None:
-            continue
-        cut = _utc(cutoffs.get(r["game_id"]))
-        state = FROZEN if cut is not None and now >= cut else PROVISIONAL
-        rec = selection_receipt(r, state, now.isoformat(), cut)
-        written[state] += write_receipt(path, rec, have)
-    for k, st in have.items():                                    # a provisional key whose cutoff passed: freeze it
-        cut = _utc(cutoffs.get(k[0]))
-        if st["frozen"] is None and st["provisional"] is not None and cut is not None and now >= cut:
-            p = st["provisional"]
-            rec = {**{f: p[f] for f in CONTENT_FIELDS}, "content_hash": p["content_hash"], "state": FROZEN,
-                   "selected_at": now.isoformat()}
-            written[FROZEN] += write_receipt(path, {**rec, "receipt_hash": _hash(rec)}, have)
-    byid = of.set_index("record_id") if len(of) else pd.DataFrame()
-
-    def row(r):
-        if not len(byid) or r["record_id"] not in byid.index:
-            raise ExportIntegrityError(f"selected receipt {r['record_id']} absent from the QUOTE_SIDE evidence")
-        o = byid.loc[r["record_id"]]
-        if (o["pick"], o["book"]) != (r["pick"], r["book"]) or _f(o["line"]) != _f(r["line"]) or _f(o["odds"]) != _f(r["odds"]):
-            raise ExportIntegrityError(f"selection {r['content_hash'][:12]} differs from its QUOTE_SIDE receipt")
-        return {"record_id": r["record_id"], "tip_utc": o["tip_utc"], "game": r["game"], "team": r["team"],
-                "player": r["player"], "prop": r["stat"], "line": r["line"], "proj": r["proj"], "dline": r["dline"],
-                "pick": r["pick"], "model_p": r["model_p"], "market_p": r["market_p"], "edge": r["edge"],
-                "book": r["book"], "odds": r["odds"], "ev": r["ev"], "window": r["window"],
-                "capture_utc": r["capture_utc"], "expected_minutes": r["expected_minutes"], "role": r["role"],
-                "result": o["result"], "realized": o["realized"], "profit": o["profit"], "game_id": r["game_id"],
-                "player_id": r["player_id"], "team_id": r["team_id"], "model_version": r["model_version"],
-                "prediction_as_of": r["prediction_as_of"], "run_id": r["run_id"], "tick_id": r["tick_id"]}
-
-    def frame(recs):
-        out = pd.DataFrame([row(r) for r in recs], columns=list(of.columns))
-        assert_unique(out)
-        return out.sort_values(["tip_utc", "game", "player", "prop"], kind="mergesort",
-                               na_position="last").reset_index(drop=True)
-    frozen = [st["frozen"] for st in have.values() if st["frozen"] is not None]
-    board = [st["frozen"] or st["provisional"] for st in have.values() if st["frozen"] or st["provisional"]]
-    return frame(board), frame(frozen), {
-        "path": str(path), "raw_offers": int(len(of)), "eligible_offers": int(len(eligible_offers(of, cutoffs, now))),
-        "written": written, "frozen": len(frozen), "provisional": len(board) - len(frozen), "tie_order": list(TIE_ORDER)}
-
-
-def selection_rows(of: pd.DataFrame) -> list[list]:
-    """The official best-offer selection rows (SELECTION_COLS order; one per GAME x PLAYER x PROP)."""
-    assert_unique(of)
-    return [[r.game, r.team, r.player, r.prop, r.line, r.proj, r.dline, r.pick, r.model_p, r.market_p, r.edge,
-             r.book, r.odds, r.ev, r.window, r.capture_utc] for r in of.itertuples(index=False)]
-
-
-def grade_rows(of: pd.DataFrame) -> list[list]:
-    return [[r.game, r.team, r.player, r.prop, r.line, r.pick, r.model_p, r.market_p, r.edge, r.book, r.odds, r.result,
-             r.realized, r.profit] for r in of.itertuples(index=False)]
-
-
-# ============================================================================ performance summary
-def _mean(v):
-    x = [float(a) for a in v if _f(a) is not None]
-    return sum(x) / len(x) if x else None
-
-
-def group_metrics(g: pd.DataFrame) -> dict:
-    res = g["result"].tolist()
-    w, l = res.count("WIN"), res.count("LOSS")
-    dec = w + l
-    pr = sum(float(p) for p in g["profit"] if _f(p) is not None)
-    return {"BETS": int(len(g)), "DECISIONS": dec, "WINS": w, "LOSSES": l, "PUSHES": res.count("PUSH"),
-            "VOIDS": res.count("VOID"), "PENDING": res.count("PENDING"), "UNSUPPORTED": res.count("UNSUPPORTED"),
-            "HIT_RATE": w / dec if dec else None, "PROFIT": pr, "ROI": pr / dec if dec else None,
-            "AVG_MODEL%": _mean(g["model_p"]), "AVG_MARKET%": _mean(g["market_p"]), "AVG_EDGE": _mean(g["edge"])}
-
-
-def summary(of: pd.DataFrame, night: str) -> dict:
-    """The six Performance Summary tables: {section: (columns, rows)}."""
-    m = group_metrics(of)
-    out = {"Overall Performance": (OVERALL_COLS, [[night, SOURCE_TEXT] + [m[c] for c in OVERALL_COLS[2:]]])}
-    stat_rows = [[s] + [group_metrics(g)[c] for c in GROUP_METRICS] for s, g in sorted(of.groupby("prop"), key=lambda x: x[0])]
-    out["Performance by Stat"] = (("STAT_CATEGORY",) + GROUP_METRICS, stat_rows + [["TOTAL"] + [m[c] for c in GROUP_METRICS]])
-    role_rows = [[r] + [group_metrics(of[of["role"] == r])[c] for c in GROUP_METRICS] for r in ROLES]
-    out["Performance by Player Role"] = (("PLAYER_ROLE",) + GROUP_METRICS, role_rows + [["TOTAL"] + [m[c] for c in GROUP_METRICS]])
-    sr = []
-    for s in sorted(of["prop"].unique()) if len(of) else []:
-        for r in ROLES:
-            g = of[(of["prop"] == s) & (of["role"] == r)]
-            if len(g):
-                sr.append([s, r] + [group_metrics(g)[c] for c in GROUP_METRICS])
-    out["Performance by Stat × Player Role"] = (("STAT_CATEGORY", "PLAYER_ROLE") + GROUP_METRICS, sr)
-    side_rows = [[s] + [group_metrics(of[of["pick"] == s])[c] for c in GROUP_METRICS] for s in SIDES]
-    out["Performance by Side"] = (("SIDE",) + GROUP_METRICS, side_rows + [["TOTAL"] + [m[c] for c in GROUP_METRICS]])
-    band = of["model_p"].map(model_band) if len(of) else pd.Series(dtype=object)
-    br = []
-    for name, _, _ in BANDS:
-        g = group_metrics(of[band == name]) if len(of) else group_metrics(of)
-        rw = g["WINS"] / g["DECISIONS"] if g["DECISIONS"] else None
-        br.append([name, g["BETS"], g["DECISIONS"], g["WINS"], g["LOSSES"], g["HIT_RATE"], g["AVG_MODEL%"], rw,
-                   None if rw is None or g["AVG_MODEL%"] is None else rw - g["AVG_MODEL%"], g["PROFIT"], g["ROI"]])
-    out["Performance by Model Probability"] = (BAND_COLS, br)
-    return out
-
-
-def reconcile(of: pd.DataFrame, summ: dict) -> dict:
-    """Every TOTAL / partition reconciles exactly to Overall Performance."""
-    ov = dict(zip(OVERALL_COLS, summ["Overall Performance"][1][0]))
-    chk = {}
-    for sec, key in (("Performance by Stat", "STAT_CATEGORY"), ("Performance by Player Role", "PLAYER_ROLE"),
-                     ("Performance by Side", "SIDE")):
-        cols, rows = summ[sec]
-        body = [dict(zip(cols, r)) for r in rows if r[0] != "TOTAL"]
-        tot = dict(zip(cols, [r for r in rows if r[0] == "TOTAL"][0]))
-        chk[sec] = all(tot[c] == ov[c] for c in ("BETS", "DECISIONS", "WINS", "LOSSES", "PUSHES", "VOIDS")) and \
-            all(sum(b[c] for b in body) == ov[c] for c in ("BETS", "DECISIONS", "WINS", "LOSSES", "PUSHES", "VOIDS")) and \
-            abs(sum(b["PROFIT"] for b in body) - ov["PROFIT"]) <= 1e-9 and abs(tot["PROFIT"] - ov["PROFIT"]) <= 1e-9
-    cols, rows = summ["Performance by Stat × Player Role"]
-    body = [dict(zip(cols, r)) for r in rows]
-    chk["Performance by Stat × Player Role"] = sum(b["BETS"] for b in body) == ov["BETS"] and \
-        sum(b["DECISIONS"] for b in body) == ov["DECISIONS"]
-    cols, rows = summ["Performance by Model Probability"]
-    body = [dict(zip(cols, r)) for r in rows]
-    nomodel = int(of["model_p"].map(lambda p: _f(p) is None).sum()) if len(of) else 0
-    chk["Performance by Model Probability"] = sum(b["BETS"] for b in body) + nomodel == ov["BETS"]
-    chk["Overall Performance"] = ov["BETS"] == len(of) and ov["DECISIONS"] == ov["WINS"] + ov["LOSSES"] and \
-        sum(ov[c] for c in ("WINS", "LOSSES", "PUSHES", "VOIDS", "PENDING", "UNSUPPORTED")) == ov["BETS"]
-    return chk
-
-
-# ============================================================================ distributions
 def _check_pmf(pmf: np.ndarray, what: str) -> None:
     if not np.isfinite(pmf).all() or (pmf < 0).any():
         raise ExportIntegrityError(f"negative / non-finite PMF {what}")
@@ -853,7 +403,8 @@ def distribution_records(ops_root: Path, runs_root: Path, games: pd.DataFrame, n
                 pmf_out.append({"game_id": gid, "player_id": r.player_id, "team_id": r.team_id, "stat": r.stat,
                                 "mean": _f(r.mean), "pmf": pmf, "game_label": r.game_label, "player_label": r.player_label,
                                 "tip": tip, "cutoff": best_src[2], "source_kind": best_src[0], "forecast_id": best_src[1],
-                                "model_version": getattr(r, "model_version", None)})
+                                "model_version": getattr(r, "model_version", None),
+                                "prediction_as_of": None if best[0] == pd.Timestamp.max.tz_localize("UTC") else best[0]})
     if audit is not None:                                        # identity keys are canonical ids, never display labels
         canon: dict = {}
         label: dict = {}
@@ -1018,100 +569,6 @@ def snapshot_tips(ops_root: Path, date: str) -> dict:
     return out
 
 
-def _pval(v):
-    v = _f(v)
-    return None if v is None else v
-
-
-def board_rows(pmfs: list, observations: dict, names: dict) -> tuple[list[list], list[dict], dict]:
-    """(rows in BOARD_COLS order, audit rows, counts). One row per (game, player, stat) PMF; market fields from the
-    game's latest pre-cutoff quote observation (prod.consensus), blank when none is valid. Model probabilities at the
-    consensus line come from the persisted PMF exactly as stored (prod.pricing); EV = prod.pricing.expected_value at
-    the best executable price at the consensus line."""
-    from cbb_platform.prod import consensus as CN, pricing as PX
-    teams: dict = {}
-    for r in pmfs:
-        teams.setdefault(r["game_id"], set()).add(r["team_id"])
-    grouped: dict = {}
-    for gid, (meta, q) in observations.items():
-        if len(q):
-            q = q.assign(stat=q["stat"].astype(object))
-            for key, g in q[q["canonical_player_id"].map(lambda v: isinstance(v, str)) & q["stat"].map(lambda v: isinstance(v, str))
-                            & (q["canonical_game_id"] == gid)].groupby(["canonical_player_id", "stat"], sort=True):
-                grouped[(gid,) + key] = g
-    rows, audit = [], []
-    seen: dict = {}
-    for r in sorted(pmfs, key=lambda x: (x["tip"] or pd.Timestamp.max.tz_localize("UTC"), x["game_label"], x["player_label"],
-                                         x["stat"], x["player_id"])):
-        k = (r["game_id"], r["player_id"], r["stat"])
-        seen[k] = seen.get(k, 0) + 1
-        g = grouped.get(k)
-        m, aud = CN.consensus(g if g is not None else pd.DataFrame())
-        audit += aud
-        line = m["consensus_line"]
-        mo = mu = oe = ue = side = ev = book = bodds = None
-        if line is not None:
-            try:
-                pr = PX.price_line(r["pmf"], float(line))
-                mo, mu = pr["p_over_nonpush"], pr["p_under_nonpush"]
-            except PX.InvalidProbabilities:
-                pr = None
-            if pr is not None and m["market_status"] == "VALID_MARKET":
-                oe, ue = mo - m["market_over_prob"], mu - m["market_under_prob"]
-                evs = {"OVER": PX.expected_value(pr["p_over"], pr["p_under"], m["best_over"]["decimal"]),
-                       "UNDER": PX.expected_value(pr["p_under"], pr["p_over"], m["best_under"]["decimal"])}
-                edges = {"OVER": oe, "UNDER": ue}
-                ok = [s_ for s_ in ("OVER", "UNDER") if edges[s_] > 0 and evs[s_] > 0]
-                if ok:
-                    side = max(ok, key=lambda s_: (evs[s_], s_ == "OVER"))
-                    ev = evs[side]
-                    b = m["best_over"] if side == "OVER" else m["best_under"]
-                    book, bodds = b["book"], _f(b["american"])
-                else:
-                    side = "PASS"
-        tip = r["tip"]
-        opp = sorted(t for t in teams.get(r["game_id"], set()) if t != r["team_id"])
-        rows.append([str(_utc(tip).tz_convert(TZ).date()) if tip is not None else None, r["game_id"], r["game_label"],
-                     _utc(tip).tz_convert(TZ).strftime("%Y-%m-%d %H:%M") if tip is not None else None,
-                     r["player_label"], r["player_id"], names.get(r["team_id"], r["team_id"]),
-                     names.get(opp[0], opp[0]) if len(opp) == 1 else None, r["stat"], _pval(r["mean"]),
-                     _pval(line), _pval(mo), _pval(m["market_over_prob"]), _pval(oe), _pval(m["consensus_over_odds"]),
-                     _pval(mu), _pval(m["market_under_prob"]), _pval(ue), _pval(m["consensus_under_odds"]),
-                     side, _pval(ev), book, None if bodds is None else int(round(bodds)), m["raw_book_count"],
-                     m["consensus_book_count"], m["outlier_book_count"], m["consensus_confidence"], m["market_status"],
-                     None if m["quote_age_seconds"] is None else int(round(m["quote_age_seconds"])),
-                     m["quote_captured_utc"], r["forecast_id"], r["model_version"]])
-    # observations of quotes that never reached a Board key (unmatched / invalid rows, players without a PMF)
-    keys = set(seen)
-    for gid, (meta, q) in observations.items():
-        if not len(q):
-            continue
-        ok = q["canonical_player_id"].map(lambda v: isinstance(v, str)) & q["stat"].map(lambda v: isinstance(v, str)) & \
-            (q["canonical_game_id"] == gid)
-        rest = q[~ok | ~pd.Series([(gid, p, s_) in keys for p, s_ in zip(q["canonical_player_id"], q["stat"])], index=q.index)]
-        for x in rest.to_dict(orient="records"):
-            why = CN.row_exclusions(pd.DataFrame([x])).iat[0] or "NO_FORECAST_FOR_PLAYER_STAT"
-            audit.append({**{c: x.get(c) for c in CN.AUDIT_COLS if c in x}, "canonical_game_id": gid,
-                          "quote_age_seconds": None, "status": "EXCLUDED", "reason": why})
-    dup = sorted(list(k) for k, n in seen.items() if n > 1)
-    counts = {"rows": len(rows), "unique_keys": len(seen), "duplicate_keys": len(dup), "duplicates": dup[:20],
-              "valid_market": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "VALID_MARKET"),
-              "no_valid_market": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "NO_VALID_MARKET"),
-              "no_exact_line_price": sum(1 for x in rows if x[BOARD_COLS.index("Market Status")] == "NO_EXACT_LINE_PRICE"),
-              "audit_rows": len(audit), "audit_excluded": sum(1 for a in audit if a["status"] == "EXCLUDED")}
-    return rows, audit, counts
-
-
-def board_sheets(rows: list[list]) -> dict:
-    """Full Board = every row; the threshold sheets = rows whose PREFERRED side's model probability >= threshold."""
-    i_side, i_o, i_u = BOARD_COLS.index("Preferred Side"), BOARD_COLS.index("Model Over %"), BOARD_COLS.index("Model Under %")
-
-    def pref_p(r):
-        return r[i_o] if r[i_side] == "OVER" else r[i_u] if r[i_side] == "UNDER" else None
-    return {s: rows if thr is None else [r for r in rows if pref_p(r) is not None and pref_p(r) >= thr]
-            for s, thr in BOARD_THRESHOLDS.items()}
-
-
 def _writers_sha(*mods) -> str:
     h = hashlib.sha256(Path(__file__).read_bytes())
     for m in mods:
@@ -1137,12 +594,6 @@ def write_if_changed(path: Path, receipt_name: str, content, build, writer_sha: 
     tmp.write_text(json.dumps({**want, **(extra or {}), "xlsx_sha256": _file_sha(p)}, sort_keys=True, indent=1) + "\n")
     os.replace(tmp, rec_p)
     return p, True
-
-
-def boards_workbook(rows: list[list], path: Path) -> Path:
-    sh = board_sheets(rows)
-    return write_xlsx(path, [{"name": s, "blocks": [{"title": None, "columns": BOARD_COLS, "rows": sh[s]}]}
-                             for s in BOARD_SHEETS])
 
 
 DIST_RECEIPT = "distributions_receipt.json"
@@ -1548,45 +999,6 @@ def distributions_workbook(rows: list, path: Path) -> Path:
                              for k, part in enumerate(parts)])
 
 
-def grade_status(of: pd.DataFrame) -> list:
-    """[GRADE_STATUS, official selections, settled, pending]: NOTHING_SETTLED_YET until a frozen selection settles."""
-    res = of["result"].tolist() if len(of) else []
-    settled = sum(1 for r in res if r in ("WIN", "LOSS", "PUSH", "VOID"))
-    pending = sum(1 for r in res if r == "PENDING")
-    st = "NOTHING_SETTLED_YET" if not settled else ("PARTIALLY_SETTLED" if pending else "SETTLED")
-    return [st, len(res), settled, pending]
-
-
-def grades_workbook(of: pd.DataFrame, night: str, path: Path) -> Path:
-    summ = summary(of, night)
-    return write_xlsx(path, [
-        {"name": GRADE_SHEETS[0], "blocks": [{"title": None, "columns": GRADE_COLS, "rows": grade_rows(of)}]},
-        {"name": GRADE_SHEETS[1], "table_filters": True,
-         "blocks": [{"title": sec, "columns": summ[sec][0], "rows": summ[sec][1]} for sec in SECTIONS]},
-        {"name": GRADE_SHEETS[2], "blocks": [{"title": None, "columns": GRADE_STATUS_COLS, "rows": [grade_status(of)]}]}])
-
-
-def _immutable(of: pd.DataFrame) -> dict:
-    keys = ["game", "team", "player", "prop", "line", "pick", "model_p", "market_p", "edge", "book", "odds"]
-    return {r["record_id"]: dict(zip(IMMUTABLE_FIELDS, [None if _f(r[k]) is None and not isinstance(r[k], str) else r[k]
-                                                        for k in keys])) for r in of.to_dict(orient="records")}
-
-
-def check_receipts(sidecar: Path, of: pd.DataFrame) -> dict:
-    """A re-export may replace PENDING outcomes; it may never change an immutable prediction field or drop a receipt."""
-    now = _immutable(of)
-    if not Path(sidecar).exists():
-        return {"previous": 0, "changed": [], "missing": [], "new": len(now)}
-    prev = json.loads(Path(sidecar).read_text())["receipts"]
-    changed = sorted(k for k in prev if k in now and json.dumps(prev[k], sort_keys=True, default=str)
-                     != json.dumps(json.loads(json.dumps(now[k], default=str)), sort_keys=True, default=str))
-    missing = sorted(k for k in prev if k not in now)
-    if changed or missing:
-        raise ExportIntegrityError(f"immutable prediction fields differ from the previous export: changed {changed[:5]} "
-                                   f"missing {missing[:5]}")
-    return {"previous": len(prev), "changed": [], "missing": [], "new": len(set(now) - set(prev))}
-
-
 def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROOT, out_root: Path = EXPORT_ROOT,
           history_db: Path | None = PC.HISTORY_CANONICAL, state_root: Path | None = PC.STATE_ROOT,
           labels=LIVE_LABELS, now=None) -> dict:
@@ -1611,7 +1023,8 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     audit: dict = {}
     pmfs: list = []
     recs, missing = distribution_records(ops_root, runs_root, games, names, date, audit=audit, pmf_out=pmfs)
-    rows = summary_rows(recs, player_context(ops_root, date, recs)) if recs else []
+    pctx = player_context(ops_root, date, recs) if recs else {}
+    rows = summary_rows(recs, pctx) if recs else []
     if rows and not missing:
         pq_path = out_dir / names_["distribution_pmfs"]
         frame = pmf_frame(recs, ops_root)
@@ -1631,91 +1044,101 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         rep["distributions"] = {"status": "MISSING_EVIDENCE",
                                 "missing": f"no durable PMF evidence (official tick pmfs.parquet or pre-cutoff forecast "
                                            f"snapshot) for ET slate date {date}", "games": missing[:20]}
-    # ---------------------------------------------------------------- Boards: forecast universe x market consensus
-    tips = {**snapshot_tips(ops_root, date), **(dict(zip(games["game_id"], games["tip_utc"])) if len(games) else {})}
-    cutoffs_all: dict = {}
-    for r in pmfs:
-        r["tip"] = _utc(tips.get(r["game_id"])) or r["tip"]
-        if r["cutoff"] is not None:
-            cutoffs_all[r["game_id"]] = r["cutoff"]
-    if len(games):
-        cutoffs_all.update({g: c for g, c in zip(games["game_id"], games["cutoff_utc"]) if c is not None})
+    # ---------------------------------------------------------------- Boards: forecast universe x exact-line market
+    from cbb_platform.prod import market_eval as ME, market_exports as MX
+    cutoffs_all = _cutoffs(pmfs, games, ops_root, date)
     obs = QO.latest(ops_root, date, cutoffs_all, at)
     rep["quote_observations"] = {"games": len(obs), "rows": int(sum(len(q) for _, q in obs.values()))}
+    rep["raw_quote_rows"] = rep["quote_observations"]["rows"]
     if pmfs:
-        brows, baudit, cnt = board_rows(pmfs, obs, names)
+        brows, evals, baudit, cnt = MX.board(pmfs, obs, names, pctx, at)
         rep["board_keys"] = cnt
+        try:
+            MX.assert_unique(brows)
+        except MX.MarketExportIntegrityError:
+            cnt["duplicate_keys"] = max(1, cnt["duplicate_keys"])
         if cnt["duplicate_keys"]:
             rep["boards"] = {"status": "ABORTED_DUPLICATE_BOARD_KEYS", "duplicate_keys": cnt["duplicate_keys"],
                              "duplicates": cnt["duplicates"],
                              "missing": "DUPLICATE_BOARD_KEYS > 0: export aborted (defect; never silently deduplicated)"}
         else:
+            receipt = {**{k: v for k, v in cnt.items() if k != "duplicates"}, **MX.ingestion_totals(ops_root, date),
+                       "board_as_of": at.isoformat(), "thresholds": {
+                           "min_ev": ME.ACTION_MIN_EV, "min_edge": ME.ACTION_MIN_EDGE,
+                           "min_model_probability": ME.ACTION_MIN_MODEL_PROBABILITY,
+                           "reliable_min_books": ME.RELIABLE_MIN_BOOKS}, "best_offer_order": list(ME.ORDER)}
             p, written = write_if_changed(out_dir / names_["boards"], BOARD_RECEIPT, brows,
-                                          lambda path: boards_workbook(brows, path), _writers_sha(CN, QO),
-                                          {k: cnt[k] for k in ("rows", "unique_keys", "duplicate_keys", "valid_market",
-                                                               "no_valid_market", "no_exact_line_price")})
+                                          lambda path: MX.boards_workbook(brows, path), _writers_sha(CN, QO, MX, ME),
+                                          receipt)
             if written:
                 tmp = out_dir / (BOARD_AUDIT + ".tmp")
                 with gzip.open(tmp, "wt") as f:
                     for x in baudit:
                         f.write(json.dumps(x, sort_keys=True, default=str) + "\n")
                 os.replace(tmp, out_dir / BOARD_AUDIT)
-            sh = board_sheets(brows)
+            sh = MX.board_sheets(brows)
             rep["boards"] = {"status": "WRITTEN", "path": str(p), "rows": len(brows), "rewritten": written,
                              "unique_player_stat_keys": cnt["unique_keys"], "duplicate_keys": 0,
                              "rows_with_valid_market": cnt["valid_market"],
-                             "rows_with_no_valid_market": cnt["no_valid_market"],
-                             "rows_no_exact_line_price": cnt["no_exact_line_price"],
+                             "rows_with_no_valid_market": cnt["model_only_rows"],
                              "audit": str(out_dir / BOARD_AUDIT), "audit_rows": cnt["audit_rows"],
-                             **{sname: len(sh[sname]) for sname in BOARD_SHEETS}}
+                             "receipt": receipt, **{sname: len(sh[sname]) for sname in MX.BOARD_SHEETS}}
+            rep["evaluations"] = MX.freeze(ops_root, date, pmfs, names, pctx, cutoffs_all, at)
     else:
         rep["boards"] = {"status": "MISSING_EVIDENCE",
                          "missing": f"no persisted PMF (forecast snapshot / official tick) for ET slate date {date}"}
-    # ---------------------------------------------------------------- official selections -> Grades
-    rr = refresh_receipts(ops_root, date, labels)
-    rep["refresh_receipts"] = int(len(rr))
-    graded = None
-    if len(games) or len(rr):
-        rc = receipts(ops_root, games, labels) if len(games) else pd.DataFrame()
-        parts = [x for x in (rc, rr) if len(x)]
-        rc = pd.concat(parts, ignore_index=True).drop_duplicates("record_id", keep="first") if parts else pd.DataFrame()
-        of, leak = offers(rc, side_settlements(ops_root), names)
-        rep["no_post_tip_leakage"] = {**leak, "NO_POST_TIP_LEAKAGE": "PASS"}
-        rep["raw_quote_rows"] = int(len(of))
-        graded = of.iloc[0:0]
-        if len(of):
-            cutoffs = {**(dict(zip(rr["game_id"], rr["cutoff_utc"].map(_utc))) if len(rr) else {}),
-                       **dict(zip(games["game_id"], games["cutoff_utc"]))}       # the registry cutoff wins
-            board, graded, rep["official_selection"] = official(of, selections_path(ops_root, date), cutoffs, now)
-            rep["official_rows"] = int(len(board))
-            rep["official_frozen_rows"] = int(len(graded))
-            rep["duplicate_game_player_prop_rows"] = int(board.duplicated(list(OFFICIAL_KEY)).sum())
-            rep["official_selection_rows"] = selection_rows(board)
-    if graded is None and not pmfs:
-        rep["grades"] = {"status": "MISSING_EVIDENCE", "missing": f"no PREDICTED registry game and no persisted PMF "
-                                                                  f"for ET slate date {date}"}
-        rep["performance"] = _performance(date, ops_root, out_dir, at)
-        return rep
-    if graded is None:
-        graded = offers(pd.DataFrame(), pd.DataFrame(), names)[0]
-    if len(graded):
-        rep["receipt_immutability"] = check_receipts(out_dir / "grade_receipts.json", graded)
-    summ = summary(graded, date)
-    rec = reconcile(graded, summ) if len(graded) else {}
-    status = grade_status(graded)
-    p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
-                                  [grade_rows(graded), {k: v[1] for k, v in summ.items()}, status, date],
-                                  lambda path: grades_workbook(graded, date, path), _writer_sha())
-    rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": int(len(graded)), "rewritten": written,
-                     "GRADE_STATUS": status[0], "results": graded["result"].value_counts().to_dict() if len(graded) else {},
-                     "reconciliation": rec, "GRADE_RECONCILIATION": "PASS" if all(rec.values()) else "FAIL"}
-    if len(graded):
-        sidecar = out_dir / "grade_receipts.json"
-        tmp = sidecar.with_name(sidecar.name + ".tmp")
-        tmp.write_text(json.dumps({"date": date, "receipts": _immutable(graded)}, sort_keys=True, indent=0, default=str))
-        os.replace(tmp, sidecar)
-    rep["performance"] = _performance(date, ops_root, out_dir, at)        # after Grades: today's frozen selections
+    # ---------------------------------------------------------------- Grades: D grades the D-1 ET slate
+    prior = MX.prior_day(date)
+    rep["prior_day_evaluations"] = _freeze_day(prior, ops_root, runs_root, names, at)
+    try:
+        grows, ginfo = MX.graded_rows(ops_root, prior, at)
+        sheets = MX.grades_tables(grows, prior, ginfo)
+        p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
+                                      [[b["rows"] for b in sh_["blocks"]] for sh_ in sheets],
+                                      lambda path: write_xlsx(path, sheets), _writers_sha(MX, ME))
+        m = MX.metrics(grows)
+        rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": len(grows), "rewritten": written,
+                         "graded_slate_date": prior, "GRADE_STATUS": MX.grade_status(grows),
+                         "results": pd.Series([r["result"] for r in grows]).value_counts().to_dict() if grows else {},
+                         "graded": m["Graded"], "void_dnp": m["VOID_DNP"], "pending": m["Pending"],
+                         "games_frozen": ginfo.get("games_frozen", 0)}
+    except MX.MarketExportIntegrityError as e:
+        rep["grades"] = {"status": "ABORTED_INTEGRITY", "missing": str(e)[:400]}
+    rep["performance"] = _performance(date, ops_root, out_dir, at)        # after Grades (same graded rows)
     return rep
+
+
+def _cutoffs(pmfs: list, games: pd.DataFrame, ops_root: Path, date: str) -> dict:
+    tips = {**snapshot_tips(ops_root, date), **(dict(zip(games["game_id"], games["tip_utc"])) if len(games) else {})}
+    out: dict = {}
+    for r in pmfs:
+        r["tip"] = _utc(tips.get(r["game_id"])) or r["tip"]
+        if r["cutoff"] is not None:
+            out[r["game_id"]] = r["cutoff"]
+    if len(games):
+        out.update({g: c for g, c in zip(games["game_id"], games["cutoff_utc"]) if c is not None})
+    return out
+
+
+def _freeze_day(day: str, ops_root: Path, runs_root: Path, names: dict, at) -> dict:
+    """Freeze any game of ET date `day` whose cutoff passed without a frozen evaluation (normally every game froze on
+    its own day's quote ticks; this covers a game whose cutoff fell after the last export of that day)."""
+    from cbb_platform.prod import market_exports as MX
+    games = slate_games(ops_root, day)
+    fs = forecast_sources(ops_root, day)
+    cut = {g: max(c for _, c, _ in v) for g, v in fs.items()}
+    if len(games):
+        cut.update({g: c for g, c in zip(games["game_id"], games["cutoff_utc"]) if c is not None})
+    _, frozen = MX.load_evaluations(MX.eval_path(ops_root, day))
+    todo = sorted(g for g, c in cut.items() if g not in frozen and _utc(c) is not None and _utc(at) >= _utc(c))
+    if not todo:
+        return {"day": day, "games_frozen_now": 0}
+    pmfs: list = []
+    recs, _ = distribution_records(ops_root, runs_root, games, names, day, audit={}, pmf_out=pmfs)
+    pmfs = [r for r in pmfs if r["game_id"] in set(todo)]
+    cut = {**{g: cut[g] for g in todo}, **_cutoffs(pmfs, games, ops_root, day)}
+    return {"day": day, **MX.freeze(ops_root, day, pmfs, names, player_context(ops_root, day, recs) if recs else {},
+                                    {g: cut[g] for g in todo}, at)}
 
 
 def _performance(date: str, ops_root: Path, out_dir: Path, at) -> dict:
@@ -1732,7 +1155,7 @@ def main(argv=None) -> int:
     d.add_argument("--ops-root", default=str(PC.OPS_ROOT))
     d.add_argument("--runs-root", default=str(RUNS_ROOT))
     d.add_argument("--out-root", default=str(EXPORT_ROOT))
-    d.add_argument("--history-db", default=str(PC.HISTORY_CANONICAL))
+    d.add_argument("--history-db", default=None, help="default: the production history DB (history_extract.resolve)")
     d.add_argument("--state-root", default=str(PC.STATE_ROOT))
     x = sub.add_parser("expand-distributions", help="write the long one-row-per-outcome Distributions derivative")
     x.add_argument("--date", required=True)
@@ -1753,6 +1176,9 @@ def main(argv=None) -> int:
     if a.cmd == "expand-distributions":
         print(expand_distributions(a.date, Path(a.out_root), Path(a.ops_root)))
         return 0
+    if a.history_db is None:
+        from cbb_platform.prod import history_extract as HX
+        a.history_db = str(HX.resolve())                   # the DB the scheduled lifecycle uses (never a stale default)
     rep = daily(a.date, ops_root=Path(a.ops_root), runs_root=Path(a.runs_root), out_root=Path(a.out_root),
                 history_db=Path(a.history_db), state_root=Path(a.state_root))
     print(json.dumps(rep, indent=1, default=str))

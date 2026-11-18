@@ -25,7 +25,7 @@ Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock
 Environment=TMPDIR=/var/lib/sports-models/cbb-originator/staging/tmp
 ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run lifecycle-refresh %I
 Restart=no
-TimeoutStartSec=40min
+TimeoutStartSec=45min
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=cbb-originator-availability

@@ -356,9 +356,10 @@ def due_document(p: dict, st: dict | None, ctx: Ctx) -> dict:
 
 
 # ============================================================================ steps
-def _session(ctx: Ctx, stage: str) -> OA.Session:
+def _session(ctx: Ctx, stage: str, max_credits: int | None = None) -> OA.Session:
     return OA.Session(stage, cache_root=ctx.cache_raw, ledger_path=ctx.odds_ledger, http_get=ctx.odds_http,
-                      credential=ctx.odds_credential, clock=(lambda: ctx.now().to_pydatetime()))
+                      credential=ctx.odds_credential, clock=(lambda: ctx.now().to_pydatetime()),
+                      **({} if max_credits is None else {"max_credits": max_credits}))
 
 
 def step_sync(ctx: Ctx, p: dict, tick: dict) -> dict:
@@ -507,7 +508,7 @@ def _validation_state(ctx: Ctx, now: pd.Timestamp) -> dict:
             "fails_recorded": len(fails), "revalidation_authorized_at": since.isoformat() if since is not None else None}
 
 
-EMPTY_DISCOVERY_STATUSES = ("INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS", "ERROR")
+EMPTY_DISCOVERY_STATUSES = ("INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED", "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS", "ERROR")
 
 
 def counts_as_attempt(a: dict) -> bool:

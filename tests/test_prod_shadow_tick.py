@@ -575,8 +575,8 @@ def test_validation_fail_blocks_and_inconclusive_retries(tmp_path, monkeypatch):
     clk = Clock("2026-11-10T23:00Z")
     ctx = _ctx(tmp_path, None, clk, None, None)
     (tmp_path / "ops").mkdir()
-    monkeypatch.setattr(QR, "certify", _fake_cert("INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS", clk))
-    assert TK.step_validate(ctx, None, {}) == "INCONCLUSIVE_NO_SUPPORTED_PLAYER_PROP_MARKETS"
+    monkeypatch.setattr(QR, "certify", _fake_cert("INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED", clk))
+    assert TK.step_validate(ctx, None, {}) == "INCONCLUSIVE_NO_SUPPORTED_PROP_MARKETS_POSTED"
     v = TK._validation_state(ctx, ctx.now())
     assert v["inconclusive_today"] == 1 and not TK.validation_eligible(v, ctx)     # spaced: not again right away
     clk.t += pd.Timedelta(minutes=TK.MIN_MINUTES_BETWEEN_INCONCLUSIVE)

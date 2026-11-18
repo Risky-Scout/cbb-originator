@@ -170,7 +170,7 @@ dates `iso`, the 12 production player-prop keys (`quotes.REQUEST_MARKETS`; no `_
     GET /v4/sports/basketball_ncaab/events/{id}/markets       1 credit    ALWAYS first: advertised keys per book
     GET /v4/sports/basketball_ncaab/events/{id}/odds          markets returned x 1 region; only the advertised subset
                                                                           (none advertised: no odds call,
-                                                                          NO_SUPPORTED_PLAYER_PROP_MARKETS)
+                                                                          NO_SUPPORTED_PROP_MARKETS_POSTED)
 
 Every live request's `x-requests-last / -used / -remaining` is in `prod/cache/odds_production_requests.jsonl` and in
 the collection file's `requests` receipt.
@@ -200,8 +200,7 @@ The certification is **persistent** (no daily re-certification). It closes only 
 `PROVIDER_SCHEMA_CHANGE` (response guard) or `CREDENTIAL_FAILURE` (HTTP 401/403), both automatic, or an architect
 invalidation (no tick runs):
 
-    runuser -u cbb-originator -- env $(grep -v '^#' /etc/sports-models/cbb-originator.env | xargs) \
-      /opt/sports-models/cbb-originator/venv/bin/python -m cbb_platform.prod.shadow_tick \
+    $CBB_PY -m cbb_platform.prod.shadow_tick \
       --ops-root /var/lib/sports-models/cbb-originator/prod/ops \
       --invalidate-certification SYSTEMATIC_MATCH_FAILURE --detail "<evidence>"
 
@@ -210,13 +209,34 @@ One rejected sportsbook quote never invalidates: it is excluded with its reason 
 A recorded FAIL stops further paid attempts. The scheduled unit cannot take `--allow-revalidation`, so after the
 defect behind a FAIL is fixed and deployed, the architect records ONE authorization (no tick runs, no provider call):
 
-    runuser -u cbb-originator -- env $(grep -v '^#' /etc/sports-models/cbb-originator.env | xargs) \
-      /opt/sports-models/cbb-originator/venv/bin/python -m cbb_platform.prod.shadow_tick \
+    $CBB_PY -m cbb_platform.prod.shadow_tick \
       --ops-root /var/lib/sports-models/cbb-originator/prod/ops \
       --authorize-revalidation "<what was fixed>" --fix-commit <sha>
 
 It appends to `prod/ops/markers/quote_revalidation_authorizations.jsonl`, lifts only the FAILs recorded before it,
 and is refused when nothing is blocked or after a PASS. A FAIL after the authorization blocks again.
+
+## 7z. Manual Python invocations (service user, bytecode disabled, real roots)
+
+Never run Python in the release as root and never without `-B`: one interpreter start that writes `__pycache__` into
+`/opt/sports-models/cbb-originator/releases/<sha>` makes every unit refuse the release (files outside its manifest,
+exit 3; recovery = `restore_release.py`, never weakening the manifest). Every manual command uses this prefix, which
+runs as `cbb-originator` with the production env file, `PYTHONDONTWRITEBYTECODE=1`, `python -B`, the release read-only
+and the production roots / history DB of the units:
+
+    CBB_PY="systemd-run --pipe --wait --quiet --uid=cbb-originator --gid=cbb-originator -p UMask=0027 \
+      -p EnvironmentFile=/etc/sports-models/cbb-originator.env -p ReadOnlyPaths=/opt/sports-models/cbb-originator \
+      -E PYTHONDONTWRITEBYTECODE=1 -E PYTHONPATH=/opt/sports-models/cbb-originator/current \
+      -E CBB_PROD_ROOT=/var/lib/sports-models/cbb-originator/prod -E CBB_EXPORT_ROOT=/var/lib/sports-models/cbb-originator/exports \
+      -E CBB_WF_ROOT=/var/lib/sports-models/cbb-originator/walkforward \
+      --working-directory=/opt/sports-models/cbb-originator/current /opt/sports-models/cbb-originator/venv/bin/python -B"
+
+Manual export of ET date D (the real history DB; the CLI default path does not exist on the Droplet), under the writer
+lock:
+
+    flock -w 600 /var/lib/sports-models/cbb-originator/locks/cbb-originator.writer.lock \
+      $CBB_PY -m cbb_platform.prod.exports daily --date D \
+      --history-db /var/lib/sports-models/cbb-originator/history/cbb_production_history_minimal.duckdb
 
 ## 8a. CBB_Boards (consensus Board)
 

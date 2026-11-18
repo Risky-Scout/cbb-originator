@@ -102,6 +102,18 @@ ODDS_REGIONS = "us"                                          # exactly one regio
 ODDS_BOOKMAKERS = ("draftkings", "fanduel", "betmgm", "williamhill_us", "betrivers", "hardrockbet", "espnbet", "bovada",
                    "betonlineag", "fliff")
 ODDS_BOOKMAKERS_PER_REGION = 10
+# Player-prop polling (prod.quote_refresh). Discovery windows (America/New_York): a game without advertised supported
+# markets is (re)discovered once per window until it crosses min(commence, legal cutoff); a PROP_DISCOVERED game is
+# refreshed (market rediscovery + event odds) every ODDS_REFRESH_FAR_MINUTES while more than ODDS_REFRESH_NEAR_WINDOW_MINUTES
+# before its cutoff, every ODDS_REFRESH_NEAR_MINUTES inside it, and never at or after min(commence, cutoff).
+ODDS_DISCOVERY_WINDOWS_ET = ("08:30", "10:00", "11:00", "12:00", "13:30", "15:30", "17:30", "19:30")
+ODDS_REFRESH_FAR_MINUTES = 30
+ODDS_REFRESH_NEAR_MINUTES = 10
+ODDS_REFRESH_NEAR_WINDOW_MINUTES = 120
+# below this many provider credits remaining (last x-requests-remaining), optional polling stops: discovery windows and
+# refreshes more than ODDS_REFRESH_NEAR_WINDOW_MINUTES before cutoff; only near-cutoff refreshes of discovered games run
+ODDS_QUOTA_SAFETY_THRESHOLD = int(_os.environ.get("CBB_ODDS_QUOTA_SAFETY_THRESHOLD") or 250_000)
+ODDS_QUOTES_MAX_CREDITS_PER_RUN = 600       # one quote-refresh wake (10 books = 1 region-equivalent; <= 13 per game)
 ODDS_MAX_LIVE_REQUESTS_PER_STAGE = 20    # same architect ceiling as CBBD: a stage that needs more STOPs first
 ODDS_MAX_CREDITS_PER_STAGE = 60          # worst case 5 events x 12 documented markets x 1 region
 ODDS_QUOTA_RESERVE = 500                 # never start a paid call that could leave fewer credits than this

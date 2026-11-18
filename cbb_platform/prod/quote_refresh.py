@@ -48,8 +48,15 @@ from cbb_platform.prod import (board as BO, config as PC, matching as MT, odds_a
 
 QR_VERSION = "cbb-prod-quote-refresh-1.0.0"
 SLOT_MINUTES = 10
-# (name, earliest minutes before cutoff (inclusive), latest minutes before cutoff (exclusive), interval minutes)
-TIERS = (("T6H_T2H", 360, 120, 60), ("T2H_T30M", 120, 30, 30), ("T30M_CUTOFF", 30, 0, 10))
+# (name, earliest minutes before cutoff (inclusive; None = no bound), latest minutes before cutoff (exclusive),
+# interval minutes). Only a PROP_DISCOVERED game is refreshed on this cadence; an undiscovered (or zero-prop) game is
+# (re)discovered once per discovery window (PC.ODDS_DISCOVERY_WINDOWS_ET). Nothing at / after min(commence, cutoff).
+TIERS = (("REFRESH_FAR", None, PC.ODDS_REFRESH_NEAR_WINDOW_MINUTES, PC.ODDS_REFRESH_FAR_MINUTES),
+         ("REFRESH_NEAR", PC.ODDS_REFRESH_NEAR_WINDOW_MINUTES, 0, PC.ODDS_REFRESH_NEAR_MINUTES))
+DISCOVERY = "DISCOVERY_WINDOW"
+PROP_DISCOVERED = "PROP_DISCOVERED"
+QUOTA_LOW = "QUOTA_SAFETY_THRESHOLD"
+EVENT_MAP_FILE = "event_map.jsonl"
 EVENTS_REFRESH_MINUTES = 30                 # a due game with no matched event refreshes the FREE events listing
 REFRESH_FILE = "reprice_side_monitor.jsonl"
 LIVE_STATUSES = ("FETCHED", "FETCHED_UNCHANGED")            # odds_acquire ledger statuses of a live (paid) request
@@ -64,23 +71,53 @@ def slot(t) -> pd.Timestamp:
     return _utc(t).floor(f"{SLOT_MINUTES}min")
 
 
-def tier(cutoff, now) -> tuple[str, int | None]:
-    """(tier name, interval minutes); interval None = no request allowed in this phase."""
-    r = (_utc(cutoff) - _utc(now)).total_seconds() / 60.0
-    if r <= 0:
+def stop_at(cutoff, commence=None) -> pd.Timestamp:
+    """min(commence, legal cutoff): no quote request (and no quote used) at or after it."""
+    return min(_utc(t) for t in (cutoff, commence) if t is not None and not pd.isna(t))
+
+
+def tier(cutoff, now, commence=None) -> tuple[str, int | None]:
+    """(cadence name, interval minutes) of a PROP_DISCOVERED game; interval None = no request allowed."""
+    now = _utc(now)
+    if now >= stop_at(cutoff, commence):
         return "AFTER_CUTOFF", None
+    r = (_utc(cutoff) - now).total_seconds() / 60.0
     for name, hi, lo, iv in TIERS:
-        if lo < r <= hi:
+        if lo < r and (hi is None or r <= hi):
             return name, iv
-    return "BEFORE_T_MINUS_6H", None
+    return "AFTER_CUTOFF", None
 
 
-def due(cutoff, now, last_request=None, official_pending: bool = True) -> tuple[bool, str, str]:
+def discovery_window(now) -> pd.Timestamp | None:
+    """The latest discovery window instant (today, America/New_York) at or before now; None before the first."""
+    et = _utc(now).tz_convert("America/New_York")
+    best = None
+    for w in PC.ODDS_DISCOVERY_WINDOWS_ET:
+        h, m = (int(x) for x in w.split(":"))
+        t = et.normalize().replace(hour=h, minute=m).tz_convert("UTC")
+        if t <= _utc(now) and (best is None or t > best):
+            best = t
+    return best
+
+
+def due(cutoff, now, last_request=None, official_pending: bool = True, discovered: bool = True, commence=None,
+        quota_low: bool = False) -> tuple[bool, str, str]:
     """(due, tier, reason) for one game."""
     now = _utc(now)
-    name, iv = tier(cutoff, now)
+    name, iv = tier(cutoff, now, commence)
     if iv is None:
         return False, name, name
+    if not discovered:
+        w = discovery_window(now)
+        if quota_low:
+            return False, DISCOVERY, QUOTA_LOW
+        if w is None:
+            return False, DISCOVERY, "BEFORE_FIRST_DISCOVERY_WINDOW"
+        if last_request is not None and _utc(last_request) >= w:
+            return False, DISCOVERY, f"ALREADY_DISCOVERED_IN_WINDOW {w.isoformat()}"
+        return True, DISCOVERY, "DUE"
+    if quota_low and name == "REFRESH_FAR":
+        return False, name, QUOTA_LOW
     if last_request is not None and (slot(now) - slot(last_request)) < pd.Timedelta(minutes=iv):
         return False, name, f"RATE_LIMIT ({iv} min; last request {_utc(last_request).isoformat()})"
     off = _utc(cutoff) - pd.Timedelta(minutes=PC.SCORE_LEAD_MINUTES)
@@ -88,6 +125,28 @@ def due(cutoff, now, last_request=None, official_pending: bool = True) -> tuple[
     if official_pending and now < off_slot and (off_slot - slot(now)) < pd.Timedelta(minutes=iv):
         return False, name, f"OFFICIAL_TICK_SNAPSHOT_DUE_AT {off_slot.isoformat()}"
     return True, name, "DUE"
+
+
+def discovered_games(ops_root: Path) -> set:
+    """Games whose event /markets has advertised at least one supported market (PROP_DISCOVERED)."""
+    return {r.get("game_id") for r in OS.read_jsonl(requests_path(ops_root)) if r.get("discovery_status") == OF.DISCOVERED}
+
+
+def last_quota(ops_root: Path):
+    """The latest provider x-requests-remaining recorded by a quote request (None when unknown)."""
+    for r in reversed(OS.read_jsonl(requests_path(ops_root))):
+        if r.get("quota_remaining") is not None:
+            return int(r["quota_remaining"])
+    return None
+
+
+def record_event_map(ops_root: Path, matched: dict, now) -> int:
+    """Persist each new (canonical game, provider event id) pairing (quotes/event_map.jsonl, append-only)."""
+    p = Path(ops_root) / "quotes" / EVENT_MAP_FILE
+    have = {(r["game_id"], r["event_id"]) for r in OS.read_jsonl(p)}
+    new = [{"game_id": g, "event_id": e, "first_matched_at": _utc(now).isoformat(), "matched_on": "HOME_AWAY_COMMENCE"}
+           for g, e in sorted(matched.items()) if (g, e) not in have]
+    return OS.append_jsonl(p, new)
 
 
 # ============================================================================ request history
@@ -117,7 +176,7 @@ def _write_last(ops_root: Path) -> None:
     for r in OS.read_jsonl(requests_path(ops_root)):
         g = r.get("game_id")
         att[g] = r.get("requested_at")
-        if r.get("status") in OK_STATUSES or r.get("discovery_status") == OF.NO_SUPPORTED:
+        if r.get("status") in OK_STATUSES or r.get("discovery_status") in (OF.NO_SUPPORTED, OF.LEGACY_NO_SUPPORTED):
             ok[g] = {"last_success_at": r.get("received_at"), "event_id": r.get("event_id"),
                      "response_sha256": r.get("response_sha256")}
     doc = {g: {"last_attempt_at": att[g], **ok.get(g, {"last_success_at": None})} for g in sorted(att)}
@@ -481,7 +540,7 @@ def _reqs(session: OA.Session) -> list[dict]:
 # ============================================================================ one scheduler wake
 # ============================================================================ ingestion diagnostics (one receipt per run)
 INGESTION_FILE = "ingestion_receipts.jsonl"
-ZERO_MARKET_CAUSES = ("NO_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE", "API_ERROR",
+ZERO_MARKET_CAUSES = ("NO_SUPPORTED_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE", "API_ERROR",
                       "QUOTE_PARSE_ERROR", "CUTOFF_PASSED")
 
 
@@ -498,7 +557,7 @@ def zero_market_cause(row: dict, req: dict | None) -> str:
     if res.get("receipts", 0) > 0:
         return "MARKETS_PRICED"
     if (req or {}).get("discovery_status") == OF.NO_SUPPORTED or not res.get("prop_quote_rows"):
-        return "NO_PROP_MARKETS_POSTED"
+        return "NO_SUPPORTED_PROP_MARKETS_POSTED"
     if res.get("quote_parse_errors", 0) >= res.get("prop_quote_rows", 0):
         return "QUOTE_PARSE_ERROR"
     if not res.get("player_quotes_matched"):
@@ -525,6 +584,11 @@ def ingestion_receipt(ops_root: Path, rep: dict, reqs: list[dict], listed: int, 
     out = {"record_type": "QUOTE_INGESTION_RECEIPT", "version": QR_VERSION, "refresh_id": rep["refresh_id"],
            "at": _utc(now).isoformat(), "et_date": day, "bookmakers_requested": list(PC.ODDS_BOOKMAKERS),
            "events_discovered": int(listed), "canonical_games_matched": len(matched),
+           "event_discovery_calls": int(rep.get("event_discovery_calls") or 0),
+           "events_unmatched": max(0, int(listed) - len(matched)),
+           "supported_markets_returned": sum(int(r.get("markets_returned") or 0) for r in reqs),
+           "credits_consumed": sum(int(r.get("credits") or 0) for r in reqs),
+           "quota_safety_threshold": PC.ODDS_QUOTA_SAFETY_THRESHOLD, "quota_low": bool(rep.get("quota_low")),
            "due_games": len(due), "unmatched_games": sorted(g for g, c in causes.items() if c == "EVENT_MAPPING_FAILURE"),
            "market_discovery_calls": sum(live(r.get("markets_status")) for r in reqs),
            "market_discovery_cache_hits": sum(r.get("markets_status") == "CACHE_HIT" for r in reqs),
@@ -563,22 +627,29 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     sch = SH.schedule(st)
     dec = SH.decided(ctx)
     open_ = sch[(sch["game_universe"] == "DI_VS_DI") & ~sch["not_played"] & sch["home_points"].isna()
-                & (sch["cutoff"] > now) & (sch["cutoff"] - pd.Timedelta(minutes=TIERS[0][1]) <= now)]
+                & (sch["cutoff"] > now) & (sch["cutoff"] <= now + pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS))]
     last = last_requests(ctx.ops_root)
+    disc = discovered_games(ctx.ops_root)
+    quota = last_quota(ctx.ops_root)
+    quota_low = quota is not None and quota < PC.ODDS_QUOTA_SAFETY_THRESHOLD
+    rep.update(quota_remaining_known=quota, quota_safety_threshold=PC.ODDS_QUOTA_SAFETY_THRESHOLD, quota_low=quota_low)
     plan = []
     for g in open_.sort_values(["cutoff", "canonical_game_id"]).to_dict(orient="records"):
         gid = g["canonical_game_id"]
-        ok, tname, why = due(g["cutoff"], now, last.get(gid), official_pending=gid not in dec)
+        ok, tname, why = due(g["cutoff"], now, last.get(gid), official_pending=gid not in dec, discovered=gid in disc,
+                             commence=g.get("scheduled_tip_utc"), quota_low=quota_low)
         src = latest_pmf_source(ctx.ops_root, gid, g["cutoff"], now) if ok else None
         if ok and src is None:
             ok, why = False, "NO_PERSISTED_PMF (no forecast snapshot / official PMF yet)"
-        rep["games"].append({"game_id": gid, "tier": tname, "due": ok, "reason": why})
+        rep["games"].append({"game_id": gid, "tier": tname, "due": ok, "reason": why,
+                             "state": PROP_DISCOVERED if gid in disc else "NOT_DISCOVERED"})
         if ok:
             plan.append((g, tname, src))
     rep["due_games"] = len(plan)
     if not plan or dry_run:
         return {**rep, "status": "NOTHING_DUE" if not plan else "DRY_RUN"}
-    session = SH._session(ctx, f"{rid}:quote_refresh")
+    session = SH._session(ctx, f"{rid}:quote_refresh", max_credits=PC.ODDS_QUOTES_MAX_CREDITS_PER_RUN)
+    events_calls = 0
     sl = SL.build(st["increment_db"], now, st["manifest"].get("schedule_as_of") or st["manifest"]["source_cutoff"],
                   PC.ODDS_PROP_WINDOW_HOURS)
     tidx = MT.team_index(SH.team_names(ctx, st), MT.odds_team_map())
@@ -591,6 +662,7 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     if any(g["canonical_game_id"] not in ev for g, _, _ in plan) and \
             (lst is None or now - lst["received_at"] >= pd.Timedelta(minutes=EVENTS_REFRESH_MINUTES)):
         try:                                                              # FREE listing (0 credits)
+            events_calls += 1
             session.get("events", OF.events_params(now, now + pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS)),
                         max_age_seconds=0, purpose="events listing (0 credits)")
             lst = OF.listing(now, ctx.cache_raw)
@@ -598,6 +670,7 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
         except (OA.OddsProviderFailure, OA.OddsGuardViolation, OA.OddsBudgetExceeded) as e:
             rep["events_listing_error"] = str(e)[:200]
     session.event_commence = OF.event_commence_resolver(ctx.cache_raw, now)
+    record_event_map(ctx.ops_root, ev, now)
     reqs = []
     for g, tname, src in plan:
         gid = g["canonical_game_id"]
@@ -635,6 +708,7 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
     rep["receipts"] = sum(int((x.get("result") or {}).get("receipts", 0)) for x in rep["games"] if isinstance(x.get("result"), dict))
     rep["status"] = "RAN"
     listed = lst.get("events") if lst else None
+    rep["event_discovery_calls"] = events_calls
     rep["ingestion"] = ingestion_receipt(ctx.ops_root, rep, reqs, 0 if listed is None else len(listed), ev, session, now)
     return rep
 

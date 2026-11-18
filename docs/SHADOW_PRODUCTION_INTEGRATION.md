@@ -501,7 +501,7 @@ at a line an actual sportsbook quoted for that player. A market an event does no
   `QUOTE_INGESTION_RECEIPT` to `ops/quotes/<ET date>/ingestion_receipts.jsonl`: events discovered, games matched /
   unmatched, discovery and event-odds calls, games with / without supported props, quote rows, player quotes matched /
   unmatched, books and markets observed, credits this run and today, provider quota headers, and per game one cause:
-  MARKETS_PRICED, NO_PROP_MARKETS_POSTED, EVENT_MAPPING_FAILURE, PLAYER_MAPPING_FAILURE, API_ERROR, QUOTE_PARSE_ERROR or
+  MARKETS_PRICED, NO_SUPPORTED_PROP_MARKETS_POSTED, EVENT_MAPPING_FAILURE, PLAYER_MAPPING_FAILURE, API_ERROR, QUOTE_PARSE_ERROR or
   CUTOFF_PASSED (never a generic NO_MARKET).
 * **Events.** The `eventId` must come from an events listing already acquired inside 2026-27. The call must fall
   within `ODDS_PROP_WINDOW_HOURS` (36) before the listed commence time, never after it.

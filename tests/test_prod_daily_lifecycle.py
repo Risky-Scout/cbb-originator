@@ -198,7 +198,7 @@ def test_no_forecast_after_a_games_cutoff_and_distributions_use_latest_pre_cutof
     b = rep["boards"]                                                # the forecast universe, no market yet
     assert b["status"] == "WRITTEN" and b["duplicate_keys"] == 0 and b["rows_with_valid_market"] == 0
     assert b["rows"] == b["unique_player_stat_keys"] == d["distributions"]          # one row per persisted PMF key
-    assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"  # no bet
+    assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NO_MARKET_PREDICTIONS"  # no market
 
 
 # ============================================================================ odds discovery: curated team map

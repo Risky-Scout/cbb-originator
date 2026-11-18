@@ -627,7 +627,8 @@ def receipt(h: dict) -> dict:
         "ACTIVE_MODEL": bool(model_version),
         "FORECAST": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
         "PMFS": no_games or int(lf.get("pmfs_persisted") or 0) > 0,
-        "EXPORTS": no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"),
+        "EXPORTS": (no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"))
+                   and st("grades") == "WRITTEN",
         "PERFORMANCE": st("performance") == "WRITTEN" if "performance" in ex else True,   # evidence only, never quality
         "NO_ACTIVE_BLOCKER": not blockers}
     return {"DATE": h.get("et_date"), "RELEASE": h.get("code_sha"),
@@ -957,10 +958,11 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
 def _brief(rep: dict) -> dict:
     return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing", "rewritten", "rows_with_valid_market",
                                          "rows_with_no_valid_market", "unique_player_stat_keys", "duplicate_keys",
-                                         "GRADE_STATUS", "PERFORMANCE_STATUS", "verification") if kk in v}
+                                         "GRADE_STATUS", "PERFORMANCE_STATUS", "verification", "graded_slate_date",
+                                         "written", "games_frozen_now") if kk in v}
             if isinstance(v, dict) else v
             for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "performance", "predicted_games",
-                                             "raw_quote_rows", "official_rows", "official_frozen_rows")}
+                                             "raw_quote_rows", "evaluations", "prior_day_evaluations")}
 
 
 def new_refresh_id(now) -> str:

@@ -54,13 +54,13 @@ def env(tmp_path, monkeypatch):
     def exports_for(lf, d):
         if d != D:                                       # the prep stage's prior-day (Grades D-1) export
             calls["prior_exports"] = calls.get("prior_exports", 0) + 1
-            return {"date": d.isoformat(), "grades": {"status": "WRITTEN"}, "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_OFFICIAL_SELECTIONS_YET"}}
+            return {"date": d.isoformat(), "grades": {"status": "WRITTEN"}, "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_MARKET_EVIDENCE_YET"}}
         calls["exports"] += 1
         if calls.get("fail_exports"):
             raise RuntimeError("synthetic export failure")
         return {"date": d.isoformat(), "boards": {"status": "WRITTEN", "rows": 10},
                 "distributions": {"status": "WRITTEN", "rows": 20}, "grades": {"status": "WRITTEN", "rows": 3},
-                "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_OFFICIAL_SELECTIONS_YET"}}
+                "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_MARKET_EVIDENCE_YET"}}
 
     def forecast(lf, w=L.INITIAL, **k):
         calls["forecast"].append(w)

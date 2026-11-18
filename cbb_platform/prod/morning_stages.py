@@ -257,7 +257,7 @@ def stage_terminal_states(p: dict) -> dict:
         elif s == "INITIAL_FORECAST" and S == PASS and st.get("FORECAST_STATUS") == "NO_FORECAST_DUE":
             out[s] = NOT_REQUIRED
         elif s == "EXPORTS" and S == PASS and p["INITIAL_FORECAST"]["STATUS"] != PASS and all(
-                st.get(k) == "MISSING_EVIDENCE" for k in ("BOARDS_STATUS", "DISTRIBUTIONS_STATUS", "GRADES_STATUS")):
+                st.get(k) == "MISSING_EVIDENCE" for k in ("BOARDS_STATUS", "DISTRIBUTIONS_STATUS")):
             out[s] = DEFERRED
         else:
             out[s] = S
@@ -505,11 +505,18 @@ def exports_evidence_key(p: dict) -> str | None:
 
 
 def _export_ok(ex: dict) -> tuple[bool, str | None]:
-    bad = [f"{k}={(ex.get(k) or {}).get('status')}" for k in ("boards", "distributions", "grades")
-           if isinstance(ex.get(k), dict) and str((ex.get(k) or {}).get("status") or "").startswith(("ABORTED", "FAIL", "ERROR"))]
-    pf = ex.get("performance") if isinstance(ex.get("performance"), dict) else {}
-    if pf.get("status") != "WRITTEN":           # CBB_Performance is REQUIRED (cumulative: always buildable, even empty)
-        bad.append(f"performance={pf.get('status') or 'PERFORMANCE_MISSING'}")
+    """REQUIRED package: Boards, Grades and Performance must each be WRITTEN (Distributions is supporting: only an
+    aborted / failed Distributions fails). Boards may be MISSING_EVIDENCE only on a date with no predicted game and no
+    persisted PMF (no slate); a missing workbook otherwise fails the stage."""
+    st = lambda k: (ex.get(k) or {}).get("status") if isinstance(ex.get(k), dict) else None      # noqa: E731
+    bad = []
+    for k in ("boards", "grades", "performance"):
+        v = st(k)
+        if v == "WRITTEN" or (k == "boards" and v == "MISSING_EVIDENCE" and not ex.get("predicted_games")):
+            continue
+        bad.append(f"{k}={v or k.upper() + '_MISSING'}")
+    if str(st("distributions") or "").startswith(("ABORTED", "FAIL", "ERROR")):
+        bad.append(f"distributions={st('distributions')}")
     return (not bad), ("; ".join(bad) or None)
 
 

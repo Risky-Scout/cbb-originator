@@ -97,7 +97,8 @@ def match_events(events: pd.DataFrame, slate: pd.DataFrame, tidx: dict) -> pd.Da
 
 
 # ============================================================================ collection (paid)
-NO_SUPPORTED = "NO_SUPPORTED_PLAYER_PROP_MARKETS"
+NO_SUPPORTED = "NO_SUPPORTED_PROP_MARKETS_POSTED"          # event /markets advertised none of the 12 keys
+LEGACY_NO_SUPPORTED = "NO_SUPPORTED_PLAYER_PROP_MARKETS"     # the same status in records written before 2026-11-18
 # The request source of both per-event endpoints. Production: the explicit approved bookmaker list (PC.ODDS_BOOKMAKERS;
 # <= 10 books = 1 region-equivalent). A literal region ("us" / "us2") is still accepted for legacy evidence and tests.
 BOOKS = "approved_bookmakers"
@@ -150,7 +151,7 @@ def collect(session: OA.Session, event_ids, out_dir: Path | None = None, markets
             label: str = "LIVE The Odds API event odds (2026-27 NCAAB)", discovered: dict | None = None) -> list[Path]:
     """Per event: market discovery FIRST (events/{id}/markets), then ONE event-odds request for exactly the advertised
     subset of the production markets (never a key discovery did not show). An event advertising none of them gets NO
-    event-odds request: its collection file carries the discovery receipt, status NO_SUPPORTED_PLAYER_PROP_MARKETS and
+    event-odds request: its collection file carries the discovery receipt, status NO_SUPPORTED_PROP_MARKETS_POSTED and
     no bookmakers (it normalizes to zero quotes). One collection file per event, stamped with the instant its quote
     evidence was received. Recent cached payloads (ODDS_EVENT_ODDS_MAX_AGE_MINUTES) are reused, never re-bought.
     `discovered`: event id -> a discover() result already made in this session (not re-requested)."""

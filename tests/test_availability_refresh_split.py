@@ -193,14 +193,14 @@ def _lock_free(w) -> bool:
 
 
 # ============================================================================ 1-3 constants / unit budget / wrapper
-def test_limits_match_the_directive_and_the_unchanged_unit_timeout():
+def test_limits_match_the_directive_and_the_unit_timeout():
     lim = AR.Limits()
     assert lim.acquire_budget_sec == 300 and L.ACQ_BUDGET_SEC == 300
     assert lim.writer_wait_max_sec == 300 and lim.retry_delay_sec == 5 * 60 and lim.max_retries == 3
     assert lim.receipt_max_age_sec == 15 * 60 == L.ACQ_RECEIPT_MAX_AGE_SEC
-    assert lim.watchdog_sec == 15 * 60 and lim.early_dump_sec == 12 * 60      # never 10 min: healthy runs take 7-11
+    assert lim.watchdog_sec == 30 * 60 and lim.early_dump_sec == 25 * 60      # 19k-row slates take ~15 min
     u = UNIT.read_text()
-    assert re.search(r"^TimeoutStartSec=40min$", u, re.M) and lim.unit_budget_sec == 40 * 60   # 40-min timeout kept
+    assert re.search(r"^TimeoutStartSec=45min$", u, re.M) and lim.unit_budget_sec == 45 * 60 >= 2400
     # a full Phase A + the max writer wait + a full watchdog-bounded Phase B fit inside the unit
     assert (lim.acquire_budget_sec + lim.acquire_kill_grace_sec + lim.writer_wait_max_sec + lim.watchdog_sec
             + lim.kill_grace_sec + lim.margin_sec) < lim.unit_budget_sec

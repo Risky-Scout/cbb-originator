@@ -23,30 +23,59 @@ def T(minutes_before_cutoff: float) -> pd.Timestamp:
     return CUT - pd.Timedelta(minutes=minutes_before_cutoff)
 
 
-# ---------------------------------------------------------------- tier boundaries (exact, inclusive / exclusive)
+# ---------------------------------------------------------------- cadence boundaries (exact, inclusive / exclusive)
 @pytest.mark.parametrize("mins,name,iv", [
-    (361, "BEFORE_T_MINUS_6H", None), (360, "T6H_T2H", 60), (121, "T6H_T2H", 60), (120, "T2H_T30M", 30),
-    (31, "T2H_T30M", 30), (30, "T30M_CUTOFF", 10), (0.5, "T30M_CUTOFF", 10), (0, "AFTER_CUTOFF", None),
-    (-10, "AFTER_CUTOFF", None)])
+    (600, "REFRESH_FAR", 30), (121, "REFRESH_FAR", 30), (120, "REFRESH_NEAR", 10), (0.5, "REFRESH_NEAR", 10),
+    (0, "AFTER_CUTOFF", None), (-10, "AFTER_CUTOFF", None)])
 def test_tier_boundaries(mins, name, iv):
     assert QR.tier(CUT, T(mins)) == (name, iv)
 
 
-def test_due_rate_limits_and_no_request_before_6h_or_after_cutoff():
-    assert QR.due(CUT, T(400), None)[0] is False                         # morning discovery only
+def test_stop_is_min_of_commence_and_cutoff():
+    early_tip = CUT - pd.Timedelta(minutes=20)                          # a tip moved before the legal cutoff
+    assert QR.tier(CUT, T(30), commence=early_tip) == ("REFRESH_NEAR", 10)
+    assert QR.tier(CUT, T(20), commence=early_tip) == ("AFTER_CUTOFF", None)
+    assert QR.due(CUT, T(10), None, official_pending=False, commence=early_tip)[0] is False
+
+
+def test_due_rate_limits_discovered_game_and_nothing_after_cutoff():
     assert QR.due(CUT, T(0), None)[0] is False and QR.due(CUT, T(-5), None)[0] is False
-    assert QR.due(CUT, T(360), None)[0] is True
-    assert QR.due(CUT, T(310), T(360))[0] is False                       # 50 min < 60
-    assert QR.due(CUT, T(300), T(360) + pd.Timedelta(seconds=40))[0] is True   # slot grid: 60 min
-    assert QR.due(CUT, T(100), T(120))[0] is False and QR.due(CUT, T(90), T(120))[0] is True
+    assert QR.due(CUT, T(400), None)[0] is True
+    assert QR.due(CUT, T(380), T(400))[0] is False                       # 20 min < 30 (far)
+    assert QR.due(CUT, T(370), T(400) + pd.Timedelta(seconds=40))[0] is True   # slot grid: 30 min
+    assert QR.due(CUT, T(115), T(120))[0] is False and QR.due(CUT, T(110), T(120))[0] is True   # near: 10 min
     assert QR.due(CUT, T(20), T(30), official_pending=False)[0] is True
 
 
-def test_official_tick_snapshot_is_counted_in_advance():
-    # official scoring slot = ceil(cutoff - 50 min) = T(50); a refresh 10 min before it (30-min tier) is skipped
-    ok, _, why = QR.due(CUT, T(60), T(90))
-    assert ok is False and why.startswith("OFFICIAL_TICK_SNAPSHOT_DUE_AT")
-    assert QR.due(CUT, T(60), T(90), official_pending=False)[0] is True
+@pytest.mark.parametrize("et,window", [("08:29", None), ("08:30", "08:30"), ("09:59", "08:30"), ("13:31", "13:30"),
+                                       ("19:30", "19:30"), ("23:00", "19:30")])
+def test_discovery_window_instants(et, window):
+    now = pd.Timestamp(f"{DAY} {et}", tz="America/New_York")
+    w = QR.discovery_window(now)
+    assert (None if w is None else w.tz_convert("America/New_York").strftime("%H:%M")) == window
+
+
+def test_undiscovered_game_is_rediscovered_once_per_window_only():
+    cut = pd.Timestamp(f"{DAY} 21:00", tz="America/New_York").tz_convert("UTC")
+    w = pd.Timestamp(f"{DAY} 10:00", tz="America/New_York").tz_convert("UTC")
+    assert QR.due(cut, w - pd.Timedelta(minutes=5), None, discovered=False)[0] is True       # 08:30 window
+    assert QR.due(cut, w + pd.Timedelta(minutes=5), None, discovered=False) == (True, QR.DISCOVERY, "DUE")
+    ok, tier, why = QR.due(cut, w + pd.Timedelta(minutes=50), w + pd.Timedelta(minutes=1), discovered=False)
+    assert ok is False and tier == QR.DISCOVERY and why.startswith("ALREADY_DISCOVERED_IN_WINDOW")
+    early = pd.Timestamp(f"{DAY} 08:00", tz="America/New_York")
+    assert QR.due(cut, early, None, discovered=False)[2] == "BEFORE_FIRST_DISCOVERY_WINDOW"
+
+
+def test_quota_safety_threshold_stops_optional_polling_only():
+    assert QR.due(CUT, T(400), None, quota_low=True) == (False, "REFRESH_FAR", QR.QUOTA_LOW)
+    assert QR.due(CUT, T(400), None, discovered=False, quota_low=True)[2] == QR.QUOTA_LOW
+    assert QR.due(CUT, T(20), T(40), official_pending=False, quota_low=True)[0] is True      # near-cutoff refresh runs
+    assert isinstance(PC.ODDS_QUOTA_SAFETY_THRESHOLD, int) and PC.ODDS_QUOTA_SAFETY_THRESHOLD > 0
+
+
+def test_near_cadence_never_requests_in_the_official_snapshot_slot():
+    # official scoring slot = ceil(cutoff - 50 min) = T(50); the 10-min cadence requests at most once per slot
+    assert QR.due(CUT, T(50) + pd.Timedelta(seconds=30), T(50) + pd.Timedelta(seconds=5), official_pending=False)[0] is False
 
 
 # ---------------------------------------------------------------- one full day of scheduler wakes
@@ -59,7 +88,7 @@ class _Session:
         raise AssertionError("no events listing needed: the event is already matched")
 
 
-def _sim_day(tmp_path, monkeypatch, official=True):
+def _sim_day(tmp_path, monkeypatch, official=True, discovery="SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"):
     ops = tmp_path / "ops"
     ctx = SH.Ctx(ops_root=ops, prod_root=tmp_path / "prod", history_db=tmp_path / "h.duckdb")
     sch = pd.DataFrame([{"canonical_game_id": "G-1", "scheduled_tip_utc": TIP, "cutoff": CUT, "game_universe": "DI_VS_DI",
@@ -80,7 +109,7 @@ def _sim_day(tmp_path, monkeypatch, official=True):
     monkeypatch.setattr(QR.OF, "event_commence_resolver", lambda *a: None)
     monkeypatch.setattr(QR, "latest_pmf_source", lambda *a: {"kind": "FORECAST_SNAPSHOT", "id": "F1"})
     sess = _Session()
-    monkeypatch.setattr(QR.SH, "_session", lambda c, stage: sess)
+    monkeypatch.setattr(QR.SH, "_session", lambda c, stage, max_credits=None: sess)
 
     def collect(session, eids, out):
         t = clock["now"]
@@ -91,7 +120,7 @@ def _sim_day(tmp_path, monkeypatch, official=True):
         p = tmp_path / "coll" / f"E1_{t.strftime('%H%M')}.json"          # a collection file as odds_feed.collect writes
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps({"collector_received_at": t.isoformat(), "events": [{"id": eids[0], "bookmakers": []}],
-                                 "market_discovery": {"status": "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"},
+                                 "market_discovery": {"status": discovery},
                                  "requests": {"event_markets": {**e, "endpoint": "event_markets", "cost": 1},
                                               "event_odds": e}}))
         return [p]
@@ -118,18 +147,33 @@ def test_full_day_request_spacing_by_tier_and_zero_after_cutoff(tmp_path, monkey
     calls, ops = _sim_day(tmp_path, monkeypatch)
     times = [(c[1], "OFFICIAL") if isinstance(c, tuple) else (c, "REFRESH") for c in calls]
     assert all(t < CUT for t, _ in times)                                 # nothing at / after the cutoff
-    assert all(t >= T(360) for t, _ in times)                             # nothing before T-6h
-    for (a, _), (b, _) in zip(times, times[1:]):                          # spacing >= the tier interval of b
+    refresh = [t for t, k in times if k == "REFRESH"]
+    first = refresh[0]
+    assert QR.discovery_window(first) is not None and first - QR.discovery_window(first) < pd.Timedelta(minutes=10)
+    for (a, _), (b, _) in zip(times[1:], times[2:]):                      # after discovery: spacing >= cadence of b
         iv = QR.tier(CUT, b)[1]
         assert QR.slot(b) - QR.slot(a) >= pd.Timedelta(minutes=iv), (a, b)
-    refresh = [t for t, k in times if k == "REFRESH"]
-    tiers = pd.Series([QR.tier(CUT, t)[0] for t in refresh]).value_counts().to_dict()
-    assert tiers == {"T6H_T2H": 4, "T2H_T30M": 2, "T30M_CUTOFF": 3}
+    tiers = pd.Series([QR.tier(CUT, t)[0] for t in refresh[1:]]).value_counts().to_dict()
+    assert set(tiers) == {"REFRESH_FAR", "REFRESH_NEAR"}
+    near = [t for t in refresh if QR.tier(CUT, t)[0] == "REFRESH_NEAR"]
+    assert min(b - a for a, b in zip(near, near[1:])) >= pd.Timedelta(minutes=10)
+    far = [t for t in refresh[1:] if QR.tier(CUT, t)[0] == "REFRESH_FAR"]
+    assert min(b - a for a, b in zip(far, far[1:])) >= pd.Timedelta(minutes=30)
     assert sum(1 for _, k in times if k == "OFFICIAL") == 1
     req = [json.loads(l) for l in (ops / "quotes" / "refresh_requests.jsonl").read_text().splitlines()]
-    assert len(req) == len(refresh) and {r["tier"] for r in req} == set(tiers)
+    assert len(req) == len(refresh) and req[0]["tier"] == QR.DISCOVERY
     last = json.loads((ops / "quotes" / "last_request.json").read_text())
     assert last["G-1"]["last_success_at"] == req[-1]["received_at"]
+    em = [json.loads(l) for l in (ops / "quotes" / QR.EVENT_MAP_FILE).read_text().splitlines()]
+    assert em == [{"game_id": "G-1", "event_id": "E1", "first_matched_at": em[0]["first_matched_at"],
+                   "matched_on": "HOME_AWAY_COMMENCE"}]                   # persisted once
+
+
+def test_zero_prop_game_is_requested_only_at_discovery_windows(tmp_path, monkeypatch):
+    calls, ops = _sim_day(tmp_path, monkeypatch, official=False, discovery="NO_SUPPORTED_PROP_MARKETS_POSTED")
+    et = [pd.Timestamp(c).tz_convert("America/New_York").strftime("%H:%M") for c in calls if not isinstance(c, tuple)]
+    assert et == ["12:00", "13:30", "15:30", "17:30"]                       # windows before the 19:00 ET cutoff
+    assert all(pd.Timestamp(c) < CUT for c in calls if not isinstance(c, tuple))
 
 
 # ---------------------------------------------------------------- reprice: persisted PMF x real quote, no model work
@@ -250,8 +294,8 @@ def test_quote_received_at_or_after_the_official_cutoff_is_never_priced(tmp_path
     ({"due": False, "reason": "NO_MATCHED_ODDS_EVENT"}, None, "EVENT_MAPPING_FAILURE"),
     ({"due": True, "result": "FAILED"}, {"status": "FAILED"}, "API_ERROR"),
     ({"due": True, "result": "BUDGET_EXHAUSTED"}, {"status": "BUDGET_EXHAUSTED"}, "API_ERROR"),
-    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 0}}, {"discovery_status": "NO_SUPPORTED_PLAYER_PROP_MARKETS"},
-     "NO_PROP_MARKETS_POSTED"),
+    ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 0}}, {"discovery_status": "NO_SUPPORTED_PROP_MARKETS_POSTED"},
+     "NO_SUPPORTED_PROP_MARKETS_POSTED"),
     ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "quote_parse_errors": 6}}, {}, "QUOTE_PARSE_ERROR"),
     ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "player_quotes_matched": 0}}, {}, "PLAYER_MAPPING_FAILURE"),
     ({"due": True, "result": {"receipts": 0, "prop_quote_rows": 6, "player_quotes_matched": 6, "post_cutoff_quotes": 6}}, {},
@@ -260,7 +304,7 @@ def test_quote_received_at_or_after_the_official_cutoff_is_never_priced(tmp_path
 ])
 def test_zero_market_causes_are_distinct_never_generic(row, req, cause):
     assert QR.zero_market_cause(row, req) == cause
-    assert set(QR.ZERO_MARKET_CAUSES) == {"NO_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE",
+    assert set(QR.ZERO_MARKET_CAUSES) == {"NO_SUPPORTED_PROP_MARKETS_POSTED", "EVENT_MAPPING_FAILURE", "PLAYER_MAPPING_FAILURE",
                                           "API_ERROR", "QUOTE_PARSE_ERROR", "CUTOFF_PASSED"}
 
 
@@ -278,7 +322,7 @@ def test_ingestion_receipt_reports_every_diagnostic_and_accumulates_daily_credit
              "discovery_status": "SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED", "books_observed": ["draftkings", "fanduel"],
              "markets_observed": ["player_points"]},
             {"game_id": "G-2", "markets_status": "FETCHED", "odds_status": None, "credits": 1,
-             "discovery_status": "NO_SUPPORTED_PLAYER_PROP_MARKETS", "books_observed": [], "markets_observed": []}]
+             "discovery_status": "NO_SUPPORTED_PROP_MARKETS_POSTED", "books_observed": [], "markets_observed": []}]
     now = T(200)
     r = QR.ingestion_receipt(ops, rep, reqs, 40, {"G-1": "E1", "G-2": "E2"}, S(), now)
     want = {"events_discovered": 40, "canonical_games_matched": 2, "unmatched_games": ["G-3"], "market_discovery_calls": 2,
@@ -286,11 +330,11 @@ def test_ingestion_receipt_reports_every_diagnostic_and_accumulates_daily_credit
             "quote_rows_returned": 4, "player_quotes_matched": 3, "player_quotes_unmatched": 1,
             "unmatched_players": ["Jon Doe"], "books_observed": ["draftkings", "fanduel"], "markets_observed": ["player_points"],
             "quota_used": 120, "quota_remaining": 4_999_880, "quota_last": 3, "credits_this_run": 5, "credits_today": 5,
-            "game_causes": {"G-1": "MARKETS_PRICED", "G-2": "NO_PROP_MARKETS_POSTED", "G-3": "EVENT_MAPPING_FAILURE"},
+            "game_causes": {"G-1": "MARKETS_PRICED", "G-2": "NO_SUPPORTED_PROP_MARKETS_POSTED", "G-3": "EVENT_MAPPING_FAILURE"},
             "BOARD_MARKET_CAUSE": "MARKETS_PRICED", "bookmakers_requested": list(PC.ODDS_BOOKMAKERS)}
     assert {k: r[k] for k in want} == want
     r2 = QR.ingestion_receipt(ops, {**rep, "games": rep["games"][1:]}, reqs[1:], 40, {"G-2": "E2"}, S(), now)
-    assert r2["credits_today"] == 6 and r2["BOARD_MARKET_CAUSE"] == ["EVENT_MAPPING_FAILURE", "NO_PROP_MARKETS_POSTED"]
+    assert r2["credits_today"] == 6 and r2["BOARD_MARKET_CAUSE"] == ["EVENT_MAPPING_FAILURE", "NO_SUPPORTED_PROP_MARKETS_POSTED"]
     lines = (ops / "quotes" / DAY / QR.INGESTION_FILE).read_text().splitlines()
     assert len(lines) == 2 and json.loads(lines[0])["record_type"] == "QUOTE_INGESTION_RECEIPT"
 
@@ -311,49 +355,50 @@ def _boards(ops, out, now):
 
 
 def _board_line(rep):
-    """(consensus line, market status, confidence) of the single Board row, read right after this export."""
+    """(best market line, market status, consensus line) of the single Full Board row, read right after this export."""
+    from cbb_platform.prod import market_exports as MX
     rows = EX.read_xlsx(Path(rep["boards"]["path"]))["Full Board"]["rows"][1:]
     assert len(rows) == 1
-    col = {c: i for i, c in enumerate(EX.BOARD_COLS)}
-    return rows[0][col["Consensus Line"]], rows[0][col["Market Status"]], rows[0][col["Consensus Confidence"]]
+    col = {c: i for i, c in enumerate(MX.BOARD_COLS)}
+    return rows[0][col["Best Market Line"]], rows[0][col["Market Status"]], rows[0][col["Consensus Line"]]
 
 
-def test_boards_provisional_then_frozen_latest_observation_never_replaced(tmp_path, monkeypatch):
+def test_boards_latest_observation_then_frozen_evaluation_never_replaced(tmp_path, monkeypatch):
+    from cbb_platform.prod import market_exports as MX
     _no_model_work(monkeypatch)
     ops = tmp_path / "ops"
     _snapshot(ops, "F1", T(400), 15.0)
     src = QR.latest_pmf_source(ops, "G-1", CUT, T(300))
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", T(300), 12.5, 150, -190), SLATE, TIDX, T(300), "Q1",
-               {"tier": "T6H_T2H", "event_id": "E1"})
+               {"tier": "REFRESH_FAR", "event_id": "E1"})
     r1 = _boards(ops, tmp_path, T(299))
     lines = [_board_line(r1)]
-    assert r1["boards"]["status"] == "WRITTEN" and r1["official_frozen_rows"] == 0
-    sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
-    assert [s["state"] for s in sel] == ["PROVISIONAL"] and sel[0]["line"] == 12.5
-    # a newer observation of the same game supersedes the old one (the old 12.5 OVER +150 is no longer offered)
+    assert r1["boards"]["status"] == "WRITTEN" and r1["evaluations"]["written"] == 0      # before the cutoff: not frozen
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", T(20), 16.5, -110, -110), SLATE, TIDX, T(20), "Q2",
-               {"tier": "T30M_CUTOFF", "event_id": "E1"})
+               {"tier": "REFRESH_NEAR", "event_id": "E1"})
     r2 = _boards(ops, tmp_path, T(19))
     lines.append(_board_line(r2))
-    sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
-    assert [s["state"] for s in sel] == ["PROVISIONAL", "PROVISIONAL"] and sel[-1]["line"] == 16.5
-    assert r2["official_rows"] == 1 and r2["duplicate_game_player_prop_rows"] == 0
-    # at the cutoff: frozen; a later (post-cutoff) observation can never replace it
+    assert not MX.eval_path(ops, DAY).exists()
+    # at the cutoff: frozen from the latest PRE-cutoff observation; a later (post-cutoff) one can never replace it
     r3 = _boards(ops, tmp_path, CUT)
+    assert r3["evaluations"]["written"] == 1 and r3["evaluations"]["games_frozen_now"] == 1
     QR.reprice(ops, GAME, src, _collection(tmp_path / "c", CUT + pd.Timedelta(minutes=10), 10.5, 400, -900), SLATE, TIDX,
                CUT + pd.Timedelta(minutes=10), "Q3", {"tier": "AFTER", "event_id": "E1"})
     r4 = _boards(ops, tmp_path, CUT + pd.Timedelta(minutes=11))
     lines.append(_board_line(r4))
-    sel = [json.loads(l) for l in EX.selections_path(ops, DAY).read_text().splitlines()]
-    frozen = [s for s in sel if s["state"] == "OFFICIAL_FROZEN"]
-    assert r3["official_frozen_rows"] == 1 and len(frozen) == 1 and frozen[0]["line"] == 16.5
-    assert r4["official_frozen_rows"] == 1 and len(sel) == 3
-    assert r4["grades"]["status"] == "WRITTEN"                             # graded from the frozen receipt (PENDING)
-    # the consensus Board: the forecast row, market fields from the latest PRE-cutoff observation (never post-cutoff)
+    ev, games = MX.load_evaluations(MX.eval_path(ops, DAY))
+    assert len(ev) == 1 and list(games) == ["G-1"] and r4["evaluations"]["written"] == 0
+    e = next(iter(ev.values()))
     obs = [json.loads(l) for l in (ops / "quotes" / DAY / "observations.jsonl").read_text().splitlines()]
     assert [o["source"] for o in obs] == ["QUOTE_REFRESH"] * 3 and all(o["rows"] > 0 for o in obs)
-    assert lines == [(12.5, "VALID_MARKET", "SINGLE_BOOK"), (16.5, "VALID_MARKET", "SINGLE_BOOK"),
-                     (16.5, "VALID_MARKET", "SINGLE_BOOK")]
+    # the decision = the first observation after the PMF (T-300, 12.5); the Board meanwhile shows the latest pre-cutoff
+    assert e["line"] == 12.5 and e["entry_received_at"] == obs[0]["received_at"]
+    assert [x[:2] for x in lines] == [(12.5, "VALID_MARKET"), (16.5, "VALID_MARKET"), (16.5, "VALID_MARKET")]
+    # the close (<= min(commence, cutoff), <= 60 min stale) is the T-20 observation, never the post-cutoff one
+    row = MX.graded_row(e, {}, MX.Observations(ops, DAY), CUT + pd.Timedelta(hours=3))
+    assert row["close_ts"] == obs[1]["received_at"] and row["close_line"] == 16.5 and row["raw_line_movement"] == 4.0
+    assert row["clv_status"] == "LINE_MOVED" and row["probability_clv"] is None
+    assert row["result"] == "PENDING"
     assert r4["boards"]["rewritten"] is False and r4["distributions"]["rewritten"] is False
 
 

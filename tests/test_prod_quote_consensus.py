@@ -88,7 +88,7 @@ def test_4b_no_supported_market_means_no_event_odds_call(tmp_path):
     p = OF.collect(s, ["e2"], tmp_path / "coll")[-1]
     assert not any(u.endswith("/odds") for u, _ in fake.calls)              # no useless prop request
     rc = OF.collection_receipt(p)
-    assert rc["discovery_status"] == "NO_SUPPORTED_PLAYER_PROP_MARKETS" and rc["credits"] == 1 and rc["odds_status"] is None
+    assert rc["discovery_status"] == "NO_SUPPORTED_PROP_MARKETS_POSTED" and rc["credits"] == 1 and rc["odds_status"] is None
     assert len(QT.load_collected(p)) == 0                                     # normalizes to zero quotes
     with pytest.raises(OA.OddsGuardViolation):                                # a market outside the 12 is refused
         OA.check_request("event_odds", {"eventId": "e1", "regions": "us", "markets": "player_points_alternate",
@@ -289,9 +289,9 @@ def test_15_quote_only_change_never_rewrites_distributions(tmp_path):
     r1 = _daily(tmp_path, "2026-11-12T19:00:00Z")
     assert r1["distributions"]["status"] == "WRITTEN" and r1["distributions"]["rewritten"] is True
     assert r1["boards"]["status"] == "WRITTEN" and r1["boards"]["rows"] == 6 and r1["boards"]["rows_with_valid_market"] == 0
-    assert r1["grades"]["status"] == "WRITTEN" and r1["grades"]["GRADE_STATUS"] == "NOTHING_SETTLED_YET"
+    assert r1["grades"]["status"] == "WRITTEN" and r1["grades"]["GRADE_STATUS"] == "NO_MARKET_PREDICTIONS"
     wb = EX.read_xlsx(Path(r1["grades"]["path"]))
-    assert wb["Status"]["rows"][1][0] == "NOTHING_SETTLED_YET"
+    assert wb["Status"]["rows"][1][0] == "NO_MARKET_PREDICTIONS"
     r2 = _daily(tmp_path, "2026-11-12T19:10:00Z")                            # nothing changed: nothing rewritten
     assert (r2["distributions"]["rewritten"], r2["boards"]["rewritten"], r2["grades"]["rewritten"]) == (False, False, False)
     QO.record(tmp_path / "ops", DATE, "G1", "e1", "2026-11-12T20:00:00Z",

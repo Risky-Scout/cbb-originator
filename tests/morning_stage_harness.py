@@ -35,8 +35,8 @@ def _fakes(alloc_mb: int, fail: str | None) -> dict:
         if fail == "exports":
             raise RuntimeError("synthetic export failure")
         return {"date": day.isoformat(), "boards": {"status": "WRITTEN", "rows": 1},
-                "distributions": {"status": "WRITTEN", "rows": 2}, "grades": {"status": "NOTHING_SETTLED_YET"},
-                "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_OFFICIAL_SELECTIONS_YET"}}
+                "distributions": {"status": "WRITTEN", "rows": 2}, "grades": {"status": "WRITTEN", "GRADE_STATUS": "NO_MARKET_PREDICTIONS"},
+                "performance": {"status": "WRITTEN", "PERFORMANCE_STATUS": "NO_MARKET_EVIDENCE_YET"}}
 
     def forecast(life, window=L.INITIAL, **k):
         if fail == "forecast":
