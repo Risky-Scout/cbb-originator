@@ -169,7 +169,7 @@ def test_board_one_row_per_game_player_stat_full_board_market_only_and_model_cov
     assert r["Selection Tier"] == "65_PLUS" and sh["65 Percent Plus"] == sh["Full Board"]
     assert r["Best Book"] in ("draftkings", "fanduel", "betmgm") and r["Best Decimal Odds"] > 1
     assert r["Raw Book Count"] == 3 and r["Opponent"] == "Beta" and r["Legal Cutoff ET"] == "2026-11-19 18:00"
-    assert r["Quote Age"] == 25 * 60                                 # board as-of - bookmaker last update
+    assert r["Quote Age"] == 10 * 60                                 # capture - bookmaker last update (stable)
     assert r["Model Projection"] == 11.0                             # display only
     assert cnt["full_board_rows"] == 1 and cnt["over_rows"] == 1 and cnt["games_with_props"] == 1
 

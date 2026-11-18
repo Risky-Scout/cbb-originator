@@ -231,8 +231,7 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
         c, b = ev["consensus"], ev["best"]
         slate = None if tip is None else str(tip.tz_convert(TZ).date())
         qts = None if b is None else _quote_ts(b)
-        ref = at if cut is None or at is None else min(at, cut)
-        age = None if qts is None or ref is None else int(round((ref - qts).total_seconds()))
+        age = None if b is None or b["quote_age_seconds"] is None else int(round(b["quote_age_seconds"]))   # at capture
         mfo = None if b is None else _f(b["model_fair_american"])
         rows.append([
             slate, r["game_id"], r["game_label"], _et(tip), _et(cut), r["player_label"], r["player_id"], team, opp_name,

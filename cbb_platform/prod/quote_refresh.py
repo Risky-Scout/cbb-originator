@@ -659,8 +659,11 @@ def run(ctx: SH.Ctx, dry_run: bool = False) -> dict:
         m = OF.match_events(lst_["events"] if lst_ else None, sl, tidx)
         return {g: e for g, e in zip(m["canonical_game_id"], m["provider_event_id"]) if isinstance(g, str)}
     ev = matched(lst)
-    if any(g["canonical_game_id"] not in ev for g, _, _ in plan) and \
-            (lst is None or now - lst["received_at"] >= pd.Timedelta(minutes=EVENTS_REFRESH_MINUTES)):
+    # the FREE events listing: refreshed when a due game has no matched event (at most every EVENTS_REFRESH_MINUTES),
+    # and always when this session does not know the provider quota yet (a paid call is refused without it)
+    if getattr(session, "quota_remaining", 0) is None or (
+            any(g["canonical_game_id"] not in ev for g, _, _ in plan) and
+            (lst is None or now - lst["received_at"] >= pd.Timedelta(minutes=EVENTS_REFRESH_MINUTES))):
         try:                                                              # FREE listing (0 credits)
             events_calls += 1
             session.get("events", OF.events_params(now, now + pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS)),

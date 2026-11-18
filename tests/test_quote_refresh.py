@@ -83,12 +83,13 @@ class _Session:
     def __init__(self):
         self.entries = []
         self.event_commence = None
+        self.quota_remaining = 4_000_000                                  # known: no listing call needed
 
     def get(self, *a, **k):
         raise AssertionError("no events listing needed: the event is already matched")
 
 
-def _sim_day(tmp_path, monkeypatch, official=True, discovery="SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED"):
+def _sim_day(tmp_path, monkeypatch, official=True, discovery="SUPPORTED_PLAYER_PROP_MARKETS_ADVERTISED", session_cls=None):
     ops = tmp_path / "ops"
     ctx = SH.Ctx(ops_root=ops, prod_root=tmp_path / "prod", history_db=tmp_path / "h.duckdb")
     sch = pd.DataFrame([{"canonical_game_id": "G-1", "scheduled_tip_utc": TIP, "cutoff": CUT, "game_universe": "DI_VS_DI",
@@ -108,8 +109,12 @@ def _sim_day(tmp_path, monkeypatch, official=True, discovery="SUPPORTED_PLAYER_P
                                                                             "provider_event_id": ["E1"]}))
     monkeypatch.setattr(QR.OF, "event_commence_resolver", lambda *a: None)
     monkeypatch.setattr(QR, "latest_pmf_source", lambda *a: {"kind": "FORECAST_SNAPSHOT", "id": "F1"})
-    sess = _Session()
-    monkeypatch.setattr(QR.SH, "_session", lambda c, stage, max_credits=None: sess)
+    made = []
+
+    def factory(c, stage, max_credits=None):
+        made.append((session_cls or _Session)())                          # one session per wake (as production)
+        return made[-1]
+    monkeypatch.setattr(QR.SH, "_session", factory)
 
     def collect(session, eids, out):
         t = clock["now"]
@@ -167,6 +172,25 @@ def test_full_day_request_spacing_by_tier_and_zero_after_cutoff(tmp_path, monkey
     em = [json.loads(l) for l in (ops / "quotes" / QR.EVENT_MAP_FILE).read_text().splitlines()]
     assert em == [{"game_id": "G-1", "event_id": "E1", "first_matched_at": em[0]["first_matched_at"],
                    "matched_on": "HOME_AWAY_COMMENCE"}]                   # persisted once
+
+
+def test_unknown_quota_triggers_the_free_events_listing_before_any_paid_call(tmp_path, monkeypatch):
+    """QA 2026-11-18: a wake whose cached listing was fresh made no events call, the session never learned the quota
+    headers and every paid call was refused ("quota None unknown"). The free listing now runs first in that case."""
+    seen = []
+
+    class Fresh(_Session):
+        def __init__(self):
+            super().__init__()
+            self.quota_remaining = None
+
+        def get(self, endpoint, *a, **k):
+            seen.append(endpoint)
+            self.quota_remaining = 4_000_000
+            return {}
+    calls, _ = _sim_day(tmp_path, monkeypatch, session_cls=Fresh)
+    refresh = [c for c in calls if not isinstance(c, tuple)]
+    assert refresh and len(seen) == len(refresh) and set(seen) == {"events"}     # one free listing per paying wake
 
 
 def test_zero_prop_game_is_requested_only_at_discovery_windows(tmp_path, monkeypatch):
@@ -245,7 +269,7 @@ def test_reprice_uses_persisted_pmf_exactly_and_never_refits(tmp_path, monkeypat
     out = QR.reprice(ops, GAME, src, col, SLATE, TIDX, now, "Q1", {"tier": "T6H_T2H", "event_id": "E1",
                                                                    "response_sha256": "abc"})
     assert out["status"] == "REPRICED" and out["receipts"] == 2
-    rr = EX.refresh_receipts(ops, DAY)
+    rr = QR.receipts_for_day(ops, DAY)
     pr = PX.price_line(_pmf(15.0), 14.5)
     o = rr[rr["side"] == "OVER"].iloc[0]
     assert o["p_over"] == pr["p_over"] and o["p_side_nonpush"] == pr["p_over"] / pr["p_nonpush"]
@@ -402,9 +426,3 @@ def test_boards_latest_observation_then_frozen_evaluation_never_replaced(tmp_pat
     assert r4["boards"]["rewritten"] is False and r4["distributions"]["rewritten"] is False
 
 
-def test_latest_observation_rule_keeps_single_official_tick_unchanged():
-    of = pd.DataFrame([{"game_id": "G", "run_id": "R1", "capture_utc": "2026-11-07T20:00:00Z",
-                        "prediction_as_of": "2026-11-07T20:05:00+00:00", "x": i} for i in range(3)])
-    assert len(EX.latest_observation(of)) == 3
-    two = pd.concat([of, of.assign(run_id="Q9", capture_utc="2026-11-07T21:00:00Z")], ignore_index=True)
-    assert set(EX.latest_observation(two)["run_id"]) == {"Q9"}

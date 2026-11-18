@@ -231,31 +231,33 @@ def _pmfs():
 
 
 def test_6_7_8_one_row_per_key_no_quote_rows_kept_blank():
+    from cbb_platform.prod import market_exports as MX
     q = pd.DataFrame(_obs("a", 14.5, -110, -110) + _obs("a", 14.5, -110, -110) + _obs("b", 14.5, -105, -115)
                      + _obs("c", 15.5, -110, -110))                           # duplicate sportsbook observations
-    rows, aud, cnt = EX.board_rows(_pmfs(), {"G1": ({"received_at": "x"}, q)}, {"T1": "Home", "T2": "Away"})
+    rows, _, aud, cnt = MX.board(_pmfs(), {"G1": ({"received_at": "x", "rows": len(q)}, q)}, {"T1": "Home", "T2": "Away"},
+                                 {}, None)
     assert cnt["rows"] == 6 and cnt["unique_keys"] == 6 and cnt["duplicate_keys"] == 0
-    keys = [(r[1], r[5], r[8]) for r in rows]
+    col = {c: i for i, c in enumerate(MX.BOARD_COLS)}
+    keys = [(r[col["Canonical Game ID"]], r[col["Canonical Player ID"]], r[col["Stat"]]) for r in rows]
     assert len(set(keys)) == len(keys) == 6                                   # sportsbook rows never multiply a key
-    col = {c: i for i, c in enumerate(EX.BOARD_COLS)}
     quoted = [r for r in rows if r[col["Canonical Player ID"]] == "P1" and r[col["Stat"]] == "PTS"][0]
     assert quoted[col["Market Status"]] == "VALID_MARKET" and quoted[col["Consensus Line"]] == 14.5
     assert quoted[col["Raw Book Count"]] == 3 and quoted[col["Consensus Book Count"]] == 2
-    assert quoted[col["Model Over %"]] is not None and quoted[col["Over Edge"]] is not None
+    assert quoted[col["Model Probability"]] is not None and quoted[col["Best Book"]] in ("a", "b", "c")
     assert quoted[col["Opponent"]] == "Away" and quoted[col["Team"]] == "Home"
-    blank = ("Consensus Line", "Model Over %", "Market Over %", "Over Edge", "Consensus Over Odds", "Model Under %",
-             "Market Under %", "Under Edge", "Consensus Under Odds", "Preferred Side", "Preferred EV")
+    blank = ("Best Market Line", "Model Probability", "Fair Market Probability", "Probability Edge", "Best Book",
+             "Preferred Side", "Preferred EV", "Consensus Line")
     for r in rows:
         if r is quoted:
             continue
-        assert r[col["Market Status"]] == "NO_VALID_MARKET" and r[col["Raw Book Count"]] == 0
-        assert r[col["Consensus Book Count"]] == 0 and r[col["Consensus Confidence"]] == "NO_MARKET"
+        assert r[col["Market Status"]] == "NO_VALID_MARKET_FOR_PLAYER_STAT" and r[col["Raw Book Count"]] == 0
         assert all(r[col[c]] is None for c in blank) and r[col["Model Projection"]] is not None
     assert sum(1 for a in aud if a["reason"] == "DUPLICATE_BOOK_OBSERVATION") == 2
 
 
 def test_board_duplicate_pmf_key_aborts_export(tmp_path):
-    rows, _, cnt = EX.board_rows(_pmfs() + _pmfs()[:1], {}, {})
+    from cbb_platform.prod import market_exports as MX
+    rows, _, _, cnt = MX.board(_pmfs() + _pmfs()[:1], {}, {}, {}, None)
     assert cnt["duplicate_keys"] == 1
 
 
@@ -300,7 +302,8 @@ def test_15_quote_only_change_never_rewrites_distributions(tmp_path):
     assert r3["distributions"]["rewritten"] is False and r3["boards"]["rewritten"] is True
     assert r3["boards"]["rows"] == 6 and r3["boards"]["rows_with_valid_market"] == 1 and r3["boards"]["duplicate_keys"] == 0
     full = EX.read_xlsx(Path(r3["boards"]["path"]))["Full Board"]["rows"]
-    assert full[0] == list(EX.BOARD_COLS) and len(full) == 7
+    from cbb_platform.prod import market_exports as MX
+    assert full[0] == list(MX.BOARD_COLS) and len(full) == 2                 # the one market row (P1 PTS)
     with gzip.open(r3["boards"]["audit"], "rt") as f:
         aud = [json.loads(x) for x in f]
     assert {a["status"] for a in aud} == {"INCLUDED"} and len(aud) == 4

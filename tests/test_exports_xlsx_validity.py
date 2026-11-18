@@ -17,6 +17,7 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from cbb_platform import config as C
@@ -176,14 +177,13 @@ def test_daily_distributions_workbook_valid_and_matches_source_without_model_cha
 
 
 def test_performance_workbook_excel_valid_and_openpyxl_reads_every_tab(tmp_path):
-    """CBB_Performance: six tabs, titled filtered tables on Overall, numeric cells finite, openpyxl == module reader."""
+    """CBB_Performance: nine tabs, titled filtered tables on Overall, numeric cells finite, openpyxl == module reader."""
     from cbb_platform.prod import performance as PF
-    from tests.test_prod_performance import AFTER1, D1, _daily, _obs, _two_day_tree
-    from tests.test_prod_exports import _sett
-    tree = _two_day_tree(tmp_path, [_sett("z_o", "WIN", 20.0), _sett("a_u", "PUSH", 5.5)])
-    _obs(tree, D1, "G1", "2026-11-04T23:40:00+00:00", [("Zed", "PTS", 17.5, "OVER", "bookb", 100),
-                                                       ("Zed", "PTS", 17.5, "UNDER", "bookb", -130)])
-    p = Path(_daily(tree, D1, AFTER1)["performance"]["path"])
+    from tests.test_prod_performance import D1, D2, _day
+    ops = tmp_path / "ops"
+    _day(ops, D1, "G1", pd.Timestamp("2026-11-05T00:00Z"), {"A": {6: 0.3, 14: 0.7}, "B": {6: 0.7, 14: 0.3}},
+         {"A": 14.0, "B": 6.0})
+    p = Path(PF.export(D2, ops, tmp_path / "x", pd.Timestamp("2026-11-06T12:00Z"))["path"])
     counts = _structural(p)
     assert tuple(counts) == PF.SHEETS
     mine = {n: s["rows"] for n, s in EX.read_xlsx(p).items()}
