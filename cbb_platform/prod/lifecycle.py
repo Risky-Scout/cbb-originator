@@ -319,9 +319,28 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
                stat_predictions=int(pe["prediction_receipt_id"].nunique()) if len(pe) else 0,
                pmfs_persisted=int(w.get("pmfs", 0)), pmfs_sha256=w.get("sha256"),
                availability=s.get("availability"))
+    rec["game_forecast"] = game_forecast(sdir, rec, games, st, day,
+                                         mi if (run_dir / "model_inputs.parquet").exists() else None)
     OS.write_once(sdir / "snapshot.json", rec)
     OS.append_jsonl(life.forecasts("index.jsonl"), [_index(rec)])
     return rec
+
+
+def game_forecast(sdir: Path, rec: dict, games: pd.DataFrame, st: dict, day: date, model_inputs) -> dict:
+    """Release B (SHADOW): one GameJointPMF per game of this snapshot, same instant / state / training cutoff as the
+    player snapshot. CBB_GAME_MODEL != SHADOW -> NOT_ENABLED. Never raises: a game-layer failure is recorded and the
+    player forecast stands."""
+    from cbb_platform.game import forecast as GF
+    if GF.mode() != "SHADOW":
+        return {"status": "NOT_ENABLED", "mode": GF.mode()}
+    from cbb_platform.walkforward import config as WC
+    try:
+        g = GF.forecast(sdir, rec, games, st["increment_db"], pd.Timestamp(WC.refit_cutoff(day)), model_inputs,
+                        PC.PRODUCTION_SEASON)
+    except Exception as e:                                 # noqa: BLE001 - isolated from the player outputs
+        return {"status": "FAILED", "mode": "SHADOW", "reason": f"{type(e).__name__}: {str(e)[:300]}"}
+    return {k: g.get(k) for k in ("status", "mode", "games_due", "game_pmfs", "ratings", "ratings_fresh",
+                                  "params_sha256", "elapsed_s", "file_sha256")} | {"failed": len(g.get("failed") or [])}
 
 
 def _index(rec: dict) -> dict:
@@ -524,7 +543,8 @@ def health_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
 
 
-FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "games_forecast", "players_forecast", "stat_predictions", "pmfs_persisted", "games_not_scored")
+FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "games_forecast", "players_forecast",
+                    "stat_predictions", "pmfs_persisted", "games_not_scored", "game_forecast")
 
 
 def training_freshness(life: Life, day: date) -> dict:
@@ -605,6 +625,31 @@ def board_status(export_status: str | None, quote_refresh: dict, real_quotes: bo
     if not real_quotes and str(quote_refresh.get("reason") or "").startswith("QUOTE_INTEGRATION_NOT_VALIDATED"):
         return "NONE_QUOTE_INTEGRATION_NOT_VALIDATED"
     return "NONE_NO_REAL_QUOTES" if not real_quotes else "NONE_NO_VALID_OFFER"
+
+
+def game_state(h: dict, lf: dict, no_games: bool) -> dict:
+    """Release B game-layer health. NOT_ENABLED when CBB_GAME_MODEL is off. GAME_FORECAST_COMPLETE judges the model
+    (every due game has a coherent PMF); GAME_MARKETS_STATE says why there is (no) market: VALID_MARKETS /
+    NO_MARKET_AVAILABLE (quotes captured, none for these games) / NOT_CAPTURED / CAPTURE_FAILED -- a missing market
+    is never a MODEL_FAILURE. Shadow-only: never part of DAY_OPERATIONAL."""
+    gf = (lf or {}).get("game_forecast") or {}
+    if not gf or gf.get("status") == "NOT_ENABLED":
+        return {"TEAM_RATINGS_FRESH": "NOT_ENABLED", "GAME_FORECAST_COMPLETE": "NOT_ENABLED",
+                "GAME_MARKETS_STATE": "NOT_ENABLED"}
+    gx = (h.get("exports") or {}).get("game_lines") or {}
+    gq = h.get("game_quotes") or {}
+    if gx.get("rows_with_market"):
+        mk = "VALID_MARKETS"
+    elif gq.get("status") == "FAILED":
+        mk = "CAPTURE_FAILED"
+    elif gq.get("status") == "COMPLETE":
+        mk = "NO_MARKET_AVAILABLE"
+    else:
+        mk = "NOT_CAPTURED"
+    return {"TEAM_RATINGS_FRESH": (gf.get("ratings_fresh") or {}).get("TEAM_RATINGS_FRESH"),
+            "GAME_FORECAST_COMPLETE": True if no_games else (gf.get("status") == "COMPLETE"
+                                                              or ("MODEL_FAILURE: " + str(gf.get("status")))),
+            "GAME_MARKETS_STATE": mk}
 
 
 def receipt(h: dict) -> dict:
@@ -713,16 +758,17 @@ def receipt(h: dict) -> dict:
     normal_path = (fw.get("STATUS") == "PASS" and lin.get("WARMUP_STATE_MATCHES_FIT") is True
                    and wf.get("DAILY_MODEL_PROMOTION") == "PROMOTED" and wf.get("attempt") == "MORNING_0700"
                    and mo.get("INITIAL_ON_SAME_DAY_MODEL") is True and not mo.get("REFIT_RETRY_USED"))
-    contract = {                                   # the concise daily health contract (Release A: player lifecycle)
+    gstate = game_state(h, lf, no_games)
+    contract = {                                   # the concise daily health contract (player + game layers)
         "PREP_COMPLETE": mo.get("MORNING_PREP_STATUS") == "PASS",
         "D_MINUS_1_COMPLETE": tf.get("PREVIOUS_DAY_STATUS"),
         "TRAINING_FRESHNESS": tfs,
         "PLAYER_MODEL_ACTIVE": model_version,
-        "TEAM_RATINGS_FRESH": "NOT_DEPLOYED",
+        "TEAM_RATINGS_FRESH": gstate["TEAM_RATINGS_FRESH"],
         "PLAYER_FORECAST_COMPLETE": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
-        "GAME_FORECAST_COMPLETE": "NOT_DEPLOYED",
+        "GAME_FORECAST_COMPLETE": gstate["GAME_FORECAST_COMPLETE"],
         "PLAYER_MARKETS_STATE": market,
-        "GAME_MARKETS_STATE": "NOT_DEPLOYED",
+        "GAME_MARKETS_STATE": gstate["GAME_MARKETS_STATE"],
         "EXPORTS_COMPLETE": operational["EXPORTS"],
         "GRADES_COMPLETE": st("grades") == "WRITTEN",
         "PERFORMANCE_COMPLETE": st("performance") == "WRITTEN",
@@ -1059,6 +1105,7 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
     rep = QR.run(ctx, dry_run=dry_run)
     out = {"lifecycle": "QUOTES", "quote_refresh": rep}
     day = et_date(life.now())
+    gq = game_quotes_capture(life, day) if not dry_run else None
     if not dry_run:
         out["exports"] = _brief(exports_for(life, day))
     h = OS.read_json(health_path(life, day), {}) or {}
@@ -1067,18 +1114,78 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
            "credits": tot["credits"] + int(rep.get("credits", 0)), "receipts": tot["receipts"] + int(rep.get("receipts", 0) or 0)}
     health(life, day, quote_refresh={k: rep.get(k) for k in ("refresh_id", "now", "status", "reason", "due_games",
                                                              "requests", "credits", "receipts", "refits_triggered")},
-           quote_refresh_totals=tot, **({"exports": out["exports"]} if "exports" in out else {}))
+           quote_refresh_totals=tot, **({"exports": out["exports"]} if "exports" in out else {}),
+           **({"game_quotes": gq} if gq else {}))
     return out
+
+
+GAME_QUOTES_FAR_MIN = 30          # bulk game-line capture cadence (3 credits, every listed game)
+GAME_QUOTES_NEAR_MIN = 10         # within GAME_QUOTES_NEAR_WINDOW_MIN of any slate tip (close evidence)
+GAME_QUOTES_NEAR_WINDOW_MIN = 60
+
+
+def game_quotes_due(life: Life, day: date, now: pd.Timestamp) -> tuple[bool, bool]:
+    """(due, extras): bulk capture every 30 min, every 10 min inside 60 min of a pending tip; team totals +
+    alternates (per-event calls) at most hourly and on every near-tip capture."""
+    from cbb_platform.prod import game_quotes as GQ
+    root = Path(life.ops_root) / "game_quotes" / day.isoformat()
+    recs = sorted(root.glob("GQ*.json")) if root.exists() else []
+    last = [json.loads(p.read_text()) for p in recs[-6:]]
+    last_ok = [r for r in last if r.get("status") == "COMPLETE"]
+    st = ST.current(life.state_root)
+    sl = slate(st, day, now) if st else pd.DataFrame()
+    if not len(sl):
+        return False, False
+    near = bool(((sl["scheduled_tip_utc"] - now) <= pd.Timedelta(minutes=GAME_QUOTES_NEAR_WINDOW_MIN)).any())
+    gap = pd.Timedelta(minutes=GAME_QUOTES_NEAR_MIN if near else GAME_QUOTES_FAR_MIN)
+    t_last = pd.Timestamp(last_ok[-1]["at"]) if last_ok else None
+    due = t_last is None or now - t_last >= gap - pd.Timedelta(seconds=30)
+    ex_last = [pd.Timestamp(r["at"]) for r in last_ok if r.get("event_calls")]
+    extras = near or not ex_last or now - ex_last[-1] >= pd.Timedelta(minutes=60)
+    return due, extras
+
+
+def game_quotes_capture(life: Life, day: date) -> dict | None:
+    """Release B (SHADOW) game-line capture inside the quote wake (same writer lock). Never raises."""
+    from cbb_platform.game import forecast as GF
+    if GF.mode() != "SHADOW":
+        return None
+    from cbb_platform.prod import game_quotes as GQ, matching as MT, odds_feed as OF
+    now = life.now()
+    try:
+        due, extras = game_quotes_due(life, day, now)
+        if not due:
+            return {"status": "NOT_DUE", "at": now.isoformat()}
+        st = ST.current(life.state_root)
+        sl = slate(st, day, now).rename(columns={"scheduled_tip_utc": "start_time"})
+        from cbb_platform.game import forecast as GFc
+        sl["neutral_site"] = sl["canonical_game_id"].map(GFc.neutral_of(st["increment_db"], sl["canonical_game_id"]))
+        sl["neutral_site"] = sl["neutral_site"].astype("boolean").fillna(False).astype(bool)
+        ctx = SH.Ctx(ops_root=Path(life.ops_root), prod_root=Path(life.prod_root),
+                     history_db=life.history_db or HX.resolve(), clock=life.clock)
+        tidx = MT.team_index(SH.team_names(ctx, st), MT.odds_team_map())
+        sess = GQ.GameSession("game_quotes", cache_root=Path(life.prod_root) / "cache" / "raw",
+                              ledger_path=Path(life.prod_root) / "cache" / "odds_production_requests.jsonl",
+                              clock=lambda: life.now().to_pydatetime())
+        rec = GQ.capture(sess, now, sl, tidx, Path(life.ops_root) / "game_quotes", extras=extras)
+        return {k: rec.get(k) for k in ("capture_id", "at", "status", "error", "events_matched", "event_calls", "rows",
+                                        "games_with_quotes", "by_market", "unmatched")} | {
+            "credits": (rec.get("session") or {}).get("credits_charged")}
+    except Exception as e:                                   # noqa: BLE001 - shadow layer never breaks the wake
+        return {"status": "FAILED", "at": now.isoformat(), "error": f"{type(e).__name__}: {str(e)[:300]}"}
 
 
 def _brief(rep: dict) -> dict:
     return {k: {kk: v.get(kk) for kk in ("status", "path", "rows", "missing", "rewritten", "rows_with_valid_market",
                                          "rows_with_no_valid_market", "unique_player_stat_keys", "duplicate_keys",
                                          "GRADE_STATUS", "PERFORMANCE_STATUS", "verification", "graded_slate_date",
-                                         "written", "games_frozen_now") if kk in v}
+                                         "written", "games_frozen_now", "games", "games_with_market",
+                                         "rows_with_market", "model_only_games", "quote_rows", "lineage", "results",
+                                         "evaluations", "days") if kk in v}
             if isinstance(v, dict) else v
             for k, v in rep.items() if k in ("date", "boards", "distributions", "grades", "performance", "predicted_games",
-                                             "raw_quote_rows", "evaluations", "prior_day_evaluations")}
+                                             "raw_quote_rows", "evaluations", "prior_day_evaluations", "game_lines",
+                                             "game_grades", "game_performance")}
 
 
 def new_refresh_id(now) -> str:

@@ -392,3 +392,24 @@ def test_migrate_replaces_an_exploded_workbook_only_when_derivation_matches(full
     assert wb["Distributions"]["rows"][0] == list(EX.DIST_SUMMARY_COLS) and (out / n["distribution_pmfs"]).exists()
     assert EX.migrate_distributions(DATE, **kw)["status"] == "ALREADY_SUMMARY"
     assert not any(p.name.startswith(".migrate-") for p in tree["out_root"].iterdir())
+
+
+def test_release_b_shadow_layout_separates_player_and_game_populations(tmp_path, monkeypatch):
+    """CBB_GAME_MODEL=SHADOW: Boards `Player Props` (= the market Full Board rows) + `Game Lines` first, player-only
+    supporting tabs after; Grades `Player Props` + `Game Markets` + `Summary` (separate blocks). Off: unchanged."""
+    monkeypatch.setenv("CBB_GAME_MODEL", "SHADOW")
+    tree = _full_tree(tmp_path)
+    at = CUT1 - pd.Timedelta(minutes=30)
+    rows = [_quote("Zed", "PTS", b, 14.5, s, o, at) for b, s, o in (("draftkings", "OVER", 120), ("draftkings", "UNDER", -150))]
+    QO.record(tree["ops_root"], DATE, "G1", "E1", at, pd.DataFrame(rows), "QUOTE_REFRESH")
+    rep = _run(tree)
+    wb = _book(rep, "boards")
+    assert tuple(wb)[:2] == ("Player Props", "Game Lines")
+    assert "Full Board" not in wb and {"Player 60 Percent Plus", "Player 65 Percent Plus", "Model Coverage"} <= set(wb)
+    assert rep["game_lines"]["status"] == "NO_GAME_PMFS"                    # no game PMF persisted in this fixture
+    nxt = _run(tree, "2026-11-05")
+    gw = _book(nxt, "grades")
+    assert tuple(gw)[:3] == ("Player Props", "Game Markets", "Summary")
+    blocks = [r[0] for r in gw["Summary"]["rows"] if r and r[0] in ("PLAYER PROPS", "GAME MARKETS")]
+    assert "PLAYER PROPS" in blocks and "GAME MARKETS" in blocks
+    assert nxt["game_performance"]["status"] == "WRITTEN"

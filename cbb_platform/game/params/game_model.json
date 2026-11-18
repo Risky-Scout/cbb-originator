@@ -1,0 +1,52 @@
+{
+ "adjust": {
+  "beta": 0.0,
+  "gamma": 0.3
+ },
+ "adjust_note": "beta selected walk-forward on 2024-25 (2023-24 fold has no p_play); OLS -0.077 (2024-25), -0.008 (2025-26); every beta>0 raised RMSE. gamma is a conservative prior (not fitted), SHADOW only.",
+ "model_version": "cbb-game-model-1.0.0",
+ "params_sha256": "4174a1760f7175eb9e495d2c5a208c09a3f95b3541105f977b416369962059a7",
+ "prior_exposure": "2026-11-18 design prototype computed 2025-26 margin RMSE (12.69 / 12.52) as a diagnostic; no parameter was chosen on 2025-26",
+ "ratings": {
+  "lam_def": 5,
+  "lam_league": 10,
+  "lam_off": 5,
+  "lam_pace": 2,
+  "prior_chain_first_season": 2014,
+  "rho_carry": 1.0,
+  "selection": "coordinate search on development season 2023-24 (season 2024) only",
+  "tau_days": 150
+ },
+ "ratings_prior": {
+  "2027": {
+   "file": "ratings_prior_2027.parquet",
+   "league": {
+    "hca": 2.073206305316281,
+    "mu": 108.53303687666572,
+    "pi": 68.08162296508894
+   },
+   "sha256": "b4c5fcd183abc71ebe5804cd283562e942416f0223a83a34a5ca37dbc374962c",
+   "source": "season-final ratings chain 2014..2026 (2025-26 final) from the canonical history, shrunk by rho_carry",
+   "state_id": "TR-0a2155b13dd15fbb",
+   "teams": 368
+  }
+ },
+ "splits": {
+  "confirmation": 2026,
+  "development": 2024,
+  "prospective": 2027,
+  "selection": 2025
+ },
+ "variance": {
+  "a_m": 11.2323,
+  "a_t": 16.6005,
+  "c_m": 0.12,
+  "c_t": 0.04,
+  "k_m": 0.0,
+  "k_t": 0.5,
+  "rho_mt": 0.056,
+  "tau_m": 4.0,
+  "tau_t": 4.0
+ },
+ "variance_fit": "Gaussian MLE grid on 2023-24 walk-forward residuals; n = min season games played of the two teams"
+}

@@ -1072,9 +1072,15 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
                            "min_ev": ME.ACTION_MIN_EV, "min_edge": ME.ACTION_MIN_EDGE,
                            "min_model_probability": ME.ACTION_MIN_MODEL_PROBABILITY,
                            "reliable_min_books": ME.RELIABLE_MIN_BOOKS}, "best_offer_order": list(ME.ORDER)}
-            p, written = write_if_changed(out_dir / names_["boards"], BOARD_RECEIPT, brows,
-                                          lambda path: MX.boards_workbook(brows, path), _writers_sha(CN, QO, MX, ME),
-                                          receipt)
+            glines = game_lines(date, ops_root, state_root, names, at)    # Release B (SHADOW); None when off
+            rep["game_lines"] = {k: v for k, v in (glines or {"status": "NOT_ENABLED"}).items() if k != "rows"}
+            if glines is not None:
+                receipt["game_lines"] = rep["game_lines"]
+            content = brows if glines is None else [brows, glines["rows"]]
+            p, written = write_if_changed(out_dir / names_["boards"], BOARD_RECEIPT, content,
+                                          lambda path: MX.boards_workbook(brows, path) if glines is None else
+                                          boards_shadow_workbook(brows, glines["rows"], path),
+                                          _writers_sha(CN, QO, MX, ME), receipt)
             if written:
                 tmp = out_dir / (BOARD_AUDIT + ".tmp")
                 with gzip.open(tmp, "wt") as f:
@@ -1098,6 +1104,10 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     try:
         grows, ginfo = MX.graded_rows(ops_root, prior, at)
         sheets = MX.grades_tables(grows, prior, ginfo)
+        gg = game_grades(prior, ops_root, state_root, names)
+        rep["game_grades"] = {k: v for k, v in (gg or {"status": "NOT_ENABLED"}).items() if k not in ("rows",)}
+        if gg is not None:
+            sheets = grades_shadow_sheets(sheets, grows, gg["rows"])
         p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
                                       [[b["rows"] for b in sh_["blocks"]] for sh_ in sheets],
                                       lambda path: write_xlsx(path, sheets), _writers_sha(MX, ME))
@@ -1110,7 +1120,99 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
     except MX.MarketExportIntegrityError as e:
         rep["grades"] = {"status": "ABORTED_INTEGRITY", "missing": str(e)[:400]}
     rep["performance"] = _performance(date, ops_root, out_dir, at)        # after Grades (same graded rows)
+    if _game_mode():                                                       # Release B: separate game population
+        from cbb_platform.prod import game_exports as GX
+        try:
+            rep["game_performance"] = GX.game_performance(date, ops_root, out_dir,
+                                                          lambda ids: _finals(state_root, ids), names)
+        except Exception as e:                                             # noqa: BLE001 - never breaks player exports
+            rep["game_performance"] = {"status": "FAILED", "missing": f"{type(e).__name__}: {str(e)[:300]}"}
     return rep
+
+
+# ============================================================================ Release B game markets (SHADOW)
+def _game_mode() -> bool:
+    from cbb_platform.game import forecast as GF
+    return GF.mode() == "SHADOW"
+
+
+def _finals(state_root: Path | None, ids) -> dict:
+    """{game_id: (home_points, away_points)} of completed games in the promoted state (OT-inclusive final score)."""
+    from cbb_platform.prod import state as ST
+    st = ST.current(state_root) if state_root else None
+    if st is None or not ids:
+        return {}
+    import duckdb
+    con = duckdb.connect(str(st["increment_db"]), read_only=True)
+    try:
+        df = con.execute("select canonical_game_id, home_points, away_points from flagship.games where "
+                         "canonical_game_id in (select unnest(?)) and home_points is not null", [list(ids)]).df()
+    finally:
+        con.close()
+    return {g: (int(h), int(a)) for g, h, a in zip(df["canonical_game_id"], df["home_points"], df["away_points"])}
+
+
+def game_lines(date: str, ops_root: Path, state_root, names: dict, at) -> dict | None:
+    """Boards `Game Lines` rows (best executable offer per game x core market) + the write-once freeze of every game
+    whose cutoff passed. None when CBB_GAME_MODEL is not SHADOW."""
+    if not _game_mode():
+        return None
+    from cbb_platform.prod import game_exports as GX, game_quotes as GQ
+    pm = GX.game_pmfs(ops_root, date, at)
+    q = GQ.load(Path(ops_root) / "game_quotes", date)
+    rows, st = GX.board_rows(pm, q, names, at) if len(pm) else ([], {"games": 0})
+    fr = GX.freeze(ops_root, date, q, names, at)
+    lin = GX.lineage(ops_root, date)
+    return {"status": "WRITTEN" if len(pm) else "NO_GAME_PMFS", "rows": rows, **st, "quote_rows": int(len(q)),
+            "frozen": fr, "lineage": lin}
+
+
+def game_grades(day: str, ops_root: Path, state_root, names: dict) -> dict | None:
+    if not _game_mode():
+        return None
+    from cbb_platform.prod import game_exports as GX, game_quotes as GQ
+    ev = GX.evaluations(ops_root, day)
+    q = GQ.load(Path(ops_root) / "game_quotes", day)
+    tips = {e["game_id"]: e["scheduled_tip_utc"] for e in ev}
+    rows = GX.graded(ops_root, day, _finals(state_root, sorted(tips)), GQ.closing(q, tips), names)
+    return {"status": "WRITTEN", "rows": rows, "evaluations": len(ev),
+            "results": pd.Series([r["RESULT"] for r in rows]).value_counts().to_dict() if rows else {}}
+
+
+def boards_shadow_workbook(brows: list, glines: list, path: Path) -> Path:
+    """Release B layout: `Player Props` (the market-backed player board: one row per game x player x stat best offer),
+    `Game Lines` (game x core market best offer, SHADOW), then the PLAYER-ONLY supporting tabs."""
+    from cbb_platform.prod import game_exports as GX, market_exports as MX
+    sh = MX.board_sheets(brows)
+    blk = lambda rows: [{"title": None, "columns": MX.BOARD_COLS, "rows": rows, "formats": MX.BOARD_FORMATS}]  # noqa: E731
+    gfmt = {c: MX.PCT for c in ("MODEL%", "MARKET%", "PUSH%", "PROBABILITY_EDGE", "EV_GROSS", "EV_NET")}
+    sheets = [{"name": "Player Props", "blocks": blk(sh["Full Board"])},
+              {"name": "Game Lines", "blocks": [{"title": None, "columns": GX.LINE_COLS, "rows": glines,
+                                                 "formats": gfmt}]}]
+    sheets += [{"name": f"Player {s}" if "Percent" in s else s, "blocks": blk(sh[s])}
+               for s in MX.BOARD_SHEETS if s != "Full Board"]
+    return write_xlsx(path, sheets)
+
+
+def grades_shadow_sheets(sheets: list, grows: list, game_rows: list) -> list:
+    """Release B Grades layout: `Player Props` (every market-backed player prediction; VOID_DNP shown, excluded from
+    the metrics), `Game Markets`, `Summary` (separate PLAYER PROPS and GAME MARKETS blocks), then the supporting tabs."""
+    from cbb_platform.prod import game_exports as GX, market_exports as MX
+    m = MX.metrics(grows)
+    first = sheets[0]
+    gfmt = {c: MX.PCT for c in ("MODEL%", "MARKET%", "PUSH%", "EDGE", "EV", "CLV_PROBABILITY")}
+    player_summary = ["PLAYER PROPS", "ALL", m["Graded"], m.get("Wins"), m.get("Losses"), m.get("Pushes"),
+                      m["VOID_DNP"], m["Pending"], m.get("Hit Rate"), m.get("Brier Score"), m.get("Log Loss"),
+                      m.get("Units Won"), m.get("ROI")]
+    sfmt = {"HIT_RATE": MX.PCT, "RETURN": MX.PCT}
+    out = [{**first, "name": "Player Props"},
+           {"name": "Game Markets", "blocks": [{"title": None, "columns": GX.GRADE_COLS,
+                                                "rows": GX.grade_table(game_rows), "formats": gfmt}]},
+           {"name": "Summary", "blocks": [
+               {"title": "PLAYER PROPS", "columns": GX.SUMMARY_COLS, "rows": [player_summary], "formats": sfmt},
+               {"title": "GAME MARKETS (SHADOW: research only, never actionable)", "columns": GX.SUMMARY_COLS,
+                "rows": GX.summary(game_rows), "formats": sfmt}]}]
+    return out + sheets[1:]
 
 
 def _cutoffs(pmfs: list, games: pd.DataFrame, ops_root: Path, date: str) -> dict:

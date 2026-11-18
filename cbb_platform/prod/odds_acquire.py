@@ -277,6 +277,19 @@ class Session:
         self.quota_used: int | None = None
         self.entries: list[dict] = []
 
+    # The guard / cost / path of THIS session's request family. The player-prop session uses the module functions
+    # unchanged; prod.game_quotes.GameSession overrides them with its own (game-line) allowlist.
+    paths = PATHS
+
+    def _check_request(self, endpoint, params, event_commence, now):
+        return check_request(endpoint, params, event_commence, now)
+
+    def _check_response(self, endpoint, body, params):
+        return check_response(endpoint, body, params)
+
+    def _estimated_cost(self, endpoint, params):
+        return estimated_cost(endpoint, params)
+
     def _log(self, entry: dict) -> dict:
         entry = {"provider": PROVIDER, "stage": self.stage, **entry}
         self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
@@ -302,12 +315,12 @@ class Session:
         (before any call) or OddsProviderFailure."""
         params = {k: str(v) for k, v in params.items()}
         requested_at = _utc(self.clock())
-        est = estimated_cost(endpoint, params)
+        est = self._estimated_cost(endpoint, params)
         base = {"endpoint": endpoint, "params": params, "request_key": request_key(endpoint, params),
                 "season": PC.PRODUCTION_SEASON, "sport": SPORT, "purpose": purpose,
                 "requested_at": requested_at.isoformat(), "estimated_cost": est}
         try:
-            check_request(endpoint, params, self.event_commence, requested_at)
+            self._check_request(endpoint, params, self.event_commence, requested_at)
         except OddsGuardViolation as e:
             self._log({**base, "status": "REFUSED_GUARD", "error": str(e), "retry_count": 0})
             raise
@@ -338,7 +351,7 @@ class Session:
                 raise OddsProviderFailure(f"Odds API quota {self.quota_remaining} unknown or would fall below the reserve "
                                           f"{self.quota_reserve}")
             key = self._credential()
-            path = PATHS[endpoint].format(**params)
+            path = self.paths[endpoint].format(**params)
             query = {k: v for k, v in params.items() if k != "eventId"}
             self.live_requests += 1
             err, status, hdr = None, None, {}
@@ -360,7 +373,7 @@ class Session:
                 content = resp.content
                 try:
                     body = json.loads(content)
-                    check_response(endpoint, body, params)
+                    self._check_response(endpoint, body, params)
                 except OddsGuardViolation as e:
                     self._log({**base, **usage, "status": "REFUSED_RESPONSE_GUARD", "http_status": status,
                                "retry_count": attempt, "error": str(e)})

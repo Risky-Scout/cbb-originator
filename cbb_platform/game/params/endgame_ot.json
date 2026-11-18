@@ -1,0 +1,45 @@
+{
+ "artifact": "endgame_ot.npz",
+ "sha256": "93369a1ac4d6510a4685e9fa3352233fc2167ffb53ff8f1a8d626d2f0812ea57",
+ "t_star_sec": 120,
+ "max_lead": 20,
+ "reach": 30,
+ "pace_edges_ppm": [
+  3.2105,
+  3.6053
+ ],
+ "fit_seasons": [
+  2014,
+  2023
+ ],
+ "source": "flagship.plays + played_games",
+ "ot": {
+  "kappa": 1.1743598520646212,
+  "sd_team": 3.940983971956073,
+  "rho": 0.26340638032624925,
+  "reach": 30
+ },
+ "fit_stats": {
+  "games_joined": 48596,
+  "games_used": 48470,
+  "dropped_inconsistent": 126,
+  "pace_edges_ppm": [
+   3.2105,
+   3.6053
+  ],
+  "thin_buckets_lt_200": 0,
+  "cell_counts_by_pace": [
+   15679,
+   16841,
+   15950
+  ],
+  "min_lead_bucket_count": 157,
+  "regulation_tie_rate": 0.05747885289870023,
+  "ot_periods": 3976,
+  "ot_period_tie_rate": 0.1697686116700201,
+  "ot_kappa": 1.1743598520646212,
+  "ot_sd_team": 3.940983971956073,
+  "ot_rho": 0.26340638032624925,
+  "ot_mean_points_per_team": 9.922912474849095
+ }
+}

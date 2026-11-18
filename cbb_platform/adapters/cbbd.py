@@ -43,6 +43,8 @@ ENDPOINTS = {
     "plays/date": "/plays/date", "plays/team": "/plays/team",
     "substitutions/team": "/substitutions/team", "lineups/team": "/lineups/team",
     "recruiting/teams": "/recruiting/teams",
+    # Release B game-model research (closing / opening lines for ATS-OU-ML validation; never a feature input)
+    "lines": "/lines",
 }
 
 

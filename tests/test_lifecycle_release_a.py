@@ -205,7 +205,7 @@ def test_health_contract_normal_path():
                       "AVAILABILITY_STATE", "RETENTION_STATE", "NORMAL_MORNING_PATH", "DAY_OPERATIONAL", "ACTIVE_BLOCKER"}
     assert c["NORMAL_MORNING_PATH"] is True and c["DAY_OPERATIONAL"] is True and c["ACTIVE_BLOCKER"] is None
     assert c["AVAILABILITY_STATE"] == "PASS" and c["RETENTION_STATE"] == "PASS" and c["TRAINING_FRESHNESS"] == "PASS"
-    assert c["GAME_FORECAST_COMPLETE"] == "NOT_DEPLOYED" and r["WARMUP_STATE_MATCHES_FIT"] is True
+    assert c["GAME_FORECAST_COMPLETE"] == "NOT_ENABLED" and r["WARMUP_STATE_MATCHES_FIT"] is True
 
 
 def test_health_contract_refit_retry_day_is_not_the_normal_path():
