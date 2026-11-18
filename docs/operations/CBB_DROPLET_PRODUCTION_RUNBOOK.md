@@ -238,18 +238,35 @@ lock:
       $CBB_PY -m cbb_platform.prod.exports daily --date D \
       --history-db /var/lib/sports-models/cbb-originator/history/cbb_production_history_minimal.duckdb
 
-## 8a. CBB_Boards (consensus Board)
+## 8a. CBB_Boards / CBB_Grades / CBB_Performance (market evaluation contract)
 
-`exports/<D>/CBB_Boards_MM_DD_YYYY.xlsx` is rebuilt by every quote tick (no manual trigger) from persisted evidence
-only, and rewritten only when its content changes (`boards_receipt.json`). One row per GAME x PLAYER x STAT of the
-persisted PMFs Distributions exports (12 stats); `DUPLICATE_BOARD_KEYS > 0` aborts the export
-(`ABORTED_DUPLICATE_BOARD_KEYS`). Market fields come from the game's latest pre-cutoff quote observation
-(`ops/quotes/<D>/observations.jsonl`, written by the official tick and the tiered refresh) via `prod/consensus.py`:
-ordinary median line; MAD screening only with >= 5 books; zero-MAD cluster rule; stale-move protection; consensus
-price from books at exactly the consensus line, de-vigged with `exports.no_vig` (proportional), median of fair
-probabilities. No valid market: the row stays with blank market fields, `MARKET_STATUS = NO_VALID_MARKET`. Every
-included / excluded sportsbook observation with its reason: `exports/<D>/board_quote_audit.jsonl.gz`.
-Grades = the official frozen best-offer selections; `GRADE_STATUS = NOTHING_SETTLED_YET` until one settles.
+Odds ingestion (prod/quote_refresh.py): event-specific endpoints only (`/events` -> `/events/{id}/markets` ->
+`/events/{id}/odds`), explicit `bookmakers=` (draftkings, fanduel, betmgm, williamhill_us (= Caesars; the provider's
+key for Caesars Sportsbook), betrivers, bovada, betonlineag, hardrockbet, espnbet, fliff), the 12 base player markets,
+`oddsFormat=american`. A game with no supported market is `NO_SUPPORTED_PROP_MARKETS_POSTED` (no /odds call) and is
+rediscovered once per window (08:30 10:00 11:00 12:00 13:30 15:30 17:30 19:30 ET); a `PROP_DISCOVERED` game is
+refreshed every 30 min (> 120 min before its cutoff) / 10 min (<= 120 min); nothing at or after min(commence, cutoff).
+A FAILED / BUDGET_EXHAUSTED attempt never consumes a window or slot. `CBB_ODDS_QUOTA_SAFETY_THRESHOLD` (default
+250000 remaining) stops optional polling. Per run: `quotes/<D>/ingestion_receipts.jsonl` (event / market / odds calls,
+supported markets, credits consumed, quota remaining); event map `quotes/event_map.jsonl`.
+
+`exports/<D>/CBB_Boards_MM_DD_YYYY.xlsx` (every quote tick; rewritten only on content change; `boards_receipt.json`):
+exactly one row per GAME x PLAYER x STAT (a duplicate aborts). Every VALID non-alternate book x line x side of the
+game's latest pre-cutoff observation is priced at its exact line from the persisted PMF (P over / under / push),
+de-vigged same book same line only, push-aware EV; best offer = EV, edge, model probability, payout, book key.
+Preferred Side OVER / UNDER when any candidate EV > 0, else NO_POSITIVE_EV. Is Actionable: EV >= 0.03, edge >= 0.03,
+model probability >= 0.54 and >= 2 books two-sided at the line (or MEDIUM / HIGH consensus at it). Tiers 65_PLUS,
+60_PLUS, ACTIONABLE, PASS_NO_EDGE. Sheets: Full Board (real-market rows only), 60 Percent Plus, 65 Percent Plus, Model
+Coverage (model-only rows). Consensus fields are informational.
+
+Frozen evaluations: once a game's cutoff passes, `ops/evaluations/<D>/market_evaluations.jsonl` records (write-once,
+hash-verified) its evaluation at the decision observation (first pre-cutoff observation at / after the latest pre-cutoff
+PMF). `CBB_Grades` of export date D grades D-1 (every market evaluation incl. PASS_NO_EDGE, exact line; VOID_DNP /
+VOID_NO_GAME / PENDING excluded from metrics). `CBB_Performance` is cumulative from the first date with real pre-cutoff
+quotes (`ops/performance/cbb_market_performance.parquet`; nine tabs). Close = last observation <= min(commence, cutoff),
+at most 60 min stale, at / after the entry; CLV statuses EXACT_LINE, SAME_LINE_NEAREST_CLOSE, LINE_MOVED (directional
+movement, no probability CLV), NO_DEVIG_PAIR, NO_CLOSE_QUOTE. Export health requires Boards, Grades and Performance;
+Distributions is supporting. No automatic historical-odds calls.
 
 ## 9. Bounded 07:00 feature catch-up (DEFERRED_FEATURE_BACKLOG)
 

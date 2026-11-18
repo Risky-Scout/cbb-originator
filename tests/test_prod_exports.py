@@ -21,6 +21,23 @@ from cbb_platform.prod import (config as PC, exports as EX, market_exports as MX
 LABELS = ("TEST",)
 DATE = "2026-11-04"
 
+# Legacy test classification (11e736c -> this file):
+#   test_boards_sheets_columns_membership_thresholds_and_order  VALID_INVARIANT_TO_PRESERVE (sheets, columns, membership)
+#       with SUPERSEDED thresholds (tiers) -> test_boards_sheets_columns_membership_and_tiers
+#   test_grades_sheets_columns_results_and_profit   VALID_INVARIANT_TO_PRESERVE -> test_grades_d_grades_prior_slate_
+#       against_the_exact_line (exact-line result, push refund units) + market_contract grading parametrization
+#   test_performance_summary_sections_and_reconciliation  SUPERSEDED sheet; VALID reconciliation ->
+#       test_prod_performance.py::test_group_tables_reconcile_to_overall
+#   test_zero_count_role_rows_kept  VALID_INVARIANT_TO_PRESERVE -> test_prod_performance.py::test_zero_count_role_rows_kept
+#   test_post_tip_receipts_excluded  VALID_INVARIANT_TO_PRESERVE (stricter: cutoff) -> test_market_contract.py::
+#       test_post_cutoff_observation_never_closes_or_freezes + test_quote_refresh.py::test_quote_received_at_or_after_
+#       the_official_cutoff_is_never_priced
+#   test_export_semantic_idempotence_and_immutable_fields  VALID_INVARIANT_TO_PRESERVE -> test_export_semantic_
+#       idempotence + test_prod_best_offer.py::test_15 (tamper hard-fails) + test_prod_performance.py::test_incremental_
+#       update_reuses_final_rows_and_rebuilds_changed (settlement fills only result fields)
+#   test_export_date_uses_america_new_york  VALID_INVARIANT_TO_PRESERVE -> same name (official_rows key removed)
+
+
 
 def _qs(rid, game, player, market, line, side, book, p_np, american, *, team="T1", minutes=32.0, proj=None, tick_run="R1",
         aso="2026-11-04T23:00:00+00:00", recv="2026-11-04T22:55:00+00:00", edge=0.01):

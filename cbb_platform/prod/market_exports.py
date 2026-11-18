@@ -626,11 +626,25 @@ def metrics(rows: list[dict]) -> dict:
             "No-Close N": st.count("NO_CLOSE_QUOTE"), "No-Devig-Pair N": st.count("NO_DEVIG_PAIR")}
 
 
-def group_rows(rows: list[dict], keys: tuple, cols: tuple) -> list[list]:
+def _taxonomy(key: str) -> tuple:
+    """The fixed categories shown even with zero rows (rates blank), in canonical order."""
+    from cbb_platform.prod import exports as EX
+    return {"player_role": EX.ROLES, "side": ("OVER", "UNDER"), "tier": ME.TIERS}.get(key, ())
+
+
+def groups(rows: list[dict], keys: tuple) -> list[tuple]:
+    """(group key, rows) pairs: single-key taxonomies (role, side, tier) list every category (zero-count kept, canonical
+    order, unexpected values after); everything else is the observed keys sorted alphabetically."""
     g: dict = {}
     for r in rows:
         g.setdefault(tuple(r[k] for k in keys), []).append(r)
-    return [list(k) + [metrics(v)[c] for c in cols] for k, v in sorted(g.items(), key=lambda x: tuple(map(str, x[0])))]
+    fixed = _taxonomy(keys[0]) if len(keys) == 1 else ()
+    head = [((c,), g.pop((c,), [])) for c in fixed]
+    return head + sorted(g.items(), key=lambda x: tuple(map(str, x[0])))
+
+
+def group_rows(rows: list[dict], keys: tuple, cols: tuple) -> list[list]:
+    return [list(k) + [metrics(v)[c] for c in cols] for k, v in groups(rows, keys)]
 
 
 def graded_table_rows(rows: list[dict]) -> list[list]:

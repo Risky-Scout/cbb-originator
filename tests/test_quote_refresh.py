@@ -18,6 +18,22 @@ TIP = pd.Timestamp("2026-11-08T01:00:00Z")          # 20:00 ET on 2026-11-07
 CUT = TIP - pd.Timedelta(hours=1)                    # official cutoff 00:00Z
 DAY = "2026-11-07"
 
+# Legacy test classification (11e736c -> this file):
+#   test_tier_boundaries (60/30/10 min, T-6h start)  SUPERSEDED_CONTRACT -> new 30/10 min tiers + discovery windows
+#   test_due_rate_limits_and_no_request_before_6h_or_after_cutoff  SUPERSEDED (6 h start) / VALID (nothing at or after
+#       the cutoff, rate limit) -> test_due_rate_limits_discovered_game_and_nothing_after_cutoff
+#   test_official_tick_snapshot_is_counted_in_advance  VALID_INVARIANT_TO_PRESERVE -> test_near_cadence_never_requests_
+#       in_the_official_snapshot_slot
+#   test_latest_observation_rule_keeps_single_official_tick_unchanged  VALID_INVARIANT_TO_PRESERVE (Board = the latest
+#       pre-cutoff observation) -> test_boards_latest_observation_then_frozen_evaluation_never_replaced +
+#       test_prod_best_offer.py::test_14
+#   test_boards_provisional_then_frozen_latest_observation_never_replaced  VALID -> test_boards_latest_observation_then_
+#       frozen_evaluation_never_replaced
+#   test_reprice_uses_persisted_pmf_exactly_and_never_refits  VALID -> same name (QR.receipts_for_day)
+#   test_zero_market_causes_are_distinct_never_generic / test_ingestion_receipt_*  VALID -> same names (status renamed
+#       NO_SUPPORTED_PROP_MARKETS_POSTED; receipt extended with event discovery / credits / quota fields)
+
+
 
 def T(minutes_before_cutoff: float) -> pd.Timestamp:
     return CUT - pd.Timedelta(minutes=minutes_before_cutoff)

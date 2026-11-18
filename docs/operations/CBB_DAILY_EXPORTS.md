@@ -1,5 +1,13 @@
 # CBB daily Excel exports
 
+> **SUPERSEDED (2026-11-18, market-data and evaluation contract).** Boards, Grades and Performance no longer use
+> official best-offer selections, `side_monitor` receipts, Graded Bets or the Performance Summary sheet. Current
+> contract: `docs/operations/CBB_DROPLET_PRODUCTION_RUNBOOK.md` §8a and `cbb_platform/prod/market_exports.py` /
+> `market_eval.py` / `performance.py`. Boards: Full Board · 60 Percent Plus · 65 Percent Plus · Model Coverage.
+> Grades (D grades D-1): Graded Predictions · By Stat · By Player Role · Stat x Role · By Side · By Selection Tier ·
+> Status. Performance: Overall · By Stat · By Player Role · Stat x Role · By Side · By Selection Tier · Daily ·
+> Calibration · Selections. The Distributions section below is still current.
+
 > **SUPERSEDED IN PART (2026-11-07, Droplet deployment).** The installed layout is: immutable git-archive release
 > `/opt/sports-models/cbb-originator/releases/<sha>` (+ root-owned `<sha>.sha256sums`, re-verified before every job)
 > behind `current`; mutable state only under `/var/lib/sports-models/cbb-originator/{prod,walkforward,exports,locks}`

@@ -29,10 +29,11 @@ DATASET = Path("performance") / "cbb_market_performance.parquet"        # under 
 RECEIPT = "performance_receipt.json"
 SHEETS = ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Selection Tier", "Daily", "Calibration",
           "Selections")
-METRICS = ("Predictions", "Graded", "Wins", "Losses", "Pushes", "VOID_DNP", "Win %", "Mean Model Probability",
+METRICS = ("Predictions", "Graded", "Wins", "Losses", "Pushes", "VOID_DNP", "VOID_NO_GAME", "Pending", "Hit Rate",
+           "Win %", "Mean Model Probability",
            "Actual Hit Rate", "Calibration Gap", "Brier Score", "Log Loss", "Mean Edge", "Median Edge", "Mean EV",
            "Units Won", "ROI", "Mean Probability CLV", "Median Probability CLV", "Mean Log-Odds CLV", "Positive CLV %",
-           "Exact-Line CLV N", "Line-Moved N", "No-Close N")
+           "Exact-Line CLV N", "Line-Moved N", "No-Close N", "No-Devig-Pair N")
 BIN_COLS = ("Model Probability Bin", "N", "Mean Predicted Probability", "Actual Hit Rate", "Brier Score")
 SEL_COLS = MX.GRADED_COLS
 
@@ -154,10 +155,7 @@ def tables(rows: list[dict]) -> dict:
         daily.append([d] + [mm[c] for c in METRICS])
 
     def grp(keys):
-        g: dict = {}
-        for r in rows:
-            g.setdefault(tuple(r[k] for k in keys), []).append(r)
-        body = [list(k) + [_metrics(v)[c] for c in METRICS] for k, v in sorted(g.items(), key=lambda x: tuple(map(str, x[0])))]
+        body = [list(k) + [_metrics(v)[c] for c in METRICS] for k, v in MX.groups(rows, keys)]
         return [{"title": None, "columns": tuple(MX.GROUP_LABELS[k] for k in keys) + METRICS, "rows": body, "formats": fm}]
     return {
         "Overall": [{"title": "Overall", "columns": ("Scope",) + METRICS, "rows": [["ALL"] + [m[c] for c in METRICS]],

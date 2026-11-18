@@ -117,6 +117,11 @@ FAST = dict(acquire_budget_sec=30, acquire_kill_grace_sec=2, receipt_max_age_sec
             unit_budget_sec=2400, margin_sec=1, min_lock_wait_sec=0.5, poll_sec=0.05)
 
 
+# Legacy test classification (11e736c): test_limits_match_the_directive_and_the_unchanged_unit_timeout (watchdog 900 s,
+# unit 30 min) SUPERSEDED_CONTRACT by the Phase B watchdog fix (1800 s, unit >= 2400 s) -> test_limits_match_the_
+# directive_and_the_unit_timeout. All lock / no-partial-publish invariants are unchanged and kept.
+
+
 @pytest.fixture
 def world(tmp_path):
     w = {"tmp": tmp_path, "ops": tmp_path / "ops", "prod": tmp_path / "prod", "lock": tmp_path / "locks" / "writer.lock",
