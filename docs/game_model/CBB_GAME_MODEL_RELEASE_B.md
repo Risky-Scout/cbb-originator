@@ -36,6 +36,8 @@ Prior exposure: the 2026-11-18 design prototype computed 2025-26 margin RMSE (12
 - Game markets therefore stay SHADOW: `IS_ACTIONABLE = FALSE`, `SELECTION_TIER = RESEARCH`, policy `GAME_MARKETS_SHADOW_RESEARCH_v1`.
 - Release C needs prospective evidence that this changes, and its thresholds are chosen per market family out of sample.
 
+The CBBD `/lines` pull for 2023-24 / 2024-25 was a one-off offline research fetch (raw responses kept outside the repo); the hash-pinned `adapters/cbbd.py` is unchanged.
+
 Why there are no 2025-26 closes: CBBD `/lines` is not in the frozen lockbox opening plan (`lockbox.OPEN_PLAN_ENDPOINTS`). Amending that plan is a governance decision; this release does not make it.
 
 ## Production path
