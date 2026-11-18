@@ -1,9 +1,9 @@
-"""Tiered quote refresh (prod/quote_refresh.py) + latest-observation Boards / freeze (prod/exports.py).
+"""Quote refresh cadence (prod/quote_refresh.py) + latest-observation Boards / frozen evaluations.
 
-T = the official prediction cutoff (TIP_MINUS_1H). Before T-6h: no paid request. T-6h..<T-2h: <= 1 / 60 min.
-T-2h..<T-30m: <= 1 / 30 min. T-30m..<T: <= 1 / 10 min. At / after T: none. A quote change only REPRICES the latest
-persisted PMF (no refit, no walk-forward, no simulation). Synthetic fixtures; no network, no credential.
-"""
+Discovery windows 08:30 10:00 11:00 12:00 13:30 15:30 17:30 19:30 ET for games with no supported market yet; once
+PROP_DISCOVERED: every 30 min (> 120 min before the cutoff) / every 10 min (<= 120 min); nothing at or after
+min(commence, cutoff). A quote change only REPRICES the latest persisted PMF (no refit, no walk-forward, no simulation).
+Synthetic fixtures; no network, no credential."""
 import json
 from pathlib import Path
 
@@ -191,6 +191,23 @@ def test_unknown_quota_triggers_the_free_events_listing_before_any_paid_call(tmp
     calls, _ = _sim_day(tmp_path, monkeypatch, session_cls=Fresh)
     refresh = [c for c in calls if not isinstance(c, tuple)]
     assert refresh and len(seen) == len(refresh) and set(seen) == {"events"}     # one free listing per paying wake
+
+
+def test_failed_attempt_does_not_consume_the_discovery_window(tmp_path):
+    """QA 2026-11-18: a locally refused attempt (quota unknown) was recorded FAILED and blocked the 17:30 ET window."""
+    ops = tmp_path / "ops"
+    (ops / "quotes").mkdir(parents=True)
+    rows = [{"game_id": "G", "requested_at": "2026-11-17T22:31:00+00:00", "status": "FAILED"},
+            {"game_id": "H", "requested_at": "2026-11-17T22:31:00+00:00", "status": "BUDGET_EXHAUSTED"},
+            {"game_id": "K", "requested_at": "2026-11-17T22:31:00+00:00", "received_at": "2026-11-17T22:31:01+00:00",
+             "status": "NO_PROP_QUOTES", "discovery_status": "NO_SUPPORTED_PROP_MARKETS_POSTED"}]
+    (ops / "quotes" / "refresh_requests.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    last = QR.last_requests(ops)
+    assert set(last) == {"K"}
+    now = pd.Timestamp("2026-11-17T22:40:00Z")
+    cut = pd.Timestamp("2026-11-18T01:00:00Z")
+    assert QR.due(cut, now, last.get("G"), discovered=False)[0] is True
+    assert QR.due(cut, now, last.get("K"), discovered=False)[0] is False
 
 
 def test_zero_prop_game_is_requested_only_at_discovery_windows(tmp_path, monkeypatch):

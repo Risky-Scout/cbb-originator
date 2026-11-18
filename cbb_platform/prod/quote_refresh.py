@@ -155,7 +155,8 @@ def requests_path(ops_root: Path) -> Path:
 
 
 def last_requests(ops_root: Path) -> dict:
-    """game_id -> latest request instant (this module's attempts + the official tick's quote snapshots)."""
+    """game_id -> latest request instant that obtained evidence (this module's requests + the official tick's quote
+    snapshots). FAILED / BUDGET_EXHAUSTED attempts are excluded so a refused attempt is retried at the next wake."""
     out: dict = {}
 
     def put(g, t):
@@ -164,6 +165,8 @@ def last_requests(ops_root: Path) -> dict:
             if g not in out or t > out[g]:
                 out[g] = t
     for r in OS.read_jsonl(requests_path(ops_root)):
+        if r.get("status") in ("FAILED", "BUDGET_EXHAUSTED"):
+            continue                    # no evidence obtained: never consumes a discovery window or a refresh slot
         put(r.get("game_id"), r.get("received_at") or r.get("requested_at"))
     for r in OS.read_jsonl(Path(ops_root) / "registry" / "quote_snapshots.jsonl"):
         if r.get("received_at"):
