@@ -129,3 +129,23 @@ def test_closing_uses_the_last_pregame_quote_inside_the_window():
                                    ("2026-11-19 19:31", 1.50))])
     c = GQ.closing(q, {"G1": "2026-11-19T19:30:00+00:00"})
     assert len(c) == 1 and c["decimal"].iloc[0] == 1.87          # last strictly-pregame, in-window; post-tip ignored
+
+
+def test_game_performance_splits_conference_games(monkeypatch, tmp_path):
+    """2026-11-20 finding: the Conference Game sheet bucketed every evaluation as 'None' (flag never attached)."""
+    from cbb_platform.prod import exports as EX, game_quotes as GQ
+    (tmp_path / "evaluations" / "2026-11-19").mkdir(parents=True)
+    (tmp_path / "evaluations" / "2026-11-19" / GX.EVAL_FILE).write_text("")
+    ev = [{"game_id": g, "scheduled_tip_utc": "2026-11-19T23:00:00+00:00"} for g in ("G1", "G2", "G3")]
+    monkeypatch.setattr(GX, "evaluations", lambda root, d: ev)
+    monkeypatch.setattr(GQ, "load", lambda root, d: pd.DataFrame())
+    monkeypatch.setattr(GQ, "closing", lambda q, tips: pd.DataFrame())
+    monkeypatch.setattr(GX, "game_pmfs", lambda root, d: pd.DataFrame())
+    monkeypatch.setattr(GX, "graded", lambda root, d, fin, cl, names: [
+        {"GAME_ID": e["game_id"], "RESULT": "WIN", "MARKET_TYPE": "SPREAD", "SIDE": "HOME", "_slate": d} for e in ev])
+    seen = {}
+    monkeypatch.setattr(GX, "performance_tables", lambda rows: seen.setdefault("rows", rows) and {})
+    monkeypatch.setattr(EX, "write_xlsx", lambda *a, **k: None)
+    monkeypatch.setattr(GX, "PERF_SHEETS", ())
+    GX.game_performance("2026-11-20", tmp_path, tmp_path, lambda ids: {}, {}, conf_of=lambda ids: {"G1": True, "G2": False})
+    assert [r["_conf"] for r in seen["rows"]] == ["CONFERENCE", "NON_CONFERENCE", "UNKNOWN"]

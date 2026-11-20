@@ -364,7 +364,7 @@ def performance_tables(rows: list[dict]) -> dict:
     return t
 
 
-def game_performance(date: str, ops_root: Path, out_dir: Path, finals_of, names: dict) -> dict:
+def game_performance(date: str, ops_root: Path, out_dir: Path, finals_of, names: dict, conf_of=None) -> dict:
     """Cumulative game-market Performance through `date` from every frozen game evaluation (ops/evaluations/*)."""
     from cbb_platform.prod import exports as EX
     days = sorted(p.parent.name for p in (Path(ops_root) / "evaluations").glob(f"*/{EVAL_FILE}") if p.parent.name <= date)
@@ -376,8 +376,11 @@ def game_performance(date: str, ops_root: Path, out_dir: Path, finals_of, names:
         rs = graded(ops_root, d, finals_of(sorted(tips)), GQ.closing(q, tips), names)
         pm = game_pmfs(ops_root, d)
         mm = dict(zip(pm.get("game_id", []), zip(pm.get("model_margin", []), pm.get("model_total", []))))
+        cf = conf_of(sorted(tips)) if conf_of else {}
         for r in rs:
             r["_margin"], r["_total"] = mm.get(r["GAME_ID"], (None, None))
+            c = cf.get(r["GAME_ID"])
+            r["_conf"] = "UNKNOWN" if c is None else ("CONFERENCE" if c else "NON_CONFERENCE")
         rows += rs
     t = performance_tables(rows)
     path = Path(out_dir) / perf_name(date)

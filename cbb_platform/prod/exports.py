@@ -1124,7 +1124,8 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         from cbb_platform.prod import game_exports as GX
         try:
             rep["game_performance"] = GX.game_performance(date, ops_root, out_dir,
-                                                          lambda ids: _finals(state_root, ids), names)
+                                                          lambda ids: _finals(state_root, ids), names,
+                                                          conf_of=lambda ids: _conference_flags(state_root, ids))
         except Exception as e:                                             # noqa: BLE001 - never breaks player exports
             rep["game_performance"] = {"status": "FAILED", "missing": f"{type(e).__name__}: {str(e)[:300]}"}
     return rep
@@ -1150,6 +1151,22 @@ def _finals(state_root: Path | None, ids) -> dict:
     finally:
         con.close()
     return {g: (int(h), int(a)) for g, h, a in zip(df["canonical_game_id"], df["home_points"], df["away_points"])}
+
+
+def _conference_flags(state_root: Path | None, ids) -> dict:
+    """{game_id: True | False} from flagship.games.conference_game (None-valued games are left out)."""
+    from cbb_platform.prod import state as ST
+    st = ST.current(state_root) if state_root else None
+    if st is None or not ids:
+        return {}
+    import duckdb
+    con = duckdb.connect(str(st["increment_db"]), read_only=True)
+    try:
+        df = con.execute("select canonical_game_id, conference_game from flagship.games where "
+                         "canonical_game_id in (select unnest(?)) and conference_game is not null", [list(ids)]).df()
+    finally:
+        con.close()
+    return {g: bool(c) for g, c in zip(df["canonical_game_id"], df["conference_game"])}
 
 
 def game_lines(date: str, ops_root: Path, state_root, names: dict, at) -> dict | None:
