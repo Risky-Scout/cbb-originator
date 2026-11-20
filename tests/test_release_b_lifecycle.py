@@ -88,3 +88,44 @@ def test_lineage_validation_detects_a_mismatched_player_snapshot(tmp_path):
                                                   "snapshot_id": "F1"}))
     bad = GX.lineage(tmp_path, day)
     assert bad["status"] == "FAIL" and bad["mismatches"][0]["field"] == "player_model_version"
+
+
+def _sched(tip, cutoff):
+    return pd.DataFrame([{"canonical_game_id": "G1", "game_date_et": "2026-11-19", "game_universe": "DI_VS_DI",
+                          "not_played": False, "home_points": np.nan, "scheduled_tip_utc": tip, "cutoff": cutoff}])
+
+
+def test_game_quote_slate_keeps_a_game_from_its_cutoff_until_tip(monkeypatch):
+    """2026-11-19 production finding: capture used the player slate (cutoff > now), so no game had a quote inside the
+    30-min close window (CLV = NO_CLOSE_QUOTE x 103) and the 10-min near-tip cadence never engaged."""
+    tip, cut = pd.Timestamp("2026-11-19 19:30", tz="UTC"), pd.Timestamp("2026-11-19 18:30", tz="UTC")
+    monkeypatch.setattr(L.SH, "schedule", lambda st: _sched(tip, cut))
+    now = pd.Timestamp("2026-11-19 19:10", tz="UTC")                                  # after cutoff, before tip
+    assert len(L.slate({}, date(2026, 11, 19), now)) == 0                             # player slate: closed
+    assert list(L.quote_slate({}, date(2026, 11, 19), now)["canonical_game_id"]) == ["G1"]
+    assert len(L.quote_slate({}, date(2026, 11, 19), tip)) == 0                       # never at / after tip
+
+
+def test_game_quotes_near_tip_cadence_engages_after_the_cutoff(monkeypatch, tmp_path):
+    tip, cut = pd.Timestamp("2026-11-19 19:30", tz="UTC"), pd.Timestamp("2026-11-19 18:30", tz="UTC")
+    monkeypatch.setattr(L.SH, "schedule", lambda st: _sched(tip, cut))
+    monkeypatch.setattr(L.ST, "current", lambda root: {"increment_db": "x"})
+    root = tmp_path / "ops" / "game_quotes" / "2026-11-19"
+    root.mkdir(parents=True)
+    (root / "GQ20261119T185000Z-a.json").write_text(json.dumps({"status": "COMPLETE", "at": "2026-11-19T18:50:00+00:00",
+                                                               "event_calls": 1}))
+
+    class Life:
+        ops_root, state_root = tmp_path / "ops", tmp_path / "state"
+    due, extras = L.game_quotes_due(Life, date(2026, 11, 19), pd.Timestamp("2026-11-19 19:00", tz="UTC"))
+    assert due and extras                                       # 10 min since the last capture, 30 min before tip
+
+
+def test_closing_uses_the_last_pregame_quote_inside_the_window():
+    from cbb_platform.prod import game_quotes as GQ
+    q = pd.DataFrame([{"game_id": "G1", "book": "b", "market_type": "SPREAD", "side": "HOME", "point": -2.5,
+                       "decimal": d, "collector_received_at": pd.Timestamp(t, tz="UTC")}
+                      for t, d in (("2026-11-19 18:20", 1.90), ("2026-11-19 19:10", 1.95), ("2026-11-19 19:20", 1.87),
+                                   ("2026-11-19 19:31", 1.50))])
+    c = GQ.closing(q, {"G1": "2026-11-19T19:30:00+00:00"})
+    assert len(c) == 1 and c["decimal"].iloc[0] == 1.87          # last strictly-pregame, in-window; post-tip ignored

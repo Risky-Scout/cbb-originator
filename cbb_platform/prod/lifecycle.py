@@ -178,6 +178,17 @@ def slate(st: dict, day: date, now: pd.Timestamp) -> pd.DataFrame:
     return g.sort_values(["cutoff", "canonical_game_id"]).reset_index(drop=True)
 
 
+def quote_slate(st: dict, day: date, now: pd.Timestamp) -> pd.DataFrame:
+    """Game-line capture slate (Release B): the slate() games, kept until their TIP rather than their prediction cutoff.
+    Captures between cutoff and tip are live, pregame close evidence only (CLV); the frozen evaluation still prices
+    strictly at the quote state as of the cutoff (game_exports.freeze -> game_quotes.as_of)."""
+    sch = SH.schedule(st)
+    d = pd.to_datetime(sch["game_date_et"]).dt.date
+    g = sch[(d == day) & (sch["game_universe"] == "DI_VS_DI") & ~sch["not_played"] & sch["home_points"].isna()
+            & (sch["scheduled_tip_utc"] > now)]
+    return g.sort_values(["scheduled_tip_utc", "canonical_game_id"]).reset_index(drop=True)
+
+
 def snapshots(life: Life, day: date | None = None) -> list[dict]:
     rows = OS.read_jsonl(life.forecasts("index.jsonl"))
     return [r for r in rows if day is None or r.get("slate_date") == day.isoformat()]
@@ -1133,7 +1144,7 @@ def game_quotes_due(life: Life, day: date, now: pd.Timestamp) -> tuple[bool, boo
     last = [json.loads(p.read_text()) for p in recs[-6:]]
     last_ok = [r for r in last if r.get("status") == "COMPLETE"]
     st = ST.current(life.state_root)
-    sl = slate(st, day, now) if st else pd.DataFrame()
+    sl = quote_slate(st, day, now) if st else pd.DataFrame()
     if not len(sl):
         return False, False
     near = bool(((sl["scheduled_tip_utc"] - now) <= pd.Timedelta(minutes=GAME_QUOTES_NEAR_WINDOW_MIN)).any())
@@ -1157,7 +1168,7 @@ def game_quotes_capture(life: Life, day: date) -> dict | None:
         if not due:
             return {"status": "NOT_DUE", "at": now.isoformat()}
         st = ST.current(life.state_root)
-        sl = slate(st, day, now).rename(columns={"scheduled_tip_utc": "start_time"})
+        sl = quote_slate(st, day, now).rename(columns={"scheduled_tip_utc": "start_time"})
         from cbb_platform.game import forecast as GFc
         sl["neutral_site"] = sl["canonical_game_id"].map(GFc.neutral_of(st["increment_db"], sl["canonical_game_id"]))
         sl["neutral_site"] = sl["neutral_site"].astype("boolean").fillna(False).astype(bool)
