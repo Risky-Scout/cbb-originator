@@ -83,13 +83,15 @@ jobs:
         run: python -m pytest -q -rs tests/test_prod_morning_state_semantics.py tests/test_prod_morning_recovery_semantics.py
       - name: Availability refresh Phase A / Phase B split (acquisition outside the writer lock, bounded Phase B watchdog, real-process lock contention / process death, old-vs-split prediction equivalence; fixtures, no network)
         run: python -m pytest -q -rs tests/test_availability_refresh_split.py
-      - name: Full regression suite (every tests/ file, one process; store-backed tests SKIP visibly; -rs lists skips)
+      - name: Full regression suite (every tests/ file except the research / lockbox files that need the gitignored local stores)
         env:
           OMP_NUM_THREADS: "1"
           OPENBLAS_NUM_THREADS: "1"
           MKL_NUM_THREADS: "1"
           NUMEXPR_NUM_THREADS: "1"
-        run: python -m pytest -q -rs -p no:cacheprovider tests
+        # The ignored files read modeling/store/*.duckdb, the v2_oos forecast stores, the research DuckDB or the Starter
+        # Pack (gitignored, absent on hosted runners; run 44955719591: 51 failed + 260 setup errors, all in these files).
+        run: python -m pytest -q -rfEs -p no:cacheprovider tests --ignore=tests/test_canonical_qa.py --ignore=tests/test_cbbd_box_route.py --ignore=tests/test_eligibility_manifests.py --ignore=tests/test_guard_v2_review.py --ignore=tests/test_lockbox_readiness.py --ignore=tests/test_lockbox_runner.py --ignore=tests/test_lockbox_trusted_window.py --ignore=tests/test_market_isolation.py --ignore=tests/test_participation.py --ignore=tests/test_pre_model_closure.py --ignore=tests/test_production_baseline.py --ignore=tests/test_props_v0_participation.py --ignore=tests/test_props_v0.py --ignore=tests/test_props_v1_final_prelockbox.py --ignore=tests/test_props_v1_refit.py --ignore=tests/test_relocation.py --ignore=tests/test_reproducibility.py --ignore=tests/test_stage1_closure.py --ignore=tests/test_stage1_final.py --ignore=tests/test_stage2_1.py --ignore=tests/test_stage2_2.py --ignore=tests/test_stage2.py --ignore=tests/test_stage3_1.py --ignore=tests/test_stage3.py --ignore=tests/test_v2_jm1_final.py --ignore=tests/test_v2_joint_minutes_v2.py --ignore=tests/test_v2_phase1.py --ignore=tests/test_v2_phase2.py --ignore=tests/test_v2_phase3.py
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke
