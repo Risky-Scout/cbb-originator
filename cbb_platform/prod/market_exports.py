@@ -368,8 +368,15 @@ class Observations:
         if f not in self._maps:
             q = pd.read_parquet(self.dir / f)
             m: dict = {}
-            for o in ME.eligible(q):
-                m[(o["canonical_player_id"], str(o["stat"]), o["_book"], o["_line"], o["side"])] = o["_d"]
+            # ME.eligible dedups ONE player x stat per (book, line, side): applied to the whole observation it kept one
+            # player per (book, line, side) and dropped every other player's contract (2026-11-21: all 353 player
+            # NO_CLOSE_QUOTE rows 11-17..11-20 were this collision; same rule as the Board's per-player grouping).
+            if len(q):
+                q = q.assign(stat=q["stat"].astype(object))
+                ok = q["canonical_player_id"].map(lambda v: isinstance(v, str)) & q["stat"].map(lambda v: isinstance(v, str))
+                for _, g in q[ok].groupby(["canonical_player_id", "stat"], sort=True):
+                    for o in ME.eligible(g):
+                        m[(o["canonical_player_id"], str(o["stat"]), o["_book"], o["_line"], o["side"])] = o["_d"]
             self._maps[f] = m
         return self._maps[f]
 

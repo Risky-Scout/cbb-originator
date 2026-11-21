@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import uuid
 from pathlib import Path
 
@@ -174,7 +175,19 @@ def parse(body_events: list, games: dict, tidx: dict, received_at, capture_id: s
 
 
 # ============================================================================ capture
-def capture(session: GameSession, now, slate: pd.DataFrame, tidx: dict, out_root: Path, extras: bool = True) -> dict:
+def _atomic_write(path: Path, write) -> None:
+    """write(tmp) then rename: a concurrent reader (GQ*.parquet / GQ*.json globs) never sees a partial capture."""
+    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex[:8]}.tmp")
+    try:
+        write(tmp)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+def capture(session: GameSession, now, slate: pd.DataFrame, tidx: dict, out_root: Path, extras: bool = True,
+            mode: str = "QUOTE_WAKE") -> dict:
     """One capture: free events listing, one bulk /odds call (core markets, every listed game), then the event call
     for team totals + alternates of every matched game still pregame. `slate` needs canonical_game_id, home_team_id,
     away_team_id, start_time (tip), neutral_site."""
@@ -184,7 +197,7 @@ def capture(session: GameSession, now, slate: pd.DataFrame, tidx: dict, out_root
     day = now.tz_convert("America/New_York").date().isoformat()
     out = Path(out_root) / day
     out.mkdir(parents=True, exist_ok=True)
-    rec = {"version": VERSION, "capture_id": cid, "at": now.isoformat(), "status": "STARTED"}
+    rec = {"version": VERSION, "capture_id": cid, "at": now.isoformat(), "status": "STARTED", "mode": mode}
     lo, hi = now, now + pd.Timedelta(hours=PC.ODDS_PROP_WINDOW_HOURS)
     try:
         # live (0 credits) every capture: it also reports the account quota every paid call is checked against
@@ -226,14 +239,14 @@ def capture(session: GameSession, now, slate: pd.DataFrame, tidx: dict, out_root
                 n_ev += 1
         q = pd.concat([f for f in frames if len(f)], ignore_index=True) if any(len(f) for f in frames) else \
             pd.DataFrame(columns=COLS)
-        q.to_parquet(out / f"{cid}.parquet", index=False)
+        _atomic_write(out / f"{cid}.parquet", lambda t: q.to_parquet(t, index=False))
         rec.update(status="COMPLETE", events_listed=int(len(ev)), events_matched=int(len(gmap)),
                    unmatched=mm[mm["canonical_game_id"].isna()]["match_reason"].value_counts().to_dict(),
                    event_calls=n_ev, rows=int(len(q)), games_with_quotes=int(q["game_id"].nunique()) if len(q) else 0,
                    by_market=q["market_type"].value_counts().to_dict() if len(q) else {}, session=session.summary())
     except (OA.OddsGuardViolation, OA.OddsBudgetExceeded, OA.OddsProviderFailure) as e:
         rec.update(status="FAILED", error=f"{type(e).__name__}: {str(e)[:300]}", session=session.summary())
-    (out / f"{cid}.json").write_text(json.dumps(rec, indent=1, default=str))
+    _atomic_write(out / f"{cid}.json", lambda t: t.write_text(json.dumps(rec, indent=1, default=str)))
     return rec
 
 

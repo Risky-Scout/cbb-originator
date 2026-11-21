@@ -1138,7 +1138,12 @@ GAME_QUOTES_NEAR_WINDOW_MIN = 60
 def game_quotes_due(life: Life, day: date, now: pd.Timestamp) -> tuple[bool, bool]:
     """(due, extras): bulk capture every 30 min, every 10 min inside 60 min of a pending tip; team totals +
     alternates (per-event calls) at most hourly and on every near-tip capture."""
-    from cbb_platform.prod import game_quotes as GQ
+    p = game_quotes_plan(life, day, now)
+    return p["due"], p["extras"]
+
+
+def game_quotes_plan(life: Life, day: date, now: pd.Timestamp) -> dict:
+    """{due, extras, near}: near = a pending slate tip within GAME_QUOTES_NEAR_WINDOW_MIN (close evidence needed)."""
     root = Path(life.ops_root) / "game_quotes" / day.isoformat()
     recs = sorted(root.glob("GQ*.json")) if root.exists() else []
     last = [json.loads(p.read_text()) for p in recs[-6:]]
@@ -1146,27 +1151,85 @@ def game_quotes_due(life: Life, day: date, now: pd.Timestamp) -> tuple[bool, boo
     st = ST.current(life.state_root)
     sl = quote_slate(st, day, now) if st else pd.DataFrame()
     if not len(sl):
-        return False, False
+        return {"due": False, "extras": False, "near": False}
     near = bool(((sl["scheduled_tip_utc"] - now) <= pd.Timedelta(minutes=GAME_QUOTES_NEAR_WINDOW_MIN)).any())
     gap = pd.Timedelta(minutes=GAME_QUOTES_NEAR_MIN if near else GAME_QUOTES_FAR_MIN)
     t_last = pd.Timestamp(last_ok[-1]["at"]) if last_ok else None
     due = t_last is None or now - t_last >= gap - pd.Timedelta(seconds=30)
     ex_last = [pd.Timestamp(r["at"]) for r in last_ok if r.get("event_calls")]
     extras = near or not ex_last or now - ex_last[-1] >= pd.Timedelta(minutes=60)
-    return due, extras
+    return {"due": due, "extras": extras, "near": near}
 
 
-def game_quotes_capture(life: Life, day: date) -> dict | None:
-    """Release B (SHADOW) game-line capture inside the quote wake (same writer lock). Never raises."""
+# The game-line capture writes ONLY its own append-only namespace (ops/game_quotes/<D>/<capture_id>.{parquet,json},
+# atomically renamed; unique capture ids), the append-only odds request ledger (one line per write) and the raw cache
+# (exclusive-create unique files). It never writes health, state, evaluations or exports. Its own narrow lock
+# serialises captures (the normal quote wake under the writer lock and the close-only path below), so a capture can run
+# while ANOTHER long CBB writer (availability Phase B, the morning chain, exports) holds the global writer lock.
+GAME_QUOTES_LOCK = "cbb-originator.game-quotes.lock"
+GAME_QUOTES_LOCK_WAIT_SEC = 120
+
+
+def game_quotes_lock_path(life: Life) -> Path:
+    d = os.environ.get("CBB_LOCK_DIR")
+    return (Path(d) if d else Path(life.prod_root).parent / "locks") / GAME_QUOTES_LOCK
+
+
+def _acquire(path: Path, wait_sec: float):
+    """An open, exclusively flock'ed file handle, or None after wait_sec."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(path, "a")
+    deadline = time.monotonic() + max(0.0, wait_sec)
+    while True:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fh
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                fh.close()
+                return None
+            time.sleep(0.5)
+
+
+def game_close_capture(life: Life, wait_sec: float = GAME_QUOTES_LOCK_WAIT_SEC) -> dict:
+    """Close-window game-line capture for a quote wake that found the CBB writer lock BUSY (cbb-originator-run tick).
+    Captures only when the normal cadence says DUE and a pending tip is inside GAME_QUOTES_NEAR_WINDOW_MIN, so it
+    never adds provider calls beyond the schedule: the wake's normal capture (after the writer lock) then finds it
+    NOT_DUE. Under the narrow game-quotes lock only; never the writer lock. Never raises."""
+    out = game_quotes_capture(life, et_date(life.now()), close_only=True, lock_wait_sec=wait_sec)
+    return {"lifecycle": "GAME_CLOSE_CAPTURE", "game_quotes": out}
+
+
+def game_quotes_capture(life: Life, day: date, close_only: bool = False,
+                        lock_wait_sec: float = GAME_QUOTES_LOCK_WAIT_SEC) -> dict | None:
+    """Release B (SHADOW) game-line capture: inside the quote wake (writer lock held) or, close_only, while another
+    writer holds it (game_close_capture). Always under the narrow game-quotes lock. Never raises."""
     from cbb_platform.game import forecast as GF
     if GF.mode() != "SHADOW":
         return None
+    now = life.now()
+    try:
+        lk = _acquire(game_quotes_lock_path(life), lock_wait_sec)
+    except OSError as e:
+        return {"status": "FAILED", "at": now.isoformat(), "error": f"GAME_QUOTES_LOCK: {type(e).__name__}: {e}"[:300]}
+    if lk is None:
+        return {"status": "SKIPPED_GAME_QUOTES_LOCK_BUSY", "at": now.isoformat(), "close_only": close_only}
+    try:
+        return _game_quotes_capture_locked(life, day, close_only)
+    finally:
+        lk.close()
+
+
+def _game_quotes_capture_locked(life: Life, day: date, close_only: bool) -> dict:
     from cbb_platform.prod import game_quotes as GQ, matching as MT, odds_feed as OF
     now = life.now()
     try:
-        due, extras = game_quotes_due(life, day, now)
+        plan = game_quotes_plan(life, day, now)
+        due, extras = plan["due"], plan["extras"]
+        if close_only and not plan["near"]:
+            return {"status": "NOT_CLOSE_WINDOW", "at": now.isoformat(), "close_only": True}
         if not due:
-            return {"status": "NOT_DUE", "at": now.isoformat()}
+            return {"status": "NOT_DUE", "at": now.isoformat(), **({"close_only": True} if close_only else {})}
         st = ST.current(life.state_root)
         sl = quote_slate(st, day, now).rename(columns={"scheduled_tip_utc": "start_time"})
         from cbb_platform.game import forecast as GFc
@@ -1178,9 +1241,10 @@ def game_quotes_capture(life: Life, day: date) -> dict | None:
         sess = GQ.GameSession("game_quotes", cache_root=Path(life.prod_root) / "cache" / "raw",
                               ledger_path=Path(life.prod_root) / "cache" / "odds_production_requests.jsonl",
                               clock=lambda: life.now().to_pydatetime())
-        rec = GQ.capture(sess, now, sl, tidx, Path(life.ops_root) / "game_quotes", extras=extras)
+        rec = GQ.capture(sess, now, sl, tidx, Path(life.ops_root) / "game_quotes", extras=extras,
+                         mode="CLOSE_ONLY_WRITER_BUSY" if close_only else "QUOTE_WAKE")
         return {k: rec.get(k) for k in ("capture_id", "at", "status", "error", "events_matched", "event_calls", "rows",
-                                        "games_with_quotes", "by_market", "unmatched")} | {
+                                        "games_with_quotes", "by_market", "unmatched", "mode")} | {
             "credits": (rec.get("session") or {}).get("credits_charged")}
     except Exception as e:                                   # noqa: BLE001 - shadow layer never breaks the wake
         return {"status": "FAILED", "at": now.isoformat(), "error": f"{type(e).__name__}: {str(e)[:300]}"}
@@ -1298,6 +1362,7 @@ def main(argv=None) -> None:
     sub.add_parser("exports")
     qp = sub.add_parser("quotes")
     qp.add_argument("--dry-run", action="store_true")
+    sub.add_parser("game-close-capture")                   # quote wake with the writer lock busy: close evidence only
     fw = sub.add_parser("features-warmup")
     fw.add_argument("--budget-min", type=float, default=None)
     aa = sub.add_parser("availability-acquire")             # Phase A (never the CBB writer lock)
@@ -1339,6 +1404,8 @@ def main(argv=None) -> None:
         out = exports_now(life)
     elif a.cmd == "quotes":
         out = quotes(life, dry_run=a.dry_run)
+    elif a.cmd == "game-close-capture":
+        out = game_close_capture(life)
     elif a.cmd == "features-warmup":
         out = features_warmup(life, a.budget_min)
     elif a.cmd == "availability-acquire":

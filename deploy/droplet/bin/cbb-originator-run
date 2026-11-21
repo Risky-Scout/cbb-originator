@@ -200,6 +200,13 @@ if [ "$CMD" = "lifecycle-refresh" ]; then
   exec "${RUN[@]}"                       # no wrapper writer lock: the orchestrator takes it for Phase B only
 fi
 exec 9>>"$WRITER_LOCK"
+if [ "$CMD" = "tick" ] && ! flock -n 9; then
+  # Another CBB writer (availability Phase B, the morning chain, exports) holds the writer lock. Game-line CLOSE evidence
+  # cannot wait for it: capture now under the narrow game-quotes lock only (own append-only namespace; only when the
+  # normal cadence is due AND a tip is <= 60 min away, so no extra provider calls). Then wait for the writer as before.
+  set +e; "$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" game-close-capture >/dev/null; CRC=$?; set -e
+  log "CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=$CRC)"
+fi
 flock -w "$WRITER_WAIT_SEC" 9 || { log "CBB writer lock busy > ${WRITER_WAIT_SEC} s; $CMD skipped"; exit 75; }
 
 if [ "$CMD" = "tick" ]; then

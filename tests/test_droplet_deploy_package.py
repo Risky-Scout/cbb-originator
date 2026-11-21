@@ -455,3 +455,29 @@ def test_forecast_and_walkforward_stages_pin_the_measured_allocator_thresholds_o
     for n in ("cbb-originator-morning-forecast.service", "cbb-originator-walkforward.service"):
         s = (D / "systemd" / n).read_text()
         assert _mem(s, "MemoryHigh") == 2800 and _mem(s, "MemoryMax") == 3200 and "MemorySwapMax=0" in s
+
+
+@needs_flock
+def test_tick_with_writer_lock_busy_captures_close_evidence_before_waiting(app):
+    """2026-11-21: availability Phase B held the writer lock 470-580 s at 10/13/16/18 ET (one wait 580.7 s of the 600 s
+    limit) and the morning chain caused 7 skipped wakes. The wake must not lose close-window game lines to another
+    writer: it runs `lifecycle game-close-capture` (narrow game-quotes lock only) BEFORE waiting for the writer lock."""
+    log = _fake_venv(app, "false")
+    lockd = app["state"] / "locks"
+    lockd.mkdir(parents=True)
+    holder = subprocess.Popen(["flock", str(lockd / "cbb-originator.writer.lock"), "sleep", "20"])
+    try:
+        import time
+        time.sleep(0.5)
+        r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_WRITER_LOCK_WAIT_SEC="1")
+        assert r.returncode == 75 and "writer lock busy > 1 s; tick skipped" in r.stderr
+        calls = log.read_text().splitlines()
+        assert len(calls) == 1 and calls[0].endswith(" game-close-capture")       # nothing else ran without the lock
+        assert "close-window game-line capture under the game-quotes lock" in r.stderr
+    finally:
+        holder.kill()
+        holder.wait()
+    log.unlink()
+    r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")                    # lock free: no close-only path
+    assert r.returncode == 0, r.stderr
+    assert not [c for c in log.read_text().splitlines() if "game-close-capture" in c]
