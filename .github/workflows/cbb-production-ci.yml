@@ -83,6 +83,13 @@ jobs:
         run: python -m pytest -q -rs tests/test_prod_morning_state_semantics.py tests/test_prod_morning_recovery_semantics.py
       - name: Availability refresh Phase A / Phase B split (acquisition outside the writer lock, bounded Phase B watchdog, real-process lock contention / process death, old-vs-split prediction equivalence; fixtures, no network)
         run: python -m pytest -q -rs tests/test_availability_refresh_split.py
+      - name: Full regression suite (every tests/ file, one process; store-backed tests SKIP visibly; -rs lists skips)
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+          NUMEXPR_NUM_THREADS: "1"
+        run: python -m pytest -q -rs -p no:cacheprovider tests
       - name: Fixture smoke (synthetic history; FIXTURE data, not live) + bundle verification + rollback dry run
         run: |
           python -m cbb_platform.prod.smoke --synthetic-history --work data/prod/ci_smoke
