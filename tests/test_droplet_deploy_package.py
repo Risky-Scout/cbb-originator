@@ -465,7 +465,8 @@ def test_tick_with_writer_lock_busy_captures_close_evidence_before_waiting(app):
     log = _fake_venv(app, "false")
     lockd = app["state"] / "locks"
     lockd.mkdir(parents=True)
-    holder = subprocess.Popen(["flock", str(lockd / "cbb-originator.writer.lock"), "sleep", "20"])
+    holder = subprocess.Popen(["flock", str(lockd / "cbb-originator.writer.lock"), "sleep", "20"],
+                              start_new_session=True)
     try:
         import time
         time.sleep(0.5)
@@ -475,7 +476,9 @@ def test_tick_with_writer_lock_busy_captures_close_evidence_before_waiting(app):
         assert len(calls) == 1 and calls[0].endswith(" game-close-capture")       # nothing else ran without the lock
         assert "close-window game-line capture under the game-quotes lock" in r.stderr
     finally:
-        holder.kill()
+        import os
+        import signal
+        os.killpg(holder.pid, signal.SIGKILL)       # flock AND its `sleep` child (the child holds the lock fd on Linux)
         holder.wait()
     log.unlink()
     r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")                    # lock free: no close-only path
