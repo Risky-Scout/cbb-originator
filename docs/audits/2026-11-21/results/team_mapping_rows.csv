@@ -1,0 +1,280 @@
+slate,game_id,market_type,side,point,book,key,raw_found,dt_s,price_match,provider_home,provider_away,raw_team,eval_team_id,sim_eval,sim_other,ok,event_home_sim,event_away_sim,event_swapped_sim
+2026-11-19,G-eb24bc50f6eb3340,AWAY_TEAM_TOTAL,UNDER,79.5,betmgm,team_totals,True,0.0,True,West Virginia Mountaineers,Florida Gators,Florida Gators,T-60e6a1c895d19846,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-eb24bc50f6eb3340,GAME_TOTAL,UNDER,150.0,betonlineag,totals,True,0.0,True,West Virginia Mountaineers,Florida Gators,,,,,True,1.0,1.0,0.0
+2026-11-19,G-eb24bc50f6eb3340,HOME_TEAM_TOTAL,UNDER,69.5,williamhill_us,team_totals,True,0.0,True,West Virginia Mountaineers,Florida Gators,West Virginia Mountaineers,T-833d97a038fdc0f1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-eb24bc50f6eb3340,MONEYLINE,HOME,,bovada,h2h,True,0.0,True,West Virginia Mountaineers,Florida Gators,West Virginia Mountaineers,T-833d97a038fdc0f1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-eb24bc50f6eb3340,SPREAD,HOME,9.5,betmgm,spreads,True,0.0,True,West Virginia Mountaineers,Florida Gators,West Virginia Mountaineers,T-833d97a038fdc0f1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-5b8b096d2d11ab26,AWAY_TEAM_TOTAL,OVER,73.5,williamhill_us,team_totals,True,0.0,True,Notre Dame Fighting Irish,Auburn Tigers,Notre Dame Fighting Irish,T-b0d3c7773460d2db,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-5b8b096d2d11ab26,GAME_TOTAL,OVER,151.5,espnbet,totals,True,0.0,True,Notre Dame Fighting Irish,Auburn Tigers,,,,,True,0.0,0.0,1.0
+2026-11-19,G-5b8b096d2d11ab26,HOME_TEAM_TOTAL,OVER,80.5,betrivers,team_totals,True,0.0,True,Notre Dame Fighting Irish,Auburn Tigers,Auburn Tigers,T-db042ba6b98e75c3,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-5b8b096d2d11ab26,MONEYLINE,HOME,,betonlineag,h2h,True,0.0,True,Notre Dame Fighting Irish,Auburn Tigers,Auburn Tigers,T-db042ba6b98e75c3,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-5b8b096d2d11ab26,SPREAD,HOME,-2.5,betrivers,spreads,True,0.0,True,Notre Dame Fighting Irish,Auburn Tigers,Auburn Tigers,T-db042ba6b98e75c3,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-91867d76e6d06e4b,GAME_TOTAL,OVER,155.0,williamhill_us,totals,True,0.0,True,Ohio State Buckeyes,UMBC Retrievers,,,,,True,1.0,1.0,0.0
+2026-11-19,G-91867d76e6d06e4b,SPREAD,AWAY,31.5,bovada,spreads,True,0.0,True,Ohio State Buckeyes,UMBC Retrievers,UMBC Retrievers,T-4b494301d8f704cc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-91867d76e6d06e4b,AWAY_TEAM_TOTAL,OVER,63.5,williamhill_us,team_totals,True,0.0,True,Ohio State Buckeyes,UMBC Retrievers,UMBC Retrievers,T-4b494301d8f704cc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-91867d76e6d06e4b,HOME_TEAM_TOTAL,UNDER,94.5,draftkings,team_totals,True,0.0,True,Ohio State Buckeyes,UMBC Retrievers,Ohio State Buckeyes,T-af722ef5fa265094,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-91867d76e6d06e4b,MONEYLINE,AWAY,,draftkings,h2h,True,0.0,True,Ohio State Buckeyes,UMBC Retrievers,UMBC Retrievers,T-4b494301d8f704cc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a0324240122e5db3,AWAY_TEAM_TOTAL,UNDER,67.5,williamhill_us,team_totals,True,0.0,True,St. Bonaventure Bonnies,Buffalo Bulls,Buffalo Bulls,T-4bc8d441d5ba3402,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a0324240122e5db3,GAME_TOTAL,OVER,146.5,betrivers,totals,True,0.0,True,St. Bonaventure Bonnies,Buffalo Bulls,,,,,True,1.0,1.0,0.0
+2026-11-19,G-a0324240122e5db3,HOME_TEAM_TOTAL,OVER,79.5,williamhill_us,team_totals,True,0.0,True,St. Bonaventure Bonnies,Buffalo Bulls,St. Bonaventure Bonnies,T-c2bce65ffed3e373,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a0324240122e5db3,MONEYLINE,HOME,,bovada,h2h,True,0.0,True,St. Bonaventure Bonnies,Buffalo Bulls,St. Bonaventure Bonnies,T-c2bce65ffed3e373,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a0324240122e5db3,SPREAD,HOME,-11.5,hardrockbet,spreads,True,0.0,True,St. Bonaventure Bonnies,Buffalo Bulls,St. Bonaventure Bonnies,T-c2bce65ffed3e373,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-5d216f5c5b4a6cf4,AWAY_TEAM_TOTAL,OVER,64.5,betrivers,team_totals,True,0.0,True,Quinnipiac Bobcats,Maine Black Bears,Maine Black Bears,T-abf097af219154c3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-5d216f5c5b4a6cf4,GAME_TOTAL,OVER,132.5,hardrockbet,totals,True,0.0,True,Quinnipiac Bobcats,Maine Black Bears,,,,,True,1.0,1.0,0.0
+2026-11-19,G-5d216f5c5b4a6cf4,HOME_TEAM_TOTAL,OVER,74.5,betrivers,team_totals,True,0.0,True,Quinnipiac Bobcats,Maine Black Bears,Quinnipiac Bobcats,T-84afe5cdbf089430,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-5d216f5c5b4a6cf4,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,Quinnipiac Bobcats,Maine Black Bears,Quinnipiac Bobcats,T-84afe5cdbf089430,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-5d216f5c5b4a6cf4,SPREAD,HOME,-8.5,espnbet,spreads,True,0.0,True,Quinnipiac Bobcats,Maine Black Bears,Quinnipiac Bobcats,T-84afe5cdbf089430,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-4e5bb12b38a4e254,AWAY_TEAM_TOTAL,OVER,73.5,williamhill_us,team_totals,True,0.0,True,Butler Bulldogs,Northeastern Huskies,Northeastern Huskies,T-0f17138f990d1895,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-4e5bb12b38a4e254,GAME_TOTAL,OVER,164.5,betonlineag,totals,True,0.0,True,Butler Bulldogs,Northeastern Huskies,,,,,True,1.0,1.0,0.0
+2026-11-19,G-4e5bb12b38a4e254,HOME_TEAM_TOTAL,OVER,93.5,betrivers,team_totals,True,0.0,True,Butler Bulldogs,Northeastern Huskies,Butler Bulldogs,T-27a18a37f86e7149,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-4e5bb12b38a4e254,MONEYLINE,HOME,,hardrockbet,h2h,True,0.0,True,Butler Bulldogs,Northeastern Huskies,Butler Bulldogs,T-27a18a37f86e7149,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-4e5bb12b38a4e254,SPREAD,HOME,-15.5,fanduel,spreads,True,0.0,True,Butler Bulldogs,Northeastern Huskies,Butler Bulldogs,T-27a18a37f86e7149,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-31eeb995fc19474a,AWAY_TEAM_TOTAL,UNDER,65.5,betrivers,team_totals,True,0.0,True,Toledo Rockets,Robert Morris Colonials,Robert Morris Colonials,T-970d0593dfe3844c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-31eeb995fc19474a,GAME_TOTAL,UNDER,145.0,bovada,totals,True,0.0,True,Toledo Rockets,Robert Morris Colonials,,,,,True,1.0,1.0,0.0
+2026-11-19,G-31eeb995fc19474a,HOME_TEAM_TOTAL,OVER,75.5,williamhill_us,team_totals,True,0.0,True,Toledo Rockets,Robert Morris Colonials,Toledo Rockets,T-848f6854dc9e3448,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-31eeb995fc19474a,MONEYLINE,HOME,,espnbet,h2h,True,0.0,True,Toledo Rockets,Robert Morris Colonials,Toledo Rockets,T-848f6854dc9e3448,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-31eeb995fc19474a,SPREAD,HOME,-6.5,draftkings,spreads,True,0.0,True,Toledo Rockets,Robert Morris Colonials,Toledo Rockets,T-848f6854dc9e3448,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a6fe70cdc3f2dc4a,AWAY_TEAM_TOTAL,UNDER,79.5,williamhill_us,team_totals,True,0.0,True,Drake Bulldogs,Charleston Cougars,Charleston Cougars,T-0961634b0b84e1ee,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a6fe70cdc3f2dc4a,GAME_TOTAL,UNDER,159.5,espnbet,totals,True,0.0,True,Drake Bulldogs,Charleston Cougars,,,,,True,1.0,1.0,0.0
+2026-11-19,G-a6fe70cdc3f2dc4a,HOME_TEAM_TOTAL,UNDER,76.5,betrivers,team_totals,True,0.0,True,Drake Bulldogs,Charleston Cougars,Drake Bulldogs,T-209788a704a188e1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a6fe70cdc3f2dc4a,MONEYLINE,AWAY,,betrivers,h2h,True,0.0,True,Drake Bulldogs,Charleston Cougars,Charleston Cougars,T-0961634b0b84e1ee,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-a6fe70cdc3f2dc4a,SPREAD,AWAY,1.5,bovada,spreads,True,0.0,True,Drake Bulldogs,Charleston Cougars,Charleston Cougars,T-0961634b0b84e1ee,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-9845dd6a63797ef0,AWAY_TEAM_TOTAL,UNDER,71.5,williamhill_us,team_totals,True,0.0,True,Louisiana Tech Bulldogs,Tulane Green Wave,Louisiana Tech Bulldogs,T-bd9d064f8bde1485,0.0,1.0,False,1.0,1.0,0.0
+2026-11-19,G-9845dd6a63797ef0,GAME_TOTAL,OVER,141.5,espnbet,totals,True,0.0,True,Louisiana Tech Bulldogs,Tulane Green Wave,,,,,True,1.0,1.0,0.0
+2026-11-19,G-9845dd6a63797ef0,HOME_TEAM_TOTAL,OVER,74.5,betrivers,team_totals,True,0.0,True,Louisiana Tech Bulldogs,Tulane Green Wave,Louisiana Tech Bulldogs,T-41f05703b101d401,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-9845dd6a63797ef0,MONEYLINE,HOME,,bovada,h2h,True,0.0,True,Louisiana Tech Bulldogs,Tulane Green Wave,Louisiana Tech Bulldogs,T-41f05703b101d401,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-9845dd6a63797ef0,SPREAD,HOME,0.5,fanduel,spreads,True,0.0,True,Louisiana Tech Bulldogs,Tulane Green Wave,Louisiana Tech Bulldogs,T-41f05703b101d401,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ec2e9cf0207d8402,AWAY_TEAM_TOTAL,OVER,60.5,draftkings,team_totals,True,0.0,True,Texas Longhorns,Southern Utah Thunderbirds,Southern Utah Thunderbirds,T-2df5ca2c186a42e6,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ec2e9cf0207d8402,GAME_TOTAL,OVER,154.5,espnbet,totals,True,0.0,True,Texas Longhorns,Southern Utah Thunderbirds,,,,,True,1.0,1.0,0.0
+2026-11-19,G-ec2e9cf0207d8402,HOME_TEAM_TOTAL,UNDER,98.5,betmgm,team_totals,True,0.0,True,Texas Longhorns,Southern Utah Thunderbirds,Texas Longhorns,T-f8148939d1d8f800,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ec2e9cf0207d8402,SPREAD,AWAY,38.5,hardrockbet,spreads,True,0.0,True,Texas Longhorns,Southern Utah Thunderbirds,Southern Utah Thunderbirds,T-2df5ca2c186a42e6,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e3286a03957692f1,AWAY_TEAM_TOTAL,OVER,76.5,betrivers,team_totals,True,0.0,True,Houston Christian Huskies,Georgia Southern Eagles,Georgia Southern Eagles,T-27e2f5eec8cc801c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e3286a03957692f1,GAME_TOTAL,OVER,150.5,fanduel,totals,True,0.0,True,Houston Christian Huskies,Georgia Southern Eagles,,,,,True,1.0,1.0,0.0
+2026-11-19,G-e3286a03957692f1,HOME_TEAM_TOTAL,UNDER,78.5,williamhill_us,team_totals,True,0.0,True,Houston Christian Huskies,Georgia Southern Eagles,Houston Christian Huskies,T-48ea1a0495392c00,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e3286a03957692f1,MONEYLINE,AWAY,,bovada,h2h,True,0.0,True,Houston Christian Huskies,Georgia Southern Eagles,Georgia Southern Eagles,T-27e2f5eec8cc801c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e3286a03957692f1,SPREAD,AWAY,3.5,espnbet,spreads,True,0.0,True,Houston Christian Huskies,Georgia Southern Eagles,Georgia Southern Eagles,T-27e2f5eec8cc801c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ddd0df9b066a6dbc,AWAY_TEAM_TOTAL,UNDER,82.5,fanduel,team_totals,True,0.0,True,TCU Horned Frogs,Texas A&M Aggies,Texas A&M Aggies,T-305b19290efa163f,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ddd0df9b066a6dbc,GAME_TOTAL,UNDER,163.0,betonlineag,totals,True,0.0,True,TCU Horned Frogs,Texas A&M Aggies,,,,,True,1.0,1.0,0.0
+2026-11-19,G-ddd0df9b066a6dbc,HOME_TEAM_TOTAL,UNDER,81.5,fanduel,team_totals,True,0.0,True,TCU Horned Frogs,Texas A&M Aggies,TCU Horned Frogs,T-cf2771d63aeecf02,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ddd0df9b066a6dbc,MONEYLINE,AWAY,,hardrockbet,h2h,True,0.0,True,TCU Horned Frogs,Texas A&M Aggies,Texas A&M Aggies,T-305b19290efa163f,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-ddd0df9b066a6dbc,SPREAD,AWAY,1.5,betmgm,spreads,True,0.0,True,TCU Horned Frogs,Texas A&M Aggies,Texas A&M Aggies,T-305b19290efa163f,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-c7b90342ca255217,AWAY_TEAM_TOTAL,OVER,59.5,fanduel,team_totals,True,0.0,True,Louisville Cardinals,Stetson Hatters,Stetson Hatters,T-9a46f0544332b82c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-c7b90342ca255217,GAME_TOTAL,OVER,154.5,betmgm,totals,True,0.0,True,Louisville Cardinals,Stetson Hatters,,,,,True,1.0,1.0,0.0
+2026-11-19,G-c7b90342ca255217,HOME_TEAM_TOTAL,UNDER,96.5,fanduel,team_totals,True,0.0,True,Louisville Cardinals,Stetson Hatters,Louisville Cardinals,T-a250df98d6193f68,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-c7b90342ca255217,SPREAD,AWAY,35.5,hardrockbet,spreads,True,0.0,True,Louisville Cardinals,Stetson Hatters,Stetson Hatters,T-9a46f0544332b82c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-1cb1d7c96493339f,AWAY_TEAM_TOTAL,OVER,82.5,betrivers,team_totals,True,0.0,True,Rutgers Scarlet Knights,UNLV Rebels,Rutgers Scarlet Knights,T-aacc10aee85ee832,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-1cb1d7c96493339f,GAME_TOTAL,OVER,156.5,fanduel,totals,True,0.0,True,Rutgers Scarlet Knights,UNLV Rebels,,,,,True,0.0,0.0,1.0
+2026-11-19,G-1cb1d7c96493339f,HOME_TEAM_TOTAL,OVER,77.5,williamhill_us,team_totals,True,0.0,True,Rutgers Scarlet Knights,UNLV Rebels,UNLV Rebels,T-532545f5e4d591f2,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-1cb1d7c96493339f,MONEYLINE,AWAY,,bovada,h2h,True,0.0,True,Rutgers Scarlet Knights,UNLV Rebels,Rutgers Scarlet Knights,T-aacc10aee85ee832,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-1cb1d7c96493339f,SPREAD,AWAY,-2.5,espnbet,spreads,True,0.0,True,Rutgers Scarlet Knights,UNLV Rebels,Rutgers Scarlet Knights,T-aacc10aee85ee832,1.0,0.0,True,0.0,0.0,1.0
+2026-11-19,G-e256380b03fd3c59,AWAY_TEAM_TOTAL,OVER,71.5,fanduel,team_totals,True,0.0,True,Seton Hall Pirates,Wisconsin Badgers,Wisconsin Badgers,T-fc3cc39461beeaa7,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e256380b03fd3c59,GAME_TOTAL,OVER,138.5,espnbet,totals,True,0.0,True,Seton Hall Pirates,Wisconsin Badgers,,,,,True,1.0,1.0,0.0
+2026-11-19,G-e256380b03fd3c59,HOME_TEAM_TOTAL,OVER,66.5,williamhill_us,team_totals,True,0.0,True,Seton Hall Pirates,Wisconsin Badgers,Seton Hall Pirates,T-f898e42ddf3bd0cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e256380b03fd3c59,MONEYLINE,HOME,,betrivers,h2h,True,0.0,True,Seton Hall Pirates,Wisconsin Badgers,Seton Hall Pirates,T-f898e42ddf3bd0cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-e256380b03fd3c59,SPREAD,HOME,5.5,espnbet,spreads,True,0.0,True,Seton Hall Pirates,Wisconsin Badgers,Seton Hall Pirates,T-f898e42ddf3bd0cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-2295282963097b0e,AWAY_TEAM_TOTAL,OVER,71.5,betrivers,team_totals,True,0.0,True,Washington Huskies,Utah Tech Trailblazers,Utah Tech Trailblazers,T-a0d80711e98eb6cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-2295282963097b0e,GAME_TOTAL,OVER,156.0,betonlineag,totals,True,0.0,True,Washington Huskies,Utah Tech Trailblazers,,,,,True,1.0,1.0,0.0
+2026-11-19,G-2295282963097b0e,HOME_TEAM_TOTAL,OVER,88.5,betrivers,team_totals,True,0.0,True,Washington Huskies,Utah Tech Trailblazers,Washington Huskies,T-78e88036be40a9bf,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-2295282963097b0e,MONEYLINE,AWAY,,espnbet,h2h,True,0.0,True,Washington Huskies,Utah Tech Trailblazers,Utah Tech Trailblazers,T-a0d80711e98eb6cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-2295282963097b0e,SPREAD,AWAY,18.5,fanduel,spreads,True,0.0,True,Washington Huskies,Utah Tech Trailblazers,Utah Tech Trailblazers,T-a0d80711e98eb6cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-d7730ab2e6d23703,GAME_TOTAL,OVER,147.5,hardrockbet,totals,True,0.0,True,Pepperdine Waves,UC Santa Barbara Gauchos,,,,,True,1.0,1.0,0.0
+2026-11-19,G-d7730ab2e6d23703,MONEYLINE,AWAY,,bovada,h2h,True,0.0,True,Pepperdine Waves,UC Santa Barbara Gauchos,UC Santa Barbara Gauchos,T-9a5a35962e84f98c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-d7730ab2e6d23703,SPREAD,AWAY,-2.5,draftkings,spreads,True,0.0,True,Pepperdine Waves,UC Santa Barbara Gauchos,UC Santa Barbara Gauchos,T-9a5a35962e84f98c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-d7730ab2e6d23703,AWAY_TEAM_TOTAL,OVER,78.5,betrivers,team_totals,True,0.0,True,Pepperdine Waves,UC Santa Barbara Gauchos,UC Santa Barbara Gauchos,T-9a5a35962e84f98c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-d7730ab2e6d23703,HOME_TEAM_TOTAL,UNDER,74.5,fanduel,team_totals,True,0.0,True,Pepperdine Waves,UC Santa Barbara Gauchos,Pepperdine Waves,T-e82c6d481afce27e,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-28ac81427d6f3b2a,GAME_TOTAL,UNDER,146.5,bovada,totals,True,0.0,True,California Golden Bears,East Texas A&M Lions,,,,,True,1.0,1.0,0.0
+2026-11-19,G-28ac81427d6f3b2a,MONEYLINE,HOME,,betonlineag,h2h,True,0.0,True,California Golden Bears,East Texas A&M Lions,California Golden Bears,T-c249609a7b1fd576,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-28ac81427d6f3b2a,SPREAD,HOME,-12.5,espnbet,spreads,True,0.0,True,California Golden Bears,East Texas A&M Lions,California Golden Bears,T-c249609a7b1fd576,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-28ac81427d6f3b2a,AWAY_TEAM_TOTAL,UNDER,65.5,williamhill_us,team_totals,True,0.0,True,California Golden Bears,East Texas A&M Lions,East Texas A&M Lions,T-c48274f131f5ef95,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-28ac81427d6f3b2a,HOME_TEAM_TOTAL,OVER,79.5,williamhill_us,team_totals,True,0.0,True,California Golden Bears,East Texas A&M Lions,California Golden Bears,T-c249609a7b1fd576,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-909656085ae27b9d,AWAY_TEAM_TOTAL,OVER,80.5,draftkings,team_totals,True,0.0,True,Santa Clara Broncos,VCU Rams,VCU Rams,T-04628678dec561a1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-909656085ae27b9d,GAME_TOTAL,OVER,163.5,betmgm,totals,True,0.0,True,Santa Clara Broncos,VCU Rams,,,,,True,1.0,1.0,0.0
+2026-11-19,G-909656085ae27b9d,HOME_TEAM_TOTAL,OVER,85.5,betrivers,team_totals,True,0.0,True,Santa Clara Broncos,VCU Rams,Santa Clara Broncos,T-5beb03a7c09f8d94,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-909656085ae27b9d,MONEYLINE,HOME,,hardrockbet,h2h,True,0.0,True,Santa Clara Broncos,VCU Rams,Santa Clara Broncos,T-5beb03a7c09f8d94,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-909656085ae27b9d,SPREAD,HOME,-1.5,hardrockbet,spreads,True,0.0,True,Santa Clara Broncos,VCU Rams,Santa Clara Broncos,T-5beb03a7c09f8d94,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-302bb19dc14834a8,AWAY_TEAM_TOTAL,OVER,76.5,williamhill_us,team_totals,True,0.0,True,Kansas Jayhawks,Houston Cougars,Houston Cougars,T-5af17dc89476af51,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-302bb19dc14834a8,GAME_TOTAL,OVER,149.5,hardrockbet,totals,True,0.0,True,Kansas Jayhawks,Houston Cougars,,,,,True,1.0,1.0,0.0
+2026-11-19,G-302bb19dc14834a8,HOME_TEAM_TOTAL,UNDER,74.5,fanduel,team_totals,True,0.0,True,Kansas Jayhawks,Houston Cougars,Kansas Jayhawks,T-1515439d0974808f,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-302bb19dc14834a8,MONEYLINE,AWAY,,fanduel,h2h,True,0.0,True,Kansas Jayhawks,Houston Cougars,Houston Cougars,T-5af17dc89476af51,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-302bb19dc14834a8,SPREAD,AWAY,-1.5,betrivers,spreads,True,0.0,True,Kansas Jayhawks,Houston Cougars,Houston Cougars,T-5af17dc89476af51,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-93a046f81d46848d,AWAY_TEAM_TOTAL,OVER,64.5,williamhill_us,team_totals,True,0.0,True,USC Trojans,Tarleton State Texans,Tarleton State Texans,T-fcd9ad123e1cbd0c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-93a046f81d46848d,GAME_TOTAL,UNDER,160.0,bovada,totals,True,0.0,True,USC Trojans,Tarleton State Texans,,,,,True,1.0,1.0,0.0
+2026-11-19,G-93a046f81d46848d,HOME_TEAM_TOTAL,UNDER,93.5,fanduel,team_totals,True,0.0,True,USC Trojans,Tarleton State Texans,USC Trojans,T-c1cb515c26aab41e,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-93a046f81d46848d,SPREAD,AWAY,28.5,draftkings,spreads,True,0.0,True,USC Trojans,Tarleton State Texans,Tarleton State Texans,T-fcd9ad123e1cbd0c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-19,G-93a046f81d46848d,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,USC Trojans,Tarleton State Texans,USC Trojans,T-c1cb515c26aab41e,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-5f344ee6dbad6b0a,AWAY_TEAM_TOTAL,UNDER,75.5,fanduel,team_totals,True,0.0,True,Middle Tennessee Blue Raiders,Temple Owls,Temple Owls,T-3c4f2604e01220d1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-5f344ee6dbad6b0a,GAME_TOTAL,UNDER,146.5,betrivers,totals,True,0.0,True,Middle Tennessee Blue Raiders,Temple Owls,,,,,True,1.0,1.0,0.0
+2026-11-20,G-5f344ee6dbad6b0a,HOME_TEAM_TOTAL,OVER,70.5,williamhill_us,team_totals,True,0.0,True,Middle Tennessee Blue Raiders,Temple Owls,Middle Tennessee Blue Raiders,T-f4fb409ebc078980,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-5f344ee6dbad6b0a,MONEYLINE,HOME,,draftkings,h2h,True,0.0,True,Middle Tennessee Blue Raiders,Temple Owls,Middle Tennessee Blue Raiders,T-f4fb409ebc078980,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-5f344ee6dbad6b0a,SPREAD,HOME,2.5,betrivers,spreads,True,0.0,True,Middle Tennessee Blue Raiders,Temple Owls,Middle Tennessee Blue Raiders,T-f4fb409ebc078980,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-8fe837b659e6f52d,AWAY_TEAM_TOTAL,OVER,68.5,betrivers,team_totals,True,0.0,True,Virginia Tech Hokies,Northwestern Wildcats,Northwestern Wildcats,T-547834793820c8f3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-8fe837b659e6f52d,GAME_TOTAL,OVER,141.5,bovada,totals,True,0.0,True,Virginia Tech Hokies,Northwestern Wildcats,,,,,True,1.0,1.0,0.0
+2026-11-20,G-8fe837b659e6f52d,HOME_TEAM_TOTAL,UNDER,77.5,fanduel,team_totals,True,0.0,True,Virginia Tech Hokies,Northwestern Wildcats,Virginia Tech Hokies,T-70caae0fecae097c,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-8fe837b659e6f52d,MONEYLINE,AWAY,,bovada,h2h,True,0.0,True,Virginia Tech Hokies,Northwestern Wildcats,Northwestern Wildcats,T-547834793820c8f3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-8fe837b659e6f52d,SPREAD,AWAY,11.5,betmgm,spreads,True,0.0,True,Virginia Tech Hokies,Northwestern Wildcats,Northwestern Wildcats,T-547834793820c8f3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-82a76c9e8692efbc,AWAY_TEAM_TOTAL,OVER,69.5,draftkings,team_totals,True,0.0,True,Liberty Flames,Rhode Island Rams,Liberty Flames,T-814d5aeb6e98ab6b,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-82a76c9e8692efbc,GAME_TOTAL,OVER,140.5,betonlineag,totals,True,0.0,True,Liberty Flames,Rhode Island Rams,,,,,True,0.0,0.0,1.0
+2026-11-20,G-82a76c9e8692efbc,HOME_TEAM_TOTAL,OVER,74.5,betrivers,team_totals,True,0.0,True,Liberty Flames,Rhode Island Rams,Rhode Island Rams,T-bf32aef675dea3a6,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-82a76c9e8692efbc,MONEYLINE,HOME,,betonlineag,h2h,True,0.0,True,Liberty Flames,Rhode Island Rams,Rhode Island Rams,T-bf32aef675dea3a6,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-82a76c9e8692efbc,SPREAD,HOME,1.0,betonlineag,spreads,True,0.0,True,Liberty Flames,Rhode Island Rams,Rhode Island Rams,T-bf32aef675dea3a6,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-4c71175f48fe7ce5,GAME_TOTAL,UNDER,151.0,betonlineag,totals,True,0.0,True,Miami Hurricanes,Manhattan Jaspers,,,,,True,1.0,1.0,0.0
+2026-11-20,G-4c71175f48fe7ce5,SPREAD,AWAY,39.5,betrivers,spreads,True,0.0,True,Miami Hurricanes,Manhattan Jaspers,Manhattan Jaspers,T-4046d657f0f6a8b1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-4c71175f48fe7ce5,AWAY_TEAM_TOTAL,OVER,54.5,draftkings,team_totals,True,0.0,True,Miami Hurricanes,Manhattan Jaspers,Manhattan Jaspers,T-4046d657f0f6a8b1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-4c71175f48fe7ce5,HOME_TEAM_TOTAL,UNDER,94.5,fanduel,team_totals,True,0.0,True,Miami Hurricanes,Manhattan Jaspers,Miami Hurricanes,T-7e8666f79aa4819a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-166b0676470a8419,GAME_TOTAL,UNDER,138.5,betmgm,totals,True,0.0,True,Canisius Golden Griffins,Mercyhurst Lakers,,,,,True,1.0,1.0,0.0
+2026-11-20,G-166b0676470a8419,MONEYLINE,AWAY,,bovada,h2h,True,0.0,True,Canisius Golden Griffins,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-166b0676470a8419,SPREAD,AWAY,-3.5,betrivers,spreads,True,0.0,True,Canisius Golden Griffins,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-166b0676470a8419,AWAY_TEAM_TOTAL,UNDER,70.5,draftkings,team_totals,True,0.0,True,Canisius Golden Griffins,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-166b0676470a8419,HOME_TEAM_TOTAL,UNDER,67.5,draftkings,team_totals,True,0.0,True,Canisius Golden Griffins,Mercyhurst Lakers,Canisius Golden Griffins,T-1d1a5a1c06dc15db,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-253cea31c13a05ad,AWAY_TEAM_TOTAL,OVER,72.5,betrivers,team_totals,True,0.0,True,Utah Utes,Dayton Flyers,Dayton Flyers,T-43f441d8568dd08a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-253cea31c13a05ad,GAME_TOTAL,OVER,138.0,williamhill_us,totals,True,0.0,True,Utah Utes,Dayton Flyers,,,,,True,1.0,1.0,0.0
+2026-11-20,G-253cea31c13a05ad,HOME_TEAM_TOTAL,OVER,69.5,fanduel,team_totals,True,0.0,True,Utah Utes,Dayton Flyers,Utah Utes,T-b949b0d2e822d4cb,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-253cea31c13a05ad,MONEYLINE,AWAY,,betrivers,h2h,True,0.0,True,Utah Utes,Dayton Flyers,Dayton Flyers,T-43f441d8568dd08a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-253cea31c13a05ad,SPREAD,AWAY,1.5,betonlineag,spreads,True,0.0,True,Utah Utes,Dayton Flyers,Dayton Flyers,T-43f441d8568dd08a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-2aa1dd1c478a0a18,AWAY_TEAM_TOTAL,UNDER,71.5,williamhill_us,team_totals,True,0.0,True,CSU Northridge Matadors,Delaware Blue Hens,Delaware Blue Hens,T-c6a982799102e6e1,1.0,0.0,True,0.5,1.0,0.0
+2026-11-20,G-2aa1dd1c478a0a18,GAME_TOTAL,UNDER,152.0,betonlineag,totals,True,0.0,True,CSU Northridge Matadors,Delaware Blue Hens,,,,,True,0.5,1.0,0.0
+2026-11-20,G-2aa1dd1c478a0a18,HOME_TEAM_TOTAL,UNDER,74.5,betrivers,team_totals,True,0.0,True,CSU Northridge Matadors,Delaware Blue Hens,CSU Northridge Matadors,T-be38d13b6bcc187d,0.5,0.0,True,0.5,1.0,0.0
+2026-11-20,G-2aa1dd1c478a0a18,MONEYLINE,AWAY,,hardrockbet,h2h,True,0.0,True,CSU Northridge Matadors,Delaware Blue Hens,Delaware Blue Hens,T-c6a982799102e6e1,1.0,0.0,True,0.5,1.0,0.0
+2026-11-20,G-2aa1dd1c478a0a18,SPREAD,HOME,-6.5,bovada,spreads,True,0.0,True,CSU Northridge Matadors,Delaware Blue Hens,CSU Northridge Matadors,T-be38d13b6bcc187d,0.5,0.0,True,0.5,1.0,0.0
+2026-11-20,G-f795357a71e3c636,GAME_TOTAL,UNDER,140.5,williamhill_us,totals,True,0.0,True,Drexel Dragons,Saint Joseph's Hawks,,,,,True,1.0,1.0,0.0
+2026-11-20,G-f795357a71e3c636,MONEYLINE,AWAY,,betonlineag,h2h,True,0.0,True,Drexel Dragons,Saint Joseph's Hawks,Saint Joseph's Hawks,T-6031e28fdd4c8935,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f795357a71e3c636,SPREAD,AWAY,-2.5,espnbet,spreads,True,0.0,True,Drexel Dragons,Saint Joseph's Hawks,Saint Joseph's Hawks,T-6031e28fdd4c8935,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f795357a71e3c636,AWAY_TEAM_TOTAL,UNDER,71.5,williamhill_us,team_totals,True,0.0,True,Drexel Dragons,Saint Joseph's Hawks,Saint Joseph's Hawks,T-6031e28fdd4c8935,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f795357a71e3c636,HOME_TEAM_TOTAL,UNDER,67.5,fanduel,team_totals,True,0.0,True,Drexel Dragons,Saint Joseph's Hawks,Drexel Dragons,T-6543985aa57f2023,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-e8a89b6a0d270b00,AWAY_TEAM_TOTAL,UNDER,68.5,williamhill_us,team_totals,True,0.0,True,Jacksonville St Gamecocks,Georgia St Panthers,Georgia St Panthers,T-b99d61dfa2604350,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-e8a89b6a0d270b00,GAME_TOTAL,UNDER,139.5,espnbet,totals,True,0.0,True,Jacksonville St Gamecocks,Georgia St Panthers,,,,,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-e8a89b6a0d270b00,HOME_TEAM_TOTAL,OVER,68.5,williamhill_us,team_totals,True,0.0,True,Jacksonville St Gamecocks,Georgia St Panthers,Jacksonville St Gamecocks,T-fee0662a38c313fd,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-e8a89b6a0d270b00,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,Jacksonville St Gamecocks,Georgia St Panthers,Jacksonville St Gamecocks,T-fee0662a38c313fd,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-e8a89b6a0d270b00,SPREAD,HOME,1.5,espnbet,spreads,True,0.0,True,Jacksonville St Gamecocks,Georgia St Panthers,Jacksonville St Gamecocks,T-fee0662a38c313fd,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-077d5a6c9810b880,AWAY_TEAM_TOTAL,OVER,68.5,williamhill_us,team_totals,True,0.0,True,Eastern Kentucky Colonels,Bellarmine Knights,Bellarmine Knights,T-70afe07d4123957a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-077d5a6c9810b880,GAME_TOTAL,OVER,142.5,betmgm,totals,True,0.0,True,Eastern Kentucky Colonels,Bellarmine Knights,,,,,True,1.0,1.0,0.0
+2026-11-20,G-077d5a6c9810b880,HOME_TEAM_TOTAL,OVER,76.5,williamhill_us,team_totals,True,0.0,True,Eastern Kentucky Colonels,Bellarmine Knights,Eastern Kentucky Colonels,T-9dac92f1e57c906a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-077d5a6c9810b880,MONEYLINE,AWAY,,betrivers,h2h,True,0.0,True,Eastern Kentucky Colonels,Bellarmine Knights,Bellarmine Knights,T-70afe07d4123957a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-077d5a6c9810b880,SPREAD,HOME,-7.5,betrivers,spreads,True,0.0,True,Eastern Kentucky Colonels,Bellarmine Knights,Eastern Kentucky Colonels,T-9dac92f1e57c906a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-05d6ab4a0845b3d3,AWAY_TEAM_TOTAL,UNDER,75.5,betmgm,team_totals,True,0.0,True,Holy Cross Crusaders,Harvard Crimson,Harvard Crimson,T-97a44b002dcbe826,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-05d6ab4a0845b3d3,GAME_TOTAL,OVER,134.5,betmgm,totals,True,0.0,True,Holy Cross Crusaders,Harvard Crimson,,,,,True,1.0,1.0,0.0
+2026-11-20,G-05d6ab4a0845b3d3,HOME_TEAM_TOTAL,OVER,61.5,betmgm,team_totals,True,0.0,True,Holy Cross Crusaders,Harvard Crimson,Holy Cross Crusaders,T-8eecf83c5a7042d9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-05d6ab4a0845b3d3,MONEYLINE,HOME,,betonlineag,h2h,True,0.0,True,Holy Cross Crusaders,Harvard Crimson,Holy Cross Crusaders,T-8eecf83c5a7042d9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-05d6ab4a0845b3d3,SPREAD,HOME,14.5,espnbet,spreads,True,0.0,True,Holy Cross Crusaders,Harvard Crimson,Holy Cross Crusaders,T-8eecf83c5a7042d9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-e07d8b8336d283f2,AWAY_TEAM_TOTAL,OVER,75.5,williamhill_us,team_totals,True,0.0,True,Richmond Spiders,Western Kentucky Hilltoppers,Richmond Spiders,T-24c551c8900bebcb,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-e07d8b8336d283f2,GAME_TOTAL,OVER,149.0,williamhill_us,totals,True,0.0,True,Richmond Spiders,Western Kentucky Hilltoppers,,,,,True,0.0,0.0,1.0
+2026-11-20,G-e07d8b8336d283f2,HOME_TEAM_TOTAL,OVER,78.5,betrivers,team_totals,True,0.0,True,Richmond Spiders,Western Kentucky Hilltoppers,Western Kentucky Hilltoppers,T-4364642485c99c74,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-e07d8b8336d283f2,MONEYLINE,AWAY,,betmgm,h2h,True,0.0,True,Richmond Spiders,Western Kentucky Hilltoppers,Richmond Spiders,T-24c551c8900bebcb,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-e07d8b8336d283f2,SPREAD,AWAY,1.5,espnbet,spreads,True,0.0,True,Richmond Spiders,Western Kentucky Hilltoppers,Richmond Spiders,T-24c551c8900bebcb,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-3b05ad0ca9aff28a,AWAY_TEAM_TOTAL,OVER,68.5,williamhill_us,team_totals,True,0.0,True,Princeton Tigers,Monmouth Hawks,Monmouth Hawks,T-88df7ba32807958a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-3b05ad0ca9aff28a,GAME_TOTAL,UNDER,141.5,espnbet,totals,True,0.0,True,Princeton Tigers,Monmouth Hawks,,,,,True,1.0,1.0,0.0
+2026-11-20,G-3b05ad0ca9aff28a,HOME_TEAM_TOTAL,UNDER,72.5,fanduel,team_totals,True,0.0,True,Princeton Tigers,Monmouth Hawks,Princeton Tigers,T-c3ed76106c53a86b,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-3b05ad0ca9aff28a,MONEYLINE,AWAY,,betonlineag,h2h,True,0.0,True,Princeton Tigers,Monmouth Hawks,Monmouth Hawks,T-88df7ba32807958a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-3b05ad0ca9aff28a,SPREAD,AWAY,2.5,betrivers,spreads,True,0.0,True,Princeton Tigers,Monmouth Hawks,Monmouth Hawks,T-88df7ba32807958a,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-408e2c33b6acca2d,AWAY_TEAM_TOTAL,OVER,60.5,williamhill_us,team_totals,True,0.0,True,Pittsburgh Panthers,Central Michigan Chippewas,Central Michigan Chippewas,T-8fabe826273685d0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-408e2c33b6acca2d,GAME_TOTAL,UNDER,145.5,fanduel,totals,True,0.0,True,Pittsburgh Panthers,Central Michigan Chippewas,,,,,True,1.0,1.0,0.0
+2026-11-20,G-408e2c33b6acca2d,HOME_TEAM_TOTAL,UNDER,80.5,betrivers,team_totals,True,0.0,True,Pittsburgh Panthers,Central Michigan Chippewas,Pittsburgh Panthers,T-0762adbdba479b58,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-408e2c33b6acca2d,MONEYLINE,AWAY,,espnbet,h2h,True,0.0,True,Pittsburgh Panthers,Central Michigan Chippewas,Central Michigan Chippewas,T-8fabe826273685d0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-408e2c33b6acca2d,SPREAD,AWAY,22.5,fanduel,spreads,True,0.0,True,Pittsburgh Panthers,Central Michigan Chippewas,Central Michigan Chippewas,T-8fabe826273685d0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-7c61f777a0ebf342,AWAY_TEAM_TOTAL,OVER,55.5,draftkings,team_totals,True,0.0,True,Maryland Terrapins,Wagner Seahawks,Wagner Seahawks,T-8bc2dc351a7e91aa,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-7c61f777a0ebf342,GAME_TOTAL,OVER,146.5,betmgm,totals,True,0.0,True,Maryland Terrapins,Wagner Seahawks,,,,,True,1.0,1.0,0.0
+2026-11-20,G-7c61f777a0ebf342,HOME_TEAM_TOTAL,UNDER,90.5,fanduel,team_totals,True,0.0,True,Maryland Terrapins,Wagner Seahawks,Maryland Terrapins,T-a3eaa7d59b03c8bd,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-7c61f777a0ebf342,SPREAD,AWAY,36.5,espnbet,spreads,True,0.0,True,Maryland Terrapins,Wagner Seahawks,Wagner Seahawks,T-8bc2dc351a7e91aa,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ba51256a53623904,AWAY_TEAM_TOTAL,OVER,61.5,williamhill_us,team_totals,True,0.0,True,Purdue Boilermakers,Oakland Golden Grizzlies,Oakland Golden Grizzlies,T-1d85ec897e1b7f7d,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ba51256a53623904,GAME_TOTAL,OVER,147.5,betmgm,totals,True,0.0,True,Purdue Boilermakers,Oakland Golden Grizzlies,,,,,True,1.0,1.0,0.0
+2026-11-20,G-ba51256a53623904,HOME_TEAM_TOTAL,OVER,87.5,betrivers,team_totals,True,0.0,True,Purdue Boilermakers,Oakland Golden Grizzlies,Purdue Boilermakers,T-33842f2f2eb8f666,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ba51256a53623904,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,Purdue Boilermakers,Oakland Golden Grizzlies,Purdue Boilermakers,T-33842f2f2eb8f666,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ba51256a53623904,SPREAD,AWAY,23.5,williamhill_us,spreads,True,0.0,True,Purdue Boilermakers,Oakland Golden Grizzlies,Oakland Golden Grizzlies,T-1d85ec897e1b7f7d,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-cf6e6ca9d07821d9,AWAY_TEAM_TOTAL,UNDER,59.5,williamhill_us,team_totals,True,0.0,True,Tennessee Volunteers,Coastal Carolina Chanticleers,Coastal Carolina Chanticleers,T-9e263661fcf86fae,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-cf6e6ca9d07821d9,GAME_TOTAL,UNDER,147.5,bovada,totals,True,0.0,True,Tennessee Volunteers,Coastal Carolina Chanticleers,,,,,True,1.0,1.0,0.0
+2026-11-20,G-cf6e6ca9d07821d9,HOME_TEAM_TOTAL,UNDER,88.5,fanduel,team_totals,True,0.0,True,Tennessee Volunteers,Coastal Carolina Chanticleers,Tennessee Volunteers,T-0c34a6a72124ccf3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-cf6e6ca9d07821d9,SPREAD,HOME,-26.5,espnbet,spreads,True,0.0,True,Tennessee Volunteers,Coastal Carolina Chanticleers,Tennessee Volunteers,T-0c34a6a72124ccf3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-cf6e6ca9d07821d9,MONEYLINE,HOME,,draftkings,h2h,True,0.0,True,Tennessee Volunteers,Coastal Carolina Chanticleers,Tennessee Volunteers,T-0c34a6a72124ccf3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ca3d5a3821ee9b4b,AWAY_TEAM_TOTAL,OVER,74.5,betrivers,team_totals,True,0.0,True,Xavier Musketeers,Iowa Hawkeyes,Iowa Hawkeyes,T-41c66bb22032b9bf,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ca3d5a3821ee9b4b,GAME_TOTAL,OVER,144.5,betonlineag,totals,True,0.0,True,Xavier Musketeers,Iowa Hawkeyes,,,,,True,1.0,1.0,0.0
+2026-11-20,G-ca3d5a3821ee9b4b,HOME_TEAM_TOTAL,UNDER,74.5,williamhill_us,team_totals,True,0.0,True,Xavier Musketeers,Iowa Hawkeyes,Xavier Musketeers,T-d1d2bcd294110622,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ca3d5a3821ee9b4b,MONEYLINE,AWAY,,hardrockbet,h2h,True,0.0,True,Xavier Musketeers,Iowa Hawkeyes,Iowa Hawkeyes,T-41c66bb22032b9bf,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-ca3d5a3821ee9b4b,SPREAD,AWAY,3.5,betmgm,spreads,True,0.0,True,Xavier Musketeers,Iowa Hawkeyes,Iowa Hawkeyes,T-41c66bb22032b9bf,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f1bc09029e023532,AWAY_TEAM_TOTAL,OVER,69.5,fanduel,team_totals,True,0.0,True,Vanderbilt Commodores,UCF Knights,UCF Knights,T-8853c317ec5049d6,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f1bc09029e023532,GAME_TOTAL,OVER,157.0,betonlineag,totals,True,0.0,True,Vanderbilt Commodores,UCF Knights,,,,,True,1.0,1.0,0.0
+2026-11-20,G-f1bc09029e023532,HOME_TEAM_TOTAL,OVER,86.5,williamhill_us,team_totals,True,0.0,True,Vanderbilt Commodores,UCF Knights,Vanderbilt Commodores,T-bc88796ff22956c1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f1bc09029e023532,MONEYLINE,HOME,,betrivers,h2h,True,0.0,True,Vanderbilt Commodores,UCF Knights,Vanderbilt Commodores,T-bc88796ff22956c1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-f1bc09029e023532,SPREAD,HOME,-16.5,espnbet,spreads,True,0.0,True,Vanderbilt Commodores,UCF Knights,Vanderbilt Commodores,T-bc88796ff22956c1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-e4dc7cdcad678551,AWAY_TEAM_TOTAL,OVER,87.5,williamhill_us,team_totals,True,0.0,True,Georgia Tech Yellow Jackets,Georgia Bulldogs,Georgia Bulldogs,T-003ed4bbe153610b,1.0,0.25,True,1.0,1.0,0.5
+2026-11-20,G-e4dc7cdcad678551,GAME_TOTAL,UNDER,167.5,espnbet,totals,True,0.0,True,Georgia Tech Yellow Jackets,Georgia Bulldogs,,,,,True,1.0,1.0,0.5
+2026-11-20,G-e4dc7cdcad678551,HOME_TEAM_TOTAL,UNDER,75.5,betrivers,team_totals,True,0.0,True,Georgia Tech Yellow Jackets,Georgia Bulldogs,Georgia Tech Yellow Jackets,T-c303a62e478a4d0d,1.0,0.5,True,1.0,1.0,0.5
+2026-11-20,G-e4dc7cdcad678551,MONEYLINE,AWAY,,fanduel,h2h,True,0.0,True,Georgia Tech Yellow Jackets,Georgia Bulldogs,Georgia Bulldogs,T-003ed4bbe153610b,1.0,0.25,True,1.0,1.0,0.5
+2026-11-20,G-e4dc7cdcad678551,SPREAD,AWAY,-8.5,fanduel,spreads,True,0.0,True,Georgia Tech Yellow Jackets,Georgia Bulldogs,Georgia Bulldogs,T-003ed4bbe153610b,1.0,0.25,True,1.0,1.0,0.5
+2026-11-20,G-89c0e7c01a37d280,AWAY_TEAM_TOTAL,UNDER,74.5,betmgm,team_totals,True,0.0,True,Utah Valley Wolverines,East Carolina Pirates,East Carolina Pirates,T-96afbd2cb235ab92,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-89c0e7c01a37d280,GAME_TOTAL,OVER,146.5,bovada,totals,True,0.0,True,Utah Valley Wolverines,East Carolina Pirates,,,,,True,1.0,1.0,0.0
+2026-11-20,G-89c0e7c01a37d280,HOME_TEAM_TOTAL,OVER,78.5,betrivers,team_totals,True,0.0,True,Utah Valley Wolverines,East Carolina Pirates,Utah Valley Wolverines,T-34fa1e80dc5aebc1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-89c0e7c01a37d280,MONEYLINE,HOME,,hardrockbet,h2h,True,0.0,True,Utah Valley Wolverines,East Carolina Pirates,Utah Valley Wolverines,T-34fa1e80dc5aebc1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-89c0e7c01a37d280,SPREAD,HOME,-3.5,betrivers,spreads,True,0.0,True,Utah Valley Wolverines,East Carolina Pirates,Utah Valley Wolverines,T-34fa1e80dc5aebc1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-734fe01907ef54d6,AWAY_TEAM_TOTAL,OVER,61.5,betrivers,team_totals,True,0.0,True,Missouri Tigers,Le Moyne Dolphins,Le Moyne Dolphins,T-688eef470e75f229,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-734fe01907ef54d6,GAME_TOTAL,OVER,154.5,betmgm,totals,True,0.0,True,Missouri Tigers,Le Moyne Dolphins,,,,,True,1.0,1.0,0.0
+2026-11-20,G-734fe01907ef54d6,HOME_TEAM_TOTAL,UNDER,96.5,draftkings,team_totals,True,0.0,True,Missouri Tigers,Le Moyne Dolphins,Missouri Tigers,T-a0872d6f669210f1,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-734fe01907ef54d6,SPREAD,AWAY,37.0,betonlineag,spreads,True,0.0,True,Missouri Tigers,Le Moyne Dolphins,Le Moyne Dolphins,T-688eef470e75f229,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-2a66c49171d482ba,AWAY_TEAM_TOTAL,OVER,75.5,williamhill_us,team_totals,True,0.0,True,Indiana Hoosiers,Kentucky Wildcats,Kentucky Wildcats,T-3062010809b10e73,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-2a66c49171d482ba,GAME_TOTAL,OVER,152.5,hardrockbet,totals,True,0.0,True,Indiana Hoosiers,Kentucky Wildcats,,,,,True,1.0,1.0,0.0
+2026-11-20,G-2a66c49171d482ba,HOME_TEAM_TOTAL,OVER,78.5,williamhill_us,team_totals,True,0.0,True,Indiana Hoosiers,Kentucky Wildcats,Indiana Hoosiers,T-4ac07a920c84721f,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-2a66c49171d482ba,MONEYLINE,AWAY,,hardrockbet,h2h,True,0.0,True,Indiana Hoosiers,Kentucky Wildcats,Kentucky Wildcats,T-3062010809b10e73,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-2a66c49171d482ba,SPREAD,AWAY,3.5,betrivers,spreads,True,0.0,True,Indiana Hoosiers,Kentucky Wildcats,Kentucky Wildcats,T-3062010809b10e73,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-1778f1960a13a566,GAME_TOTAL,OVER,147.5,espnbet,totals,True,0.0,True,Alabama A&M Bulldogs,Lipscomb Bisons,,,,,True,1.0,1.0,0.0
+2026-11-20,G-1778f1960a13a566,MONEYLINE,AWAY,,fanduel,h2h,True,0.0,True,Alabama A&M Bulldogs,Lipscomb Bisons,Lipscomb Bisons,T-ccf15dc7ac21f7bc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-1778f1960a13a566,SPREAD,AWAY,-5.5,hardrockbet,spreads,True,0.0,True,Alabama A&M Bulldogs,Lipscomb Bisons,Lipscomb Bisons,T-ccf15dc7ac21f7bc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-1778f1960a13a566,AWAY_TEAM_TOTAL,OVER,79.5,betrivers,team_totals,True,0.0,True,Alabama A&M Bulldogs,Lipscomb Bisons,Lipscomb Bisons,T-ccf15dc7ac21f7bc,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-1778f1960a13a566,HOME_TEAM_TOTAL,UNDER,72.5,williamhill_us,team_totals,True,0.0,True,Alabama A&M Bulldogs,Lipscomb Bisons,Alabama A&M Bulldogs,T-738c92706dcffdea,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-bccae5990e3c702b,AWAY_TEAM_TOTAL,OVER,68.5,betrivers,team_totals,True,0.0,True,SMU Mustangs,South Alabama Jaguars,South Alabama Jaguars,T-2056a1489e73b915,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-bccae5990e3c702b,GAME_TOTAL,OVER,146.0,williamhill_us,totals,True,0.0,True,SMU Mustangs,South Alabama Jaguars,,,,,True,1.0,1.0,0.0
+2026-11-20,G-bccae5990e3c702b,HOME_TEAM_TOTAL,OVER,84.5,betrivers,team_totals,True,0.0,True,SMU Mustangs,South Alabama Jaguars,SMU Mustangs,T-10b1df7b02225bde,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-bccae5990e3c702b,MONEYLINE,AWAY,,betonlineag,h2h,True,0.0,True,SMU Mustangs,South Alabama Jaguars,South Alabama Jaguars,T-2056a1489e73b915,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-bccae5990e3c702b,SPREAD,AWAY,16.5,betonlineag,spreads,True,0.0,True,SMU Mustangs,South Alabama Jaguars,South Alabama Jaguars,T-2056a1489e73b915,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-93ebf77be91f1ea7,AWAY_TEAM_TOTAL,OVER,68.5,betmgm,team_totals,True,0.0,True,North Carolina Tar Heels,Marshall Thundering Herd,Marshall Thundering Herd,T-b738b7f2f15867c0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-93ebf77be91f1ea7,GAME_TOTAL,OVER,156.5,williamhill_us,totals,True,0.0,True,North Carolina Tar Heels,Marshall Thundering Herd,,,,,True,1.0,1.0,0.0
+2026-11-20,G-93ebf77be91f1ea7,HOME_TEAM_TOTAL,UNDER,89.5,betmgm,team_totals,True,0.0,True,North Carolina Tar Heels,Marshall Thundering Herd,North Carolina Tar Heels,T-6886e1c8c7ab4d18,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-93ebf77be91f1ea7,MONEYLINE,AWAY,,betonlineag,h2h,True,0.0,True,North Carolina Tar Heels,Marshall Thundering Herd,Marshall Thundering Herd,T-b738b7f2f15867c0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-93ebf77be91f1ea7,SPREAD,AWAY,20.5,hardrockbet,spreads,True,0.0,True,North Carolina Tar Heels,Marshall Thundering Herd,Marshall Thundering Herd,T-b738b7f2f15867c0,1.0,0.0,True,1.0,1.0,0.0
+2026-11-20,G-56f1541ac923e1a4,AWAY_TEAM_TOTAL,UNDER,59.5,draftkings,team_totals,True,0.0,True,Illinois Fighting Illini,Eastern Illinois Panthers,Eastern Illinois Panthers,T-efeec459bed07453,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-56f1541ac923e1a4,GAME_TOTAL,UNDER,166.5,fanduel,totals,True,0.0,True,Illinois Fighting Illini,Eastern Illinois Panthers,,,,,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-56f1541ac923e1a4,HOME_TEAM_TOTAL,OVER,104.5,betmgm,team_totals,True,0.0,True,Illinois Fighting Illini,Eastern Illinois Panthers,Illinois Fighting Illini,T-eeae59b5ea19e9f1,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-56f1541ac923e1a4,MONEYLINE,HOME,,betmgm,h2h,True,0.0,True,Illinois Fighting Illini,Eastern Illinois Panthers,Illinois Fighting Illini,T-eeae59b5ea19e9f1,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-56f1541ac923e1a4,SPREAD,HOME,-46.5,bovada,spreads,True,0.0,True,Illinois Fighting Illini,Eastern Illinois Panthers,Illinois Fighting Illini,T-eeae59b5ea19e9f1,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-f16749e23d569c49,AWAY_TEAM_TOTAL,UNDER,69.5,williamhill_us,team_totals,True,0.0,True,Seton Hall Pirates,NC State Wolfpack,Seton Hall Pirates,T-f898e42ddf3bd0cb,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-f16749e23d569c49,GAME_TOTAL,UNDER,143.5,draftkings,totals,True,0.0,True,Seton Hall Pirates,NC State Wolfpack,,,,,True,0.0,0.0,1.0
+2026-11-20,G-f16749e23d569c49,HOME_TEAM_TOTAL,UNDER,72.5,williamhill_us,team_totals,True,0.0,True,Seton Hall Pirates,NC State Wolfpack,NC State Wolfpack,T-932a8cd8adc49db7,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-f16749e23d569c49,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,Seton Hall Pirates,NC State Wolfpack,NC State Wolfpack,T-932a8cd8adc49db7,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-f16749e23d569c49,SPREAD,HOME,-2.5,betonlineag,spreads,True,0.0,True,Seton Hall Pirates,NC State Wolfpack,NC State Wolfpack,T-932a8cd8adc49db7,1.0,0.0,True,0.0,0.0,1.0
+2026-11-20,G-0f362f3a8acb3b4f,GAME_TOTAL,OVER,158.5,betmgm,totals,True,0.0,True,Saint Mary's Gaels,Saint Louis Billikens,,,,,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-0f362f3a8acb3b4f,MONEYLINE,HOME,,williamhill_us,h2h,True,0.0,True,Saint Mary's Gaels,Saint Louis Billikens,Saint Mary's Gaels,T-7807a16ec4eee464,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-0f362f3a8acb3b4f,SPREAD,HOME,-1.5,draftkings,spreads,True,0.0,True,Saint Mary's Gaels,Saint Louis Billikens,Saint Mary's Gaels,T-7807a16ec4eee464,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-0f362f3a8acb3b4f,AWAY_TEAM_TOTAL,OVER,78.5,draftkings,team_totals,True,0.0,True,Saint Mary's Gaels,Saint Louis Billikens,Saint Louis Billikens,T-84846d5112415644,1.0,0.25,True,1.0,1.0,0.3333333333333333
+2026-11-20,G-0f362f3a8acb3b4f,HOME_TEAM_TOTAL,OVER,80.5,williamhill_us,team_totals,True,0.0,True,Saint Mary's Gaels,Saint Louis Billikens,Saint Mary's Gaels,T-7807a16ec4eee464,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-45105d4d392e2a71,AWAY_TEAM_TOTAL,UNDER,79.5,betrivers,team_totals,True,0.0,True,Bucknell Bison,Siena Saints,Siena Saints,T-1271fbe236051bd3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-45105d4d392e2a71,GAME_TOTAL,UNDER,157.0,betonlineag,totals,True,0.0,True,Bucknell Bison,Siena Saints,,,,,True,1.0,1.0,0.0
+2026-11-21,G-45105d4d392e2a71,HOME_TEAM_TOTAL,UNDER,71.5,betrivers,team_totals,True,0.0,True,Bucknell Bison,Siena Saints,Bucknell Bison,T-12c15b79cb7bf467,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-45105d4d392e2a71,MONEYLINE,AWAY,,espnbet,h2h,True,0.0,True,Bucknell Bison,Siena Saints,Siena Saints,T-1271fbe236051bd3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-45105d4d392e2a71,SPREAD,AWAY,-4.5,hardrockbet,spreads,True,0.0,True,Bucknell Bison,Siena Saints,Siena Saints,T-1271fbe236051bd3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-daa908ea33bdb1c9,GAME_TOTAL,OVER,145.5,betrivers,totals,True,0.0,True,UNC Greensboro Spartans,South Carolina Upstate Spartans,,,,,True,1.0,1.0,0.25
+2026-11-21,G-daa908ea33bdb1c9,MONEYLINE,HOME,,fanduel,h2h,True,0.0,True,UNC Greensboro Spartans,South Carolina Upstate Spartans,UNC Greensboro Spartans,T-9625fb47a311c96d,1.0,0.25,True,1.0,1.0,0.25
+2026-11-21,G-daa908ea33bdb1c9,SPREAD,HOME,-6.5,espnbet,spreads,True,0.0,True,UNC Greensboro Spartans,South Carolina Upstate Spartans,UNC Greensboro Spartans,T-9625fb47a311c96d,1.0,0.25,True,1.0,1.0,0.25
+2026-11-21,G-daa908ea33bdb1c9,AWAY_TEAM_TOTAL,UNDER,70.5,fanduel,team_totals,True,0.0,True,UNC Greensboro Spartans,South Carolina Upstate Spartans,South Carolina Upstate Spartans,T-48c9d1ab639b88f4,1.0,0.3333333333333333,True,1.0,1.0,0.25
+2026-11-21,G-daa908ea33bdb1c9,HOME_TEAM_TOTAL,OVER,79.5,betrivers,team_totals,True,0.0,True,UNC Greensboro Spartans,South Carolina Upstate Spartans,UNC Greensboro Spartans,T-9625fb47a311c96d,1.0,0.25,True,1.0,1.0,0.25
+2026-11-21,G-f4fe21a25e1c2187,AWAY_TEAM_TOTAL,UNDER,54.5,fanduel,team_totals,True,0.0,True,Michigan St Spartans,Detroit Mercy Titans,Detroit Mercy Titans,T-af2fbd740320e5b8,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-f4fe21a25e1c2187,GAME_TOTAL,OVER,150.0,betonlineag,totals,True,0.0,True,Michigan St Spartans,Detroit Mercy Titans,,,,,True,1.0,1.0,0.0
+2026-11-21,G-f4fe21a25e1c2187,HOME_TEAM_TOTAL,OVER,95.5,draftkings,team_totals,True,0.0,True,Michigan St Spartans,Detroit Mercy Titans,Michigan St Spartans,T-64d137df389e9aa3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-f4fe21a25e1c2187,SPREAD,HOME,-40.5,betmgm,spreads,True,0.0,True,Michigan St Spartans,Detroit Mercy Titans,Michigan St Spartans,T-64d137df389e9aa3,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-00565ac55b309a09,AWAY_TEAM_TOTAL,OVER,71.5,williamhill_us,team_totals,True,0.0,True,LSU Tigers,Queens University Royals,Queens University Royals,T-32d5db984949e4ba,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-00565ac55b309a09,GAME_TOTAL,OVER,171.5,espnbet,totals,True,0.0,True,LSU Tigers,Queens University Royals,,,,,True,1.0,1.0,0.0
+2026-11-21,G-00565ac55b309a09,HOME_TEAM_TOTAL,UNDER,100.5,williamhill_us,team_totals,True,0.0,True,LSU Tigers,Queens University Royals,LSU Tigers,T-ac5ed60df62aa41e,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-00565ac55b309a09,MONEYLINE,HOME,,draftkings,h2h,True,0.0,True,LSU Tigers,Queens University Royals,LSU Tigers,T-ac5ed60df62aa41e,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-00565ac55b309a09,SPREAD,AWAY,28.5,fanduel,spreads,True,0.0,True,LSU Tigers,Queens University Royals,Queens University Royals,T-32d5db984949e4ba,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-461b55038e4dac71,GAME_TOTAL,UNDER,131.0,betonlineag,totals,True,0.0,True,New Haven Chargers,New Hampshire Wildcats,,,,,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-461b55038e4dac71,MONEYLINE,HOME,,hardrockbet,h2h,True,0.0,True,New Haven Chargers,New Hampshire Wildcats,New Haven Chargers,T-fb2ce37e3e2048f6,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-461b55038e4dac71,SPREAD,HOME,2.5,bovada,spreads,True,0.0,True,New Haven Chargers,New Hampshire Wildcats,New Haven Chargers,T-fb2ce37e3e2048f6,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-461b55038e4dac71,AWAY_TEAM_TOTAL,UNDER,62.5,betrivers,team_totals,True,0.0,True,New Haven Chargers,New Hampshire Wildcats,New Hampshire Wildcats,T-ed0697c03fb4c382,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-461b55038e4dac71,HOME_TEAM_TOTAL,UNDER,64.5,williamhill_us,team_totals,True,0.0,True,New Haven Chargers,New Hampshire Wildcats,New Haven Chargers,T-fb2ce37e3e2048f6,1.0,0.3333333333333333,True,1.0,1.0,0.3333333333333333
+2026-11-21,G-70899ee641d22ef0,AWAY_TEAM_TOTAL,OVER,65.5,williamhill_us,team_totals,True,0.0,True,Eastern Michigan Eagles,Denver Pioneers,Denver Pioneers,T-9c5c9fbe05fa3d49,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-70899ee641d22ef0,GAME_TOTAL,OVER,137.5,fanduel,totals,True,0.0,True,Eastern Michigan Eagles,Denver Pioneers,,,,,True,1.0,1.0,0.0
+2026-11-21,G-70899ee641d22ef0,HOME_TEAM_TOTAL,OVER,73.5,williamhill_us,team_totals,True,0.0,True,Eastern Michigan Eagles,Denver Pioneers,Eastern Michigan Eagles,T-a2d87a15b0b18109,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-70899ee641d22ef0,MONEYLINE,AWAY,,hardrockbet,h2h,True,0.0,True,Eastern Michigan Eagles,Denver Pioneers,Denver Pioneers,T-9c5c9fbe05fa3d49,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-70899ee641d22ef0,SPREAD,AWAY,7.5,betrivers,spreads,True,0.0,True,Eastern Michigan Eagles,Denver Pioneers,Denver Pioneers,T-9c5c9fbe05fa3d49,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-ff5523ad80f9cc52,GAME_TOTAL,OVER,129.0,betonlineag,totals,True,0.0,True,Western Illinois Leathernecks,Mercyhurst Lakers,,,,,True,1.0,1.0,0.0
+2026-11-21,G-ff5523ad80f9cc52,MONEYLINE,AWAY,,betonlineag,h2h,True,0.0,True,Western Illinois Leathernecks,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-ff5523ad80f9cc52,SPREAD,AWAY,-5.5,espnbet,spreads,True,0.0,True,Western Illinois Leathernecks,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-ff5523ad80f9cc52,AWAY_TEAM_TOTAL,OVER,71.5,betrivers,team_totals,True,0.0,True,Western Illinois Leathernecks,Mercyhurst Lakers,Mercyhurst Lakers,T-aea839a74d7982b9,1.0,0.0,True,1.0,1.0,0.0
+2026-11-21,G-ff5523ad80f9cc52,HOME_TEAM_TOTAL,OVER,61.5,draftkings,team_totals,True,0.0,True,Western Illinois Leathernecks,Mercyhurst Lakers,Western Illinois Leathernecks,T-f816499f282e5c50,1.0,0.0,True,1.0,1.0,0.0

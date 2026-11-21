@@ -1,0 +1,89 @@
+# Per-GAME residuals (effective sample = unique graded games)
+actual_home-model_home           n= 50 mean= +2.48 sd=10.06 t=+1.74
+actual_away-model_away           n= 50 mean= +1.27 sd= 9.78 t=+0.92
+actual_total-model_total         n= 50 mean= +3.75 sd=15.36 t=+1.73
+actual_margin-model_margin       n= 50 mean= +1.21 sd=12.55 t=+0.68
+actual_total-MARKET_total        n= 50 mean= +4.59 sd=14.56 t=+2.23
+actual_margin-MARKET_margin      n= 50 mean= +0.66 sd=12.58 t=+0.37
+model_total-market_total         n= 50 mean= +0.84 sd= 3.53 t=+1.68
+model_margin-market_margin       n= 50 mean= -0.55 sd= 3.04 t=-1.29
+RMSE total: model 15.66  market 15.13 | RMSE margin: model 12.49  market 12.47
+corr(model-mkt total, actual-mkt total) = -0.111   (positive = model total deviations carry signal)
+corr(model-mkt margin, actual-mkt margin) = 0.128
+OLS actual-mkt total on model-mkt total: slope -0.458 intercept 4.98
+
+# Variance: realized residual sd vs PMF sd
+total: realized sd(rT) 15.36  RMS(rT) 15.66  mean PMF sdT 17.34  ratio RMS/sd 0.903
+margin: realized sd(rM) 12.55  RMS(rM) 12.49  mean PMF sdM 11.77  ratio 1.061
+z-score total sd (should be 1): 0.896  margin: 1.07
+PIT pit_T: quintile counts [2, 10, 18, 9, 11]  mean 0.569  KS p=0.009
+PIT pit_M: quintile counts [10, 13, 7, 4, 16]  mean 0.510  KS p=0.352
+PIT pit_H: quintile counts [5, 11, 6, 14, 14]  mean 0.582  KS p=0.059
+PIT pit_A: quintile counts [9, 8, 11, 11, 11]  mean 0.533  KS p=0.713
+rho_mt PMF mean 0.056  realized corr(rT, rM) 0.029
+chi2 test of total variance (sum z^2, df=n): 41.7 n 50  p(upper)= 0.791
+
+# Components
+OT games 4 of 50 ; OT games residual total n=  4 mean=+22.55 sd=20.86 t=+2.16
+regulation-only games residual total n= 46 mean= +2.11 sd=13.92 t=+1.03
+availability delta |dh|+|da| > 0 in 0 games; mean gamma-shift 0.0
+top_down total - PMF total: n= 50 mean= -0.00 sd= 0.00 t=-0.85  (endgame/OT kernel + availability effect on the mean)
+actual - top_down total: n= 50 mean= +3.75 sd=15.36 t=+1.73
+games_played_min distribution {'min': 2.0, '50%': 4.0, 'max': 5.0}
+neutral games 13  residual total neutral n= 13 mean= +5.16 sd=17.25 t=+1.08  non-neutral n= 37 mean= +3.25 sd=14.87 t=+1.33
+conference games 0
+slate 2026-11-19 rT n= 21 mean= +3.08 sd=11.31 t=+1.25 | rM n= 21 mean= -1.87 sd=10.87 t=-0.79
+slate 2026-11-20 rT n= 29 mean= +4.23 sd=17.92 t=+1.27 | rM n= 29 mean= +3.45 sd=13.38 t=+1.39
+
+# Per-game residuals by MODEL total bucket
+<135     rT n=  2 mean= -9.62 sd= 5.58 t=-2.44 | mkt_rT n=  2 mean=-17.25 sd= 0.35 t=-69.00 | model-mkt -7.63
+135-145  rT n= 15 mean=+10.10 sd=13.93 t=+2.81 | mkt_rT n= 15 mean= +9.70 sd=12.98 t=+2.89 | model-mkt -0.40
+145-155  rT n= 17 mean= +3.43 sd=19.70 t=+0.72 | mkt_rT n= 17 mean= +5.09 sd=18.62 t=+1.13 | model-mkt +1.66
+155+     rT n= 16 mean= -0.20 sd= 9.64 t=-0.08 | mkt_rT n= 16 mean= +2.00 sd= 8.28 t=+0.97 | model-mkt +2.20
+# Per-game residuals by |model margin| bucket
+<3     rM n= 11 mean= +0.11 sd=12.59 t=+0.03 | rT n= 11 mean= +1.90 sd=16.49 t=+0.38
+3-7    rM n= 12 mean= -1.15 sd=11.06 t=-0.36 | rT n= 12 mean= +9.23 sd=17.25 t=+1.85
+7-12   rM n=  9 mean= +0.88 sd=11.49 t=+0.23 | rT n=  9 mean= +8.61 sd= 6.29 t=+4.10
+12+    rM n= 18 mean= +3.63 sd=14.45 t=+1.07 | rT n= 18 mean= -1.21 sd=15.73 t=-0.33
+
+# Per-EVALUATION residuals by market type x side (rows share games: not independent)
+AWAY_TEAM_TOTAL  OVER  n= 33 games= 33 W-L 20-13 p=0.555 hit=0.606 | rH +0.87 rA -0.29 rT +0.58 rM +1.16 | stale 0.30
+AWAY_TEAM_TOTAL  UNDER n= 17 games= 17 W-L 7-10 p=0.585 hit=0.412 | rH +5.61 rA +4.29 rT +9.90 rM +1.32 | stale 0.53
+GAME_TOTAL       OVER  n= 32 games= 32 W-L 21-11 p=0.580 hit=0.656 | rH -0.53 rA +0.13 rT -0.40 rM -0.66 | stale 0.66
+GAME_TOTAL       UNDER n= 18 games= 18 W-L 8-10 p=0.596 hit=0.444 | rH +7.83 rA +3.29 rT +11.12 rM +4.54 | stale 0.61
+HOME_TEAM_TOTAL  OVER  n= 25 games= 25 W-L 13-12 p=0.540 hit=0.520 | rH +0.42 rA -0.11 rT +0.32 rM +0.53 | stale 0.36
+HOME_TEAM_TOTAL  UNDER n= 25 games= 25 W-L 8-17 p=0.569 hit=0.320 | rH +4.54 rA +2.64 rT +7.18 rM +1.90 | stale 0.48
+MONEYLINE        AWAY  n= 23 games= 23 W-L 10-13 p=0.444 hit=0.435 | rH +5.04 rA +1.42 rT +6.46 rM +3.62 | stale 0.00
+MONEYLINE        HOME  n= 22 games= 22 W-L 14-8 p=0.718 hit=0.636 | rH +1.56 rA +1.59 rT +3.16 rM -0.03 | stale 0.00
+SPREAD           AWAY  n= 28 games= 28 W-L 14-14 p=0.619 hit=0.500 | rH +3.21 rA -1.30 rT +1.92 rM +4.51 | stale 0.68
+SPREAD           HOME  n= 22 games= 22 W-L 10-12 p=0.600 hit=0.455 | rH +1.55 rA +4.53 rT +6.08 rM -2.98 | stale 0.59
+# by total bucket
+<135     n=10 games=2 hit=0.800 p=0.693 rT -9.62
+135-145  n=75 games=15 hit=0.427 p=0.559 rT +10.10
+145-155  n=83 games=17 hit=0.518 p=0.579 rT +3.85
+155+     n=77 games=16 hit=0.545 p=0.584 rT -0.17
+
+# Totals family (GAME/HOME/AWAY totals) by side: model mean vs line vs actual
+OVER  n=90 games=42 model-line +2.12  actual-line +1.99  actual-model -0.13 (t=-0.12)  hit 0.600 p 0.560
+UNDER n=60 games=34 model-line -2.61  actual-line +3.83  actual-model +6.44 (t=+3.88)  hit 0.383 p 0.582
+  AWAY_TEAM_TOTAL  OVER  n=33 model-line +1.45 actual-line +1.17 actual-model -0.29
+  AWAY_TEAM_TOTAL  UNDER n=17 model-line -2.20 actual-line +2.09 actual-model +4.29
+  GAME_TOTAL       OVER  n=32 model-line +3.71 actual-line +3.31 actual-model -0.40
+  GAME_TOTAL       UNDER n=18 model-line -3.95 actual-line +7.17 actual-model +11.12
+  HOME_TEAM_TOTAL  OVER  n=25 model-line +0.96 actual-line +1.38 actual-model +0.42
+  HOME_TEAM_TOTAL  UNDER n=25 model-line -1.92 actual-line +2.62 actual-model +4.54
+
+# Stale offers (point not on the book's latest pre-cutoff board for that market)
+all evaluations stale share 0.409 ; graded 0.424
+stale=False: n=141 hit=0.468 p=0.561 edge=0.078
+stale=True: n=104 hit=0.567 p=0.603 edge=0.111
+UNDER stale=False: n=28 W-L 6-22 p=0.554
+UNDER stale=True: n=32 W-L 17-15 p=0.606
+
+# Proper scores on graded rows with a de-vig pair (n=245)
+model (0.24240426960797762, 0.6710643866325675)  market (0.23765041658113134, 0.6615223374141055)  50/50 (0.25, 0.6931471805599453)
+OVER model (0.24844449490740017, 0.6907759819129438) market (0.25222785159790284, 0.6977516937607828) n 90
+UNDER model (0.26280548254437247, 0.7184081882334561) market (0.24106083825626634, 0.6747911309028891) n 60
+
+# Selection: the evaluated side is argmax EV across books x lines x sides (best_by_market).
+mean edge (model_p - fair) of graded rows 0.0921  UNDER 0.0948  OVER 0.0885

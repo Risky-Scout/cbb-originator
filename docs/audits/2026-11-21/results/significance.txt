@@ -1,0 +1,13 @@
+UNDER rows 60 games 34 hit-p -0.199 game-clustered 95% CI [-0.35, -0.046]
+OVER  rows 90 games 42 hit-p +0.040 CI [-0.067, 0.15]
+UNDER hit - MARKET fair -0.104 CI [-0.259, 0.055]  (market also over-predicted UNDER)
+totals family: OLS (actual-line) on (model-line): slope +0.13 CI [-0.76, 0.87] intercept +2.70  [slope 1 = model mean informative, 0 = no information]
+totals family mean actual-line +2.73 CI [0.0, 5.43]
+GAME_TOTAL: actual-line UNDER-picked +7.17 vs OVER-picked +3.31 diff +3.85 (Welch t +0.82)
+game-level actual-market total +4.59; excluding 4 OT games +3.09 (n=46)
+UNDER rows in OT games 9: W-L 0-9; regulation-only UNDER W-L 23-28 p=0.589OVER: n=90 hit 0.600 model 0.560 market_fair 0.471 | hit-market +0.129 | model-market (claimed edge) +0.088
+UNDER: n=60 hit 0.383 model 0.582 market_fair 0.487 | hit-market -0.104 | model-market (claimed edge) +0.095
+HOME: n=44 hit 0.545 model 0.659 market_fair 0.571 | hit-market -0.026 | model-market (claimed edge) +0.088
+AWAY: n=51 hit 0.471 model 0.540 market_fair 0.441 | hit-market +0.030 | model-market (claimed edge) +0.099
+OVER totals-family: model p 0.560 -> with +1.57 season-to-date league total shift 0.591 (hit 0.600)
+UNDER totals-family: model p 0.582 -> with +1.57 season-to-date league total shift 0.551 (hit 0.383)
