@@ -87,6 +87,24 @@ def test_quote_state_and_close_never_use_post_tip_rows():
     assert len(c) == len(q) and (c["decimal"] < 3).all()
 
 
+def test_as_of_never_reoffers_a_point_the_book_moved_off():
+    """A book moves its total 141.5 -> 143.5 between captures: at t only 143.5 is on that book's board (the 141.5 rows
+    of the older capture are not re-offered); another book that has not re-captured keeps its last board; a market
+    type the newer capture did not carry keeps its last capture."""
+    t0 = TIP - pd.Timedelta(hours=3)
+    old = GQ.parse([_event()], {"e1": ("G1", "TH", "TA")}, TIDX, t0, "GQ1")
+    new = old[old.market_type == "GAME_TOTAL"].assign(point=143.5, capture_id="GQ2",
+                                                     collector_received_at=(t0 + pd.Timedelta(hours=1)).isoformat())
+    other = old.assign(book="otherbook")
+    allq = pd.concat([old, new, other]).assign(collector_received_at=lambda d: pd.to_datetime(d.collector_received_at, utc=True))
+    x = GQ.as_of(allq, TIP - pd.Timedelta(minutes=61))
+    tot = x[(x.market_type == "GAME_TOTAL")]
+    assert set(tot.loc[tot.book != "otherbook", "point"]) == {143.5}
+    assert set(tot.loc[tot.book == "otherbook", "point"]) == {141.5}
+    assert set(x.loc[x.book != "otherbook", "market_type"]) == set(old.market_type)        # spreads / ML / TT kept
+    assert len(GQ.as_of(allq, t0 - pd.Timedelta(minutes=1))) == 0
+
+
 @pytest.mark.parametrize("mt,side,pt,hp,ap,res", [
     ("SPREAD", "HOME", -5.5, 80, 70, "WIN"), ("SPREAD", "HOME", -10.0, 80, 70, "PUSH"),
     ("SPREAD", "AWAY", 5.5, 80, 70, "LOSS"), ("ALT_SPREAD", "AWAY", 12.5, 80, 70, "WIN"),

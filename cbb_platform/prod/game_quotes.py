@@ -248,11 +248,21 @@ def load(out_root: Path, day: str) -> pd.DataFrame:
 
 
 def as_of(q: pd.DataFrame, t) -> pd.DataFrame:
-    """Latest row per (game, book, market_type, side, point) received at or before `t`."""
+    """The board each book showed at `t`: per (game, book, market_type) ONLY the rows of that group's latest capture
+    received at or before `t` (then the latest row per side / point). A point a book has withdrawn or moved off is not
+    re-offered from an older capture (2026-11-21 audit: 42% of graded game evaluations priced a point that was no longer
+    on that book's latest pre-cutoff board). A market type absent from a book's latest capture keeps its last capture."""
     if not len(q):
         return q
     t = pd.Timestamp(t)
     x = q[q["collector_received_at"] <= t].copy()
+    if not len(x):
+        return x.reset_index(drop=True)
+    cap = x["capture_id"].astype(str) if "capture_id" in x.columns else x["collector_received_at"].astype(str)
+    grp = ["game_id", "book", "market_type"]
+    last = x.assign(_cap=cap).groupby(grp + ["_cap"], sort=False)["collector_received_at"].max().reset_index() \
+        .sort_values("collector_received_at").drop_duplicates(grp, keep="last")[grp + ["_cap"]]
+    x = x.assign(_cap=cap).merge(last, on=grp + ["_cap"], how="inner").drop(columns="_cap")
     x["_pt"] = x["point"].fillna(-9999.0)
     x = x.sort_values("collector_received_at").drop_duplicates(["game_id", "book", "market_type", "side", "_pt"],
                                                                keep="last")
