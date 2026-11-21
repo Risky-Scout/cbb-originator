@@ -428,6 +428,7 @@ def test_grades_naming_contract_folder_d_file_d_minus_1(market):
     assert Path(g["path"]).parent == out and g["export_date"] == "2026-11-05" and g["graded_slate_date"] == "2026-11-04"
     assert g["retired_legacy_file"] == "CBB_Grades_11_05_2026.xlsx" and not (out / "CBB_Grades_11_05_2026.xlsx").exists()
     rec = json.loads((out / EX.GRADE_RECEIPT).read_text())
+    assert (rec["EXPORT_DATE"], rec["GRADED_SLATE_DATE"]) == ("2026-11-05", "2026-11-04")
     assert (rec["file"], rec["export_date"], rec["graded_slate_date"]) == ("CBB_Grades_11_04_2026.xlsx", "2026-11-05",
                                                                           "2026-11-04")
     assert rep["performance"]["status"] == "WRITTEN" and Path(rep["performance"]["path"]).name == "CBB_Performance_11_05_2026.xlsx"

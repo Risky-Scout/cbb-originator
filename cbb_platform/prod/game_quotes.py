@@ -260,11 +260,21 @@ def load(out_root: Path, day: str) -> pd.DataFrame:
     return q
 
 
-def as_of(q: pd.DataFrame, t) -> pd.DataFrame:
-    """The board each book showed at `t`: per (game, book, market_type) ONLY the rows of that group's latest capture
-    received at or before `t` (then the latest row per side / point). A point a book has withdrawn or moved off is not
-    re-offered from an older capture (2026-11-21 audit: 42% of graded game evaluations priced a point that was no longer
-    on that book's latest pre-cutoff board). A market type absent from a book's latest capture keeps its last capture."""
+# Bounded offer freshness (2026-11-21 directive, 1B). Bulk captures (SPREAD / GAME_TOTAL / MONEYLINE) run every
+# GAME_QUOTES_FAR_MIN = 30 min (10 min near tip) and team totals / alternates at least hourly, so a (game, book, market)
+# whose latest capture is older than two cadence periods + slack was not re-posted by the book on the last captures:
+# the book withdrew it (or capture stopped). Such an offer is STALE_OFFER_INELIGIBLE at the pricing instant
+# (min(now, legal cutoff)); it is never priced and never replaced by a fabricated price.
+STALE_OFFER = "STALE_OFFER_INELIGIBLE"
+BULK_MARKETS = ("SPREAD", "GAME_TOTAL", "MONEYLINE")
+MAX_OFFER_AGE_MIN = {"BULK": 75, "EXTRAS": 135}
+
+
+def max_offer_age(market_type: str) -> pd.Timedelta:
+    return pd.Timedelta(minutes=MAX_OFFER_AGE_MIN["BULK" if market_type in BULK_MARKETS else "EXTRAS"])
+
+
+def _latest_board(q: pd.DataFrame, t) -> pd.DataFrame:
     if not len(q):
         return q
     t = pd.Timestamp(t)
@@ -280,6 +290,34 @@ def as_of(q: pd.DataFrame, t) -> pd.DataFrame:
     x = x.sort_values("collector_received_at").drop_duplicates(["game_id", "book", "market_type", "side", "_pt"],
                                                                keep="last")
     return x.drop(columns="_pt").reset_index(drop=True)
+
+
+def _stale_mask(x: pd.DataFrame, t) -> pd.Series:
+    if not len(x):
+        return pd.Series(False, index=x.index)
+    t = pd.Timestamp(t)
+    grp_last = x.groupby(["game_id", "book", "market_type"])["collector_received_at"].transform("max")
+    lim = x["market_type"].map(max_offer_age)
+    return (t - grp_last) > lim
+
+
+def as_of(q: pd.DataFrame, t) -> pd.DataFrame:
+    """The executable board each book showed at `t`: per (game, book, market_type) ONLY the rows of that group's latest
+    capture received at or before `t` (then the latest row per side / point), and only if that capture is fresh
+    (max_offer_age). A point a book moved off is not re-offered from an older capture (2026-11-21 audit: 42% of graded
+    game evaluations priced such a point); a market the book stopped posting expires (stale_offers)."""
+    x = _latest_board(q, t)
+    if not len(x):
+        return x
+    return x[~_stale_mask(x, t)].reset_index(drop=True)
+
+
+def stale_offers(q: pd.DataFrame, t) -> pd.DataFrame:
+    """The latest-board rows at `t` that are STALE_OFFER_INELIGIBLE (older than max_offer_age): never priced."""
+    x = _latest_board(q, t)
+    if not len(x):
+        return x
+    return x[_stale_mask(x, t)].reset_index(drop=True)
 
 
 def closing(q: pd.DataFrame, tips: dict) -> pd.DataFrame:

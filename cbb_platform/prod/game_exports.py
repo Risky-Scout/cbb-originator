@@ -91,6 +91,20 @@ def _offers(q: pd.DataFrame, gid: str) -> pd.DataFrame:
                                  "market_last_update", "collector_received_at"]] if len(x) else x
 
 
+def _stale_only(qg: pd.DataFrame, t, best: dict, alternates: bool) -> dict:
+    """market_type -> {books, last_capture_utc} for market types whose ONLY offers at `t` are STALE_OFFER_INELIGIBLE
+    (every book stopped posting them): reported as such, never priced, never replaced by another price."""
+    if not len(qg):
+        return {}
+    st = GQ.stale_offers(qg, t)
+    out = {}
+    for mt, x in st.groupby("market_type"):
+        if mt in best or (not alternates and mt in GM.ALTS):
+            continue
+        out[mt] = {"books": int(x["book"].nunique()), "last_capture_utc": _iso(x["collector_received_at"].max())}
+    return out
+
+
 # ============================================================================ Board: Game Lines
 def board_rows(pmfs: pd.DataFrame, quotes: pd.DataFrame, names: dict, now, alternates: bool = False) -> tuple[list, dict]:
     now = pd.Timestamp(now)
@@ -99,9 +113,11 @@ def board_rows(pmfs: pd.DataFrame, quotes: pd.DataFrame, names: dict, now, alter
         stats["games"] += 1
         g = GF.pmf_of(r)
         cut = pd.Timestamp(r["cutoff_utc"]) if r.get("cutoff_utc") else now
-        q = GQ.as_of(quotes[quotes["game_id"] == r["game_id"]], min(now, cut)) if len(quotes) else quotes
+        qg = quotes[quotes["game_id"] == r["game_id"]] if len(quotes) else quotes
+        q = GQ.as_of(qg, min(now, cut)) if len(qg) else qg
         cands = GM.candidates(g, _offers(q, r["game_id"]) if len(q) else None)
         best = GM.best_by_market(cands, alternates)
+        stale = _stale_only(qg, min(now, cut), best, alternates)
         h, a = names.get(r["home_team_id"], r["home_team_id"]), names.get(r["away_team_id"], r["away_team_id"])
         base = {"GAME": f"{a} @ {h}", "GAME_ID": r["game_id"], "TIP_ET": _et(r["scheduled_tip_utc"]), "HOME_TEAM": h,
                 "AWAY_TEAM": a, "MODEL_HOME_SCORE": r["model_home_score"], "MODEL_AWAY_SCORE": r["model_away_score"],
@@ -109,6 +125,10 @@ def board_rows(pmfs: pd.DataFrame, quotes: pd.DataFrame, names: dict, now, alter
                 "PLAYER_FIT_ID": r.get("player_model_version"), "GAME_MODEL_VERSION": r["model_version"],
                 "TEAM_RATING_STATE": r["ratings_state_id"], "PMF_SHA256": r["pmf_sha256"], "POLICY": POLICY,
                 "IS_ACTIONABLE": False, "SELECTION_TIER": GM.TIER_RESEARCH}
+        for mt, st in stale.items():
+            stats["stale_offer_markets"] = stats.get("stale_offer_markets", 0) + 1
+            rows.append({**base, "MARKET_TYPE": mt, "DECISION": GQ.STALE_OFFER, "NO_BET_REASON": GQ.STALE_OFFER,
+                         "PICK": None, "BOOKS_QUOTED": st["books"], "CAPTURE_UTC": st["last_capture_utc"]})
         if not best:
             stats["model_only_games"] += 1
             rows.append({**base, "MARKET_TYPE": "ALL", "DECISION": NO_MARKET, "NO_BET_REASON": NO_MARKET,
@@ -151,9 +171,14 @@ def freeze(ops_root: Path, day: str, quotes: pd.DataFrame, names: dict, now) -> 
         if r["game_id"] in done or cut is None or now < cut:
             continue
         g = GF.pmf_of(r)
-        q = GQ.as_of(quotes[quotes["game_id"] == r["game_id"]], cut) if len(quotes) else quotes
+        qg = quotes[quotes["game_id"] == r["game_id"]] if len(quotes) else quotes
+        q = GQ.as_of(qg, cut) if len(qg) else qg
         cands = GM.candidates(g, _offers(q, r["game_id"]) if len(q) else None)
         best = GM.best_by_market(cands)
+        for mt, st in _stale_only(qg, cut, best, True).items():
+            new.append({"kind": "GAME_MARKET_STALE_OFFER", "game_id": r["game_id"], "slate_date": day,
+                        "market_type": mt, "reason": GQ.STALE_OFFER, **st, "cutoff_utc": r["cutoff_utc"],
+                        "frozen_at": now.isoformat(), "version": VERSION})
         for mt, c in best.items():
             e = {"kind": "GAME_MARKET_EVALUATION", "game_id": r["game_id"], "slate_date": day, "market_type": mt,
                  "home_team_id": r["home_team_id"], "away_team_id": r["away_team_id"],

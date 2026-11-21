@@ -1135,7 +1135,8 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
         p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
                                       [[b["rows"] for b in sh_["blocks"]] for sh_ in sheets],
                                       lambda path: write_xlsx(path, sheets), _writers_sha(MX, ME),
-                                      extra={"export_date": date, "graded_slate_date": prior})
+                                      extra={"export_date": date, "graded_slate_date": prior,
+                                             "EXPORT_DATE": date, "GRADED_SLATE_DATE": prior})
         legacy = _retire_legacy_grades(out_dir, date, p)
         m = MX.metrics(grows)
         rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": len(grows), "rewritten": written,

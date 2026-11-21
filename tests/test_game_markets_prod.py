@@ -97,12 +97,32 @@ def test_as_of_never_reoffers_a_point_the_book_moved_off():
                                                      collector_received_at=(t0 + pd.Timedelta(hours=1)).isoformat())
     other = old.assign(book="otherbook")
     allq = pd.concat([old, new, other]).assign(collector_received_at=lambda d: pd.to_datetime(d.collector_received_at, utc=True))
-    x = GQ.as_of(allq, TIP - pd.Timedelta(minutes=61))
+    x = GQ.as_of(allq, t0 + pd.Timedelta(minutes=70))
     tot = x[(x.market_type == "GAME_TOTAL")]
     assert set(tot.loc[tot.book != "otherbook", "point"]) == {143.5}
     assert set(tot.loc[tot.book == "otherbook", "point"]) == {141.5}
     assert set(x.loc[x.book != "otherbook", "market_type"]) == set(old.market_type)        # spreads / ML / TT kept
     assert len(GQ.as_of(allq, t0 - pd.Timedelta(minutes=1))) == 0
+
+
+def test_withdrawn_market_expires_stale_offer_ineligible():
+    """A book stops posting a market entirely: its last quote is executable within the bounded cadence window, then
+    STALE_OFFER_INELIGIBLE (never priced, no replacement price). Bulk markets expire after 75 min, team totals /
+    alternates (hourly extras) after 135 min."""
+    t0 = TIP - pd.Timedelta(hours=6)
+    q = GQ.parse([_event()], {"e1": ("G1", "TH", "TA")}, TIDX, t0, "GQ1") \
+        .assign(collector_received_at=lambda d: pd.to_datetime(d.collector_received_at, utc=True))
+    assert len(GQ.as_of(q, t0 + pd.Timedelta(minutes=60))) == len(GQ.as_of(q, t0)) > 0
+    late = t0 + pd.Timedelta(minutes=100)
+    fresh, stale = GQ.as_of(q, late), GQ.stale_offers(q, late)
+    assert not set(fresh.market_type) & set(GQ.BULK_MARKETS)
+    assert set(stale.market_type) == set(q.market_type) & set(GQ.BULK_MARKETS)
+    assert len(fresh) + len(stale) == len(GQ.as_of(q, t0))
+    hours = t0 + pd.Timedelta(hours=3)
+    assert len(GQ.as_of(q, hours)) == 0 and len(GQ.stale_offers(q, hours)) == len(GQ.as_of(q, t0))
+    # a re-capture of the same book refreshes it
+    q2 = pd.concat([q, q.assign(capture_id="GQ2", collector_received_at=q.collector_received_at + pd.Timedelta(hours=2))])
+    assert len(GQ.as_of(q2, hours)) == len(GQ.as_of(q, t0)) and len(GQ.stale_offers(q2, hours)) == 0
 
 
 @pytest.mark.parametrize("mt,side,pt,hp,ap,res", [
@@ -147,6 +167,12 @@ def test_board_grain_and_shadow_policy():
     assert (df.IS_ACTIONABLE == False).all() and (df.SELECTION_TIER == "RESEARCH").all()      # noqa: E712
     assert df[df.GAME_ID == "G2"].DECISION.tolist() == [GX.NO_MARKET]                       # model-only, not a failure
     assert st == {"games": 2, "games_with_market": 1, "rows_with_market": 4, "model_only_games": 1}
+    # every book stopped posting: 3 h later the bulk markets are STALE_OFFER_INELIGIBLE, never priced
+    rows2, st2 = GX.board_rows(pm, q, {"TH": "Home U", "TA": "Away U"}, NOW + pd.Timedelta(hours=3))
+    d2 = pd.DataFrame(rows2, columns=GX.LINE_COLS)
+    s2 = d2[(d2.GAME_ID == "G1") & (d2.DECISION == GQ.STALE_OFFER)]
+    assert set(s2.MARKET_TYPE) == {"SPREAD", "GAME_TOTAL", "MONEYLINE", "AWAY_TEAM_TOTAL"} and s2.ODDS.isna().all() and s2["MODEL%"].isna().all()
+    assert st2["stale_offer_markets"] == 4 and "SPREAD" not in set(d2[d2.DECISION != GQ.STALE_OFFER].MARKET_TYPE)
 
 
 def test_stored_pmf_round_trip_is_exact():
