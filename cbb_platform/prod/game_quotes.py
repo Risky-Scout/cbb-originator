@@ -166,7 +166,10 @@ def parse(body_events: list, games: dict, tidx: dict, received_at, capture_id: s
                                  "american": float(price), "decimal": dec,
                                  "market_last_update": m.get("last_update") or bk.get("last_update"),
                                  "collector_received_at": pd.Timestamp(received_at).isoformat(),
-                                 "quote_id": f"{eid}|{bk.get('key')}|{key}|{side}|{point}|{received_at}"})
+                                 # team totals carry HOME/AWAY in the id: both teams' OVER 76.5 from one book in one
+                                 # capture are two quotes (the 2026-11-21 audit found 40,170 shared ids)
+                                 "quote_id": f"{eid}|{bk.get('key')}|{key}{':' + who if mtype.endswith('TEAM_TOTAL') else ''}"
+                                             f"|{side}|{point}|{received_at}"})
     return pd.DataFrame(rows, columns=COLS)
 
 

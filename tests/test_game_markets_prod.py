@@ -174,3 +174,18 @@ def test_capture_end_to_end_with_a_fake_provider(tmp_path):
     q = GQ.load(tmp_path / "gq", "2026-12-01")
     assert {"SPREAD", "GAME_TOTAL", "MONEYLINE", "AWAY_TEAM_TOTAL", "ALT_SPREAD"} <= set(q.market_type)
     assert not any("apiKey" in l for l in (tmp_path / "l.jsonl").read_text().splitlines())
+
+
+def test_team_total_quote_ids_are_unique_per_team():
+    """2026-11-21 audit: both teams' OVER/UNDER at the same point from one book in one capture shared a quote_id."""
+    ev = _event()
+    tt = ev["bookmakers"][0]["markets"][3]["outcomes"]
+    tt += [{"name": "Over", "description": "Home U", "price": -110, "point": 68.5},
+           {"name": "Under", "description": "Home U", "price": -110, "point": 68.5}]
+    q = GQ.parse([ev], {"e1": ("G1", "TH", "TA")}, TIDX, NOW, "GQ1")
+    t = q[q.market_type.str.endswith("TEAM_TOTAL")]
+    assert len(t) == 4 and t.quote_id.is_unique
+    assert set(t.loc[t.market_type == "HOME_TEAM_TOTAL", "team_id"]) == {"TH"}
+    assert all("team_totals:HOME|" in x for x in t.loc[t.market_type == "HOME_TEAM_TOTAL", "quote_id"])
+    other = q[~q.market_type.str.endswith("TEAM_TOTAL")]
+    assert all(x.split("|")[2] in GQ.CORE_KEYS for x in other.quote_id)       # non-team-total ids unchanged

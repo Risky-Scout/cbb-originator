@@ -224,6 +224,23 @@ def test_curated_odds_team_map_is_unique_and_resolves_provider_spellings():
     assert OF.match_events(ev, slate, tidx)["canonical_game_id"].tolist() == ["G-x"]
 
 
+
+def test_curated_map_covers_the_odds_api_state_abbreviations():
+    """2026-11-21 audit: 70 provider spellings ("Kansas St Wildcats", "UMKC Kangaroos", "Loyola (MD) Greyhounds", ...)
+    were unresolved, so 34% of listed events (29 D-I games on 11-19/20) lost both game lines and player props.
+    Every entry is explicit and schedule-verified; matching stays strict (no runtime fuzziness)."""
+    m = MT.odds_team_map()
+    assert len(m) >= 77 and m["canonical_team_id"].str.match(r"^T-[0-9a-f]{16}$").all()
+    assert not m["canonical_team_id"].duplicated().any()                       # one provider spelling per team
+    k = dict(zip(m["provider_team_name"], m["canonical_team_id"]))
+    assert k["Kansas St Wildcats"] == "T-15268382895e06f6" and k["UMKC Kangaroos"] == "T-cee2d39c1f25e115"
+    assert k["Long Beach St 49ers"] == "T-a87f5a13ea129a7d" and k["Grand Canyon Antelopes"] == "T-b55206cb483ae7c5"
+    assert m["evidence"].str.contains("listing").all() and m["verified_on"].notna().all()
+    tidx = MT.team_index(pd.DataFrame(columns=["canonical_team_id", "school", "display_name", "mascot"]), m)
+    assert MT.resolve_team("Kansas St. Wildcats", tidx)[1] == "EXPLICIT_MAP"      # normalisation still applies
+    assert MT.resolve_team("Kansas Wildcats", tidx) == (None, "UNMATCHED")       # nothing fuzzy
+
+
 def test_duplicate_curated_map_entries_are_refused(tmp_path):
     p = tmp_path / "m.csv"
     p.write_text("provider_team_name,canonical_team_id\nWichita St Shockers,T-1\nwichita st. shockers,T-2\n")
