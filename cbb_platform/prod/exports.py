@@ -14,7 +14,8 @@ writes, for the America/New_York slate date D, into <export root>/D/:
     CBB_Distributions_MM_DD_YYYY_pmf_refs.parquet   REFERENCES, not vectors (the full PMF is stored ONCE, in
                                        ticks/<tick>/pmfs.parquet or forecasts/<D>/<snapshot>/pmfs.parquet)
     (on request only) `exports expand-distributions --date D` writes the legacy one-row-per-outcome workbook
-    CBB_Grades_MM_DD_YYYY.xlsx         REQUIRED. Grades the D-1 ET slate (never a blank same-day workbook): every frozen
+    CBB_Grades_<D-1>.xlsx              REQUIRED. Grades the D-1 ET slate, and its file name carries D-1 (folder D, e.g.
+                                       exports/2026-11-21/CBB_Grades_11_20_2026.xlsx; never a blank same-day workbook): every frozen
                                        pre-cutoff market evaluation (PASS_NO_EDGE included) against the exact persisted
                                        line. Graded Predictions | By Stat | By Player Role | Stat x Role | By Side |
                                        By Selection Tier | Status
@@ -106,11 +107,17 @@ def slate_date_of(tip) -> str | None:
     return None if t is None else str(t.tz_convert(TZ).date())
 
 
+def _tag(d: pd.Timestamp) -> str:
+    return f"{d.month:02d}_{d.day:02d}_{d.year:04d}"
+
+
 def file_names(date: str) -> dict:
+    """Names of the files in the export folder of production date D. Every file carries D, EXCEPT Grades: the Grades
+    workbook of folder D grades the D-1 ET slate, so its file name carries D-1 (CBB_Grades_<D-1>.xlsx)."""
     d = pd.Timestamp(date)
-    tag = f"{d.month:02d}_{d.day:02d}_{d.year:04d}"
+    tag = _tag(d)
     return {"boards": f"CBB_Boards_{tag}.xlsx", "distributions": f"CBB_Distributions_{tag}.xlsx",
-            "grades": f"CBB_Grades_{tag}.xlsx", "performance": f"CBB_Performance_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmf_refs.parquet",
+            "grades": f"CBB_Grades_{_tag(d - pd.Timedelta(days=1))}.xlsx", "performance": f"CBB_Performance_{tag}.xlsx", "distribution_pmfs": f"CBB_Distributions_{tag}_pmf_refs.parquet",
             "distributions_long": f"CBB_Distributions_{tag}_LONG.xlsx"}
 
 
@@ -599,6 +606,23 @@ def write_if_changed(path: Path, receipt_name: str, content, build, writer_sha: 
     tmp.write_text(json.dumps({**want, **(extra or {}), "xlsx_sha256": _file_sha(p)}, sort_keys=True, indent=1) + "\n")
     os.replace(tmp, rec_p)
     return p, True
+
+
+def _retire_legacy_grades(out_dir: Path, date: str, current: Path) -> str | None:
+    """Before 2026-11-21 the Grades workbook of folder D was misnamed CBB_Grades_<D>.xlsx although it grades D-1. When
+    folder D is re-exported under the corrected name, the misnamed copy (same content contract, same folder) is removed
+    so the folder holds exactly one Grades workbook. Only that exact legacy name in this folder is ever touched, and
+    only after the correctly named workbook exists and its receipt names it."""
+    legacy = Path(out_dir) / f"CBB_Grades_{_tag(pd.Timestamp(date))}.xlsx"
+    if legacy == Path(current) or not legacy.exists() or not Path(current).exists():
+        return None
+    try:
+        if json.loads((Path(out_dir) / GRADE_RECEIPT).read_text()).get("file") != Path(current).name:
+            return None
+    except (OSError, ValueError):
+        return None
+    legacy.unlink()
+    return legacy.name
 
 
 DIST_RECEIPT = "distributions_receipt.json"
@@ -1110,13 +1134,16 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
             sheets = grades_shadow_sheets(sheets, grows, gg["rows"])
         p, written = write_if_changed(out_dir / names_["grades"], GRADE_RECEIPT,
                                       [[b["rows"] for b in sh_["blocks"]] for sh_ in sheets],
-                                      lambda path: write_xlsx(path, sheets), _writers_sha(MX, ME))
+                                      lambda path: write_xlsx(path, sheets), _writers_sha(MX, ME),
+                                      extra={"export_date": date, "graded_slate_date": prior})
+        legacy = _retire_legacy_grades(out_dir, date, p)
         m = MX.metrics(grows)
         rep["grades"] = {"status": "WRITTEN", "path": str(p), "rows": len(grows), "rewritten": written,
                          "graded_slate_date": prior, "GRADE_STATUS": MX.grade_status(grows),
                          "results": pd.Series([r["result"] for r in grows]).value_counts().to_dict() if grows else {},
                          "graded": m["Graded"], "void_dnp": m["VOID_DNP"], "pending": m["Pending"],
-                         "games_frozen": ginfo.get("games_frozen", 0)}
+                         "games_frozen": ginfo.get("games_frozen", 0), "export_date": date,
+                         "file": p.name, **({"retired_legacy_file": legacy} if legacy else {})}
     except MX.MarketExportIntegrityError as e:
         rep["grades"] = {"status": "ABORTED_INTEGRITY", "missing": str(e)[:400]}
     rep["performance"] = _performance(date, ops_root, out_dir, at)        # after Grades (same graded rows)

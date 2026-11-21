@@ -262,7 +262,7 @@ Coverage (model-only rows). Consensus fields are informational.
 
 Frozen evaluations: once a game's cutoff passes, `ops/evaluations/<D>/market_evaluations.jsonl` records (write-once,
 hash-verified) its evaluation at the decision observation (first pre-cutoff observation at / after the latest pre-cutoff
-PMF). `CBB_Grades` of export date D grades D-1 (every market evaluation incl. PASS_NO_EDGE, exact line; VOID_DNP /
+PMF). `CBB_Grades` of export date D grades D-1 and is named for D-1 (`exports/<D>/CBB_Grades_<D-1>.xlsx`; receipt `grades_receipt.json` carries `export_date` D and `graded_slate_date` D-1; since 2026-11-21) (every market evaluation incl. PASS_NO_EDGE, exact line; VOID_DNP /
 VOID_NO_GAME / PENDING excluded from metrics). `CBB_Performance` is cumulative from the first date with real pre-cutoff
 quotes (`ops/performance/cbb_market_performance.parquet`; nine tabs). Close = last observation <= min(commence, cutoff),
 at most 60 min stale, at / after the entry; CLV statuses EXACT_LINE, SAME_LINE_NEAREST_CLOSE, LINE_MOVED (directional

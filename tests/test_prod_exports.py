@@ -240,7 +240,7 @@ def test_export_date_uses_america_new_york():
     """a 22:30 ET tip (03:30Z next UTC day) belongs to the ET slate date; file names follow MM_DD_YYYY."""
     assert EX.file_names("2026-11-04") == {"boards": "CBB_Boards_11_04_2026.xlsx",
                                            "distributions": "CBB_Distributions_11_04_2026.xlsx",
-                                           "grades": "CBB_Grades_11_04_2026.xlsx",
+                                           "grades": "CBB_Grades_11_03_2026.xlsx",   # grades D-1
                                            "performance": "CBB_Performance_11_04_2026.xlsx",
                                            "distribution_pmfs": "CBB_Distributions_11_04_2026_pmf_refs.parquet",
                                            "distributions_long": "CBB_Distributions_11_04_2026_LONG.xlsx"}
@@ -345,7 +345,7 @@ def test_missing_evidence_writes_nothing_and_decided_matches_tick(tmp_path):
     rep = _run(tree)
     assert all(rep[k]["status"] == "MISSING_EVIDENCE" for k in ("boards", "distributions"))
     assert rep["grades"]["status"] == "WRITTEN" and rep["grades"]["GRADE_STATUS"] == "NO_MARKET_PREDICTIONS"
-    assert sorted(p.name for p in (tree["out_root"] / DATE).glob("*.xlsx")) == ["CBB_Grades_11_04_2026.xlsx",
+    assert sorted(p.name for p in (tree["out_root"] / DATE).glob("*.xlsx")) == ["CBB_Grades_11_03_2026.xlsx",
                                                                                 "CBB_Performance_11_04_2026.xlsx"]
     assert rep["performance"]["status"] == "WRITTEN"            # REQUIRED: cumulative, written even without evidence
     from cbb_platform.prod import shadow_tick as TK
@@ -413,3 +413,24 @@ def test_release_b_shadow_layout_separates_player_and_game_populations(tmp_path,
     blocks = [r[0] for r in gw["Summary"]["rows"] if r and r[0] in ("PLAYER PROPS", "GAME MARKETS")]
     assert "PLAYER PROPS" in blocks and "GAME MARKETS" in blocks
     assert nxt["game_performance"]["status"] == "WRITTEN"
+
+
+def test_grades_naming_contract_folder_d_file_d_minus_1(market):
+    """Folder date = export date D; Boards / Distributions / Performance carry D; Grades grades D-1 and carries D-1 in
+    its name and receipt. A legacy misnamed CBB_Grades_<D>.xlsx in folder D is retired once the correct one exists."""
+    tree, _ = market
+    out = tree["out_root"] / "2026-11-05"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "CBB_Grades_11_05_2026.xlsx").write_bytes(b"legacy misnamed grades")       # pre-fix name in folder D
+    rep = _run(tree, "2026-11-05")
+    g = rep["grades"]
+    assert g["status"] == "WRITTEN" and Path(g["path"]).name == "CBB_Grades_11_04_2026.xlsx" == g["file"]
+    assert Path(g["path"]).parent == out and g["export_date"] == "2026-11-05" and g["graded_slate_date"] == "2026-11-04"
+    assert g["retired_legacy_file"] == "CBB_Grades_11_05_2026.xlsx" and not (out / "CBB_Grades_11_05_2026.xlsx").exists()
+    rec = json.loads((out / EX.GRADE_RECEIPT).read_text())
+    assert (rec["file"], rec["export_date"], rec["graded_slate_date"]) == ("CBB_Grades_11_04_2026.xlsx", "2026-11-05",
+                                                                          "2026-11-04")
+    assert rep["performance"]["status"] == "WRITTEN" and Path(rep["performance"]["path"]).name == "CBB_Performance_11_05_2026.xlsx"
+    assert [p.name for p in sorted(out.glob("CBB_Grades_*.xlsx"))] == ["CBB_Grades_11_04_2026.xlsx"]
+    again = _run(tree, "2026-11-05")                                                   # idempotent
+    assert again["grades"]["rewritten"] is False and "retired_legacy_file" not in again["grades"]

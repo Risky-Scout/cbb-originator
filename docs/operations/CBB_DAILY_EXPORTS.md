@@ -30,7 +30,7 @@ PYTHONPATH=. .venv/bin/python -m cbb_platform.prod.exports daily --date YYYY-MM-
 |---|---|
 | `CBB_Boards_MM_DD_YYYY.xlsx` | Full Board · 60 Percent Plus (MODEL% ≥ 0.60) · 65 Percent Plus (MODEL% ≥ 0.65) |
 | `CBB_Distributions_MM_DD_YYYY.xlsx` | Distributions (official marginal PMFs, full mass, folded tail point kept) |
-| `CBB_Grades_MM_DD_YYYY.xlsx` | Graded Bets · Performance Summary (six sections) |
+| `CBB_Grades_<D-1>.xlsx` | Grades the D-1 slate; the file name carries D-1 (folder `exports/<D>/`, e.g. `exports/2026-11-21/CBB_Grades_11_20_2026.xlsx`). Every other file in folder D carries D. |
 
 Optional overrides: `--ops-root`, `--runs-root`, `--out-root`, `--history-db` (team names only), `--state-root`.
 
