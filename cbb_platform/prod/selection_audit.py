@@ -17,7 +17,8 @@ audit, mode prospective (default; the decision-gate population): only frozen pla
 persisted decision-time candidate_offer_set (selection_replay.replayable_evidence: REPLAYABLE_EVIDENCE_START onward);
 earlier records are counted NOT_REPLAYABLE and never back-filled. Mode retrospective additionally reconstructs earlier
 candidate sets from the persisted PMF + the record's own decision observation, accepted only when they reproduce the
-stored best offer exactly (diagnostic; never used by the gate).
+stored best offer exactly (diagnostic; never used by the gate; needs MemoryMax=2000M, ~1.4 GB peak per slate -- the
+prospective mode loads no PMF and stays small).
 Per record: the four rules of selection_replay pick an offer each; settled on the final box score; CLV of the picked
 offer from the corrected close evidence (prod.market_exports.closing, the Performance function). The pre-declared
 POLICY_CANDIDATE is applied to its rule's picks. ALL_MARKETS (selection-free): one OVER offer per market (the line with
@@ -192,6 +193,7 @@ def _reconstruct(ops: Path, day: str, e: dict, obs, pm: dict, frames: dict):
         return None
     f = e["observation_file"]
     if f not in frames:
+        frames.clear()                 # records are visited game by game: keep one decision observation in memory
         frames[f] = obs.frame(ob)
     q = frames[f].assign(stat=frames[f]["stat"].astype(object))
     q = q[(q["canonical_game_id"] == e["game_id"]) & (q["canonical_player_id"] == e["player_id"])
@@ -199,12 +201,18 @@ def _reconstruct(ops: Path, day: str, e: dict, obs, pm: dict, frames: dict):
     return SR.offers({"candidate_offer_set": ME.evaluate(p, q if len(q) else pd.DataFrame())["offer_set"]})
 
 
-def _pmf_map(ops: Path, day: str) -> dict:
+def _pmf_map(ops: Path, day: str, keys) -> dict:
+    """Retrospective mode only. prod.exports.distribution_records over the whole slate peaks at ~1.4 GB (per-game calls
+    are ~30 s each): run with MemoryMax=2000M outside the morning / heavy windows."""
     import numpy as np
     from cbb_platform.prod import exports as EX
     pmfs: list = []
     EX.distribution_records(ops, EX.RUNS_ROOT, EX.slate_games(ops, day), {}, day, audit={}, pmf_out=pmfs)
-    return {(r["game_id"], r["player_id"], r["stat"]): np.asarray(r["pmf"], dtype=float) for r in pmfs}
+    keys = set(keys)
+    out = {(r["game_id"], r["player_id"], r["stat"]): np.asarray(r["pmf"], dtype=float) for r in pmfs
+           if (r["game_id"], r["player_id"], r["stat"]) in keys}
+    del pmfs
+    return out
 
 
 def _game_check(ops: Path, day: str) -> dict:
@@ -222,6 +230,14 @@ def _game_check(ops: Path, day: str) -> dict:
             "fail": [r["game_id"] for r in res if not r["PASS"]][:20]} if res else {}
 
 
+def _release(*objs) -> None:
+    import gc
+    for o in objs:
+        if isinstance(o, dict):
+            o.clear()
+    gc.collect()
+
+
 def audit(ops: Path, out: Path, mode: str = "prospective", lo: str | None = None, hi: str | None = None) -> dict:
     from cbb_platform.prod import market_exports as MX
     ops, out = Path(ops), Path(out)
@@ -236,8 +252,8 @@ def audit(ops: Path, out: Path, mode: str = "prospective", lo: str | None = None
         if not evals:
             continue
         obs, act = MX.Observations(ops, day), MX.actuals(ops, {k[0] for k in evals})
-        pm = _pmf_map(ops, day) if mode == "retrospective" and any(
-            not e.get("candidate_offer_set") for e in evals.values()) else {}
+        need = [k for k, e in evals.items() if not e.get("candidate_offer_set")]
+        pm = _pmf_map(ops, day, need) if mode == "retrospective" and need else {}
         frames, cache = {}, {}
         for k in sorted(evals):
             e = evals[k]
@@ -288,6 +304,8 @@ def audit(ops: Path, out: Path, mode: str = "prospective", lo: str | None = None
                              "probability_clv": cl["probability_clv"],
                              "disagreement_bucket": SR.disagreement_bucket(c["edge"]),
                              "prob_bucket": SR.prob_bucket(c["model_p"])})
+        _release(pm, frames, cache)
+        del obs, act
     rep = {"version": AUDIT_VERSION, "mode": mode, "days": days, "graded_slates": sorted(graded_days),
            "evidence_window": ev_window, "records": dict(recon),
            "replay_hash": SR.replay_hash([{k: v for k, v in r.items() if k != "roles"} for r in picks]),
