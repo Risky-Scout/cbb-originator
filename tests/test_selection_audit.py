@@ -145,3 +145,94 @@ def test_performance_overall_names_rule_actionability_and_replayable_start():
     assert scope["Replayable Evidence Start (first frozen candidate-offer set)"] == "2026-11-22T17:00:00+00:00"
     assert ME.ACTIONABILITY_STATUS in scope["Actionability"] and "not a wagering approval" in scope["Actionability"]
     assert "By Reporting Tier" in PF.SHEETS and "Reporting Tier" in MX.GRADED_COLS
+
+
+# ---------------------------------------------------------------- 2026-11-22: frozen gate, live checks, daily accumulation
+def test_validation_gate_v1_is_frozen_and_tamper_evident(tmp_path):
+    from cbb_platform import config as C
+    f = json.loads((C.PROJECT_ROOT / "docs" / "governance" / "PROPOSED_VALIDATION_GATE_V1.json").read_text())
+    assert f["definition"] == SR.gate_definition() and f["definition_sha256"] == SR.gate_sha256()
+    assert f["declared_at"] == SR.GATE_DECLARED_AT == "2026-11-22T04:26:24+00:00"
+    assert (SR.GATE_ID, SR.GATE_MIN_GRADED, SR.GATE_MIN_SLATES, SR.GATE_Z, SR.GATE_MAX_ABS_CAL_GAP) == \
+        ("PROPOSED_VALIDATION_GATE_V1", 300, 10, 2.0, 0.05)
+    g = SR.decision_gate({ru: SR.metrics([]) for ru in SR.RULES}, SR.metrics([]), 0, [])
+    assert g["gate_id"] == SR.GATE_ID and g["gate_sha256"] == SR.gate_sha256()
+    assert SA.pin_gate(tmp_path, "2026-11-22T12:00:00+00:00")["status"] == "PINNED"
+    assert SA.pin_gate(tmp_path, "2026-11-23T12:00:00+00:00")["status"] == "UNCHANGED"
+    pin = json.loads((tmp_path / "gate_freeze.json").read_text())
+    assert pin["pinned_at"] == "2026-11-22T12:00:00+00:00"                     # first pin is never rewritten
+    (tmp_path / "gate_freeze.json").write_text(json.dumps({**pin, "definition_sha256": "edited"}))
+    assert SA.pin_gate(tmp_path, "2026-11-24T12:00:00+00:00")["status"] == "GATE_DEFINITION_CHANGED"
+
+
+def _live():
+    return {**_record(), "frozen_at": (CUT_TS()).isoformat()}
+
+
+def CUT_TS():
+    from tests.test_market_contract import CUT
+    return pd.Timestamp(CUT)
+
+
+def test_offer_timing_rejects_stale_post_cutoff_and_duplicate_quotes():
+    from cbb_platform.prod import config as PC
+    e = _live()
+    rows = [dict(zip(ME.OFFER_COLS, r)) for r in e["candidate_offer_set"]]
+    assert SA.offer_timing(e, rows) == {}
+    dec = pd.Timestamp(e.get("entry_received_at") or e["observation_received_at"])
+    i = next(i for i, r in enumerate(rows) if r["status"] == ME.ELIGIBLE)
+    stale = [dict(r) for r in rows]
+    stale[i]["collector_received_at"] = (dec - pd.Timedelta(seconds=PC.QUOTE_MAX_AGE_SECONDS + 60)).isoformat()
+    assert SA.offer_timing(e, stale)["STALE_OFFER_ELIGIBLE"] == 1
+    late = [dict(r) for r in rows]
+    late[i]["collector_received_at"] = (pd.Timestamp(e["cutoff_utc"]) + pd.Timedelta(minutes=1)).isoformat()
+    assert SA.offer_timing(e, late)["POST_CUTOFF_OFFER_ELIGIBLE"] == 1
+    dup = [dict(r) for r in rows]
+    j = next(j for j, r in enumerate(rows) if r["status"] == ME.ELIGIBLE and j != i)
+    dup[j]["quote_id"] = dup[i]["quote_id"]
+    assert SA.offer_timing(e, dup)["DUPLICATE_QUOTE_ID"] == 1
+    bad = [list(x) for x in e["candidate_offer_set"]]
+    bad[i][ME.OFFER_COLS.index("collector_received_at")] = (dec - pd.Timedelta(hours=2)).isoformat()
+    v = SA.verify_player_record({**e, "candidate_offer_set": bad})
+    assert not v["PERSISTENCE_PASS"] and not v["PASS"] and v["timing_defects"] == {"STALE_OFFER_ELIGIBLE": 1}
+
+
+def test_daily_is_incremental_pins_the_gate_and_never_counts_pre_start_records(tmp_path, monkeypatch):
+    from cbb_platform.prod import market_exports as MX
+    ops, out = tmp_path / "ops", tmp_path / "audit"
+
+    def sealed(**b):
+        b = {k: v for k, v in b.items() if k not in ("record_type", "content_hash")}
+        return {"record_type": "MARKET_EVALUATION", **b, "content_hash": MX._hash(b)}
+    e = _live()
+    old = {k: v for k, v in e.items() if k not in ("candidate_offer_set", "candidate_offer_schema")}
+    _write(ops / "evaluations" / "2026-11-21" / SR.PLAYER_EVAL_FILE, [sealed(**old)])
+    _write(ops / "evaluations" / "2026-11-22" / SR.PLAYER_EVAL_FILE, [sealed(**e)])
+    calls = []
+
+    def fake_rows(o, day, evals, mode):
+        calls.append(day)
+        persisted = sum(bool(x.get("candidate_offer_set")) for x in evals.values())
+        return {"picks": [], "allm": [], "pol": [], "graded": False,
+                "recon": {"PERSISTED": persisted, "NOT_REPLAYABLE_BEFORE_START": len(evals) - persisted}}
+    monkeypatch.setattr(SA, "_day_rows", fake_rows)
+    monkeypatch.setattr(SA, "close_lineage", lambda obs, e, now: {"status": "PENDING_TIP"})
+    monkeypatch.setattr(MX, "Observations", lambda ops, day: None)
+    r = SA.daily(ops, out, "2026-11-23T14:15:00+00:00")
+    assert sorted(calls) == ["2026-11-21", "2026-11-22"]
+    assert r["evidence_window"]["replayable_evidence_start"] == e["frozen_at"]
+    assert r["records"] == {"PERSISTED": 1, "NOT_REPLAYABLE_BEFORE_START": 1}
+    assert r["live"]["LIVE_PLAYER_CANDIDATE_PERSISTENCE"] == "PASS"
+    assert r["live"]["LIVE_PLAYER_SELECTION_REPLAY"] == "PASS"
+    assert r["live"]["LIVE_PLAYER_CLOSE_LINEAGE"] == "PENDING_TIP"
+    assert r["gate_pin"]["status"] == "PINNED" and r["decision_gate"]["gate"] == "INSUFFICIENT_SAMPLE"
+    assert r["actionability_validated"] is False and r["headline"]["gate_id"] == SR.GATE_ID
+    calls.clear()
+    SA.daily(ops, out, "2026-11-24T14:15:00+00:00")
+    assert calls == []                                   # complete, unchanged slates come from the per-slate cache
+    hist = [json.loads(x) for x in (out / "history.jsonl").read_text().splitlines()]
+    assert len(hist) == 2 and (out / "latest.json").exists() and len(list((out / "reports").glob("*.json"))) == 2
+    _write(ops / "evaluations" / "2026-11-22" / SR.PLAYER_EVAL_FILE,
+           [sealed(**e), sealed(**{**e, "stat": "REB"})])
+    SA.daily(ops, out, "2026-11-25T14:15:00+00:00")
+    assert calls == ["2026-11-22"]                       # a slate whose evaluation file changed is recomputed

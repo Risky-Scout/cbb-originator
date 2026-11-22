@@ -34,6 +34,9 @@
 #   cbb-originator-run tick                     every 10 min (writer lock): official shadow tick only when its cheap due
 #                                               gate says due; then the tiered quote refresh (per-game tier spacing;
 #                                               nothing requested when no game is due; reprice only, never a refit)
+#   cbb-originator-run selection-audit          09:15 ET prospective selection audit (prod/selection_audit.py daily):
+#                                               read-only on the ops state, writes only $STATE/audit/selection; no
+#                                               writer lock, NEVER the heavy lock; no provider call, fit or simulation
 #   CBB_DRY_RUN=1 ...                           run every check, print the command that would run, run nothing
 #
 # Layout (immutable code, mutable state elsewhere):
@@ -73,7 +76,8 @@ case "$CMD" in preflight|morning-recover|features-warmup|tick) ;;
   lifecycle-refresh) case "${2:-}" in 10:00|13:00|16:00|18:00) ;; *) echo "lifecycle-refresh needs one of 10:00 13:00 16:00 18:00" >&2; exit 3 ;; esac ;;
   availability-poll) case "${2:-}" in 08:30) ;; *) echo "availability-poll needs 08:30" >&2; exit 3 ;; esac ;;
   prune-scratch) case "${2:-}" in ""|--apply) ;; *) echo "prune-scratch takes only --apply" >&2; exit 3 ;; esac ;;
-  *) echo "usage: cbb-originator-run preflight|morning-stage STAGE|morning-finalize STAGE|morning-recover|morning-reconcile DATE|features-warmup|lifecycle-refresh HH:MM|availability-poll HH:MM|prune-scratch [--apply]|tick" >&2; exit 3 ;; esac
+  selection-audit) [ -z "${2:-}" ] || { echo "selection-audit takes no argument" >&2; exit 3; } ;;
+  *) echo "usage: cbb-originator-run preflight|morning-stage STAGE|morning-finalize STAGE|morning-recover|morning-reconcile DATE|features-warmup|lifecycle-refresh HH:MM|availability-poll HH:MM|prune-scratch [--apply]|selection-audit|tick" >&2; exit 3 ;; esac
 
 # ------------------------------------------------------------------ 1. safe-by-default deployment mode (docs §10)
 [ "${CBB_MODEL_SOURCE:-ACTIVE_DAILY}" = "ACTIVE_DAILY" ] || [ "${CBB_MODEL_SOURCE}" = "FROZEN_OPENING_BASELINE" ] \
@@ -169,8 +173,14 @@ case "$CMD" in
   features-warmup)   RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" features-warmup) ;;
   prune-scratch)     RUN=("$PY" -m cbb_platform.prod.retention --runs-root "$CBB_PROD_ROOT/runs" --ops-root "$OPS" ${2:+"$2"})
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;           # structurally never the shared heavy lock
+  selection-audit)   RUN=("$PY" -B -m cbb_platform.prod.selection_audit daily "$OPS" "$STATE/audit/selection")
+                     unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;           # read-only research: never a lock
   tick)              RUN=("$PY" -m cbb_platform.prod.shadow_tick --ops-root "$OPS") ;;
 esac
+if [ "$CMD" = "selection-audit" ]; then
+  [ "$DRY" = "1" ] && { log "DRY RUN: no CBB writer lock, heavy lock NONE (read-only audit), run: ${RUN[*]}"; exit 0; }
+  exec "${RUN[@]}"                       # no lock: reads frozen evidence, writes only $STATE/audit/selection
+fi
 if [ "$DRY" = "1" ] && [ "$CMD" = "features-warmup" ]; then
   log "DRY RUN: no CBB writer lock; heavy lock ${CBB_HEAVY_LOCK:-NONE} for the whole warmup (budget ${CBB_WARMUP_BUDGET_MIN:-150} min), run: ${RUN[*]}"
   exit 0

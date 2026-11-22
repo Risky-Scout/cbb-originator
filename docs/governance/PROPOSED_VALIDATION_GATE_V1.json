@@ -1,0 +1,32 @@
+{
+ "declared_at": "2026-11-22T04:26:24+00:00",
+ "declared_in_commit": "907dd4b",
+ "definition": {
+  "conservative_min_edge": 0.03,
+  "defect_min_gap": 0.05,
+  "defect_min_n": 40,
+  "gate_id": "PROPOSED_VALIDATION_GATE_V1",
+  "incumbent_rule": "MAX_EV",
+  "log_loss_below_market": true,
+  "max_abs_cal_gap": 0.05,
+  "min_graded": 300,
+  "min_slates": 10,
+  "policy_candidate": {
+   "max_abs_disagreement": 0.1,
+   "min_books": 3,
+   "min_edge": 0.03,
+   "min_ev": 1e-12,
+   "rule": "CONSERVATIVE_MAX_EV"
+  },
+  "population": "PERSISTED candidate_offer_set records only, frozen_at >= REPLAYABLE_EVIDENCE_START; no back-fill",
+  "rules": [
+   "MAX_EV",
+   "MAX_EDGE",
+   "MAX_PROB_POS_EV",
+   "CONSERVATIVE_MAX_EV"
+  ],
+  "z": 2.0
+ },
+ "definition_sha256": "3f962543663b08ecd5925e7401120098b9d682c32bb0ff6adcd6a544a5962941",
+ "note": "Frozen before any prospective (persisted candidate-offer set) evidence was evaluated. Changing any threshold requires a new gate id and declaration; V1 is never edited."
+}

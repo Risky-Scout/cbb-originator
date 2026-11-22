@@ -250,6 +250,7 @@ NO_HEAVY_UNITS = STAGE_UNITS + SMALL_UNITS
 LIGHT_UNITS = ("cbb-originator-availability@.service", "cbb-originator-quotes.service")
 POLL_UNIT = "cbb-originator-availability-poll.service"      # 08:30 light poll: writer lock only, NEVER the heavy lock
 RETENTION_UNIT = "cbb-originator-retention.service"          # 05:45 run-scratch retention: writer lock only, NEVER heavy
+AUDIT_UNIT = "cbb-originator-selection-audit.service"        # 09:15 read-only selection audit: no lock, NEVER heavy
 
 
 def _mem(s: str, key: str) -> int:
@@ -259,6 +260,7 @@ def _mem(s: str, key: str) -> int:
 
 def test_units_are_isolated_and_hold_no_secrets():
     assert {u.name for u in UNITS} == {*HEAVY_UNITS, *NO_HEAVY_UNITS, *LIGHT_UNITS, POLL_UNIT, RETENTION_UNIT,
+                                       AUDIT_UNIT, "cbb-originator-selection-audit.timer",
                                        "cbb-originator-retention.timer", "cbb-originator-morning.timer",
                                        "cbb-originator-morning.target", "cbb-originator-morning-recover.timer",
                                        "cbb-originator-quotes.timer",
@@ -273,7 +275,7 @@ def test_units_are_isolated_and_hold_no_secrets():
     for u in (D / "systemd").glob("*.service"):
         s = u.read_text()
         lines = s.splitlines()
-        heavy = () if u.name in (POLL_UNIT, RETENTION_UNIT) + NO_HEAVY_UNITS else ("SupplementaryGroups=sports-models-heavy",
+        heavy = () if u.name in (POLL_UNIT, RETENTION_UNIT, AUDIT_UNIT) + NO_HEAVY_UNITS else ("SupplementaryGroups=sports-models-heavy",
                                                  "Environment=CBB_HEAVY_LOCK=/run/lock/sports-models/heavy.lock",
                                                  "ReadWritePaths=/var/lib/sports-models/cbb-originator /run/lock/sports-models")
         for line in heavy + ("Type=oneshot", "User=cbb-originator", "Group=cbb-originator", "Restart=no",
@@ -321,6 +323,7 @@ def test_timers_are_dst_correct_and_match_the_approved_schedule():
                    "cbb-originator-quotes.timer": ["OnCalendar=*-*-* *:00/10:00"],
                    "cbb-originator-availability-0830.timer": ["OnCalendar=*-*-* 08:30:00 America/New_York"],
                    "cbb-originator-retention.timer": ["OnCalendar=*-*-* 05,11,17,23:45:00 America/New_York"],
+                   "cbb-originator-selection-audit.timer": ["OnCalendar=*-*-* 09:15:00 America/New_York"],
                    **{f"cbb-originator-availability-{t.replace(':', '')}.timer": [f"OnCalendar=*-*-* {t}:00 America/New_York"]
                       for t in ("10:00", "13:00", "16:00", "18:00")}}
     for p in (D / "systemd").glob("*.timer"):
@@ -484,3 +487,22 @@ def test_tick_with_writer_lock_busy_captures_close_evidence_before_waiting(app):
     r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")                    # lock free: no close-only path
     assert r.returncode == 0, r.stderr
     assert not [c for c in log.read_text().splitlines() if "game-close-capture" in c]
+
+
+def test_selection_audit_unit_is_read_only_lock_free_and_small():
+    u = (D / "systemd" / AUDIT_UNIT).read_text()
+    lines = u.splitlines()
+    assert "ExecStart=/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run selection-audit" in u
+    assert "ReadOnlyPaths=/var/lib/sports-models/cbb-originator" in lines
+    rw = [ln for ln in lines if ln.startswith("ReadWritePaths=")]
+    assert rw == ["ReadWritePaths=/var/lib/sports-models/cbb-originator/audit"]       # never the ops state
+    body = "\n".join(ln for ln in lines if not ln.lstrip().startswith("#"))
+    assert "SupplementaryGroups" not in body and "/run/lock" not in body and "CBB_HEAVY_LOCK" not in body
+    assert _mem(u, "MemoryMax") <= 800
+    r = (D / "bin" / "cbb-originator-run").read_text()
+    blk = r[r.index("selection-audit)   RUN="):r.index("tick)              RUN=")]
+    assert "cbb_platform.prod.selection_audit daily" in blk and "unset CBB_HEAVY_LOCK" in blk
+    i = r.index('if [ "$CMD" = "selection-audit" ]; then')
+    gate = r[i:r.index("\nfi\n", i)]
+    assert 'exec "${RUN[@]}"' in gate and "flock" not in gate and "WRITER_LOCK" not in gate
+    assert i < r.index('mkdir -p "$LOCK_DIR"')          # exec'd before any lock is taken

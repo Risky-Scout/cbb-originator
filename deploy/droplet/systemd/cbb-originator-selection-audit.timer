@@ -1,0 +1,14 @@
+# CBB Originator prospective selection audit: 09:15 ET daily -- after the 06:10 morning chain graded the previous slate
+# and the 08:00 recovery window, before the 10:00 availability refresh. systemd evaluates the zone itself (DST-correct).
+[Unit]
+Description=CBB Originator 09:15 ET prospective selection audit timer
+
+[Timer]
+OnCalendar=*-*-* 09:15:00 America/New_York
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=cbb-originator-selection-audit.service
+
+[Install]
+WantedBy=timers.target

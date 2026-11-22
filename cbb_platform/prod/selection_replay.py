@@ -314,6 +314,25 @@ POLICY_CANDIDATE = {"rule": "CONSERVATIVE_MAX_EV", "min_ev": 1e-12, "min_edge": 
                     "max_abs_disagreement": 0.10, "min_books": 3}
 DEFECT_MIN_N = 40              # selection-free STAT x ROLE cell size for a localized predictive defect
 DEFECT_MIN_GAP = 0.05          # |mean model P(OVER) - realized OVER rate|, and > GATE_Z SE
+# Governance identity of the gate above. First declared in commit 907dd4b (2026-11-22T04:26:24Z), before the first
+# persisted player candidate-offer set; frozen record: docs/governance/PROPOSED_VALIDATION_GATE_V1.json (tested equal).
+# Any change to these thresholds is a NEW gate id with its own declaration timestamp -- never a silent edit of V1.
+GATE_ID = "PROPOSED_VALIDATION_GATE_V1"
+GATE_DECLARED_AT = "2026-11-22T04:26:24+00:00"
+GATE_DECLARED_IN_COMMIT = "907dd4b"
+
+
+def gate_definition() -> dict:
+    return {"gate_id": GATE_ID, "rules": list(RULES), "incumbent_rule": INCUMBENT_RULE,
+            "conservative_min_edge": CONSERVATIVE_MIN_EDGE, "min_graded": GATE_MIN_GRADED,
+            "min_slates": GATE_MIN_SLATES, "z": GATE_Z, "max_abs_cal_gap": GATE_MAX_ABS_CAL_GAP,
+            "log_loss_below_market": True, "policy_candidate": POLICY_CANDIDATE, "defect_min_n": DEFECT_MIN_N,
+            "defect_min_gap": DEFECT_MIN_GAP, "population": "PERSISTED candidate_offer_set records only, "
+            "frozen_at >= REPLAYABLE_EVIDENCE_START; no back-fill"}
+
+
+def gate_sha256() -> str:
+    return hashlib.sha256(json.dumps(gate_definition(), sort_keys=True).encode()).hexdigest()
 
 
 def validates(m: dict) -> bool:
@@ -353,7 +372,8 @@ def decision_gate(rule_metrics: dict, policy_metrics: dict, slates: int, defects
         gate = "INSUFFICIENT_SAMPLE"
     note = ("selection failed on a sufficient sample but no localized predictive defect: no model work justified"
             if gate == "INSUFFICIENT_SAMPLE" and enough and not ok else None)
-    return {"gate": gate, "note": note, "validated": ok, "slates": slates, "enough_sample": enough,
+    return {"gate": gate, "gate_id": GATE_ID, "gate_sha256": gate_sha256(), "gate_declared_at": GATE_DECLARED_AT,
+            "note": note, "validated": ok, "slates": slates, "enough_sample": enough,
             "localized_defects": defects,
             "criteria": {"min_graded": GATE_MIN_GRADED, "min_slates": GATE_MIN_SLATES, "z": GATE_Z,
                          "max_abs_cal_gap": GATE_MAX_ABS_CAL_GAP, "policy_candidate": POLICY_CANDIDATE,
