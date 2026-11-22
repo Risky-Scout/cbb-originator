@@ -23,7 +23,7 @@ Preferred Side = the best offer's side whenever any candidate has EV > 0 (the be
 NO_POSITIVE_EV. Threshold screen (reporting) = Preferred Side in (OVER, UNDER) and EV >= ACTION_MIN_EV and edge >= ACTION_MIN_EDGE
 and model probability >= ACTION_MIN_MODEL_PROBABILITY and RELIABLE, where RELIABLE = at least RELIABLE_MIN_BOOKS
 distinct books quote a two-sided (de-viggable) price at the selected line, OR the selected line is the consensus line
-with consensus confidence MEDIUM / HIGH (prod.consensus: >= 3 books at the line). Selection Tier (a REPORTING view of
+with consensus confidence MEDIUM / HIGH (prod.consensus: >= 3 books at the line). Reporting Tier (a REPORTING view of
 the screen): 65_PLUS (screen and model probability >= 0.65), 60_PLUS (screen and >= 0.60), ACTIONABLE (screen; the
 historical label), else PASS_NO_EDGE. Is Actionable = screen AND ACTIONABILITY_VALIDATED (False: not validated OOS).
 Consensus fields (prod.consensus) are informational only.

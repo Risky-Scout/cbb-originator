@@ -22,12 +22,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import exports as EX, market_exports as MX
+from cbb_platform.prod import exports as EX, market_eval as ME, market_exports as MX, selection_replay as SR
 
 PERFORMANCE_VERSION = "cbb-prod-performance-2.0.0"
 DATASET = Path("performance") / "cbb_market_performance.parquet"        # under ops_root
 RECEIPT = "performance_receipt.json"
-SHEETS = ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Selection Tier", "Daily", "Calibration",
+SHEETS = ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier", "Daily", "Calibration",
           "Selections")
 METRICS = ("Predictions", "Graded", "Wins", "Losses", "Pushes", "VOID_DNP", "VOID_NO_GAME", "Pending", "Hit Rate",
            "Win %", "Mean Model Probability",
@@ -134,16 +134,34 @@ def calibration_bins(rows: list[dict]) -> list[list]:
     return out
 
 
-def tables(rows: list[dict]) -> dict:
+def selection_evidence(ops_root: Path) -> dict:
+    """Selection rule / actionability state / replayable evidence window shown on Overall and in the receipt."""
+    w = SR.replayable_evidence(ops_root)
+    return {"selection_rule": SR.INCUMBENT_RULE, "actionability_status": ME.ACTIONABILITY_STATUS,
+            "actionability_validated": ME.ACTIONABILITY_VALIDATED, **w,
+            "replayable_slate_dates": len(w["replayable_slate_dates"])}
+
+
+def tables(rows: list[dict], evidence: dict | None = None) -> dict:
     m = _metrics(rows)
     dates = sorted({r["slate_date"] for r in rows})
+    ev = evidence or {}
     scope = [["Start Date (first persisted real pre-cutoff quote evidence)", dates[0] if dates else None],
              ["Through Date", dates[-1] if dates else None],
              ["Rows", "every frozen market evaluation (one per game x player x stat with a real pre-cutoff market; "
                       "PASS_NO_EDGE included); model-only rows excluded"],
              ["Grading", "exact persisted line; VOID_DNP / VOID_NO_GAME / PENDING excluded from Brier, Log Loss, "
                          "win rate and ROI; 1 unit per graded row at the recorded best price; push refunds"],
-             ["Close", f"last observation <= min(commence, cutoff), at most {MX.CLOSE_MAX_STALE_MINUTES} min stale"]]
+             ["Close", f"last observation <= min(commence, cutoff), at most {MX.CLOSE_MAX_STALE_MINUTES} min stale"],
+             ["Selection Rule", ev.get("selection_rule", SR.INCUMBENT_RULE)],
+             ["Actionability", f"{ev.get('actionability_status', ME.ACTIONABILITY_STATUS)}: Is Actionable = NO for "
+                               "every new player row; Reporting Tier (60_PLUS / 65_PLUS / ACTIONABLE) is a reporting "
+                               "view, not a wagering approval (rows frozen before 2026-11-22 keep their historical "
+                               "label)"],
+             ["Replayable Evidence Start (first frozen candidate-offer set)", ev.get("replayable_evidence_start")],
+             ["Replayable Records", ev.get("replayable_records")],
+             ["Selection Evidence", "from the start: the persisted decision-time candidate-offer set "
+                                    "(cbb-candidate-offers-1); earlier rows: the stored best offer only"]]
     status = [[s, sum(1 for r in rows if r["result"] in MX.GRADED and r["clv_status"] == s)] for s in MX.CLV_STATUSES]
     fm = MX.METRIC_FORMATS
     daily = []
@@ -163,7 +181,7 @@ def tables(rows: list[dict]) -> dict:
                     {"title": "Evaluation Scope", "columns": ("Item", "Value"), "rows": scope},
                     {"title": "CLV Status (graded rows)", "columns": ("CLV Status", "Rows"), "rows": status}],
         "By Stat": grp(("stat",)), "By Player Role": grp(("player_role",)), "Stat x Role": grp(("stat", "player_role")),
-        "By Side": grp(("side",)), "By Selection Tier": grp(("tier",)),
+        "By Side": grp(("side",)), "By Reporting Tier": grp(("tier",)),
         "Daily": [{"title": None, "columns": ("Date",) + METRICS, "rows": daily, "formats": fm}],
         "Calibration": [{"title": None, "columns": BIN_COLS, "rows": calibration_bins(rows), "formats": fm}],
         "Selections": [{"title": None, "columns": SEL_COLS, "rows": MX.graded_table_rows(rows), "formats": fm}]}
@@ -225,7 +243,8 @@ def export(date: str, ops_root: Path, out_dir: Path, now=None) -> dict:
         return {"status": "ABORTED_INTEGRITY", "missing": str(e)[:400]}
     except (OSError, ValueError, KeyError) as e:
         return {"status": "PERFORMANCE_MISSING_EVIDENCE", "missing": f"{type(e).__name__}: {str(e)[:400]}"}
-    tbl = tables(rows)
+    sel = selection_evidence(ops_root)
+    tbl = tables(rows, sel)
     path = out_dir / performance_name(date)
     rec_p = out_dir / RECEIPT
     writer = hashlib.sha256(Path(__file__).read_bytes() + Path(MX.__file__).read_bytes()
@@ -247,6 +266,8 @@ def export(date: str, ops_root: Path, out_dir: Path, now=None) -> dict:
            "roi": m["ROI"], "units_won": m["Units Won"], "exact_line_clv_n": m["Exact-Line CLV N"],
            "line_moved_n": m["Line-Moved N"], "no_close_n": m["No-Close N"],
            "mean_probability_clv": m["Mean Probability CLV"], "positive_clv_pct": m["Positive CLV %"],
+           **{k: sel[k] for k in ("selection_rule", "actionability_status", "actionability_validated",
+                                  "replayable_evidence_start", "replayable_records")},
            "canonical_dataset": str(Path(ds["path"])), "canonical_dataset_rows": ds["rows"],
            "canonical_dataset_sha256": ds["dataset_sha256"], "workbook_sha256": EX._file_sha(path),
            "content_sha256": content, "writer_sha256": writer}

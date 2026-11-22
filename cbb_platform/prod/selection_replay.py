@@ -19,10 +19,14 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from pathlib import Path
 
 from cbb_platform.prod import market_eval as ME
 
 RULES = ("MAX_EV", "MAX_EDGE", "MAX_PROB_POS_EV", "CONSERVATIVE_MAX_EV")
+INCUMBENT_RULE = "MAX_EV"                       # the production selection rule (prod.market_eval.best_offer)
+PLAYER_EVAL_FILE = "market_evaluations.jsonl"   # == prod.market_exports.EVAL_FILE (tested)
+GAME_EVAL_FILE = "game_market_evaluations.jsonl"  # == prod.game_exports.EVAL_FILE (tested)
 CONSERVATIVE_MIN_EDGE = ME.ACTION_MIN_EDGE
 DISAGREEMENT_BUCKETS = ("<=-10pp", "-10..-5pp", "-5..0pp", "0..+5pp", "+5..+10pp", ">+10pp")
 PROB_BUCKETS = ((0.0, 0.50, "<50"), (0.50, 0.55, "50-55"), (0.55, 0.60, "55-60"), (0.60, 0.65, "60-65"),
@@ -152,7 +156,23 @@ def metrics(rows: list[dict]) -> dict:
            "mean_edge": (sum(r["edge"] for r in g if r.get("edge") is not None) /
                          max(1, sum(r.get("edge") is not None for r in g))),
            "mean_ev": sum(r["ev"] for r in g) / n}
+    out.update(_paired(g, y))
     return out
+
+
+def _paired(g: list[dict], y: list[float]) -> dict:
+    """Per-row model-minus-market Brier / log-loss differences on rows with a de-vigged market price (negative = the
+    model beats the market) with their standard errors."""
+    db = [(r["model_p"] - yy) ** 2 - (r["fair_p"] - yy) ** 2 for r, yy in zip(g, y) if r.get("fair_p") is not None]
+    dl = [_ll(r["model_p"], yy) - _ll(r["fair_p"], yy) for r, yy in zip(g, y) if r.get("fair_p") is not None]
+
+    def ms(v):
+        if len(v) < 2:
+            return None, None
+        m = sum(v) / len(v)
+        return m, math.sqrt(sum((x - m) ** 2 for x in v) / (len(v) - 1) / len(v))
+    (bm, bs), (lm, ls) = ms(db), ms(dl)
+    return {"brier_diff_vs_market": bm, "brier_diff_se": bs, "log_loss_diff_vs_market": lm, "log_loss_diff_se": ls}
 
 
 def replay_hash(rows: list[dict]) -> str:
@@ -255,3 +275,86 @@ def apply_policy(c: dict, policy: dict, books_at_line: int = 0) -> bool:
     if c.get("stat") in policy.get("excluded_stats", ()) or c.get("side") in policy.get("excluded_sides", ()):
         return False
     return True
+
+
+# ---------------------------------------------------------------- prospective evidence window + decision gate
+def replayable_evidence(ops_root) -> dict:
+    """REPLAYABLE_EVIDENCE_START: the first production frozen_at of a player MARKET_EVALUATION carrying its persisted
+    candidate_offer_set (records frozen before it cannot be replayed from decision-time offers and are never
+    back-filled), with the count of such records and of the slate dates holding them."""
+    root = Path(ops_root) / "evaluations"
+    start, n, days = None, 0, []
+    for d in sorted(root.iterdir()) if root.exists() else []:
+        p = d / PLAYER_EVAL_FILE
+        if not p.exists():
+            continue
+        k = 0
+        for line in p.read_text().splitlines():
+            if '"candidate_offer_set"' not in line:
+                continue
+            r = json.loads(line)
+            if r.get("record_type") == "MARKET_EVALUATION" and r.get("candidate_offer_set"):
+                k += 1
+                start = r["frozen_at"] if start is None or r["frozen_at"] < start else start
+        if k:
+            n += k
+            days.append(d.name)
+    return {"replayable_evidence_start": start, "replayable_records": n, "replayable_slate_dates": days}
+
+
+# Decision gate, declared 2026-11-22 BEFORE any prospective (persisted-offer-set) evidence existed. Not to be tuned
+# on the prospective sample. Applied to PERSISTED candidate sets only.
+GATE_MIN_GRADED = 300          # graded WIN/LOSS active picks of a rule (or of the policy subset)
+GATE_MIN_SLATES = 10           # distinct slate dates
+GATE_Z = 2.0                   # model must beat the market by > GATE_Z standard errors (paired Brier)
+GATE_MAX_ABS_CAL_GAP = 0.05
+# The ONE pre-declared simple global actionability candidate (not fitted; motivated by the retrospective audit:
+# large disagreements were model location bias, so require consensus support and bound the disagreement).
+POLICY_CANDIDATE = {"rule": "CONSERVATIVE_MAX_EV", "min_ev": 1e-12, "min_edge": CONSERVATIVE_MIN_EDGE,
+                    "max_abs_disagreement": 0.10, "min_books": 3}
+DEFECT_MIN_N = 40              # selection-free STAT x ROLE cell size for a localized predictive defect
+DEFECT_MIN_GAP = 0.05          # |mean model P(OVER) - realized OVER rate|, and > GATE_Z SE
+
+
+def validates(m: dict) -> bool:
+    """A rule / policy subset beats the de-vigged market out of sample: enough graded rows, paired Brier difference
+    < 0 by more than GATE_Z SE, log loss no worse than the market, calibrated within GATE_MAX_ABS_CAL_GAP."""
+    if m.get("N", 0) < GATE_MIN_GRADED or m.get("brier_diff_vs_market") is None or m.get("brier_diff_se") is None:
+        return False
+    return (m["brier_diff_vs_market"] + GATE_Z * m["brier_diff_se"] < 0 and m["log_loss_diff_vs_market"] < 0
+            and abs(m["calibration_gap"]) <= GATE_MAX_ABS_CAL_GAP)
+
+
+def localized_defects(cells: dict) -> list[str]:
+    """Selection-free (one OVER offer per market) cells whose mean model P(OVER) misses the realized rate by more than
+    DEFECT_MIN_GAP and GATE_Z binomial SE."""
+    out = []
+    for k, m in cells.items():
+        n = m.get("N", 0)
+        if n < DEFECT_MIN_N:
+            continue
+        h = m["hit_rate"]
+        se = math.sqrt(max(h * (1 - h), 1e-9) / n)
+        if abs(m["calibration_gap"]) > DEFECT_MIN_GAP and abs(m["calibration_gap"]) > GATE_Z * se:
+            out.append(k)
+    return out
+
+
+def decision_gate(rule_metrics: dict, policy_metrics: dict, slates: int, defects: list[str]) -> dict:
+    """SELECTION_POLICY_VALIDATED | INSUFFICIENT_SAMPLE | SELECTION_POLICY_FAILED_MODEL_CHALLENGER_JUSTIFIED."""
+    cand = {**{r: m for r, m in rule_metrics.items()}, "POLICY_CANDIDATE": policy_metrics}
+    ok = [k for k, m in cand.items() if validates(m)]
+    enough = slates >= GATE_MIN_SLATES and all(m.get("N", 0) >= GATE_MIN_GRADED for m in rule_metrics.values())
+    if ok and slates >= GATE_MIN_SLATES:
+        gate = "SELECTION_POLICY_VALIDATED"
+    elif enough and defects:
+        gate = "SELECTION_POLICY_FAILED_MODEL_CHALLENGER_JUSTIFIED"
+    else:
+        gate = "INSUFFICIENT_SAMPLE"
+    note = ("selection failed on a sufficient sample but no localized predictive defect: no model work justified"
+            if gate == "INSUFFICIENT_SAMPLE" and enough and not ok else None)
+    return {"gate": gate, "note": note, "validated": ok, "slates": slates, "enough_sample": enough,
+            "localized_defects": defects,
+            "criteria": {"min_graded": GATE_MIN_GRADED, "min_slates": GATE_MIN_SLATES, "z": GATE_Z,
+                         "max_abs_cal_gap": GATE_MAX_ABS_CAL_GAP, "policy_candidate": POLICY_CANDIDATE,
+                         "defect_min_n": DEFECT_MIN_N, "defect_min_gap": DEFECT_MIN_GAP}}

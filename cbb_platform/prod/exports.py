@@ -18,9 +18,9 @@ writes, for the America/New_York slate date D, into <export root>/D/:
                                        exports/2026-11-21/CBB_Grades_11_20_2026.xlsx; never a blank same-day workbook): every frozen
                                        pre-cutoff market evaluation (PASS_NO_EDGE included) against the exact persisted
                                        line. Graded Predictions | By Stat | By Player Role | Stat x Role | By Side |
-                                       By Selection Tier | Status
+                                       By Reporting Tier | Status
     CBB_Performance_MM_DD_YYYY.xlsx    REQUIRED, cumulative (prod.performance): Overall | By Stat | By Player Role |
-                                       Stat x Role | By Side | By Selection Tier | Daily | Calibration | Selections
+                                       Stat x Role | By Side | By Reporting Tier | Daily | Calibration | Selections
 
 Read-only over evidence production has ALREADY persisted (no refit, no scoring, no provider / API / GitHub call: the
 module imports no network or acquisition code):

@@ -180,7 +180,7 @@ def test_12_13_threshold_sheets_pure_full_board_filters():
 
     def row(pid, status, tier):
         r = [None] * len(MX.BOARD_COLS)
-        r[col["Canonical Player ID"]], r[col["Market Status"]], r[col["Selection Tier"]] = pid, status, tier
+        r[col["Canonical Player ID"]], r[col["Market Status"]], r[col["Reporting Tier"]] = pid, status, tier
         return r
     rows = [row("a", "VALID_MARKET", ME.TIER_65), row("b", "VALID_MARKET", ME.TIER_60),
             row("c", "VALID_MARKET", ME.TIER_ACT), row("d", "VALID_MARKET", ME.TIER_PASS),

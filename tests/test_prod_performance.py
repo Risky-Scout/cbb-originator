@@ -121,7 +121,7 @@ def test_workbook_tabs_cumulative_scope_and_daily(two_days):
     assert rep["status"] == "WRITTEN" and rep["start_date"] == D1 and rep["rows"] == 3
     wb = EX.read_xlsx(out / D2 / PF.performance_name(D2))
     assert tuple(wb) == PF.SHEETS == ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side",
-                                      "By Selection Tier", "Daily", "Calibration", "Selections")
+                                      "By Reporting Tier", "Daily", "Calibration", "Selections")
     assert tuple(wb["Daily"]["rows"][0]) == ("Date",) + PF.METRICS
     assert [r[0] for r in wb["Daily"]["rows"][1:]] == [D1, D2]
     rows = PF.read_dataset(ops / PF.DATASET)
@@ -242,7 +242,7 @@ def test_group_tables_reconcile_to_overall(two_days):
     rows = PF.read_dataset(ops / PF.DATASET)
     t = PF.tables(rows)
     ov = dict(zip(t["Overall"][0]["columns"], t["Overall"][0]["rows"][0]))
-    for tab, width in (("By Stat", 1), ("By Player Role", 1), ("By Side", 1), ("By Selection Tier", 1), ("Daily", 1),
+    for tab, width in (("By Stat", 1), ("By Player Role", 1), ("By Side", 1), ("By Reporting Tier", 1), ("Daily", 1),
                        ("Stat x Role", 2)):
         cols, body = t[tab][0]["columns"], t[tab][0]["rows"]
         for k in ("Predictions", "Graded", "Wins", "Losses", "Pushes", "VOID_DNP", "VOID_NO_GAME", "Pending",
@@ -266,7 +266,7 @@ def test_zero_count_role_rows_kept(two_days):
         assert empty and all(r["Brier Score"] is None and r["ROI"] is None for r in empty)
     sides = [r[0] for r in PF.tables(rows)["By Side"][0]["rows"]]
     assert sides == ["OVER", "UNDER"]
-    assert [r[0] for r in PF.tables(rows)["By Selection Tier"][0]["rows"]] == list(MX.ME.TIERS)
+    assert [r[0] for r in PF.tables(rows)["By Reporting Tier"][0]["rows"]] == list(MX.ME.TIERS)
 
 
 def test_point_in_time_probability_is_the_frozen_evaluation(tmp_path):

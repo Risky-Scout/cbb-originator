@@ -4,8 +4,8 @@
 > official best-offer selections, `side_monitor` receipts, Graded Bets or the Performance Summary sheet. Current
 > contract: `docs/operations/CBB_DROPLET_PRODUCTION_RUNBOOK.md` §8a and `cbb_platform/prod/market_exports.py` /
 > `market_eval.py` / `performance.py`. Boards: Full Board · 60 Percent Plus · 65 Percent Plus · Model Coverage.
-> Grades (D grades D-1): Graded Predictions · By Stat · By Player Role · Stat x Role · By Side · By Selection Tier ·
-> Status. Performance: Overall · By Stat · By Player Role · Stat x Role · By Side · By Selection Tier · Daily ·
+> Grades (D grades D-1): Graded Predictions · By Stat · By Player Role · Stat x Role · By Side · By Reporting Tier ·
+> Status. Performance: Overall · By Stat · By Player Role · Stat x Role · By Side · By Reporting Tier · Daily ·
 > Calibration · Selections. The Distributions section below is still current.
 
 > **SUPERSEDED IN PART (2026-11-07, Droplet deployment).** The installed layout is: immutable git-archive release

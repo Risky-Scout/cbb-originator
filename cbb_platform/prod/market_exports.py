@@ -57,7 +57,8 @@ BOARD_COLS = (
     "Slate Date", "Canonical Game ID", "Game", "Tip Time ET", "Legal Cutoff ET", "Player", "Canonical Player ID", "Team",
     "Opponent", "Player Role", "Stat", "Model Projection", "Best Market Line", "Preferred Side", "Model Probability",
     "Push Probability", "Fair Market Probability", "Probability Edge", "Model Fair Odds", "Best Book",
-    "Best American Odds", "Best Decimal Odds", "Preferred EV", "Is Actionable", "Selection Tier", "Consensus Line",
+    "Best American Odds", "Best Decimal Odds", "Preferred EV", "Is Actionable", "Reporting Tier", "Actionability Status",
+    "Consensus Line",
     "Consensus Over Odds", "Consensus Under Odds", "Consensus Fair Over %", "Consensus Fair Under %", "Raw Book Count",
     "Consensus Book Count", "Outlier Book Count", "Quote Timestamp", "Quote Age", "Forecast ID", "Model Version",
     "Market Status", "Best Offer Side", "Books At Line", "Candidate Offers")
@@ -102,17 +103,17 @@ METRIC_FORMATS = {**{c: PCT for c in ("Hit Rate", "Win %", "Mean Model Probabili
 GRADED_COLS = (
     "Slate Date", "Game", "Tip Time ET", "Player", "Team", "Opponent", "Player Role", "Stat", "Side", "Preferred Side",
     "Line", "Book", "American Odds", "Decimal Odds", "Model Probability", "Push Probability", "Fair Market Probability",
-    "Probability Edge", "EV", "Is Actionable", "Selection Tier", "Actual", "Minutes", "Result", "Units",
+    "Probability Edge", "EV", "Is Actionable", "Reporting Tier", "Actual", "Minutes", "Result", "Units",
     "Entry Timestamp", "Entry Fair Probability", "Close Timestamp", "Close Book", "Close Line",
     "Close Fair Probability", "Probability CLV", "Log-Odds CLV", "Directional Line Movement", "CLV Status",
     "Canonical Game ID", "Canonical Player ID", "Forecast ID", "Model Version", "Evaluation Hash")
-GRADE_SHEETS = ("Graded Predictions", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Selection Tier",
+GRADE_SHEETS = ("Graded Predictions", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier",
                 "Status")
 STATUS_COLS = ("GRADE_STATUS", "GRADED_SLATE_DATE", "MARKET_PREDICTIONS", "GRADED", "VOID_DNP", "PENDING",
                "GAMES_FROZEN", "SOURCE")
 GROUPS = {"By Stat": ("stat",), "By Player Role": ("player_role",), "Stat x Role": ("stat", "player_role"),
-          "By Side": ("side",), "By Selection Tier": ("tier",)}
-GROUP_LABELS = {"stat": "Stat", "player_role": "Player Role", "side": "Side", "tier": "Selection Tier"}
+          "By Side": ("side",), "By Reporting Tier": ("tier",)}
+GROUP_LABELS = {"stat": "Stat", "player_role": "Player Role", "side": "Side", "tier": "Reporting Tier"}
 
 
 class MarketExportIntegrityError(RuntimeError):
@@ -241,7 +242,8 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
             None if b is None else b["edge"], None if mfo is None else int(round(mfo)), None if b is None else b["book"],
             None if b is None else ME.decimal_to_american(b["decimal"]) if b["american"] is None else int(round(b["american"])),
             None if b is None else b["decimal"], None if b is None else b["ev"],
-            None if b is None else ("YES" if ev["actionable"] else "NO"), ev["tier"], _f(c["consensus_line"]),
+            None if b is None else ("YES" if ev["actionable"] else "NO"), ev["tier"],
+            None if b is None else ev["actionability_status"], _f(c["consensus_line"]),
             _f(c["consensus_over_odds"]), _f(c["consensus_under_odds"]), _f(c["market_over_prob"]),
             _f(c["market_under_prob"]), c["raw_book_count"], c["consensus_book_count"], c["outlier_book_count"],
             _iso(qts), age, r.get("forecast_id"), r.get("model_version"), status, None if b is None else b["side"],
@@ -280,7 +282,7 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
             audit.append({**{c: x.get(c) for c in CN.AUDIT_COLS if c in x}, "canonical_game_id": gid,
                           "quote_age_seconds": None, "status": "EXCLUDED", "reason": why})
     dup = sorted(list(k) for k, n in seen.items() if n > 1)
-    i_st, i_side, i_tier, i_act = (BOARD_COLS.index(c) for c in ("Market Status", "Preferred Side", "Selection Tier",
+    i_st, i_side, i_tier, i_act = (BOARD_COLS.index(c) for c in ("Market Status", "Preferred Side", "Reporting Tier",
                                                                  "Is Actionable"))
     market = [x for x in rows if x[i_st] == VALID_MARKET]
     games = {r["game_id"] for r in pmfs}
@@ -316,7 +318,7 @@ def assert_unique(rows: list[list]) -> None:
 
 
 def board_sheets(rows: list[list]) -> dict:
-    i_st, i_tier = BOARD_COLS.index("Market Status"), BOARD_COLS.index("Selection Tier")
+    i_st, i_tier = BOARD_COLS.index("Market Status"), BOARD_COLS.index("Reporting Tier")
     market = [r for r in rows if r[i_st] == VALID_MARKET]
     return {"Full Board": market,
             "60 Percent Plus": [r for r in market if r[i_tier] in (ME.TIER_65, ME.TIER_60)],

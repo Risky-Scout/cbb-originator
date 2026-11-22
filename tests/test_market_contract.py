@@ -168,7 +168,7 @@ def test_board_one_row_per_game_player_stat_full_board_market_only_and_model_cov
     assert sorted(r[MX.BOARD_COLS.index("Canonical Player ID")] for r in sh["Model Coverage"]) == ["P-2", "P-9"]
     r = dict(zip(MX.BOARD_COLS, sh["Full Board"][0]))
     assert r["Market Status"] == "VALID_MARKET" and r["Preferred Side"] == "OVER" and r["Is Actionable"] == "NO"
-    assert r["Selection Tier"] == "65_PLUS" and sh["65 Percent Plus"] == sh["Full Board"]
+    assert r["Reporting Tier"] == "65_PLUS" and sh["65 Percent Plus"] == sh["Full Board"]
     assert r["Best Book"] in ("draftkings", "fanduel", "betmgm") and r["Best Decimal Odds"] > 1
     assert r["Raw Book Count"] == 3 and r["Opponent"] == "Beta" and r["Legal Cutoff ET"] == "2026-11-19 18:00"
     assert r["Quote Age"] == 10 * 60                                 # capture - bookmaker last update (stable)
@@ -180,7 +180,7 @@ def test_required_board_columns_present():
     need = ("Slate Date", "Canonical Game ID", "Game", "Tip Time ET", "Legal Cutoff ET", "Player", "Canonical Player ID",
             "Team", "Opponent", "Player Role", "Stat", "Model Projection", "Best Market Line", "Preferred Side",
             "Model Probability", "Push Probability", "Fair Market Probability", "Probability Edge", "Model Fair Odds",
-            "Best Book", "Best American Odds", "Best Decimal Odds", "Preferred EV", "Is Actionable", "Selection Tier",
+            "Best Book", "Best American Odds", "Best Decimal Odds", "Preferred EV", "Is Actionable", "Reporting Tier",
             "Consensus Line", "Consensus Over Odds", "Consensus Under Odds", "Consensus Fair Over %",
             "Consensus Fair Under %", "Raw Book Count", "Consensus Book Count", "Outlier Book Count", "Quote Timestamp",
             "Quote Age", "Forecast ID", "Model Version", "Market Status")
