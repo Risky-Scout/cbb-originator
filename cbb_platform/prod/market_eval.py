@@ -20,11 +20,12 @@ ranks last), then highest model probability, then highest payout (decimal odds),
 line ascending, then OVER before UNDER (only identical offers can reach the last two).
 
 Preferred Side = the best offer's side whenever any candidate has EV > 0 (the best offer then has EV > 0), else
-NO_POSITIVE_EV. Is Actionable = Preferred Side in (OVER, UNDER) and EV >= ACTION_MIN_EV and edge >= ACTION_MIN_EDGE
+NO_POSITIVE_EV. Threshold screen (reporting) = Preferred Side in (OVER, UNDER) and EV >= ACTION_MIN_EV and edge >= ACTION_MIN_EDGE
 and model probability >= ACTION_MIN_MODEL_PROBABILITY and RELIABLE, where RELIABLE = at least RELIABLE_MIN_BOOKS
 distinct books quote a two-sided (de-viggable) price at the selected line, OR the selected line is the consensus line
-with consensus confidence MEDIUM / HIGH (prod.consensus: >= 3 books at the line). Selection Tier: 65_PLUS (actionable
-and model probability >= 0.65), 60_PLUS (actionable and >= 0.60), ACTIONABLE, else PASS_NO_EDGE.
+with consensus confidence MEDIUM / HIGH (prod.consensus: >= 3 books at the line). Selection Tier (a REPORTING view of
+the screen): 65_PLUS (screen and model probability >= 0.65), 60_PLUS (screen and >= 0.60), ACTIONABLE (screen; the
+historical label), else PASS_NO_EDGE. Is Actionable = screen AND ACTIONABILITY_VALIDATED (False: not validated OOS).
 Consensus fields (prod.consensus) are informational only.
 """
 from __future__ import annotations
@@ -44,6 +45,12 @@ RELIABLE_MIN_BOOKS = 2
 RELIABLE_CONSENSUS_CONFIDENCE = ("MEDIUM", "HIGH")
 TIER_65, TIER_60, TIER_ACT, TIER_PASS = "65_PLUS", "60_PLUS", "ACTIONABLE", "PASS_NO_EDGE"
 TIERS = (TIER_65, TIER_60, TIER_ACT, TIER_PASS)
+# Selection tiers are REPORTING VIEWS of the threshold screen above, not validated wagering thresholds. The 2026-11-22
+# corrected-evidence audit (docs/audits/2026-11-22) found no selection rule, edge / EV / probability / disagreement band
+# or STAT x ROLE x SIDE cell whose OOS proper scores beat the de-vigged market (information slope 0.14 +- 0.13), so
+# Is Actionable stays NO until a policy is validated OOS: actionable = screen AND ACTIONABILITY_VALIDATED.
+ACTIONABILITY_VALIDATED = False
+ACTIONABILITY_STATUS = "NOT_VALIDATED_REPORTING_TIERS_ONLY"
 NO_POSITIVE_EV = "NO_POSITIVE_EV"
 ORDER = ("EV", "PROBABILITY_EDGE", "MODEL_PROBABILITY", "DECIMAL_ODDS", "BOOKMAKER_KEY")
 SIDES = ("OVER", "UNDER")
@@ -221,8 +228,9 @@ def evaluate(pmf: np.ndarray, q: pd.DataFrame) -> dict:
         return out
     rel, n = reliable(cands, b, cons)
     pref = b["side"] if b["ev"] > 0 else NO_POSITIVE_EV
-    act = pref in SIDES and b["ev"] >= ACTION_MIN_EV and b["edge"] is not None and b["edge"] >= ACTION_MIN_EDGE \
+    screen = pref in SIDES and b["ev"] >= ACTION_MIN_EV and b["edge"] is not None and b["edge"] >= ACTION_MIN_EDGE \
         and b["model_p"] >= ACTION_MIN_MODEL_PROBABILITY and rel
-    out.update(best=b, preferred_side=pref, actionable=bool(act), tier=tier(act, b["model_p"]), reliable=bool(rel),
-               books_at_line=n)
+    out.update(best=b, preferred_side=pref, screen_pass=bool(screen),
+               actionable=bool(screen and ACTIONABILITY_VALIDATED), actionability_status=ACTIONABILITY_STATUS,
+               tier=tier(screen, b["model_p"]), reliable=bool(rel), books_at_line=n)
     return out

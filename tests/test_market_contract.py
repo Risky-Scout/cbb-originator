@@ -106,27 +106,29 @@ def test_preferred_side_over_or_under_whenever_any_candidate_has_positive_ev():
     assert ev["best"]["ev"] < 0                                      # the best offer is still evaluated and graded
 
 
-def test_actionable_requires_ev_edge_model_probability_and_two_book_reliability():
+def test_screen_requires_ev_edge_model_probability_and_two_book_reliability_never_actionable_until_validated():
+    """2026-11-22: tiers are reporting views of the screen; Is Actionable = screen AND ACTIONABILITY_VALIDATED."""
     pmf = pmf_mix({6: 0.30, 14: 0.70})                               # P(OVER 10.5) = 0.70
     one = ME.evaluate(pmf, q([("draftkings", 10.5, "OVER", -110), ("draftkings", 10.5, "UNDER", -110)]))
     assert one["preferred_side"] == "OVER" and one["best"]["ev"] >= 0.03 and one["best"]["edge"] >= 0.03
-    assert one["reliable"] is False and one["actionable"] is False and one["tier"] == ME.TIER_PASS
+    assert one["reliable"] is False and one["screen_pass"] is False and one["actionable"] is False and one["tier"] == ME.TIER_PASS
     two = ME.evaluate(pmf, q([("draftkings", 10.5, "OVER", -110), ("draftkings", 10.5, "UNDER", -110),
                               ("fanduel", 10.5, "OVER", -115), ("fanduel", 10.5, "UNDER", -105)]))
-    assert two["reliable"] and two["books_at_line"] == 2 and two["actionable"] and two["tier"] == ME.TIER_65
+    assert two["reliable"] and two["books_at_line"] == 2 and two["screen_pass"] and not two["actionable"] and two["tier"] == ME.TIER_65
     p62 = pmf_mix({6: 0.38, 14: 0.62})
     t = ME.evaluate(p62, q([("draftkings", 10.5, "OVER", 110), ("draftkings", 10.5, "UNDER", -140),
                             ("fanduel", 10.5, "OVER", 105), ("fanduel", 10.5, "UNDER", -135)]))
-    assert t["actionable"] and t["tier"] == ME.TIER_60
+    assert t["screen_pass"] and t["tier"] == ME.TIER_60
     p56 = pmf_mix({6: 0.44, 14: 0.56})
     t = ME.evaluate(p56, q([("draftkings", 10.5, "OVER", 130), ("draftkings", 10.5, "UNDER", -160),
                             ("fanduel", 10.5, "OVER", 125), ("fanduel", 10.5, "UNDER", -155)]))
-    assert t["actionable"] and t["tier"] == ME.TIER_ACT
+    assert t["screen_pass"] and t["tier"] == ME.TIER_ACT
     p53 = pmf_mix({6: 0.47, 14: 0.53})                               # model probability < 0.54: never actionable
     t = ME.evaluate(p53, q([("draftkings", 10.5, "OVER", 150), ("draftkings", 10.5, "UNDER", -190),
                             ("fanduel", 10.5, "OVER", 150), ("fanduel", 10.5, "UNDER", -190)]))
-    assert t["best"]["ev"] > 0.03 and t["best"]["edge"] > 0.03 and not t["actionable"]
+    assert t["best"]["ev"] > 0.03 and t["best"]["edge"] > 0.03 and not t["screen_pass"] and not t["actionable"]
     assert (ME.ACTION_MIN_EV, ME.ACTION_MIN_EDGE, ME.ACTION_MIN_MODEL_PROBABILITY) == (0.03, 0.03, 0.54)
+    assert ME.ACTIONABILITY_VALIDATED is False and two["actionability_status"] == ME.ACTIONABILITY_STATUS
 
 
 def test_alternate_and_invalid_quotes_never_evaluated():
@@ -165,7 +167,7 @@ def test_board_one_row_per_game_player_stat_full_board_market_only_and_model_cov
     assert [r[MX.BOARD_COLS.index("Canonical Player ID")] for r in sh["Full Board"]] == ["P-1"]
     assert sorted(r[MX.BOARD_COLS.index("Canonical Player ID")] for r in sh["Model Coverage"]) == ["P-2", "P-9"]
     r = dict(zip(MX.BOARD_COLS, sh["Full Board"][0]))
-    assert r["Market Status"] == "VALID_MARKET" and r["Preferred Side"] == "OVER" and r["Is Actionable"] == "YES"
+    assert r["Market Status"] == "VALID_MARKET" and r["Preferred Side"] == "OVER" and r["Is Actionable"] == "NO"
     assert r["Selection Tier"] == "65_PLUS" and sh["65 Percent Plus"] == sh["Full Board"]
     assert r["Best Book"] in ("draftkings", "fanduel", "betmgm") and r["Best Decimal Odds"] > 1
     assert r["Raw Book Count"] == 3 and r["Opponent"] == "Beta" and r["Legal Cutoff ET"] == "2026-11-19 18:00"

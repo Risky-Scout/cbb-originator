@@ -5,8 +5,9 @@ persisted PMF priced by prod.market_eval (existing pricing / EV / de-vig).
 
 Board grain: EXACTLY one row per GAME x PLAYER x STAT (asserted; a violation aborts the Boards export).
     Full Board       rows with a real market (>= 1 eligible, priceable pre-cutoff sportsbook offer)
-    60 Percent Plus  actionable and model probability >= 0.60 (tiers 60_PLUS, 65_PLUS)
-    65 Percent Plus  actionable and model probability >= 0.65 (tier 65_PLUS)
+    60 Percent Plus  REPORTING VIEW: threshold screen and model probability >= 0.60 (tiers 60_PLUS, 65_PLUS)
+    65 Percent Plus  REPORTING VIEW: threshold screen and model probability >= 0.65 (tier 65_PLUS)
+                     (neither implies Is Actionable: market_eval.ACTIONABILITY_VALIDATED is False)
     Model Coverage   model-only rows (no real market): never on the Full Board
 
 Frozen evaluations (the graded evidence; compact, write-once):
@@ -257,6 +258,7 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
                     "american_odds": rows[-1][BOARD_COLS.index("Best American Odds")], "decimal_odds": b["decimal"],
                     "model_probability": b["model_p"], "push_probability": b["p_push"], "fair_probability": b["fair_p"],
                     "edge": b["edge"], "ev": b["ev"], "actionable": bool(ev["actionable"]), "tier": ev["tier"],
+                    "screen_pass": bool(ev["screen_pass"]), "actionability_status": ev["actionability_status"],
                     "reliable": bool(ev["reliable"]), "books_at_line": ev["books_at_line"],
                     "candidate_offers": ev["candidates"], "quote_received_at": _iso(b["collector_received_at"]),
                     "market_last_update": _iso(b["market_last_update"]),
@@ -278,7 +280,8 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
             audit.append({**{c: x.get(c) for c in CN.AUDIT_COLS if c in x}, "canonical_game_id": gid,
                           "quote_age_seconds": None, "status": "EXCLUDED", "reason": why})
     dup = sorted(list(k) for k, n in seen.items() if n > 1)
-    i_st, i_side, i_tier = (BOARD_COLS.index(c) for c in ("Market Status", "Preferred Side", "Selection Tier"))
+    i_st, i_side, i_tier, i_act = (BOARD_COLS.index(c) for c in ("Market Status", "Preferred Side", "Selection Tier",
+                                                                 "Is Actionable"))
     market = [x for x in rows if x[i_st] == VALID_MARKET]
     games = {r["game_id"] for r in pmfs}
     games_props = {x[1] for x in market}
@@ -289,7 +292,9 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
               "full_board_rows": len(market), "over_rows": sum(1 for x in market if x[i_side] == "OVER"),
               "under_rows": sum(1 for x in market if x[i_side] == "UNDER"),
               "no_positive_ev_rows": sum(1 for x in market if x[i_side] == ME.NO_POSITIVE_EV),
-              "actionable_rows": sum(1 for x in market if x[i_tier] in (ME.TIER_65, ME.TIER_60, ME.TIER_ACT)),
+              "actionable_rows": sum(1 for x in market if x[i_act] == "YES"),
+              "screen_pass_rows": sum(1 for x in market if x[i_tier] in (ME.TIER_65, ME.TIER_60, ME.TIER_ACT)),
+              "actionability_status": ME.ACTIONABILITY_STATUS,
               "plus60_rows": sum(1 for x in market if x[i_tier] in (ME.TIER_65, ME.TIER_60)),
               "plus65_rows": sum(1 for x in market if x[i_tier] == ME.TIER_65),
               "tier_65_plus": sum(1 for x in market if x[i_tier] == ME.TIER_65),
