@@ -1,0 +1,22 @@
+{
+ "id": "CBB_PLAYER_CHALLENGER_A_ROLE_AWARE_RATE_V1",
+ "declared_at": "2026-11-22T08:40:00+00:00",
+ "declared_before": "any challenger fit or any challenger metric on any fold",
+ "defect_targeted": "Phase 1B per-minute rate: prior-season history carried forward unprojected (no development / role-change adjustment) and a position-only shrinkage target (no role conditioning). Evidence: d1 A1 decomposition (rate part dominates; realized/model PTS rate 1.069 at current<10% of history vs 0.950 at >=75%; role-change slope 0.122 +- 0.007 where the blend dominates, 0.001 +- 0.003 where current evidence dominates).",
+ "structure": "rate_t = (cur_t + sum_j w_j * G_tj * h_jt + k_t * prior_pos_t * exp(gamma_t * z)) / (cur_min + sum_j w_j * h_jmin + k_t); G_tj = exp(alpha_t * j + beta_t * clip(D, -1.5, 1.5)); D = log(max(min_mu,1) / max(h1 minutes per appearance,1)) when h1_n_app >= 5 else 0; z = log(max(min_mu,1) / 20). w_j, k_t, prior_pos_t, minutes model, dispersion and PMF construction UNCHANGED.",
+ "parameters": "3 per stat (alpha_t, beta_t, gamma_t), stats PTS REB AST FG3M STL BLK TOV fitted independently (no shared shrinkage).",
+ "fit_objective": "Poisson log likelihood of y_t given exposure y_min * rate_t (realized minutes: isolates the rate) on PLAYED rows of the TRAINING folds only.",
+ "level_control": "both arms get a per-stat level factor L_t = sum y / sum(y_min * rate) fitted on the same training rows (mimics the JM1 GLM intercept, so the comparison is on geometry, not on level).",
+ "chronology": {"development": "fit F2024 -> validate F2025", "final_holdout": "fit F2024+F2025 -> evaluate F2026 ONCE", "prospective_holdout": "2026-27 live season (frozen production forecasts + actuals), never used for fitting"},
+ "holdout_contamination_note": "the A1 descriptive decomposition that motivated the hypothesis pooled F2024-F2026; no parameter is fitted on F2026 and no structure choice is made after reading any F2026 challenger metric.",
+ "evaluation_pmf": "NB(min_mu * L_t * rate_t, phi_t) via props_v0.pmf_matrix (the 1B marginal); metrics on PLAYED rows: log loss, RPS, mean error, Brier and P(OVER) calibration at the synthetic line floor(mu_incumbent)+0.5; by stat x role (min_mu buckets), evidence share, role change, early season, transfer.",
+ "promotion_gate_A": [
+  "aggregate log loss and RPS improve on the F2026 holdout for every stat with a fitted |effect| (paired, game-clustered 95% upper bound < 0), and no stat worse than +0.0005 log loss",
+  "no stat x role cell worse than +0.002 log loss (upper bound)",
+  "calibration-in-the-large: max |realized/model rate - 1| over role and evidence buckets decreases for PTS and AST",
+  "early season (season_day <= 30) not worse for any stat",
+  "prospective: on the live 2026-27 played player-games, mean error by role decreases for PTS/AST without degrading REB",
+  "then the production implementation must reproduce the research rates exactly and pass the walk-forward refit + full CI"
+ ],
+ "ablations_reporting_only": ["A_dev (alpha only)", "A_role (alpha, beta)", "A_full (alpha, beta, gamma) = the challenger"]
+}
