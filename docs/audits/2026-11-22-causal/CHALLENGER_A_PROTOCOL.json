@@ -46,5 +46,22 @@
    "secondary": "F2026 second look, flagged as holdout reuse"
   },
   "gate": "same promotion_gate_A; criteria 3-4 judged on the primary (live) holdout"
+ },
+ "outcome_A2": {
+  "evaluated_at": "2026-11-22T22:00:00+00:00",
+  "verdict": "PROMOTED_FOR_AST_FG3M_STL",
+  "per_stat_rule": "a stat failing any pre-declared criterion keeps the incumbent rate (stated with the decision; gate criteria unchanged)",
+  "promoted": [
+   "AST",
+   "FG3M",
+   "STL"
+  ],
+  "not_promoted": {
+   "PTS": "live early-season log loss +0.0050 (criterion 4)",
+   "REB": "F2026 aggregate upper bound > 0 (criterion 1)",
+   "BLK": "F2026 aggregate upper bound +9e-7 (criterion 1)",
+   "TOV": "F2026 early season + live aggregate worse"
+  },
+  "live_2026_27": "AST -0.00404+-0.00079, FG3M -0.00356+-0.00044, STL -0.00186+-0.00022 log loss; PTS +0.00134+-0.00152 (RPS -0.0086, Brier .2453->.2434)"
  }
 }

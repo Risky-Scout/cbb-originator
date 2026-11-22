@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC, pool_grain as PG, run_receipts as RR,
                                inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
-                               roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
+                               rate_a2 as RA2, roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -219,6 +219,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             if (pd.to_datetime(gc["prediction_cutoff_utc"], utc=True) != cut[gid]).any():
                 game_reasons[gid].append("FUTURE_LEAKAGE")       # feature cutoff disagrees with the validated rule
         rows = IN.marginal_rows(cand, model.marginal_cfg, model.v0_state, model.participation_state) if len(cand) else pd.DataFrame()
+        if len(rows):                                            # promoted 2026-11-22: AST / FG3M / STL role-aware rate
+            rows, summary["player_rate_adjustment"] = RA2.apply(rows, cand, model.marginal_cfg, model.v0_state)
         envd = IN.environment(fr["team"], model.jm1["struct"]["env"]) if len(cand) else {}
         if len(rows):
             rows, aflags = IN.apply_availability(rows, availability)

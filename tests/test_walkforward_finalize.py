@@ -201,7 +201,7 @@ def test_frozen_opening_baseline_source_is_exact_on_the_golden_slate(tmp_path, m
     model = MS.resolve("FROZEN_OPENING_BASELINE")
     assert model.identity == LD.load().identity and "model_source" not in model.identity
     monkeypatch.setattr(RN.LD, "load", lambda paths=None, expected=None: model)
-    got = G.capture(tmp_path / "g")
+    got = G.capture_incumbent(tmp_path / "g")                              # golden = incumbent rate path (rate_a2 off)
     assert G.compare(got, json.loads(G.GOLDEN.read_text())) == []          # identity, banks, every record: exact
 
 

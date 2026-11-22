@@ -126,9 +126,23 @@ def compare(got: dict, gold: dict) -> list[str]:
     return bad
 
 
+def capture_incumbent(work: Path) -> dict:
+    """The frozen-champion path: the 2026-11-22 rate_a2 promotion disabled (its stats keep the incumbent rate). The
+    golden file pins this path exactly; the promotion's own effect is pinned by test_rate_a2_changes_only_its_stats."""
+    from cbb_platform.prod import rate_a2 as RA2
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(RA2, "PARAMS", {})
+        return capture(work)
+
+
 @pytest.fixture(scope="module")
 def captured(tmp_path_factory):
-    return capture(tmp_path_factory.mktemp("golden"))
+    return capture_incumbent(tmp_path_factory.mktemp("golden"))
+
+
+@pytest.fixture(scope="module")
+def captured_a2(tmp_path_factory):
+    return capture(tmp_path_factory.mktemp("golden_a2"))
 
 
 def test_golden_file_present_and_pinned_to_the_frozen_champion():
@@ -145,7 +159,24 @@ def test_production_outputs_equal_the_golden_file(captured):
 
 
 def test_capture_is_deterministic(captured, tmp_path):
-    assert compare(capture(tmp_path / "again"), captured) == []
+    assert compare(capture_incumbent(tmp_path / "again"), captured) == []
+
+
+def test_rate_a2_changes_only_its_stats(captured, captured_a2):
+    """Promotion 2026-11-22 (prod.rate_a2): every model input equals the incumbent except the AST / FG3M / STL means."""
+    from cbb_platform.prod import rate_a2 as RA2
+    assert [r["key"] for r in captured_a2["model_inputs"]] == [r["key"] for r in captured["model_inputs"]]
+    changed = {f"{s}_mu" for s in RA2.PARAMS}
+    moved = set()
+    for a, b in zip(captured_a2["model_inputs"], captured["model_inputs"]):
+        for c in INPUT_COLS:
+            if c in changed:
+                if not _close(a[c], b[c], 1e-12):
+                    moved.add(c)
+            else:
+                assert _close(a[c], b[c], 1e-12), (a["key"], c)
+    assert moved == changed
+    assert captured_a2["identity"] == captured["identity"] and captured_a2["game_reasons"] == captured["game_reasons"]
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ def test_prediction_level_reproduction_on_the_golden_slate(refit, tmp_path, monk
                              "random_seed_policy": frozen["random_seed_policy"]})
     model = SO.load_dir(cand, REPRO)
     monkeypatch.setattr(RN.LD, "load", lambda paths=None, expected=None: model)
-    got = G.capture(tmp_path / "golden")
+    got = G.capture_incumbent(tmp_path / "golden")          # the golden file pins the incumbent rate path (rate_a2 off)
     gold = json.loads(G.GOLDEN.read_text())
     assert got["platform"] == gold["platform"] == f"{sys.platform}-{platform.machine()}", "exact comparison needs the golden platform"
     bad = [b for b in G.compare(got, gold) if not b.endswith((".model_version", ".ModelVersion"))]
