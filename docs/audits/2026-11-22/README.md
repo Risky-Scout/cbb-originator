@@ -87,3 +87,46 @@ improving starters, and not fixed by the rejected adaptive weighting (live re-pr
 challenger is justified, scoped to the minutes x per-minute-rate location of starters, evaluated walk-forward against
 the market line population; sample (4 graded slates, correlated within player) is small, so it must be confirmed on
 more slates before any build.
+
+## 12. Prospective evidence window (decision-gate population)
+
+`REPLAYABLE_EVIDENCE_START` = the `frozen_at` of the first production player MARKET_EVALUATION carrying its persisted
+`candidate_offer_set` (`selection_replay.replayable_evidence`; shown on CBB_Performance Overall and in
+`performance_receipt.json`). The first game record (`GAME_CANDIDATE_OFFERS`, 2026-11-21 slate) was frozen
+2026-11-22T03:00:13Z by d313729 and replays all 5 stored game evaluations exactly; the 11-21 slate had no player prop
+market after that release went live, so the player start is the first 2026-11-22 cutoff. Records frozen earlier are
+never back-filled; the retrospective reconstruction above is a diagnostic only.
+
+Deterministic audit (Droplet, read-only, no provider call; writes only `<out>`):
+
+```
+systemd-run --pipe --wait --uid=cbb-originator --gid=cbb-originator \
+  -p EnvironmentFile=/etc/sports-models/cbb-originator.env -p ReadOnlyPaths=/var/lib/sports-models \
+  -p ReadWritePaths=<out> -p WorkingDirectory=/ -p MemoryMax=2000M -p CPUWeight=20 \
+  -E PYTHONPATH=/opt/sports-models/cbb-originator/current -E PYTHONDONTWRITEBYTECODE=1 \
+  -E OMP_NUM_THREADS=1 -E OPENBLAS_NUM_THREADS=1 \
+  /opt/sports-models/cbb-originator/venv/bin/python -B -m cbb_platform.prod.selection_audit \
+  audit /var/lib/sports-models/cbb-originator/prod/ops <out>          # prospective (default): the gate
+# ... selection_audit verify-live <ops> <out>                         # LIVE_CANDIDATE_PERSISTENCE / _SELECTION_REPLAY
+# ... selection_audit audit <ops> <out> --mode retrospective          # diagnostic incl. reconstructed pre-start sets
+```
+
+Output `<out>/selection_audit.json`: the four rules (N, mean p, hit, calibration gap, Brier, log loss, paired
+model-minus-market Brier / log loss with SE, CLV, positive CLV %, ROI, mean edge / EV) overall and by stat, role,
+side, probability bucket, disagreement bucket and CLV status; STAT x ROLE x SIDE flags per rule; the selection-free
+ALL_MARKETS disagreement table and information slope; `model_beats_market`; the single pre-declared policy candidate;
+game candidate replay checks; the decision gate and the actionability recommendation.
+
+Decision gate, declared before any prospective evidence existed (`selection_replay`, not to be tuned on it):
+`SELECTION_POLICY_VALIDATED` when one of the four rules or `POLICY_CANDIDATE` (CONSERVATIVE_MAX_EV, EV > 0, edge >=
+0.03, |disagreement| <= 0.10, >= 3 two-sided books at the line) has >= 300 graded picks over >= 10 slates, paired
+Brier below the market by > 2 SE, log loss below the market and |calibration gap| <= 0.05;
+`SELECTION_POLICY_FAILED_MODEL_CHALLENGER_JUSTIFIED` when the sample is sufficient, nothing validates and a
+selection-free STAT x ROLE cell (N >= 40) misses the realized OVER rate by > 0.05 and > 2 SE; otherwise
+`INSUFFICIENT_SAMPLE`. Even VALIDATED only opens a promotion review: `ACTIONABILITY_VALIDATED` stays False until that
+review is explicitly approved.
+
+Retrospective diagnostic on 2026-11-22 (886 / 886 reconstructed exactly, 5 graded slates incl. 11-21): MAX_EV N 628,
+Brier .2648 vs market .2481 (paired +.0168 +- .0064), every rule worse than the market; policy candidate N 15;
+`model_beats_market` empty; information slope 0.17 +- 0.13; localized defects AST / PTS / PRA starters. Prospective:
+0 replayable records, gate INSUFFICIENT_SAMPLE.
