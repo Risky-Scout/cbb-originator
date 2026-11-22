@@ -262,7 +262,8 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
                     "market_last_update": _iso(b["market_last_update"]),
                     "observation_received_at": None if meta is None else meta.get("received_at"),
                     "observation_file": None if meta is None else meta.get("file"),
-                    "consensus_line": _f(c["consensus_line"]), "consensus_confidence": c["consensus_confidence"]}
+                    "consensus_line": _f(c["consensus_line"]), "consensus_confidence": c["consensus_confidence"],
+                    "candidate_offer_schema": ME.OFFER_SET_SCHEMA, "candidate_offer_set": ev["offer_set"]}
             evals.append(json.loads(json.dumps({k: _clean(v) for k, v in body.items()}, default=str)))
     keys = set(seen)
     for gid, (meta, q) in obs.items():                      # quotes that never reached a Board key

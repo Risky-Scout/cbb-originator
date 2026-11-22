@@ -159,6 +159,55 @@ def _hash(d: dict) -> str:
     return hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
 
 
+# Persisted candidate-offer set (replay evidence): ONE record per frozen game with every offer the evaluation saw at
+# the cutoff, compact (OFFER_COLS rows; game / teams / PMF hash / timestamps once on the record), unrounded, write-once
+# with the game's other frozen records. Priced offers: status ELIGIBLE; offers withdrawn by every book (game_quotes
+# freshness rule): STALE_OFFER_INELIGIBLE, unpriced. EV_GROSS == EV_NET (no commission is modelled).
+OFFER_SET_SCHEMA = "cbb-game-candidate-offers-1"
+OFFER_COLS = ("book", "market_type", "side", "point", "american", "decimal", "p_win", "p_lose", "p_push", "model_p",
+              "fair_p", "edge", "ev_gross", "ev_net", "paired", "market_last_update", "collector_received_at",
+              "quote_id", "status")
+
+
+def _num(v):
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if math.isnan(f) else f
+
+
+def offer_rows(cands: list[dict], stale: pd.DataFrame) -> list[list]:
+    out = [[c["book"], c["market_type"], c["side"], c["point"], _num(c["american"]), c["decimal"], c["p_win"],
+            c["p_lose"], c["p_push"], c["model_p"], c["fair_p"], c["edge"], c["ev"], c["ev"], bool(c["paired"]),
+            _iso(c["market_last_update"]), _iso(c["collector_received_at"]), c["quote_id"], "ELIGIBLE"] for c in cands]
+    for x in (stale.to_dict(orient="records") if len(stale) else []):
+        out.append([str(x["book"]), x["market_type"], x["side"], _num(x.get("point")), _num(x.get("american")),
+                    _num(x.get("decimal")), None, None, None, None, None, None, None, None, None,
+                    _iso(x.get("market_last_update")), _iso(x.get("collector_received_at")), x.get("quote_id"),
+                    GQ.STALE_OFFER])
+    return sorted(out, key=lambda r: (r[18], r[1], r[0], str(r[2]), -math.inf if r[3] is None else r[3], str(r[15])))
+
+
+def candidate_record(r: dict, day: str, cands: list[dict], stale: pd.DataFrame, now) -> dict:
+    e = {"kind": "GAME_CANDIDATE_OFFERS", "game_id": r["game_id"], "slate_date": day,
+         "home_team_id": r["home_team_id"], "away_team_id": r["away_team_id"],
+         "scheduled_tip_utc": r["scheduled_tip_utc"], "cutoff_utc": r["cutoff_utc"], "forecast_id": r["forecast_id"],
+         "pmf_sha256": r["pmf_sha256"], "game_model_version": r["model_version"], "markets_version": GM.MARKETS_VERSION,
+         "evaluated_at": pd.Timestamp(r["cutoff_utc"]).isoformat(), "frozen_at": pd.Timestamp(now).isoformat(),
+         "schema": OFFER_SET_SCHEMA, "offers": offer_rows(cands, stale), "version": VERSION}
+    e["content_hash"] = _hash(e)
+    return e
+
+
+def candidate_offers(ops_root: Path, day: str) -> list[dict]:
+    p = eval_path(ops_root, day)
+    return [e for e in (json.loads(l) for l in p.read_text().splitlines() if l.strip())
+            if e["kind"] == "GAME_CANDIDATE_OFFERS"] if p.exists() else []
+
+
 def freeze(ops_root: Path, day: str, quotes: pd.DataFrame, names: dict, now) -> dict:
     """Write the evaluation of every game whose cutoff has passed and is not frozen yet (write-once)."""
     now = pd.Timestamp(now)
@@ -179,6 +228,7 @@ def freeze(ops_root: Path, day: str, quotes: pd.DataFrame, names: dict, now) -> 
             new.append({"kind": "GAME_MARKET_STALE_OFFER", "game_id": r["game_id"], "slate_date": day,
                         "market_type": mt, "reason": GQ.STALE_OFFER, **st, "cutoff_utc": r["cutoff_utc"],
                         "frozen_at": now.isoformat(), "version": VERSION})
+        new.append(candidate_record(r, day, cands, GQ.stale_offers(qg, cut) if len(qg) else qg, now))
         for mt, c in best.items():
             e = {"kind": "GAME_MARKET_EVALUATION", "game_id": r["game_id"], "slate_date": day, "market_type": mt,
                  "home_team_id": r["home_team_id"], "away_team_id": r["away_team_id"],

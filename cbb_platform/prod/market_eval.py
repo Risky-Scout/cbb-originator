@@ -112,7 +112,10 @@ def candidates(pmf: np.ndarray, q: pd.DataFrame) -> tuple[list[dict], list[dict]
                 priced[ln] = e
         pr = priced[ln]
         if isinstance(pr, Exception):
-            rejected.append({"book": o["_book"], "line": ln, "side": o["side"], "reason": getattr(pr, "reason", "INVALID")})
+            rejected.append({"book": o["_book"], "line": ln, "side": o["side"], "reason": getattr(pr, "reason", "INVALID"),
+                             "american": _num(o.get("american_odds")), "decimal": o["_d"],
+                             "market_last_update": o.get("market_last_update"),
+                             "collector_received_at": o.get("collector_received_at"), "quote_id": quote_id(o)})
             continue
         win, lose = (pr["p_over"], pr["p_under"]) if o["side"] == "OVER" else (pr["p_under"], pr["p_over"])
         mp = pr["p_over_nonpush"] if o["side"] == "OVER" else pr["p_under_nonpush"]
@@ -125,8 +128,59 @@ def candidates(pmf: np.ndarray, q: pd.DataFrame) -> tuple[list[dict], list[dict]
                     "model_fair_american": pr["fair_over_american"] if o["side"] == "OVER" else pr["fair_under_american"],
                     "paired": other is not None, "market_last_update": o.get("market_last_update"),
                     "collector_received_at": o.get("collector_received_at"), "quote_age_seconds": CN._age(o),
-                    "provider_event_id": o.get("provider_event_id"), "market_key": o.get("market_key")})
+                    "provider_event_id": o.get("provider_event_id"), "market_key": o.get("market_key"),
+                    "quote_id": quote_id(o)})
     return out, rejected
+
+
+# ---------------------------------------------------------------- persisted candidate-offer set (replay evidence)
+# Every offer of one game x player x stat seen at the decision observation, written once into its frozen evaluation:
+# the priced candidates (status ELIGIBLE), the unpriceable ones (UNPRICEABLE:<reason>) and the quote rows excluded by
+# the normalizer / matcher / freshness checks (status = the exclusion reason, unpriced). game / player / stat and the
+# evaluation timestamp live once on the parent record (no duplication). Values are stored unrounded, so selection
+# rules replay exactly (prod.selection_replay). EV_GROSS == EV_NET: no commission is modelled (as on the game board).
+OFFER_SET_SCHEMA = "cbb-candidate-offers-1"
+OFFER_COLS = ("book", "line", "side", "american", "decimal", "p_win", "p_lose", "p_push", "model_p", "fair_p", "edge",
+              "ev_gross", "ev_net", "paired", "market_last_update", "collector_received_at", "quote_id", "status")
+ELIGIBLE = "ELIGIBLE"
+
+
+def _iso(x):
+    t = _t(x)
+    return None if t is None else t.isoformat()
+
+
+def quote_id(r: dict) -> str:
+    """Deterministic id of one player prop quote (provider event | book | market key | side | line)."""
+    return f"{r.get('provider_event_id')}|{r.get('sportsbook', r.get('book'))}|{r.get('market_key')}|{r.get('side')}|" \
+           f"{_num(r.get('line'))}"
+
+
+def offer_set(q: pd.DataFrame, cands: list[dict], rejected: list[dict]) -> list[list]:
+    """Compact rows (OFFER_COLS order) of every offer of one player x stat; deterministic order."""
+    out = []
+    for c in cands:
+        out.append([c["book"], c["line"], c["side"], c["american"], c["decimal"], c["p_win"], c["p_lose"], c["p_push"],
+                    c["model_p"], c["fair_p"], c["edge"], c["ev"], c["ev"], bool(c["paired"]),
+                    _iso(c["market_last_update"]), _iso(c["collector_received_at"]), c["quote_id"], ELIGIBLE])
+    for r in rejected:
+        out.append([r["book"], r["line"], r["side"], r.get("american"), r.get("decimal"), None, None, None, None, None,
+                    None, None, None, None, _iso(r.get("market_last_update")), _iso(r.get("collector_received_at")),
+                    r.get("quote_id"), f"UNPRICEABLE:{r['reason']}"])
+    if q is not None and len(q):
+        seen = set()
+        for x, w in zip(q.to_dict(orient="records"), CN.row_exclusions(q).tolist()):
+            if not w:
+                continue
+            row = [str(x.get("sportsbook")), _num(x.get("line")), x.get("side"), _num(x.get("american_odds")),
+                   _num(x.get("decimal_odds")), None, None, None, None, None, None, None, None, None,
+                   _iso(x.get("market_last_update")), _iso(x.get("collector_received_at")), quote_id(x), w]
+            k = tuple(str(v) for v in row)
+            if k not in seen:
+                seen.add(k)
+                out.append(row)
+    return sorted(out, key=lambda r: (r[17] != ELIGIBLE, str(r[0]), -1 if r[1] is None else r[1], str(r[2]),
+                                      str(r[14]), str(r[17])))
 
 
 def order_key(c: dict) -> tuple:
@@ -160,7 +214,8 @@ def evaluate(pmf: np.ndarray, q: pd.DataFrame) -> dict:
     cands, rejected = candidates(pmf, q)
     out = {"eval_version": EVAL_VERSION, "market": bool(cands), "candidates": len(cands), "rejected": rejected,
            "consensus": cons, "audit": audit, "best": None, "preferred_side": None, "actionable": False,
-           "tier": None, "reliable": False, "books_at_line": 0, "books_quoted": len({c["book"] for c in cands})}
+           "tier": None, "reliable": False, "books_at_line": 0, "books_quoted": len({c["book"] for c in cands}),
+           "offer_set": offer_set(q, cands, rejected)}
     b = best_offer(cands)
     if b is None:
         return out
