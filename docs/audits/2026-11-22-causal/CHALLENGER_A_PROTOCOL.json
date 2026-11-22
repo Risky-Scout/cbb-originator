@@ -7,7 +7,11 @@
  "parameters": "3 per stat (alpha_t, beta_t, gamma_t), stats PTS REB AST FG3M STL BLK TOV fitted independently (no shared shrinkage).",
  "fit_objective": "Poisson log likelihood of y_t given exposure y_min * rate_t (realized minutes: isolates the rate) on PLAYED rows of the TRAINING folds only.",
  "level_control": "both arms get a per-stat level factor L_t = sum y / sum(y_min * rate) fitted on the same training rows (mimics the JM1 GLM intercept, so the comparison is on geometry, not on level).",
- "chronology": {"development": "fit F2024 -> validate F2025", "final_holdout": "fit F2024+F2025 -> evaluate F2026 ONCE", "prospective_holdout": "2026-27 live season (frozen production forecasts + actuals), never used for fitting"},
+ "chronology": {
+  "development": "fit F2024 -> validate F2025",
+  "final_holdout": "fit F2024+F2025 -> evaluate F2026 ONCE",
+  "prospective_holdout": "2026-27 live season (frozen production forecasts + actuals), never used for fitting"
+ },
  "holdout_contamination_note": "the A1 descriptive decomposition that motivated the hypothesis pooled F2024-F2026; no parameter is fitted on F2026 and no structure choice is made after reading any F2026 challenger metric.",
  "evaluation_pmf": "NB(min_mu * L_t * rate_t, phi_t) via props_v0.pmf_matrix (the 1B marginal); metrics on PLAYED rows: log loss, RPS, mean error, Brier and P(OVER) calibration at the synthetic line floor(mu_incumbent)+0.5; by stat x role (min_mu buckets), evidence share, role change, early season, transfer.",
  "promotion_gate_A": [
@@ -18,5 +22,29 @@
   "prospective: on the live 2026-27 played player-games, mean error by role decreases for PTS/AST without degrading REB",
   "then the production implementation must reproduce the research rates exactly and pass the walk-forward refit + full CI"
  ],
- "ablations_reporting_only": ["A_dev (alpha only)", "A_role (alpha, beta)", "A_full (alpha, beta, gamma) = the challenger"]
+ "ablations_reporting_only": [
+  "A_dev (alpha only)",
+  "A_role (alpha, beta)",
+  "A_full (alpha, beta, gamma) = the challenger"
+ ],
+ "outcome_A": {
+  "evaluated_at": "2026-11-22T08:55:00+00:00",
+  "verdict": "REJECTED_AT_GATE",
+  "holdout_F2026": "aggregate log loss PTS -0.00264+-0.00038, AST -0.00176+-0.00020, FG3M -0.00087+-0.00013, STL -0.00032+-0.00006, TOV -0.00063+-0.00012, REB -0.00005+-0.00007, BLK -0.00005+-0.00003; no stat x role cell ub > +0.002",
+  "failed": [
+   "gate 3: AST max |realized/model - 1| rises 0.186 -> 0.311 (NO_HISTORY cell, n~380: role-conditional prior applied to first appearances)",
+   "gate 4: TOV early-season log loss +0.00035 (point estimate)"
+  ]
+ },
+ "revision_A2": {
+  "declared_at": "2026-11-22T09:00:00+00:00",
+  "declared_before": "any A2 metric",
+  "single_change": "z = 0 (position-only prior, as the incumbent) for rows with no minutes history at all (H_min == 0); everything else identical to A",
+  "mechanism": "the role-conditional prior is identified from players with history (low min_mu = low demonstrated role/skill); for a first appearance min_mu reflects minutes-model uncertainty, not skill",
+  "evaluation": {
+   "primary": "prospective 2026-27 live season (production pregame rate components reconstructed read-only on the Droplet; never fitted on)",
+   "secondary": "F2026 second look, flagged as holdout reuse"
+  },
+  "gate": "same promotion_gate_A; criteria 3-4 judged on the primary (live) holdout"
+ }
 }
