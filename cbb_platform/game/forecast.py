@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform.game import joint as J, markets as GM, model as GMod, params as GP, ratings as GR
+from cbb_platform.prod import engine as ENG
 
 FILE = "game_pmfs.parquet"
 RECEIPT = "game_forecast.json"
@@ -199,6 +200,8 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
             "scheduled_tip_utc": pd.Timestamp(gr["scheduled_tip_utc"]).isoformat(),
             "cutoff_utc": pd.Timestamp(gr["cutoff"]).isoformat() if gr.get("cutoff") is not None else None,
             "player_run_id": snapshot.get("run_id"), "player_model_version": snapshot.get("model_version"),
+            "player_engine_id": ENG.attribute(snapshot.get("engine_id"),
+                                              snapshot.get("prediction_as_of") or snapshot.get("executed_at")),
             "state_version": snapshot.get("state_version"),
             "training_cutoff_utc": pd.Timestamp(training_cutoff).isoformat(),
             "ratings_state_id": r.meta["state_id"], "ratings_games": r.meta["games"],

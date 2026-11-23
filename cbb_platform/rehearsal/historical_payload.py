@@ -37,7 +37,7 @@ import pandas as pd
 import requests
 
 from cbb_platform import credentials
-from cbb_platform.prod import (board as BO, config as PC, features as PF, inputs as IN, ledger as LG, loader as LD,
+from cbb_platform.prod import (board as BO, config as PC, engine as ENG, features as PF, inputs as IN, ledger as LG, loader as LD,
                                matching as MT, odds_feed as OF, ops_store as OS, pricing as PX, prospective_monitor as PM,
                                quotes as QT, readiness as RD, run as RN, shadow_tick as TK, side_monitor as SD,
                                simulate as SM, slate as SL, universe as UV)
@@ -398,7 +398,8 @@ def run(work: Path, rank: int = 1, sims: int = PC.SIMS) -> dict:
         recs.append({"record_type": "PREDICTION", "body": {
             "prediction_id": LG.prediction_id(run_id, p["game_id"], p["player_id"], p["market"], p["line"], p["side"]),
             "run_id": run_id, "prediction_as_of": aso, "feature_cutoff": sl.loc[p["game_id"], "feature_cutoff"],
-            "model_version": model.identity["model_version"], "artifact_sha256": model.identity["artifact_sha256"],
+            "model_version": model.identity["model_version"], "engine_id": ENG.engine_id(), "code_commit": ENG.code_commit(),
+            "artifact_sha256": model.identity["artifact_sha256"],
             "production_manifest": model.identity["production_manifest"],
             "state_version": "REHEARSAL_FROZEN_CANONICAL_2025_26_ASOF",
             "game_id": p["game_id"], "game": p["game"], "player_id": p["player_id"], "player": p["player"],

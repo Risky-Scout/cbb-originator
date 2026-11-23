@@ -26,7 +26,7 @@ def _long(rng, n_pmfs=60):
         rows.append(pd.DataFrame({"prediction_receipt_id": rid, "game_id": f"G-{i // 13}", "player_id": f"P-{i // 4}",
                                   "team_id": f"T-{i % 2}", "stat": ["PTS", "REB", "AST", "PRA"][i % 4],
                                   "prediction_as_of": "2026-11-13T12:05:00+00:00", "model_version": "cbb-jm1-x",
-                                  "outcome": np.arange(k, dtype=np.int64), "probability": p,
+                                  "engine_id": "JM1_FINAL", "outcome": np.arange(k, dtype=np.int64), "probability": p,
                                   "mean": float((p * np.arange(k)).sum()), "run_id": "R1",
                                   "method": "BANK_MIXTURE_PMF" if i % 3 else "BANK_DRAWS",
                                   "game_label": f"A @ B {i // 13}", "player_label": f"Player {i // 4}"}))
@@ -124,3 +124,20 @@ def test_run_copy_kept_when_durable_differs_or_is_partial(tmp_path, kw):
     PE, d, durable = _deref_case(tmp_path, **kw)
     r = PE.dereference_run(d, "R1", durable)
     assert r["status"] == "KEPT" and (d / PE.RUN_FILE).exists() and not (d / PE.RUN_REF).exists()
+
+
+def test_files_written_before_engine_attribution_read_with_the_exact_legacy_engine(tmp_path):
+    """A durable PMF file from before engine_id existed: attributed from prediction_as_of (prod.engine)."""
+    from cbb_platform.prod import engine as ENG
+    L = _long(np.random.default_rng(3), 8).drop(columns="engine_id")
+    L.loc[L.index[L["prediction_receipt_id"] >= "PR-0004"], "prediction_as_of"] = "2026-11-22T22:10:10.060092+00:00"
+    p = tmp_path / "pmfs.parquet"
+    L.to_parquet(p, index=False)                                   # a legacy LONG file
+    back = PE.read(p)
+    assert list(back.columns) == PE.COLUMNS
+    old = back[back["prediction_receipt_id"] < "PR-0004"]["engine_id"].unique().tolist()
+    new = back[back["prediction_receipt_id"] >= "PR-0004"]["engine_id"].unique().tolist()
+    assert old == ["JM1_FINAL"] and new == [ENG.ENGINE_HISTORY[1][1]]
+    c = tmp_path / "compact.parquet"                                # a legacy COMPACT file
+    PCX.compact(back).drop(columns="engine_id").to_parquet(c, index=False)
+    assert PE.read(c).equals(back)

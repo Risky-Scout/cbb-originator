@@ -687,7 +687,8 @@ def scoring_evidence(ctx: Ctx, tdir: Path, s: dict, timing: dict, sch: pd.DataFr
     tim = pd.DataFrame([{"game_id": g, **{k: v for k, v in t.items() if k != "prediction_as_of"}} for g, t in timing.items()])
     out = {}
     # the complete PMFs this prediction used, persisted with the tick (the run directory is ephemeral on a runner)
-    pe = PE.from_run(run_dir, s["run_id"], s["prediction_as_of"], (s.get("model_identity") or {}).get("model_version"))
+    pe = PE.from_run(run_dir, s["run_id"], s["prediction_as_of"], (s.get("model_identity") or {}).get("model_version"),
+                     engine_id=(s.get("model_identity") or {}).get("engine_id"))
     if len(pe):
         w = PE.write(tdir / PE.FILE, pe)
         out["pmfs"] = w.get("pmfs", int(pe["prediction_receipt_id"].nunique()))

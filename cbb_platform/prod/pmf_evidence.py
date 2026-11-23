@@ -13,6 +13,9 @@ Long format: one row per (prediction, outcome). Logical keys (directive §13):
     stat                   production market (PTS, REB, ..., PRA)
     prediction_as_of       the run's as-of instant (UTC ISO)
     model_version          the model identity's model_version that produced the PMF
+    engine_id              the predictive engine (prod.engine) that produced it; a file written before the column existed
+                           is attributed on read from prediction_as_of (prod.engine.legacy_engine: exact, deploys are
+                           serialized against runs)
     outcome / probability  integer outcome and its probability (the full support, folded tail point included)
     mean                   the official projection mean of that PMF row
 plus run_id, method, game_label and player_label (provenance and labels for the exports).
@@ -35,12 +38,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import ledger as LG, pmf_compact as PCX
+from cbb_platform.prod import engine as ENG, ledger as LG, pmf_compact as PCX
 
 PMF_TOL = 1e-9                                   # = prod.pricing.SUM_TOL = prod.simulate.PMF_TOL
 FILE = "pmfs.parquet"
 COLUMNS = ["prediction_receipt_id", "game_id", "player_id", "team_id", "stat", "prediction_as_of", "model_version",
-           "outcome", "probability", "mean", "run_id", "method", "game_label", "player_label"]
+           "engine_id", "outcome", "probability", "mean", "run_id", "method", "game_label", "player_label"]
 
 
 class PMFEvidenceError(RuntimeError):
@@ -56,8 +59,10 @@ def _iso(t) -> str:
     return (t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")).isoformat()
 
 
-def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, game_ids=None) -> pd.DataFrame:
-    """Long-format evidence of the priced PMFs a run wrote (runs/<run_id>/market_pmfs.parquet)."""
+def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, game_ids=None,
+             engine_id: str | None = None) -> pd.DataFrame:
+    """Long-format evidence of the priced PMFs a run wrote (runs/<run_id>/market_pmfs.parquet). engine_id: the run's
+    recorded engine (default: the run's run_summary.json model_identity); absent = attributed from prediction_as_of."""
     src = Path(run_dir) / "market_pmfs.parquet"
     if not src.exists():
         return pd.DataFrame(columns=COLUMNS)
@@ -65,6 +70,9 @@ def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, g
     if game_ids is not None:
         mp = mp[mp["game_id"].isin(set(game_ids))]
     aso = _iso(prediction_as_of)
+    if engine_id is None and (Path(run_dir) / "run_summary.json").exists():
+        engine_id = (json.loads((Path(run_dir) / "run_summary.json").read_text()).get("model_identity") or {}).get("engine_id")
+    eid = ENG.attribute(engine_id, aso)
     out = []
     for r in mp.sort_values(["game_id", "player_id", "market"]).itertuples(index=False):
         pmf = np.asarray(r.pmf, dtype=float)
@@ -74,7 +82,7 @@ def from_run(run_dir: Path, run_id: str, prediction_as_of, model_version: str, g
         pl = getattr(r, "player_label", None)
         out.append(pd.DataFrame({"prediction_receipt_id": rid, "game_id": r.game_id, "player_id": r.player_id,
                                  "team_id": r.team_id, "stat": r.market, "prediction_as_of": aso,
-                                 "model_version": model_version, "outcome": np.arange(len(pmf), dtype=np.int64),
+                                 "model_version": model_version, "engine_id": eid, "outcome": np.arange(len(pmf), dtype=np.int64),
                                  "probability": pmf, "mean": float(r.projection), "run_id": run_id, "method": r.method,
                                  "game_label": gl if isinstance(gl, str) else r.game_id,
                                  "player_label": pl if isinstance(pl, str) else r.player_id}))
@@ -221,7 +229,7 @@ def _bytes(df: pd.DataFrame) -> bytes:
 def write(path: Path, df: pd.DataFrame) -> dict:
     """Write-once. Re-writing identical content is a no-op; different content for an existing file is refused."""
     path = Path(path)
-    df = df[COLUMNS].reset_index(drop=True)
+    df = _with_engine(df)[COLUMNS].reset_index(drop=True)      # a caller without engine_id: attributed (prod.engine)
     if path.exists():
         old = read(path)
         if not old.equals(df):
@@ -240,6 +248,7 @@ def read_compact(path: Path, run_id: str | None = None) -> pd.DataFrame:
     parquet row filter -- every row of one receipt carries the receipt's run_id, so whole PMFs are kept), so verifying
     one run never materializes a whole multi-run evidence file (retention runs at MemoryHigh=500M)."""
     df = pd.read_parquet(path, filters=[("run_id", "==", run_id)]) if run_id is not None else pd.read_parquet(path)
+    df = _with_engine(df)
     if "probabilities" in df.columns:
         miss = [c for c in PCX.PMF_COLUMNS if c not in df.columns]
         if miss:
@@ -249,7 +258,16 @@ def read_compact(path: Path, run_id: str | None = None) -> pd.DataFrame:
     return PCX.compact(_long(df, path))
 
 
+def _with_engine(df: pd.DataFrame) -> pd.DataFrame:
+    """A file written before engine attribution: engine_id from each row's prediction_as_of (prod.engine)."""
+    if "engine_id" in df.columns or "prediction_as_of" not in df.columns:
+        return df
+    m = {a: ENG.legacy_engine(a) for a in pd.unique(df["prediction_as_of"])}
+    return df.assign(engine_id=df["prediction_as_of"].map(m))
+
+
 def _long(df: pd.DataFrame, path) -> pd.DataFrame:
+    df = _with_engine(df)
     miss = [c for c in COLUMNS if c not in df.columns]
     if miss:
         raise PMFEvidenceError(f"{path}: missing columns {miss}")
@@ -280,6 +298,6 @@ def distributions(df: pd.DataFrame) -> list[dict]:
         f = g.iloc[0]
         check(pmf, f"{f.game_id} {f.player_id} {f.stat}")
         out.append({"prediction_receipt_id": rid, **{k: f[k] for k in ("game_id", "player_id", "team_id", "stat",
-                    "prediction_as_of", "model_version", "mean", "run_id", "method", "game_label", "player_label")},
-                    "pmf": pmf})
+                    "prediction_as_of", "model_version", "engine_id", "mean", "run_id", "method", "game_label",
+                    "player_label")}, "pmf": pmf})
     return out

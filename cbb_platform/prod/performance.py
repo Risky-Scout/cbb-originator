@@ -27,8 +27,8 @@ from cbb_platform.prod import exports as EX, market_eval as ME, market_exports a
 PERFORMANCE_VERSION = "cbb-prod-performance-2.0.0"
 DATASET = Path("performance") / "cbb_market_performance.parquet"        # under ops_root
 RECEIPT = "performance_receipt.json"
-SHEETS = ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier", "Daily", "Calibration",
-          "Selections")
+SHEETS = ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier", "By Engine", "Daily",
+          "Calibration", "Selections")
 METRICS = ("Predictions", "Graded", "Wins", "Losses", "Pushes", "VOID_DNP", "VOID_NO_GAME", "Pending", "Hit Rate",
            "Win %", "Mean Model Probability",
            "Actual Hit Rate", "Calibration Gap", "Brier Score", "Log Loss", "Mean Edge", "Median Edge", "Mean EV",
@@ -70,7 +70,11 @@ def read_dataset(path: Path) -> list[dict]:
 
     def v(x):
         return None if x is None or (not isinstance(x, str) and pd.isna(x)) else MX._clean(x)
-    return [{c: v(r.get(c)) for c in MX.ROW_COLS} for r in df.to_dict(orient="records")]
+    out = [{c: v(r.get(c)) for c in MX.ROW_COLS} for r in df.to_dict(orient="records")]
+    for r in out:                                                # rows stored before engine attribution
+        if not r.get("engine_id"):
+            r["engine_id"] = MX.ENG.attribute(None, r.get("prediction_as_of"))
+    return out
 
 
 def _content_sha(rows) -> str:
@@ -181,7 +185,7 @@ def tables(rows: list[dict], evidence: dict | None = None) -> dict:
                     {"title": "Evaluation Scope", "columns": ("Item", "Value"), "rows": scope},
                     {"title": "CLV Status (graded rows)", "columns": ("CLV Status", "Rows"), "rows": status}],
         "By Stat": grp(("stat",)), "By Player Role": grp(("player_role",)), "Stat x Role": grp(("stat", "player_role")),
-        "By Side": grp(("side",)), "By Reporting Tier": grp(("tier",)),
+        "By Side": grp(("side",)), "By Reporting Tier": grp(("tier",)), "By Engine": grp(("engine_id",)),
         "Daily": [{"title": None, "columns": ("Date",) + METRICS, "rows": daily, "formats": fm}],
         "Calibration": [{"title": None, "columns": BIN_COLS, "rows": calibration_bins(rows), "formats": fm}],
         "Selections": [{"title": None, "columns": SEL_COLS, "rows": MX.graded_table_rows(rows), "formats": fm}]}

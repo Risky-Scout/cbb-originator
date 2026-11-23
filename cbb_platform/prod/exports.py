@@ -52,7 +52,7 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-from cbb_platform.prod import config as PC, pmf_compact as PCX, pmf_evidence as PE
+from cbb_platform.prod import config as PC, engine as ENG, pmf_compact as PCX, pmf_evidence as PE
 
 EXPORT_VERSION = "cbb-prod-daily-exports-2.0.0"
 TZ = "America/New_York"
@@ -71,7 +71,7 @@ EXCEL_MAX_ROWS = 1_048_576               # SpreadsheetML worksheet limits (ECMA-
 EXCEL_MAX_COLS = 16_384                  # beyond them is invalid content (Excel "repairs" by deleting the cells)
 DIST_COLS = ("GAME", "TEAM", "PLAYER", "PROP", "MEAN", "OUTCOME", "PROBABILITY")   # long derivative (on request)
 DIST_SUMMARY_COLS = ("GAME", "TEAM", "OPPONENT", "PLAYER", "PROP", "MEAN", "MEDIAN", "SD", "P10", "P25", "P75", "P90",
-                     "MAX_OUTCOME", "P_PLAY", "EXP_MINUTES", "AVAILABILITY", "MODEL_VERSION", "SOURCE", "FORECAST_ID",
+                     "MAX_OUTCOME", "P_PLAY", "EXP_MINUTES", "AVAILABILITY", "MODEL_VERSION", "ENGINE_ID", "SOURCE", "FORECAST_ID",
                      "PMF_SHA256")
 DIST_PERCENTILES = (0.10, 0.25, 0.50, 0.75, 0.90)   # smallest outcome k with CDF(k) >= q
 ROLES = ("CORE_30_PLUS", "ROTATION_20_TO_30", "LIMITED_UNDER_20", "NO_EXPECTED_MINUTES", "UNKNOWN_ROLE")
@@ -396,7 +396,9 @@ def distribution_records(ops_root: Path, runs_root: Path, games: pd.DataFrame, n
         tip = order.get(gid)
         if tip is None:
             tip = min((c for _, c, _ in fsrc.get(gid, [])), default=None)
+        b_aso = None if best[0] == pd.Timestamp.max.tz_localize("UTC") else best[0]
         for r in df.itertuples(index=False):
+            eid = ENG.attribute(getattr(r, "engine_id", None), getattr(r, "prediction_as_of", None) or b_aso)
             pmf = np.asarray(r.pmf, dtype=float)
             _check_pmf(pmf, f"{gid} {r.player_id} {r.stat}")
             nz = np.flatnonzero(pmf)
@@ -404,14 +406,14 @@ def distribution_records(ops_root: Path, runs_root: Path, games: pd.DataFrame, n
             recs.append({"tip": tip, "game": r.game_label, "player": r.player_label, "market": r.stat,
                          "team": names.get(r.team_id, r.team_id), "mean": _f(r.mean), "pmf_trimmed": pmf[: last + 1],
                          "key": (gid, r.player_id, r.stat), "pmf": pmf, "game_id": gid, "player_id": r.player_id,
-                         "team_id": r.team_id, "model_version": getattr(r, "model_version", None),
+                         "team_id": r.team_id, "model_version": getattr(r, "model_version", None), "engine_id": eid,
                          "source_kind": best_src[0], "forecast_id": best_src[1], "method": getattr(r, "method", None),
                          "game_label": r.game_label, "player_label": r.player_label, "pmf_source": best_src[3]})
             if pmf_out is not None and getattr(r, "method", None) != "NOT_PRICED":
                 pmf_out.append({"game_id": gid, "player_id": r.player_id, "team_id": r.team_id, "stat": r.stat,
                                 "mean": _f(r.mean), "pmf": pmf, "game_label": r.game_label, "player_label": r.player_label,
                                 "tip": tip, "cutoff": best_src[2], "source_kind": best_src[0], "forecast_id": best_src[1],
-                                "model_version": getattr(r, "model_version", None),
+                                "model_version": getattr(r, "model_version", None), "engine_id": eid,
                                 "prediction_as_of": None if best[0] == pd.Timestamp.max.tz_localize("UTC") else best[0]})
     if audit is not None:                                        # identity keys are canonical ids, never display labels
         canon: dict = {}
@@ -479,7 +481,7 @@ def summary_rows(recs: list, ctx: dict) -> list:
         rows.append([x["game"], x["team"], opp[0] if len(opp) == 1 else None, x["player"], x["market"], x["mean"],
                      sm["P50"], _f(sm["sd"]), sm["P10"], sm["P25"], sm["P75"], sm["P90"], sm["max_outcome"],
                      _f(c.get("p_play")), _f(c.get("min_mu")), c.get("availability_status"), x["model_version"],
-                     x["source_kind"], x["forecast_id"], PCX.content_sha(0, np.asarray(x["pmf"], dtype=np.float64))])
+                     x.get("engine_id"), x["source_kind"], x["forecast_id"], PCX.content_sha(0, np.asarray(x["pmf"], dtype=np.float64))])
     return rows
 
 
@@ -500,7 +502,8 @@ def pmf_frame(recs: list, ops_root: Path | None = None) -> pd.DataFrame:
             return None
     return pd.DataFrame([{"game_id": x["game_id"], "player_id": x["player_id"], "team_id": x["team_id"],
                           "stat": x["market"], "game_label": x["game"], "player_label": x["player"], "team": x["team"],
-                          "mean": x["mean"], "model_version": x["model_version"], "source_kind": x["source_kind"],
+                          "mean": x["mean"], "model_version": x["model_version"], "engine_id": x.get("engine_id"),
+                          "source_kind": x["source_kind"],
                           "forecast_id": x["forecast_id"], "method": x["method"], "support_min": 0,
                           "support_max": len(x["pmf"]) - 1, "pmf_source": str(x.get("pmf_source") or ""),
                           "pmf_source_rel": rel(x.get("pmf_source")),
@@ -508,7 +511,7 @@ def pmf_frame(recs: list, ops_root: Path | None = None) -> pd.DataFrame:
 
 
 PMF_EXPORT_COLS = ("game_id", "player_id", "team_id", "stat", "game_label", "player_label", "team", "mean",
-                   "model_version", "source_kind", "forecast_id", "method", "support_min", "support_max",
+                   "model_version", "engine_id", "source_kind", "forecast_id", "method", "support_min", "support_max",
                    "pmf_source", "pmf_source_rel", "pmf_sha256")
 
 

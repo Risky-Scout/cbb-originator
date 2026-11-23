@@ -32,7 +32,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import config as PC, directional_audit as DA, ledger as LG, pricing as PX
+from cbb_platform.prod import config as PC, directional_audit as DA, engine as ENG, ledger as LG, pricing as PX
 
 AUTOMATIC_MODEL_CORRECTION = False
 SIDE_MONITOR_PATH = PC.LEDGER_PATH.parent / "side_monitor.jsonl"           # beside the shadow ledger
@@ -48,7 +48,7 @@ Z = 1.959963984540054
 STAT_COLS = {"PTS": "points", "REB": "reb", "AST": "ast", "FG3M": "three_pm", "STL": "stl", "BLK": "blk", "TOV": "tov"}
 
 QUOTE_SIDE_FIELDS = (
-    "record_id", "opportunity_id", "run_id", "model_version", "data_label", "prediction_as_of", "game_id", "game",
+    "record_id", "opportunity_id", "run_id", "model_version", "engine_id", "data_label", "prediction_as_of", "game_id", "game",
     "game_date", "week", "player_id", "player", "team_id", "market", "market_kind", "line", "side", "sportsbook",
     "book_decimal_odds", "book_american_odds", "quote_available_at", "collector_received_at",
     "predicted_minutes", "p_play", "role_pregame", "cold_start_class", "team_games_pregame", "exposure_band",
@@ -107,6 +107,8 @@ def append(records: list[dict], path: Path = SIDE_MONITOR_PATH) -> dict:
     for r in records:
         t, body = r["record_type"], r["body"]
         if t == "QUOTE_SIDE":
+            if "engine_id" not in body:                          # a producer without attribution: by prediction_as_of
+                body = r["body"] = {**body, "engine_id": ENG.attribute(None, body.get("prediction_as_of"))}
             miss = [k for k in QUOTE_SIDE_FIELDS if k not in body]
             if miss:
                 raise MonitorViolation(f"quote-side record missing fields {miss}")
@@ -140,6 +142,8 @@ def load(path: Path = SIDE_MONITOR_PATH) -> pd.DataFrame:
     q = [r["body"] for _, r in _records(path) if r["record_type"] == "QUOTE_SIDE"]
     s = [r["body"] for _, r in _records(path) if r["record_type"] == "SIDE_SETTLEMENT"]
     d = pd.DataFrame(q, columns=list(QUOTE_SIDE_FIELDS))
+    if len(d):                                                   # records written before engine attribution
+        d["engine_id"] = [ENG.attribute(e, a) for e, a in zip(d["engine_id"], d["prediction_as_of"])]
     st = pd.DataFrame(s, columns=list(SETTLEMENT_FIELDS))
     return d.merge(st, on="record_id", how="left")
 
@@ -202,7 +206,8 @@ def quote_side_records(dist: pd.DataFrame, quotes: pd.DataFrame, exposure: pd.Da
         gdate = pd.Timestamp(gd) if gd is not None else aso.tz_convert("America/New_York").tz_localize(None).normalize()
         iso = gdate.isocalendar()
         common = {
-            "run_id": meta["run_id"], "model_version": meta["model_version"], "data_label": meta.get("data_label", "LIVE"),
+            "run_id": meta["run_id"], "model_version": meta["model_version"],
+            "engine_id": ENG.attribute(meta.get("engine_id"), aso.isoformat()), "data_label": meta.get("data_label", "LIVE"),
             "prediction_as_of": aso.isoformat(), "game_id": d.game_id, "game": getattr(d, "game_label", None),
             "game_date": str(gdate.date()), "week": f"{iso[0]}-W{iso[1]:02d}", "player_id": d.player_id,
             "player": getattr(d, "player_label", None), "team_id": d.team_id, "market": d.market,

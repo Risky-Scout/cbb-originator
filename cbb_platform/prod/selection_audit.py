@@ -53,7 +53,7 @@ from pathlib import Path
 
 from cbb_platform.prod import market_eval as ME, selection_replay as SR
 
-AUDIT_VERSION = "cbb-selection-audit-1.1.0"
+AUDIT_VERSION = "cbb-selection-audit-1.2.0"   # 1.2.0: every row attributed to its predictive engine
 PLAYER_REQUIRED = ("book", "line", "side", "american", "decimal", "model_p", "p_push", "ev_gross", "ev_net",
                    "collector_received_at", "quote_id", "status")
 GAME_REQUIRED = ("book", "market_type", "side", "american", "decimal", "model_p", "p_push", "ev_gross", "ev_net",
@@ -347,6 +347,7 @@ def _day_rows(ops: Path, day: str, evals: dict, mode: str) -> dict:
         graded = True
         y = g["actual"]
         base = {"slate_date": day, "stat": e["stat"], "source": src,
+                "engine_id": MX.ENG.attribute(e.get("engine_id"), e.get("prediction_as_of")),
                 "roles": SR.role_tags(e.get("expected_minutes"), _context(ops, day, e, cache))}
         for r in SR.replay(e, cands, y):
             if r["picked"]:
@@ -381,8 +382,11 @@ def _day_rows(ops: Path, day: str, evals: dict, mode: str) -> dict:
 def _report(mode, days, graded_days, ev_window, recon, picks, allm, pol, games) -> dict:
     rep = {"version": AUDIT_VERSION, "mode": mode, "days": days, "graded_slates": sorted(graded_days),
            "evidence_window": ev_window, "records": dict(recon),
-           "replay_hash": SR.replay_hash([{k: v for k, v in r.items() if k != "roles"} for r in picks]),
+           "replay_hash": SR.replay_hash([{k: v for k, v in r.items() if k not in ("roles", "engine_id")} for r in picks]),
            **summarize(picks, allm, pol, len(graded_days)),
+           "by_engine": {eid: {"evaluations": sum(1 for r in allm if (r.get("engine_id") or "UNATTRIBUTED") == eid),
+                               "selections": sum(1 for r in picks if (r.get("engine_id") or "UNATTRIBUTED") == eid and r.get("picked"))}
+                         for eid in sorted({r.get("engine_id") or "UNATTRIBUTED" for r in picks + allm})},
            "game_candidate_replay": {d: g for d, g in games.items() if g}}
     if mode != "prospective":
         rep["decision_gate"] = {**rep["decision_gate"], "gate": "NOT_APPLICABLE_RETROSPECTIVE",

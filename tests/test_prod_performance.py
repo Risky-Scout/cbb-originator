@@ -121,7 +121,7 @@ def test_workbook_tabs_cumulative_scope_and_daily(two_days):
     assert rep["status"] == "WRITTEN" and rep["start_date"] == D1 and rep["rows"] == 3
     wb = EX.read_xlsx(out / D2 / PF.performance_name(D2))
     assert tuple(wb) == PF.SHEETS == ("Overall", "By Stat", "By Player Role", "Stat x Role", "By Side",
-                                      "By Reporting Tier", "Daily", "Calibration", "Selections")
+                                      "By Reporting Tier", "By Engine", "Daily", "Calibration", "Selections")
     assert tuple(wb["Daily"]["rows"][0]) == ("Date",) + PF.METRICS
     assert [r[0] for r in wb["Daily"]["rows"][1:]] == [D1, D2]
     rows = PF.read_dataset(ops / PF.DATASET)

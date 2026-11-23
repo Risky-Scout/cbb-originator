@@ -239,7 +239,10 @@ def _dist_and_exposure(src: dict, game_id: str) -> tuple[pd.DataFrame, pd.DataFr
         .rename(columns={"player_label": "display_name"}) if len(dist) else \
         pd.DataFrame(columns=["game_id", "team_id", "player_id", "display_name"])
     mv = ds[0]["model_version"] if ds else None
-    return dist, expo, cands, {"model_version": mv, "pmf_sha256": PE.sha256(src["pmfs"])}
+    eng = sorted({d["engine_id"] for d in ds if d.get("engine_id")})
+    if len(eng) > 1:
+        raise RuntimeError(f"one PMF source mixes predictive engines: {eng}")
+    return dist, expo, cands, {"model_version": mv, "engine_id": eng[0] if eng else None, "pmf_sha256": PE.sha256(src["pmfs"])}
 
 
 def price_collection(game: dict, src: dict, collection: Path, slate: pd.DataFrame, tidx: dict, now, refresh_id: str,
@@ -274,7 +277,7 @@ def price_collection(game: dict, src: dict, collection: Path, slate: pd.DataFram
     if not len(dist):
         return {**out, "status": "NO_PMF_ROWS"}, [], q
     meta = {"run_id": refresh_id, "prediction_as_of": src["prediction_as_of"], "model_version": info["model_version"],
-            "data_label": "LIVE", "game_dates": {gid: str(pd.Timestamp(game["game_date_et"]).date())}}
+            "engine_id": info["engine_id"], "data_label": "LIVE", "game_dates": {gid: str(pd.Timestamp(game["game_date_et"]).date())}}
     bodies = SD.quote_side_records(dist, q, expo, meta)
     rid = dist.set_index(["player_id", "market"])["prediction_receipt_id"].to_dict()
     for b in bodies:

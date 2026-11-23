@@ -18,7 +18,8 @@ from pathlib import Path
 from cbb_platform.prod import config as PC
 
 GENESIS = "0" * 64
-PREDICTION_FIELDS = ("prediction_id", "run_id", "prediction_as_of", "feature_cutoff", "model_version", "artifact_sha256",
+PREDICTION_FIELDS = ("prediction_id", "run_id", "prediction_as_of", "feature_cutoff", "model_version", "engine_id",
+                     "code_commit", "artifact_sha256",
                      "production_manifest", "state_version", "game_id", "game", "player_id", "player", "team_id", "market",
                      "line", "side", "projection", "probability", "push_probability", "p_nonpush", "p_play",
                      "fair_decimal", "fair_american", "best_decimal_odds", "best_american_odds", "sportsbook", "edge",

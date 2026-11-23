@@ -20,7 +20,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import (board as BO, bundle as BD, config as PC, features as PF, identity_conflicts as IC, pool_grain as PG, run_receipts as RR,
+from cbb_platform.prod import (board as BO, bundle as BD, config as PC, engine as ENG, features as PF, identity_conflicts as IC, pool_grain as PG, run_receipts as RR,
                                inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
                                rate_a2 as RA2, roster_omissions as RO, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
@@ -120,7 +120,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         out = {"run_id": run_id, "readiness_state": "BLOCKED", "run_reasons": [e.reason], "error": str(e), "predictions": 0}
         (run_dir / "run_summary.json").write_text(json.dumps(out, indent=1, default=str))
         return out
-    ident = model.identity
+    ident = {**model.identity, **ENG.identity()}                 # + the predictive engine that scores (prod.engine)
     # ---------------------------------------------------------------- state (last known good)
     st = ST.current(state_root)
     if st is None:
@@ -310,7 +310,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                          .to_dict(orient="records") if len(quotes) else []}
     # ---------------------------------------------------------------- price + readiness + ledger + bundle
     run_state = RD.evaluate(run_reasons)
-    meta = {"run_id": run_id, "prediction_as_of": aso, "model_version": ident["model_version"], "sims": sims,
+    meta = {"run_id": run_id, "prediction_as_of": aso, "model_version": ident["model_version"],
+            "engine_id": ident["engine_id"], "code_commit": ident["code_commit"], "sims": sims,
             "run_reasons": run_reasons}
     if no_quote_reason is not None:
         meta["no_quote_reason"] = no_quote_reason
@@ -337,8 +338,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         recs.append({"record_type": "PREDICTION", "body": {
             "prediction_id": LG.prediction_id(run_id, p["game_id"], p["player_id"], p["market"], p["line"], p["side"]),
             "run_id": run_id, "prediction_as_of": aso, "feature_cutoff": sl.loc[p["game_id"], "feature_cutoff"],
-            "model_version": ident["model_version"], "artifact_sha256": ident["artifact_sha256"],
-            "production_manifest": ident["production_manifest"], "state_version": man["state_version"],
+            "model_version": ident["model_version"], "engine_id": ident["engine_id"], "code_commit": ident["code_commit"],
+            "artifact_sha256": ident["artifact_sha256"], "production_manifest": ident["production_manifest"], "state_version": man["state_version"],
             "game_id": p["game_id"], "game": p["game"], "player_id": p["player_id"], "player": p["player"],
             "team_id": p["team_id"], "market": p["market"], "line": p["line"], "side": p["side"],
             "projection": None if pd.isna(p["projection"]) else p["projection"], "probability": p.get("probability"),
@@ -367,7 +368,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         summary["side_monitor"] = {"error": type(e).__name__, "detail": str(e)[:200]}
     proj = dist[["game_id", "game_label", "player_id", "player_label", "market", "projection", "p_play", "method",
                  "player_suppression"]].copy() if len(dist) else pd.DataFrame()
-    bmeta = {"run_id": run_id, "model_version": ident["model_version"], "architecture": ident["architecture"],
+    bmeta = {"run_id": run_id, "model_version": ident["model_version"], "engine_id": ident["engine_id"],
+             "code_commit": ident["code_commit"], "architecture": ident["architecture"],
              "artifact_sha256": ident["artifact_sha256"], "production_manifest": ident["production_manifest"],
              "frozen_commit": ident["frozen_commit"], "frozen_tag": ident["frozen_tag"],
              "state_version": man["state_version"], "prediction_as_of": aso, "readiness_state": run_state["readiness_state"],

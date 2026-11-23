@@ -43,7 +43,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import market_eval as ME, ops_store as OS
+from cbb_platform.prod import engine as ENG, market_eval as ME, ops_store as OS
 
 MX_VERSION = "cbb-market-exports-1.0.0"
 TZ = "America/New_York"
@@ -61,7 +61,7 @@ BOARD_COLS = (
     "Consensus Line",
     "Consensus Over Odds", "Consensus Under Odds", "Consensus Fair Over %", "Consensus Fair Under %", "Raw Book Count",
     "Consensus Book Count", "Outlier Book Count", "Quote Timestamp", "Quote Age", "Forecast ID", "Model Version",
-    "Market Status", "Best Offer Side", "Books At Line", "Candidate Offers")
+    "Engine ID", "Market Status", "Best Offer Side", "Books At Line", "Candidate Offers")
 BOARD_SHEETS = ("Full Board", "60 Percent Plus", "65 Percent Plus", "Model Coverage")
 VALID_MARKET = "VALID_MARKET"
 PCT = "0.0%"
@@ -77,8 +77,8 @@ CLV_STATUSES = ("EXACT_LINE", "SAME_LINE_NEAREST_CLOSE", "LINE_MOVED", "NO_CLOSE
 CLV_COMPUTED = ("EXACT_LINE", "SAME_LINE_NEAREST_CLOSE")
 ROW_COLS = (
     "eval_key", "slate_date", "game_id", "player_id", "team_id", "game", "player", "team", "opponent", "player_role",
-    "expected_minutes", "stat", "tip_utc", "cutoff_utc", "forecast_id", "model_version", "prediction_as_of",
-    "projection", "side", "preferred_side", "line", "book", "american_odds", "decimal_odds", "model_probability",
+    "expected_minutes", "stat", "tip_utc", "cutoff_utc", "forecast_id", "model_version", "engine_id",
+    "prediction_as_of", "projection", "side", "preferred_side", "line", "book", "american_odds", "decimal_odds", "model_probability",
     "push_probability", "fair_probability", "edge", "ev", "actionable", "tier", "books_at_line", "quote_received_at",
     "entry_received_at", "entry_decimal_odds", "entry_fair_probability", "close_ts", "close_book", "close_line",
     "close_fair_probability", "probability_clv", "log_odds_clv", "raw_line_movement", "directional_line_movement",
@@ -106,14 +106,15 @@ GRADED_COLS = (
     "Probability Edge", "EV", "Is Actionable", "Reporting Tier", "Actual", "Minutes", "Result", "Units",
     "Entry Timestamp", "Entry Fair Probability", "Close Timestamp", "Close Book", "Close Line",
     "Close Fair Probability", "Probability CLV", "Log-Odds CLV", "Directional Line Movement", "CLV Status",
-    "Canonical Game ID", "Canonical Player ID", "Forecast ID", "Model Version", "Evaluation Hash")
+    "Canonical Game ID", "Canonical Player ID", "Forecast ID", "Model Version", "Engine ID", "Evaluation Hash")
 GRADE_SHEETS = ("Graded Predictions", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier",
-                "Status")
+                "By Engine", "Status")
 STATUS_COLS = ("GRADE_STATUS", "GRADED_SLATE_DATE", "MARKET_PREDICTIONS", "GRADED", "VOID_DNP", "PENDING",
                "GAMES_FROZEN", "SOURCE")
 GROUPS = {"By Stat": ("stat",), "By Player Role": ("player_role",), "Stat x Role": ("stat", "player_role"),
-          "By Side": ("side",), "By Reporting Tier": ("tier",)}
-GROUP_LABELS = {"stat": "Stat", "player_role": "Player Role", "side": "Side", "tier": "Reporting Tier"}
+          "By Side": ("side",), "By Reporting Tier": ("tier",), "By Engine": ("engine_id",)}
+GROUP_LABELS = {"stat": "Stat", "player_role": "Player Role", "side": "Side", "tier": "Reporting Tier",
+                "engine_id": "Engine ID"}
 
 
 class MarketExportIntegrityError(RuntimeError):
@@ -246,7 +247,8 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
             None if b is None else ev["actionability_status"], _f(c["consensus_line"]),
             _f(c["consensus_over_odds"]), _f(c["consensus_under_odds"]), _f(c["market_over_prob"]),
             _f(c["market_under_prob"]), c["raw_book_count"], c["consensus_book_count"], c["outlier_book_count"],
-            _iso(qts), age, r.get("forecast_id"), r.get("model_version"), status, None if b is None else b["side"],
+            _iso(qts), age, r.get("forecast_id"), r.get("model_version"),
+            ENG.attribute(r.get("engine_id"), r.get("prediction_as_of")), status, None if b is None else b["side"],
             ev["books_at_line"], ev["candidates"]])
         if b is not None:
             body = {"eval_version": ME.EVAL_VERSION, "slate_date": slate, "game_id": r["game_id"],
@@ -254,7 +256,9 @@ def board(pmfs: list, obs: dict, names: dict, ctx: dict, at) -> tuple[list[list]
                     "player": r["player_label"], "team": team, "opponent": opp_name, "player_role": role,
                     "expected_minutes": mins, "tip_utc": _iso(tip), "cutoff_utc": _iso(cut),
                     "forecast_id": r.get("forecast_id"), "source_kind": r.get("source_kind"),
-                    "model_version": r.get("model_version"), "prediction_as_of": _iso(r.get("prediction_as_of")),
+                    "model_version": r.get("model_version"),
+                    "engine_id": ENG.attribute(r.get("engine_id"), r.get("prediction_as_of")),
+                    "prediction_as_of": _iso(r.get("prediction_as_of")),
                     "projection": _f(r["mean"]), "side": b["side"], "preferred_side": ev["preferred_side"],
                     "line": b["line"], "book": b["book"],
                     "american_odds": rows[-1][BOARD_COLS.index("Best American Odds")], "decimal_odds": b["decimal"],
@@ -567,6 +571,7 @@ def grade(e: dict, act: dict) -> dict:
 
 def graded_row(e: dict, act: dict, obs: Observations, now) -> dict:
     row = {k: e.get(k) for k in ROW_COLS if k in e}
+    row["engine_id"] = ENG.attribute(e.get("engine_id"), e.get("prediction_as_of"))   # frozen before attribution
     row.update(eval_key="|".join(eval_key(e)) + "|" + e["slate_date"], content_hash=e["content_hash"])
     row.update(closing(obs, e))
     row.update(grade(e, act))
@@ -592,6 +597,8 @@ def graded_rows(ops_root: Path, day: str, now, reuse: dict | None = None) -> tup
         key = "|".join(k) + "|" + day
         prev = (reuse or {}).get(key)
         if prev is not None and prev["content_hash"] == e["content_hash"] and final(prev):
+            if not prev.get("engine_id"):                        # stored before attribution
+                prev = {**prev, "engine_id": ENG.attribute(e.get("engine_id"), e.get("prediction_as_of"))}
             rows.append(prev)
             reused += 1
             continue
@@ -673,7 +680,7 @@ def graded_table_rows(rows: list[dict]) -> list[list]:
                     r["entry_fair_probability"], r["close_ts"], r["close_book"], r["close_line"],
                     r["close_fair_probability"], r["probability_clv"], r["log_odds_clv"],
                     r["directional_line_movement"], r["clv_status"], r["game_id"], r["player_id"], r["forecast_id"],
-                    r["model_version"], r["content_hash"]])
+                    r["model_version"], r.get("engine_id"), r["content_hash"]])
     return out
 
 

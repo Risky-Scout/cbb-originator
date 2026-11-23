@@ -4,7 +4,7 @@ vector, instead of one row per support point (prod.pmf_evidence long format).
 Persist information, not expanded representations: the long rows are a deterministic VIEW (expand) of these rows.
 
 Compact columns (PMF_COLUMNS):
-    prediction_receipt_id, game_id, player_id, team_id, stat, prediction_as_of, model_version, mean, run_id, method,
+    prediction_receipt_id, game_id, player_id, team_id, stat, prediction_as_of, model_version, engine_id, mean, run_id, method,
     game_label, player_label     -- the per-PMF fields of the long format (constant within one PMF)
     support_min, support_max     -- the integer support of the vector (long outcomes support_min..support_max)
     probabilities                -- list<double>, P(outcome = support_min + i), the exact float64 values
@@ -22,10 +22,10 @@ import numpy as np
 import pandas as pd
 
 PER_PMF = ["prediction_receipt_id", "game_id", "player_id", "team_id", "stat", "prediction_as_of", "model_version",
-           "mean", "run_id", "method", "game_label", "player_label"]
+           "engine_id", "mean", "run_id", "method", "game_label", "player_label"]
 PMF_COLUMNS = PER_PMF + ["support_min", "support_max", "probabilities", "pmf_sha256"]
 LONG_COLUMNS = ["prediction_receipt_id", "game_id", "player_id", "team_id", "stat", "prediction_as_of", "model_version",
-                "outcome", "probability", "mean", "run_id", "method", "game_label", "player_label"]
+                "engine_id", "outcome", "probability", "mean", "run_id", "method", "game_label", "player_label"]
 
 
 class PMFCompactError(RuntimeError):

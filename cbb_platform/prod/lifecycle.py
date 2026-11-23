@@ -53,7 +53,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cbb_platform.prod import (config as PC, history_extract as HX, loader as LD, ops_store as OS, pmf_evidence as PE,
+from cbb_platform.prod import (config as PC, engine as ENG, history_extract as HX, loader as LD, ops_store as OS, pmf_evidence as PE,
                                run as RN, shadow_tick as SH, state as ST)
 
 LIFECYCLE_VERSION = "cbb-prod-daily-lifecycle-1.0.0"
@@ -306,7 +306,8 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
                  side_monitor_path=sdir / "side_monitor.jsonl", model=model,
                  rotowire_root=PC.ROTOWIRE_ROOT if rec.get("rotowire_refresh") == "ENABLED" else None)
     run_dir = Path(s.get("run_dir") or life.runs / s["run_id"])
-    pe = PE.from_run(run_dir, s["run_id"], now, ident["model_version"], rec["games"])
+    eng = (s.get("model_identity") or {}).get("engine_id") or ENG.engine_id()   # the engine that scored this run
+    pe = PE.from_run(run_dir, s["run_id"], now, ident["model_version"], rec["games"], engine_id=eng)
     w = PE.write(sdir / PE.FILE, pe) if len(pe) else {"pmfs": 0}
     if len(pe):                                       # the snapshot file is the one canonical payload
         w["run_copy"] = PE.dereference_run(run_dir, s["run_id"], sdir / PE.FILE)["status"]
@@ -316,12 +317,13 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
         players = mi[[c for c in PLAYER_COLS if c in mi.columns]].drop_duplicates(["game_id", "player_id"])
         players = players[players["game_id"].isin(rec["games"])].reset_index(drop=True)
     players = players.assign(snapshot_id=sid, run_id=s["run_id"], prediction_as_of=now.isoformat(),
-                             model_version=ident["model_version"])
+                             model_version=ident["model_version"], engine_id=eng)
     sdir.mkdir(parents=True, exist_ok=True)
     players.to_parquet(sdir / "forecast_players.parquet", index=False)
     scored = sorted(s.get("banks", {}))
     rec.update(status="FORECAST", run_id=s["run_id"], prediction_as_of=now.isoformat(),
-               model_version=ident["model_version"], model_kind=ident.get("model_kind"),
+               model_version=ident["model_version"], engine_id=eng, code_commit=ENG.code_commit(),
+               model_kind=ident.get("model_kind"),
                artifact_sha256=ident.get("artifact_sha256"), state_version=st["manifest"]["state_version"],
                readiness_state=s.get("readiness_state"), run_reasons=s.get("run_reasons"),
                games_forecast=len(scored), games_not_scored={g: s.get("game_reasons", {}).get(g) for g in rec["games"]
@@ -554,7 +556,7 @@ def health_path(life: Life, day: date) -> Path:
     return Path(life.prod_root) / "health" / f"{day.isoformat()}.json"
 
 
-FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "games_forecast", "players_forecast",
+FORECAST_SUMMARY = ("snapshot_id", "window", "executed_at", "model_version", "engine_id", "games_forecast", "players_forecast",
                     "stat_predictions", "pmfs_persisted", "games_not_scored", "game_forecast")
 
 
