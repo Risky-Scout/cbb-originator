@@ -1,0 +1,29 @@
+{
+ "id": "CBB_PHASE4_PRODUCTION_SCORER_RETEST_V1",
+ "declared_at": "2026-11-23T00:30:00+00:00",
+ "declared_before": "any production-scorer replay metric of any arm",
+ "finding_that_motivates_it": {
+  "production_pmfs": "2026-27 persisted production PMFs (154,728 rows, 44 runs, incumbent): realized / PMF mean PTS low-minute (min_mu < 10) 0.728, bench 0.873; AST 0.752 / 0.907; FG3M 0.685 / 0.888; variance ratio PTS 0.95-1.08 (no dispersion defect visible)",
+  "decomposition": "PMF mean / marginal mean = 1.218 PTS, 1.125 AST, 1.267 FG3M for min_mu < 10 (1.00 for starters): JM1 (alpha = 1) propagates realized-minutes variation through log_minutes_ratio; realized minutes of deep-bench players exceed min_mu, so the full per-minute RATE over-forecast (~27% PTS) reaches the priced PMF",
+  "consequence": "the 2026-11-22 proxy scorer (NB at expected minutes, no minutes uncertainty) is not the production PMF. The 'PTS low-minute dispersion defect' was a proxy artifact; the A2 per-stat decisions must be re-tested on the PRODUCTION scorer"
+ },
+ "scorer": "cbb_platform.v2.jm1_final_production.score_game (the production scorer, unmodified) with the frozen opening artifacts (prod.loader.load); PMF = its Rao-Blackwellized mixture_pmf; SIMS 2000 per game, common random numbers across arms (same game seeds)",
+ "datasets": {
+  "F2026": "v2.phase3.season_inputs(2026): point-in-time Phase 1B OOS candidate rows (state through 2024-25) + pregame environment; A2 inputs from D1 F2026 (joined on player_game_example_id)",
+  "LIVE": "2026-27 walk-forward rows through 2026-11-21 (opening-marginal OOS forecasts, frame hash = the 11-22 production manifest) + their team frame -> prod.inputs.environment"
+ },
+ "arms": {
+  "INC": "incumbent Phase 1B means (no rate correction)",
+  "A2": "A2 means (frozen F2024+F2025 constants, CHALLENGER_A_PROTOCOL revision_A2, SCALE = L_A2 / L_incumbent) for all 7 stats"
+ },
+ "evaluation": "played rows (y_min > 0), PMF conditional on playing; per stat: log score, RPS, calibration-in-the-large by role (min_mu <10 / 10-20 / 20-30 / 30+), early season (season_day <= 14); game-clustered paired SE",
+ "gate_per_stat": {
+  "G1": "F2026 and LIVE: d log loss (A2 - INC) upper bound (mean + 1.96 SE) < 0",
+  "G2": "F2026: no role cell d log loss upper bound > +0.002",
+  "G3": "LIVE: early-season (season_day <= 14) d log loss upper bound <= +0.0005",
+  "G4": "LIVE: max |realized / PMF mean - 1| over roles decreases",
+  "decision": "PROMOTE A2 for a stat iff G1-G4 pass; a promoted stat that FAILS here (AST / FG3M / STL) is ROLLED BACK to the incumbent rate"
+ },
+ "combos": "PRA / PR / PA / RA / STOCKS are reported (from the same draws is not available in the mixture PMF; reported only through their component stats)",
+ "no_tuning": "no parameter is fitted in Phase 4; the A2 constants are the frozen F2024+F2025 values already in production"
+}
