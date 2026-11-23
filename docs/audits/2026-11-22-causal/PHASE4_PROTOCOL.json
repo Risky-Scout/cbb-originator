@@ -25,5 +25,27 @@
   "decision": "PROMOTE A2 for a stat iff G1-G4 pass; a promoted stat that FAILS here (AST / FG3M / STL) is ROLLED BACK to the incumbent rate"
  },
  "combos": "PRA / PR / PA / RA / STOCKS are reported (from the same draws is not available in the mixture PMF; reported only through their component stats)",
- "no_tuning": "no parameter is fitted in Phase 4; the A2 constants are the frozen F2024+F2025 values already in production"
+ "no_tuning": "no parameter is fitted in Phase 4; the A2 constants are the frozen F2024+F2025 values already in production",
+ "challenger_M1_minutes_sd": {
+  "declared_at": "2026-11-23T01:05:00+00:00",
+  "declared_before": "any replay metric of M1",
+  "defect": "cold-start minutes uncertainty understated: realized / forecast minutes SD by cold_start_class (played rows): TRAIN F2024+F2025 EARLY 1.115, NO_HISTORY 1.257, TRANSFER_IN 1.090, WARM 0.972; F2026 1.133 / 1.306 / 1.107 / 0.980; LIVE 1.251 / 1.317 / 1.249 / 1.000 (minutes mean unbiased)",
+  "fix": "min_sigma_i <- min_sigma_i x s[cold_start_class_i], s = the TRAIN ratios above (frozen; no 2026 data used); applied to the scorer input only (the same sigma feeds the production minutes draw for all 7 stats)",
+  "s": {
+   "COLD_EARLY_SEASON": 1.115,
+   "COLD_NO_HISTORY": 1.257,
+   "COLD_TRANSFER_IN": 1.09,
+   "WARM": 0.972
+  },
+  "arms": {
+   "M1": "INC means + scaled sigma",
+   "A2M1": "all-A2 means + scaled sigma (evaluated against A2)"
+  },
+  "gate": {
+   "G1": "F2026 and LIVE: stacked 7-stat d log loss upper bound < 0, and no single stat d log loss upper bound > +0.0005",
+   "G2": "F2026: no stat x cold_start_class cell upper bound > +0.002",
+   "G3": "LIVE early season: stacked upper bound <= +0.0005",
+   "decision": "one minutes law feeds every stat, so M1 is promoted or rejected as a whole"
+  }
+ }
 }

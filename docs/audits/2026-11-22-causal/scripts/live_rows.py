@@ -30,6 +30,7 @@ fr = ts["frames"]
 out.mkdir(parents=True, exist_ok=True)
 fr["frame"].to_parquet(out / "frame_2027.parquet", index=False)
 fr["oos"].to_parquet(out / "oos_2027.parquet", index=False)
+fr["team"].to_parquet(out / "team_2027.parquet", index=False)          # Phase 4: the scorer's pregame environment
 opening = SO.load_version(real, WC.version_id(WC.OPENING_DATE))
 (out / "opening_v0_state.json").write_text(json.dumps(opening.v0_state, default=float))
 print(json.dumps({"training_cutoff": str(ts["training_cutoff"]), "games": len(ts["trained_games"]),
