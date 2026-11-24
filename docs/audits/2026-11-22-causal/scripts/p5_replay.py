@@ -30,10 +30,10 @@ model = LD.load()
 prod = model.jm1
 
 # ------------------------------------------------------------------ inputs: candidate rows + environment + A2 components
-if ds == "F2026":
-    df, envp = P3.season_inputs(2026, prod["struct"])
+if ds in ("F2025", "F2026"):
+    df, envp = P3.season_inputs(int(ds[1:]), prod["struct"])
     envd = {(r.game_id, r.team_id): np.array([r.pace_dev, r.own_eff_dev, r.opp_eff_dev]) for r in envp.itertuples(index=False)}
-    comp = pd.read_parquet(D / "d1_F2026.parquet")
+    comp = pd.read_parquet(D / f"d1_{ds}.parquet")
     comp = comp.rename(columns={**{f"{s}_{c}": f"{c}_{t}" for s, t in TGT.items() for c in ("cur", "h1", "h2", "h3")}})
     st = {"prior_k_minutes": {t: float(comp[f"{s}_k"].iloc[0]) for s, t in TGT.items()}}
     prior_col = {t: comp.set_index("player_game_example_id")[f"{s}_prior"] for s, t in TGT.items()}
@@ -77,8 +77,66 @@ def a2_means(rows: pd.DataFrame, stats) -> dict:
     return out
 
 
-def score_mna(prod, gid, gp, envd, sims):
-    """= JP.score_game with the minutes-neutral anchor (challenger_P1_mean_anchor.fix); everything else identical."""
+PV = np.array([0.11, 0.65, 0.24])             # challenger_P2: frozen TRAIN event shares (results/p2_pts_family_train_fit.json)
+VB = float((PV * np.arange(1, 4)).sum())
+NMAX = 100
+
+
+def _vconv(kmax):
+    out = np.zeros((NMAX + 1, kmax + 1)); cur = np.zeros(kmax + 1); cur[0] = 1.0
+    step = np.zeros(kmax + 1); step[1:4] = PV
+    for n in range(NMAX + 1):
+        out[n] = cur; out[n, -1] += max(1.0 - cur.sum(), 0.0)
+        cur = np.convolve(cur, step)[: kmax + 1]
+    return out
+
+
+VCONV = None
+
+
+def compound_matrix(mu, phiN, kmax):
+    """P2 PTS family: sum of N iid V in {1,2,3}, N ~ NB(mean mu / VB, var m + phiN m^2); tail folded into kmax."""
+    global VCONV
+    if VCONV is None or VCONV.shape[1] != kmax + 1:
+        VCONV = _vconv(kmax)
+    from cbb_platform import props_v0 as PZ
+    pN = PZ.pmf_matrix(np.asarray(mu, float) / VB, float(phiN), NMAX)
+    out = pN @ VCONV
+    out[:, -1] += np.maximum(1.0 - out.sum(axis=1), 0.0)
+    return out
+
+
+def tables(lm, phi, pts_phiN=None):
+    """= structural.mixture_tables, with the PTS conditional table optionally the P2 compound family."""
+    from cbb_platform import props_v0 as PZ
+    from cbb_platform.v2 import structural as S
+    kmax = L.KMAX
+    sims, d = lm.shape
+    q = np.round(lm / S.GRID_H).astype(np.int64)
+    qmin = q.min(axis=0); width = q.max(axis=0) - qmin + 1
+    base = np.concatenate([[0], np.cumsum(width)[:-1]])
+    key = q - qmin[None, :] + base[None, :]
+    used = np.bincount(key.ravel(), minlength=int(width.sum())) > 0
+    rank = np.cumsum(used) - 1; inv = rank[key]
+    dim_of = np.repeat(np.arange(d), width)[used]
+    grid = (np.concatenate([np.arange(w) for w in width]) + np.repeat(qmin, width))[used]
+    mu = np.exp(grid * S.GRID_H); so = dim_of % S.NS
+    pmf = np.empty((len(mu), kmax + 1))
+    for j in range(S.NS):
+        m = so == j
+        if m.any():
+            pmf[m] = (compound_matrix(mu[m], pts_phiN, kmax) if (j == 0 and pts_phiN is not None)
+                      else PZ.pmf_matrix(mu[m], float(phi[j]), kmax))
+    cdf = np.minimum(np.maximum.accumulate(np.cumsum(pmf, axis=1), axis=1), 1.0); cdf[:, -1] = 1.0
+    thr = np.full(cdf.shape, S.THR_CAP); need = (cdf < 1.0 - 1e-15)
+    with np.errstate(divide="ignore"):
+        thr[need] = np.clip(L.ndtri(np.clip(cdf[need], 1e-300, 1.0)), -S.THR_CAP, S.THR_CAP)
+    starts = np.searchsorted(dim_of, np.arange(d + 1), side="left")
+    return {"inv": inv, "starts": starts, "pmf": pmf, "cdf": cdf, "thr": thr}
+
+
+def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None):
+    """= JP.score_game with the minutes-neutral anchor (challenger_P1_mean_anchor.fix) and / or the P2 PTS family."""
     from cbb_platform.v2 import dependence as D, jm1_final as F, joint as J, structural as S
     gi = P3._game_input(gid, gp, envd)
     rows = gp[gp["_scored"]].reset_index(drop=True)
@@ -93,8 +151,8 @@ def score_mna(prod, gid, gp, envd, sims):
     mm = rows["min_mu"].to_numpy(dtype=float)
     full = S.log_mu_terms(base_lm, mm, team, sv, prod["struct"]["glm"], JM.JM_TERMS)
     nom = S.log_mu_terms(base_lm, mm, team, sv, prod["struct"]["glm"], tuple(t for t in JM.JM_TERMS if t != "log_minutes_ratio"))
-    lm = full + (np.log(np.exp(nom).mean(axis=0)) - np.log(np.exp(full).mean(axis=0)))[None]
-    tab = S.mixture_tables(lm.reshape(sims, n * J.NS), np.array([prod["s4"]["dispersion"][s]["phi"] for s in L.STATS]))
+    lm = full + (np.log(np.exp(nom).mean(axis=0)) - np.log(np.exp(full).mean(axis=0)))[None] if mna else S.anchor(full, base_lm, JM.JM1_ALPHA)[0]
+    tab = tables(lm.reshape(sims, n * J.NS), np.array([prod["s4"]["dispersion"][s]["phi"] for s in L.STATS]), pts_phiN)
     draws = S.counts(tab, z).reshape(sims, n, J.NS)
     return {"rows": rows, "draws": draws, "pmf": S.mixture_pmf(tab, sims).reshape(n, J.NS, -1)}
 
@@ -112,7 +170,10 @@ for gi, gid in enumerate(games):
         if spec.get("min_sd"):
             cls = gp["cold_start_class"].astype(str)
             gp["min_sigma"] = gp["min_sigma"] * cls.map(spec["min_sd"]).fillna(1.0).to_numpy(float)
-        r = score_mna(prod, gid, gp, envd, SIMS) if spec.get("anchor") == "MNA" else JP.score_game(prod, gid, gp, envd, SIMS)
+        if spec.get("anchor") == "MNA" or "pts_phiN" in spec:
+            r = score_mna(prod, gid, gp, envd, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"))
+        else:
+            r = JP.score_game(prod, gid, gp, envd, SIMS)
         rows, pmf = r["rows"], r["pmf"]
         K = pmf.shape[2]
         for j, s in enumerate(L.STATS):
