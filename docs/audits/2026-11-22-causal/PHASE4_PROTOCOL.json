@@ -199,7 +199,26 @@
    "spec": "TOV_mu *= exp(b * (u - ubar)), u = days since Nov 1 of the season / 100; b = Poisson GLM slope of y_TOV on u with offset log(TOV_mu) and an intercept (discarded), played rows of d1_F2024 + d1_F2025; ubar = mean u of those rows (season-average multiplier 1). Mean of TOV only; no other stat, dispersion or dependence parameter changes.",
    "evaluation": "production configuration replay (A2 AST/FG3M/STL/REB + P2), arm PRODXT1 vs PRODX (= P2 arm of p2final, common random numbers), F2026 and LIVE, single run, no refit.",
    "gate": "TOV log loss ub < 0 on F2026 and LIVE; F2026 minutes-bin cells (<10,10-20,20-30,30+) ub <= 0.002; LIVE early (<=14 days) ub <= 0.0005; every other stat bit-identical.",
-   "if_pass": "prod module applying the multiplier to model_inputs TOV_mu by game date (as prod.rate_a2), engine correction TOVS1[b]."
+   "if_pass": "prod module applying the multiplier to model_inputs TOV_mu by game date (as prod.rate_a2), engine correction TOVS1[b].",
+   "fit": {
+    "b": -0.07673824529357458,
+    "se_b": 0.005045,
+    "ubar": 0.7213194232871556,
+    "rows": 223196,
+    "seasons": [
+     "F2024",
+     "F2025"
+    ]
+   },
+   "result": {
+    "utc": "2026-11-24T10:35Z",
+    "evaluator": "scripts/p11_t1_eval.py -> results/t1_eval.json",
+    "F2026": "TOV dLL -0.00076 (ub -0.00056), dRPS ub -0.00027; bins <10/10-20/20-30/30+ ub -0.0002/-0.0003/-0.0010/+0.0004 (<= .002); early ub -0.0025",
+    "LIVE": "TOV dLL -0.00368 (ub -0.00288), dRPS ub -0.0015; y/mean 10-20 1.078->1.027, 20-30 1.140->1.088, 30+ 1.096->1.048; early ub -0.0036",
+    "others_identical": true,
+    "gates": "all pass",
+    "decision": "PROMOTE -> prod/tov_trend.py, engine TOVT1"
+   }
   }
  },
  "context_ablation": {
@@ -216,5 +235,21 @@
   "utc": "2026-11-24T09:15Z",
   "F2026": "base stats tail-calibrated (>q95 .046-.051, <q05 .050-.053); PTS and its combos shifted (>q95 .042-.044, <q05 .060-.062) = the documented low-minute PTS mean over-forecast, not tail shape",
   "LIVE": "both tails heavy for nearly all stats; split: WARM var ratio ~1.0 (two-tail .10-.11), COLD 1.18-1.37 (two-tail .11-.16) -> COLD_START_DISPERSION (see M1)"
+ },
+ "dependence_vs_independent": {
+  "utc": "2026-11-24T10:00Z",
+  "method": "same production draws; <COMBO>_IND permutes each stat's draws over sims independently (marginals bit-identical, within-player dependence removed); arm PRODXT1 (combos identical to production: TOV in no combo)",
+  "LIVE": {
+   "PRA": "dLL joint-IND -0.0951 (ub -0.0870), dRPS -0.0608",
+   "PR": "-0.0579 (ub -0.0521)",
+   "PA": "-0.0218 (ub -0.0182)",
+   "RA": "-0.0246 (ub -0.0214)",
+   "STOCKS": "-0.0034 (ub -0.0021)",
+   "var_ratio_realized_over_forecast": {
+    "joint": "1.10-1.16",
+    "independent": "1.16-1.55"
+   }
+  },
+  "reading": "production joint dependence validated on every combo; residual joint under-dispersion live = COLD_START_DISPERSION"
  }
 }

@@ -129,10 +129,11 @@ def compare(got: dict, gold: dict) -> list[str]:
 def capture_incumbent(work: Path) -> dict:
     """The frozen-champion path: the 2026-11-22 rate_a2 and 2026-11-24 PTS compound promotions disabled (its stats keep the incumbent rate). The
     golden file pins this path exactly; the promotion's own effect is pinned by test_rate_a2_changes_only_its_stats."""
-    from cbb_platform.prod import pts_compound as PTC, rate_a2 as RA2
+    from cbb_platform.prod import pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(RA2, "PARAMS", {})
         mp.setattr(PTC, "PHI_N", None)                     # 2026-11-24 P2 PTS family off: incumbent NB
+        mp.setattr(TT, "ENABLED", False)                   # 2026-11-24 T1 TOV season trend off
         return capture(work)
 
 
@@ -165,9 +166,9 @@ def test_capture_is_deterministic(captured, tmp_path):
 
 def test_rate_a2_changes_only_its_stats(captured, captured_a2):
     """Promotion 2026-11-22 (prod.rate_a2): every model input equals the incumbent except the AST / FG3M / STL means."""
-    from cbb_platform.prod import rate_a2 as RA2
+    from cbb_platform.prod import rate_a2 as RA2, tov_trend as TT
     assert [r["key"] for r in captured_a2["model_inputs"]] == [r["key"] for r in captured["model_inputs"]]
-    changed = {f"{s}_mu" for s in RA2.PARAMS}
+    changed = {f"{s}_mu" for s in RA2.PARAMS} | ({"TOV_mu"} if TT.enabled() else set())      # + T1 (2026-11-24)
     moved = set()
     for a, b in zip(captured_a2["model_inputs"], captured["model_inputs"]):
         for c in INPUT_COLS:
