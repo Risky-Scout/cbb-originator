@@ -50,6 +50,8 @@ else:
     prior_col = {t: comp.set_index("player_game_example_id")["pos"].map(v0["prior_rate"][t]) for t in TGT.values()}
     ts = pd.to_datetime(comp.prediction_cutoff_utc, utc=True)
     early_day = pd.Series((ts - ts.min()).dt.days.to_numpy(), index=comp.player_game_example_id)
+_gsrc = df if "prediction_cutoff_utc" in df else comp                                         # T1: game date
+GAME_CUTOFF = _gsrc.drop_duplicates("game_id").set_index("game_id")["prediction_cutoff_utc"]
 comp = comp.set_index("player_game_example_id")
 
 
@@ -167,6 +169,12 @@ for gi, gid in enumerate(games):
         if spec.get("a2"):
             for s, mu in a2_means(gp, spec["a2"]).items():
                 gp[f"{s}_mu"] = np.where(np.isnan(mu), gp[f"{s}_mu"], mu)
+        if spec.get("tov_trend"):                         # challenger T1 (PHASE4_PROTOCOL tov_blk_reevaluation)
+            tt = spec["tov_trend"]
+            ts = pd.to_datetime(gp["game_id"].map(GAME_CUTOFF), utc=True).dt.tz_convert("America/New_York").dt.tz_localize(None)
+            yr = ts.dt.year.where(ts.dt.month >= 7, ts.dt.year - 1)
+            u = (ts - pd.to_datetime(yr.astype(str) + "-11-01")).dt.days.to_numpy(float) / 100.0
+            gp["TOV_mu"] = gp["TOV_mu"].to_numpy(float) * np.exp(tt["b"] * (u - tt["ubar"]))
         if spec.get("min_sd"):
             cls = gp["cold_start_class"].astype(str)
             gp["min_sigma"] = gp["min_sigma"] * cls.map(spec["min_sd"]).fillna(1.0).to_numpy(float)

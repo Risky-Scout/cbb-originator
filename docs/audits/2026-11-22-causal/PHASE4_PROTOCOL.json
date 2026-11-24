@@ -141,5 +141,43 @@
    "note": "boundary of the declared grid; not extended (no tuning)",
    "final_evaluation": "exactly one run: PROD vs P2(phiN 0) on F2026 (5,748 games) and LIVE (873 games), scripts/p5_replay.py tag p2final"
   }
+ },
+ "challenger_R1_injury_replacement": {
+  "declared_utc": "2026-11-24T08:40Z",
+  "declared_before_metrics": true,
+  "diagnosis_LIVE": "oos_2027: 340 absences of min_mu>=25 players. 221 KNOWN (p_play<0.5), all ONGOING (missed the team's previous game); teammates' realized/forecast minutes 0.996-1.084 (unbiased: recent-form features already carry the redistribution). 119 SURPRISE (p_play>=0.5, DNP; all first-game outs): teammates +2.98/+1.33/+1.64/+1.15 min (tiers <10/10-20/20-25/25+) vs NONE +0.07/-0.37/+1.29/-0.66; PTS realized/forecast 1.15/1.01/1.18/1.11. Zero KNOWN_NEW cases live.",
+  "trigger": "team-game with >=1 NEW absence: LIVE = min_mu>=25 & p_play>=0.5 & DNP; history (played rows only) = last-3 mean minutes>=25, played the team's previous game, no row this game.",
+  "lost_minutes": "L = sum over new absentees of their conditional minutes forecast (LIVE min_mu; history: min_mu of the absentee's most recent row).",
+  "arms": {
+   "R1a_proportional": "dmin_i = beta * L * min_mu_i / sum_team(min_mu)",
+   "R1b_headroom": "dmin_i = beta * L * h_i / sum_team(h), h = min_mu_i*(40-min_mu_i)/40"
+  },
+  "cap": "min_mu_i + dmin_i <= 40; P(play) unchanged (live: teammates' played share unchanged by a shock)",
+  "fit": "beta by least squares on teammate (y_min - min_mu) in F2025 trigger team-games; arm chosen on F2025 MSE; F2026 = confirmation; LIVE SURPRISE = single final evaluation, no refit.",
+  "gate": "LIVE: teammate minutes MSE R1 - INC, game-clustered 95% ub < 0, and |bias| reduced in >=3 of 4 tiers; F2026 MSE also improves (ub < 0).",
+  "if_pass": "implement in prod.inputs as a mean-only minutes adjustment for confirmed-OUT new absentees (availability known at scoring); the stat PMFs follow through the frozen minutes elasticity; rotation-shock games stay non-actionable until the prospective gate.",
+  "policy_ongoing": "separately: an OUT player whose own p_play < 0.5 (model already expects the absence) is evidenced as represented (ratio 0.996-1.084); UNSUPPORTED_ROTATION_SHOCK narrowed to OUT players with p_play >= 0.5 only if the LIVE KNOWN_ONGOING teammate bias is within 2 se of NONE in every tier.",
+  "result": {
+   "utc": "2026-11-24T08:55Z",
+   "selected_on_F2025": "R1b_headroom beta 0.796 (R1a 0.572: dMSE -6.07 vs R1b -9.81)",
+   "F2026": "dMSE -8.26 ub -7.12, bias reduced 4/4",
+   "LIVE": "112 team-games, dMSE +0.110 ub +3.487, bias INC +2.98/+1.32/+1.64/+1.15 -> R1 +1.39/-1.87/-1.31/-1.14",
+   "decision": "REJECT (LIVE ub > 0). No refit.",
+   "classification": "the history trigger (roster inference, absentee unknown to the forecast) overstates the live new-OUT effect: live incremental teammate minutes vs the no-shock baseline are ~+2.9/+1.7/+0.4/+1.8, beta*share adds ~+1.6..+3.2 in tiers 10+. Live sample (112 team-games) too small to fit. Production keeps the fail-closed UNSUPPORTED_ROTATION_SHOCK for new outs (no wrong price is actionable).",
+   "evaluation_bug_fixed_before_reading_LIVE": "LIVE DNP selection used y_min<=0; DNP rows carry NaN -> ~(y_min>0) (the declared 'DNP').",
+   "policy_ongoing": "NOT narrowed: KNOWN_ONGOING vs NONE teammate bias within 2 se in 3 of 4 tiers; 20-25 differs by 2.9 se (ongoing +0.15 vs NONE +1.29). Declared condition fails."
+  }
+ },
+ "tov_blk_reevaluation": {
+  "utc": "2026-11-24T09:05Z",
+  "BLK": "no defect: incumbent BLK mean calibrated (WARM ratio F2026 0.983, LIVE 0.992; P0 within 0.01 in every bin); the A2 BLK failure is A2-specific. No BLK change.",
+  "TOV_decomposition": "production arm (P2): F2026 WARM 0.993 overall but by month Nov 1.055 Dec 1.028 Jan .980 Feb .980 Mar .965 Apr .950; LIVE (all Nov) 1.08 WARM, 1.11-1.15 cold, all bins 10+. Marginal y/TOV_mu by month: F2024 .987 .976 .935 .919 .929; F2025 1.008 .999 .966 .946 .929; F2026 1.034 .995 .943 .933 .927 (Nov..Mar). LIVE ISO weeks 45/46/47: 1.073/1.060/1.033. => within-season TOV seasonality absent from the model (not cold start, not shrinkage).",
+  "challenger_T1_tov_season_trend": {
+   "declared_before_metrics": true,
+   "spec": "TOV_mu *= exp(b * (u - ubar)), u = days since Nov 1 of the season / 100; b = Poisson GLM slope of y_TOV on u with offset log(TOV_mu) and an intercept (discarded), played rows of d1_F2024 + d1_F2025; ubar = mean u of those rows (season-average multiplier 1). Mean of TOV only; no other stat, dispersion or dependence parameter changes.",
+   "evaluation": "production configuration replay (A2 AST/FG3M/STL/REB + P2), arm PRODXT1 vs PRODX (= P2 arm of p2final, common random numbers), F2026 and LIVE, single run, no refit.",
+   "gate": "TOV log loss ub < 0 on F2026 and LIVE; F2026 minutes-bin cells (<10,10-20,20-30,30+) ub <= 0.002; LIVE early (<=14 days) ub <= 0.0005; every other stat bit-identical.",
+   "if_pass": "prod module applying the multiplier to model_inputs TOV_mu by game date (as prod.rate_a2), engine correction TOVS1[b]."
+  }
  }
 }
