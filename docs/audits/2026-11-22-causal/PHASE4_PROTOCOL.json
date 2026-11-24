@@ -229,7 +229,22 @@
    "OPP0": "opponent efficiency deviation only set to 0"
   },
   "baseline": "PRODX (production configuration: A2 AST/FG3M/STL/REB + P2), common random numbers",
-  "reading": "per stat and stacked base-7 log loss ABL - PRODX, game-clustered 95% CI. A component is evidenced as useful when the ablation's lower bound > 0 on F2026 and LIVE; HARMFUL (a defect) when the ablation's upper bound < 0 on both; otherwise UNRESOLVED (kept, no change). No retuning of env coefficients in this phase."
+  "reading": "per stat and stacked base-7 log loss ABL - PRODX, game-clustered 95% CI. A component is evidenced as useful when the ablation's lower bound > 0 on F2026 and LIVE; HARMFUL (a defect) when the ablation's upper bound < 0 on both; otherwise UNRESOLVED (kept, no change). No retuning of env coefficients in this phase.",
+  "result": {
+   "utc": "2026-11-24T10:10Z",
+   "evaluator": "scripts/p12_ablation_eval.py -> p4/p5_{ds}_abl_eval.json",
+   "ENV0": {
+    "F2026_stacked": "+0.00163 [+0.00145,+0.00180]",
+    "LIVE_stacked": "+0.00112 [+0.00064,+0.00159]",
+    "reading": "environment USEFUL (both); per stat useful or unresolved everywhere; TOV useful F2026 / harmful LIVE (no-T1 baseline) -> UNRESOLVED"
+   },
+   "OPP0": {
+    "F2026_stacked": "-0.00009 [-0.00014,-0.00004]",
+    "LIVE_stacked": "+0.00013 [-0.00002,+0.00028]",
+    "reading": "stacked UNRESOLVED (kept). Per stat: TOV HARMFUL on both (-0.00003 / -0.00007 nats per row: immaterial, logged CONTEXT_OPP_EFF_TOV_IMMATERIAL); REB harmful F2026 only; AST, BLK, STOCKS useful on LIVE"
+   },
+   "decision": "no change (declared: no env retuning in this phase)"
+  }
  },
  "tails": {
   "utc": "2026-11-24T09:15Z",
@@ -250,6 +265,18 @@
     "independent": "1.16-1.55"
    }
   },
-  "reading": "production joint dependence validated on every combo; residual joint under-dispersion live = COLD_START_DISPERSION"
+  "reading": "production joint dependence validated on every combo; residual joint under-dispersion live = COLD_START_DISPERSION",
+  "F2026": {
+   "PRA": "dLL -0.0484 (ub -0.0461)",
+   "PR": "-0.0282 (ub -0.0264)",
+   "PA": "-0.0089 (ub -0.0078)",
+   "RA": "-0.0087 (ub -0.0077)",
+   "STOCKS": "-0.0009 (ub -0.0005)",
+   "var_ratio": {
+    "joint": "0.93-0.99",
+    "independent": "1.01-1.24"
+   }
+  },
+  "decision": "PASS: production joint dependence validated on both datasets"
  }
 }
