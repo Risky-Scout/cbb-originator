@@ -311,5 +311,28 @@
    "decision": "REJECT. No retuning.",
    "classification": "M1 and M2 fail at the same place: STL / STOCKS for COLD_NO_HISTORY (~450 F2026 rows). The pooled TRAIN sigma for NO_HISTORY (0.56) comes mostly from its BLK / REB variance (TRAIN n = 359 rows) and over-widens STL. A per-stat sigma would be fitted after seeing which cell failed, so it goes to the architect for a decision instead of being run as a third challenger."
   }
+ },
+ "challenger_P1R_mna_high_elasticity": {
+  "declared_utc": "2026-11-24T10:30Z",
+  "declared_before": "any metric of this arm",
+  "basis": "P1 (MNA, all stats) re-test scheduled by its own result after the P2 and cold-start decisions (P2 promoted; M1, M2 rejected). The convexity inflation MNA removes is ~ c(c-1)/2 * CV^2 in the minutes elasticity c: PTS 1.30 / FG3M 1.37 -> 0.20-0.25 CV^2; REB 1.08, AST 1.07 -> ~0.04 CV^2; TOV 0.63 < 1. Restricting to c > 1.2 follows from that mechanism. Disclosure: P1's per-stat results (REB/STL/BLK LIVE harm) were seen before this declaration.",
+  "fix": "P1's MNA shift s_i applied only to the PTS and FG3M columns; every other stat, the minutes draws and the dependence unchanged",
+  "evaluation": "arm PRODXP1R = production (A2 AST/FG3M/STL/REB + P2 + T1) + restricted MNA vs PRODXT1 of p5_{F2026,LIVE}_t1 (same seeds), single run, no refit",
+  "gate": "G1 stacked 7-stat dLL ub < 0 (F2026 and LIVE) and no stat ub > +0.0005; G2 F2026 PTS and FG3M x minutes bins (<5,5-10,10-15,15-20,20-30,30+) ub <= +0.002; G3 LIVE early (<=14 days) stacked ub <= +0.0005; COMBOS PRA/PR/PA dRPS ub <= 0 (both). PROMOTE iff all pass.",
+  "result": {
+   "utc": "2026-11-24T11:20Z",
+   "evaluator": "scripts/p14_p1r_eval.py -> results/p1r_eval.json",
+   "F2026": "stacked -0.00100 (ub -0.00089); PTS bins <5/5-10/10-15/15-20/20-30/30+ dLL -0.068/-0.017/-0.009/-0.002/+0.0006/+0.0007; FG3M <5 ub +0.0027",
+   "LIVE": "stacked -0.00050 (ub -0.00021); early ub +0.00018; PTS 20-30 +0.0027 (ub +0.0035), 30+ +0.0011; PRA/PR/PA RPS ub < 0",
+   "gates": {
+    "G1": true,
+    "G2": false,
+    "G3": true,
+    "COMBOS": true
+   },
+   "failure": "G2: F2026 FG3M x <5 min ub +0.00271 (mean -0.0035)",
+   "decision": "REJECT. No retuning.",
+   "classification": "MNA corrects the low-minute PTS over-forecast but lowers starters, who are already under-forecast (LIVE 20-30 realized 9.80 vs 9.09). The remaining PTS mean defect is role-dependent rate compression (bench per-minute over, starters under), not convexity alone: any successor needs a role-aware rate model, not a mean anchor. OPEN: PTS_ROLE_RATE_COMPRESSION."
+  }
  }
 }
