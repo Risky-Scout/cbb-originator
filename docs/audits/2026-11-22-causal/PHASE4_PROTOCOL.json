@@ -47,5 +47,44 @@
    "G3": "LIVE early season: stacked upper bound <= +0.0005",
    "decision": "one minutes law feeds every stat, so M1 is promoted or rejected as a whole"
   }
+ },
+ "phase4_results_A2_production_scorer": {
+  "recorded_at": "2026-11-24T07:00:00+00:00",
+  "source": "data/qa/large/causal_20261122/p4/replay_{F2026,LIVE}_a2 (run 2026-11-22/23, evaluated by p4_eval.py)",
+  "PTS": "G1 PASS (F2026 ub -0.00479, LIVE ub -0.00233), G2 PASS, G3 FAIL (LIVE early ub +0.00138 > +0.0005), G4 PASS -> NOT promoted",
+  "REB": "G1 PASS (F2026 ub -0.00019, LIVE ub -0.00047), G2 PASS (max cell ub +0.00137), G3 PASS (-0.00032), G4 PASS (.057 -> .048) -> PROMOTE",
+  "AST": "all pass -> stays promoted",
+  "FG3M": "all pass -> stays promoted",
+  "STL": "all pass -> stays promoted",
+  "BLK": "G1 FAIL (F2026 ub +0.00012) -> incumbent",
+  "TOV": "G1 FAIL (LIVE dLL +0.00255) -> incumbent",
+  "finding": "the 11-22 'A2 worsens low-minute PTS log loss' was a proxy-scorer artifact: on the production scorer A2 improves L<10 PTS log loss (F2026 -0.0239, LIVE -0.0237)"
+ },
+ "challenger_P1_mean_anchor": {
+  "declared_at": "2026-11-24T07:05:00+00:00",
+  "declared_before": "any replay metric of an alpha = 0 arm",
+  "defect": "JM1 production scorer uses mean anchor alpha = 1 (no anchor): PMF mean = mu_1B x E_d[exp(b0 + c log(M/min_mu) + env)]. With minutes elasticity c > 1 (PTS 1.30, FG3M 1.37, REB 1.08, AST 1.07) the Jensen term grows with minutes CV^2; the GLM intercept absorbs only the population average (starter dominated). Live 2026-27 incumbent PMFs, PTS: PMF/marginal 1.121 (min_mu 5-10) vs analytic E[(M/mu)^c] 1.106; 1.064 vs 1.057 (10-15); 1.00 for 25+. Realized/PMF PTS 0.77 (5-10), FG3M 0.73.",
+  "fix": "alpha = 0 in structural.anchor: E_d[mu_ib] = mu_1B for every (player, stat); the conditional structure (minutes, environment, residual dependence) is unchanged. No probability scaling, no new parameter, nothing fitted.",
+  "arms": {
+   "PROD": "current production: A2 means for AST/FG3M/STL, alpha 1",
+   "INC0": "incumbent means, alpha 0",
+   "A2ALL0": "A2 means for all 7 stats, alpha 0",
+   "INC": "incumbent means, alpha 1 (reference)",
+   "A2ALL": "A2 all, alpha 1 (reference)"
+  },
+  "scorer": "p4_replay.py, production score_game, frozen opening artifacts, SIMS 2000, common random numbers (same game seeds) across arms",
+  "datasets": "F2026 and LIVE as in this protocol",
+  "per_stat_mean_choice": "under alpha 0, stat s uses A2 means iff A2ALL0 vs INC0 passes G1-G4 of gate_per_stat; else incumbent means",
+  "candidate": "P1 = alpha 0 + the per-stat mean choice above",
+  "gate_P1_vs_PROD": {
+   "H1": "F2026 and LIVE: stacked 7-stat d log loss upper bound < 0",
+   "H2": "F2026 and LIVE: no single stat d log loss upper bound > +0.0005",
+   "H3": "F2026: no stat x role cell (min_mu <10 / 10-20 / 20-30 / 30+) d log loss upper bound > +0.002",
+   "H4": "LIVE early season (season_day <= 14): stacked upper bound <= +0.0005",
+   "H5": "combos PRA/PR/PA/RA/STOCKS (from the same draws): F2026 and LIVE d RPS upper bound <= 0 for each (reported log score from draw histograms is descriptive only)",
+   "decision": "PROMOTE P1 iff H1-H5 pass; one anchor law for every stat, promoted or rejected as a whole"
+  },
+  "also_reported": "RPS, calibration-in-the-large by role, PIT / 50% and 80% central interval coverage, variance ratio, OVER/UNDER at the median line, cold_start_class cells",
+  "no_tuning": "alpha is set to the boundary value 0 (exact anchor); no intermediate alpha is searched"
  }
 }
