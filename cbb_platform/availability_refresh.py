@@ -12,8 +12,11 @@ Phase A (child process: lifecycle availability-acquire): the RotoWire acquisitio
     faulthandler stacks, then SIGKILL). Result: one immutable receipt <ops>/availability_acquisitions/<refresh_id>.json.
     ACQUISITION_TIMEOUT / ACQUISITION_FAILED -> no Phase B: the prior forecast and exports stand.
 Phase B (child process: lifecycle availability-publish, the lock fd inherited): taken only AFTER Phase A, waiting at most
-    PHASE_B_WRITER_WAIT_MAX_SEC (300 s). Busy -> DEFERRED_WRITER_LOCK, retried at +5 / +10 / +15 min after the first
-    deferral (max 3, each only if it still fits the unit's 45-min budget); a receipt older than 15 min is replaced by a
+    PHASE_B_WRITER_WAIT_MAX_SEC (300 s). Busy -> DEFERRED_WRITER_LOCK, retried at +5 / +10 / +15 min after the START of
+    the first lock wait (max 3, each only if it still fits the unit's 45-min budget), so with a 5-min wait the attempts
+    are contiguous: no unwatched gap in which a free lock is missed (2026-11-24: anchoring at the first deferral left a
+    5-min gap after the first wait; on a 77-game slate back-to-back ~9-min quote ticks freed the lock only inside it, 15:00Z and
+    18:00Z refreshes exited 75); a receipt older than 15 min is replaced by a
     fresh Phase A (outside the lock) first. Under the lock it re-reads state / ACTIVE / snapshots, forecasts (PMFs ->
     forecast_players -> snapshot.json -> index LAST), exports, health.
     WATCHDOG (bounded lock hold): early non-fatal stack dump (SIGUSR1) at PHASE_B_EARLY_DUMP_SEC (1500 s), abort
@@ -247,7 +250,7 @@ class Refresh:
         return code, self.rec
 
     def _run_after_a(self, acq: dict, n_acq: int) -> int:
-        retries, first_defer = 0, None
+        retries, first_wait = 0, None
         while True:
             r = acq["receipt"]
             if not r.get("PUBLISHABLE") or r.get("STATUS") not in ACQ_PUBLISHABLE:
@@ -260,6 +263,7 @@ class Refresh:
                 return 75
             self.mark("PHASE_B_LOCK_WAIT_START", max_wait_sec=round(wait, 1), attempt=retries + 1)
             t = self.clock()
+            first_wait = first_wait if first_wait is not None else t   # retry schedule anchor
             fd = self._lock(wait)
             waited = self.clock() - t
             self.rec["PHASE_B_LOCK_WAIT_SEC"] = round(self.rec.get("PHASE_B_LOCK_WAIT_SEC", 0.0) + waited, 1)
@@ -267,12 +271,11 @@ class Refresh:
                 self.rec["ATTEMPTS"].append({"attempt": retries + 1, "status": DEFERRED, "waited_sec": round(waited, 1),
                                              "at": _iso(_utcnow())})
                 self.mark(DEFERRED, waited_sec=round(waited, 1), attempt=retries + 1)
-                first_defer = first_defer if first_defer is not None else self.clock()
                 if retries >= self.L.max_retries:
                     self.rec["STATUS"] = DEFERRED
                     return 75
                 retries += 1
-                at = first_defer + retries * self.L.retry_delay_sec
+                at = first_wait + retries * self.L.retry_delay_sec
                 stale = (at - acq["finished_mono"]) > self.L.receipt_max_age_sec
                 need = (at - self.clock()) + self.L.min_lock_wait_sec + (
                     self.L.acquire_budget_sec + self.L.acquire_kill_grace_sec if stale else 0)

@@ -480,6 +480,19 @@ def test_three_retries_max_then_deferred_writer_lock_exit_75(world):
     assert world["exports"].read_bytes() == b"PRIOR-VALID-WORKBOOK"
 
 
+def test_retries_are_anchored_at_the_first_wait_start_so_attempts_are_contiguous(world):
+    # 2026-11-24 15:00Z / 18:00Z: retries anchored at the first DEFERRAL left a dead gap of retry_delay between waits
+    q = _holder(world, 30.0, "MORNING")
+    _wait_for(world, "ENTER")
+    try:
+        code, rec, err = _orchestrate(world, limits=dict(writer_wait_max_sec=1.0, retry_delay_sec=1.0))
+    finally:
+        q.kill(); q.wait()
+    assert code == 75 and len(rec["ATTEMPTS"]) == 4, err
+    after_a = rec["TOTAL_REFRESH_SEC"] - rec["PHASE_A_SEC"]
+    assert rec["PHASE_B_LOCK_WAIT_SEC"] >= 3.9 and after_a < 4.6, rec    # 4 x 1 s contiguous; the old schedule left a 1-s gap (5 s)
+
+
 def test_stale_receipt_is_replaced_by_a_fresh_phase_a_outside_the_lock(world):
     q = _holder(world, 4.0, "MORNING")
     _wait_for(world, "ENTER")
