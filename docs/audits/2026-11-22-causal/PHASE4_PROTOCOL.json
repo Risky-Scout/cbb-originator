@@ -88,6 +88,28 @@
   "also_reported": "RPS, calibration-in-the-large by role, PIT / 50% and 80% central interval coverage, variance ratio, OVER/UNDER at the median line, cold_start_class cells",
   "no_tuning": "alpha is set to the boundary value 0 (exact anchor); no intermediate alpha is searched",
   "amended_at": "2026-11-24T07:25:00+00:00",
-  "amendment": "alpha 0 REPLACED by the minutes-neutral anchor (MNA) before any full-run metric. Reason (code reading, not metrics): the environment draws carry each team's pregame pace / efficiency expectation (P3._game_input env), so alpha 0 would also anchor away opponent / pace context, which is a separate Phase 6 question. Only a 3-game smoke of INC vs INC0 (alpha 0) was looked at (pipeline check)."
+  "amendment": "alpha 0 REPLACED by the minutes-neutral anchor (MNA) before any full-run metric. Reason (code reading, not metrics): the environment draws carry each team's pregame pace / efficiency expectation (P3._game_input env), so alpha 0 would also anchor away opponent / pace context, which is a separate Phase 6 question. Only a 3-game smoke of INC vs INC0 (alpha 0) was looked at (pipeline check).",
+  "result_LIVE": "MNA alone (INCM vs INC): stacked-7 dLL -0.00048 ub +0.00018; PTS -0.00339 (ub -0.00148), FG3M -0.00227, TOV -0.00066; REB +0.00235 (ub +0.00384), STL +0.00055 (ub +0.00143), BLK +0.00084 (ub +0.00167) -> H2 FAILS (REB / BLK / STL ub > +0.0005) for any per-stat mean choice -> P1 REJECTED. Cause: below min_mu 10 the convexity inflation offsets a separate minutes / family error (REB L<10 realized/PMF .968 -> 1.079)."
+ },
+ "challenger_P2_pts_compound_family": {
+  "declared_at": "2026-11-24T08:00:00+00:00",
+  "declared_before": "any F2025 / F2026 / LIVE scorer metric of a compound arm",
+  "defect": "PTS conditional family misspecified (unit-step NB). Live 2026-27 played rows: PMF P(PTS=0) 0.146 vs realized 0.336 (min_mu 10-15), 0.061 vs 0.184 (15-20), 0.011 vs 0.053 (20+); REB / STL match. Within realized-minutes bins, an NB matched to the realized mean AND variance still gives about half the realized zero mass (12-16 min 0.109 vs 0.208) and P(1) 5x too large: points arrive in 1/2/3-point events.",
+  "train_design": "results/p2_pts_family_train_fit.json (scripts/p6_pts_family_fit.py): 2023-24 + 2024-25 box scores only; event shares (p1, p2, p3) = (0.11, 0.65, 0.24) by ML at bin-matched moments; mean LL NB -2.5729, compound -2.5041",
+  "family": "PTS | conditional mean mu = sum_{k<=N} V_k, V in {1,2,3} w.p. (0.11, 0.65, 0.24) (frozen), N ~ NB(mean mu / 2.13, var m + phiN m^2) (props_v0 convention)",
+  "phiN_selection": "grid {0, 0.03, 0.06, 0.12} chosen by mean PTS log loss of the production scorer on F2025 (2024-25 season inputs, first 2000 games, state through 2023-24); no F2026 / LIVE data used",
+  "unchanged": "every other stat's table (their PMFs are identical by construction), means (PROD: A2 AST/FG3M/STL/REB), mean anchor alpha 1, minutes, dependence (latent thresholds from the compound CDF)",
+  "arms": {
+   "PROD": "production",
+   "P2": "production + compound PTS family"
+  },
+  "gate_P2_vs_PROD": {
+   "K1": "F2026 and LIVE: PTS d log loss upper bound < 0",
+   "K2": "F2026: no PTS role cell (min_mu <10 / 10-20 / 20-30 / 30+) upper bound > +0.002",
+   "K3": "LIVE early season (season_day <= 14): PTS upper bound <= +0.0005",
+   "K4": "F2026 and LIVE: PRA, PR, PA d RPS upper bound <= 0",
+   "decision": "PROMOTE iff K1-K4 pass"
+  },
+  "also_reported": "RPS, PIT, 50 / 80 % central coverage, P(0), variance ratio, calibration by role"
  }
 }
