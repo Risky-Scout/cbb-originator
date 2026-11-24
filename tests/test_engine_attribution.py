@@ -13,7 +13,7 @@ A2_SWITCH = "2026-11-22T21:45:31.499302+00:00"           # Droplet `current` -> 
 
 def test_engine_id_is_deterministic_in_the_mathematics():
     eid = ENG.engine_id()
-    assert eid == "JM1_FINAL+RA2V1[AST,FG3M,STL]#437c07dc928d" == ENG.engine_id()
+    assert eid == "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]#c2b7a68aada8" == ENG.engine_id()
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(RA2, "PARAMS", {})
         assert ENG.engine_id() == "JM1_FINAL"

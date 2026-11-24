@@ -1,4 +1,4 @@
-"""Player Challenger A2 (role-aware per-minute rate), promoted 2026-11-22 for AST, FG3M and STL only.
+"""Player Challenger A2 (role-aware per-minute rate), promoted 2026-11-22 for AST, FG3M and STL; REB added 2026-11-24.
 
 Defect (docs/audits/2026-11-22-causal): the Phase 1B rate blend carries prior-season history forward unprojected (no
 season-to-season development, no role-change adjustment) and shrinks toward a position-only prior (no role). Realized /
@@ -19,6 +19,11 @@ Applied in the SCORING path only (prod.run, after inputs.marginal_rows). The dai
 the structural GLM training rows are unchanged (that is the configuration that was evaluated). PTS, REB, BLK and TOV are
 NOT adjusted: they failed a pre-declared criterion (PTS live early-season log loss; REB / BLK aggregate upper bound;
 TOV everywhere), so they keep the incumbent rate.
+
+2026-11-24 (PHASE4_PROTOCOL.json, production-scorer re-test, common random numbers): REB passes G1-G4 on the
+PRODUCTION scorer (F2026 d log loss -0.00031, ub -0.00019; LIVE -0.00091, ub -0.00047; early ub -0.00032; max role
+error .057 -> .048) and is promoted with its frozen F2024 + F2025 constants. AST / FG3M / STL re-confirmed. PTS fails G3
+(live early-season ub +0.00138), BLK fails G1 (F2026 ub +0.00012), TOV fails G1 (LIVE +0.00255): incumbent rate.
 """
 from __future__ import annotations
 
@@ -35,8 +40,9 @@ PARAMS = {
     "AST": ("ast", 0.06990694168849601, 0.10985553123445585, 0.306375232970297, 0.9629945862889774),
     "FG3M": ("three_pm", 0.07120316621231922, 0.03688378479751936, 0.24144762614925558, 0.9657138734373469),
     "STL": ("stl", 0.08097776987423, -0.007646288823820966, 0.021172416258187172, 0.9673960453383759),
+    "REB": ("reb", 0.028409245183987564, 0.03249293210071952, 0.02648832272897604, 0.9853249554045149),
 }
-NOT_ADJUSTED = ("PTS", "REB", "BLK", "TOV")
+NOT_ADJUSTED = ("PTS", "BLK", "TOV")
 
 
 def _col(df: pd.DataFrame, c: str) -> np.ndarray:
@@ -65,7 +71,7 @@ def rates(cand: pd.DataFrame, min_mu: np.ndarray, v0_state: dict) -> dict:
 
 
 def apply(rows: pd.DataFrame, cand: pd.DataFrame, cfg: dict, v0_state: dict) -> tuple[pd.DataFrame, dict]:
-    """rows = inputs.marginal_rows output; returns rows with AST / FG3M / STL means replaced and an audit receipt."""
+    """rows = inputs.marginal_rows output; returns rows with the PARAMS stats' means replaced and an audit receipt."""
     if rows.empty:
         return rows, {"id": ID, "stats": list(PARAMS), "rows": 0}
     c = cand.set_index("player_game_example_id").loc[rows["player_game_example_id"].to_numpy()].reset_index()

@@ -1,4 +1,4 @@
-"""prod.rate_a2 (Challenger A2, promoted 2026-11-22 for AST / FG3M / STL): exact formula, pinned constants, wiring."""
+"""prod.rate_a2 (Challenger A2, promoted 2026-11-22 for AST / FG3M / STL, REB 2026-11-24): exact formula, pinned constants, wiring."""
 from __future__ import annotations
 
 import json
@@ -10,10 +10,11 @@ from cbb_platform import config as C
 from cbb_platform.prod import rate_a2 as RA2
 
 RES = C.PROJECT_ROOT / "docs" / "audits" / "2026-11-22-causal" / "results"
-STATE = {"prior_k_minutes": {"ast": 60.0, "three_pm": 70.0, "stl": 255.0},
+STATE = {"prior_k_minutes": {"ast": 60.0, "three_pm": 70.0, "stl": 255.0, "reb": 45.0},
          "prior_rate": {"ast": {"G": 0.08, "F": 0.045, "C": 0.044, "U": 0.07},
                         "three_pm": {"G": 0.06, "F": 0.04, "C": 0.01, "U": 0.05},
-                        "stl": {"G": 0.04, "F": 0.03, "C": 0.025, "U": 0.035}}}
+                        "stl": {"G": 0.04, "F": 0.03, "C": 0.025, "U": 0.035},
+                        "reb": {"G": 0.12, "F": 0.2, "C": 0.25, "U": 0.15}}}
 
 
 def _cand():
@@ -22,7 +23,7 @@ def _cand():
     d = pd.DataFrame({"player_game_example_id": [f"E{i}" for i in range(n)], "pos": rng.choice(list("GFCU"), n),
                       "cur_min": rng.uniform(0, 300, n), "h1_min": rng.uniform(0, 900, n), "h2_min": rng.uniform(0, 900, n),
                       "h3_min": rng.uniform(0, 900, n), "h1_n_app": rng.integers(0, 30, n).astype(float)})
-    for t in ("ast", "three_pm", "stl"):
+    for t in ("ast", "three_pm", "stl", "reb"):
         for c in ("cur", "h1", "h2", "h3"):
             d[f"{c}_{t}"] = d[f"{c}_min" if c != "cur" else "cur_min"] * rng.uniform(0.01, 0.1, n)
     d.loc[0, ["cur_min", "h1_min", "h2_min", "h3_min", "cur_ast", "h1_ast", "h2_ast", "h3_ast"]] = 0.0   # first appearance
@@ -56,7 +57,7 @@ def test_apply_reproduces_the_research_formula_and_touches_only_its_stats():
         assert np.allclose(out[f"{s}_mu"].to_numpy(), ref.loc[out.player_game_example_id].to_numpy(), rtol=0, atol=1e-12)
     for s in RA2.NOT_ADJUSTED:
         assert (out[f"{s}_mu"] == 1.5).all()
-    assert rec["id"] == RA2.ID and set(rec["mean_ratio"]) == {"AST", "FG3M", "STL"}
+    assert rec["id"] == RA2.ID and set(rec["mean_ratio"]) == {"AST", "FG3M", "STL", "REB"}
     assert list(out.player_game_example_id) == list(rows.player_game_example_id)        # row order preserved
 
 
