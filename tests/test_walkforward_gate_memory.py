@@ -30,9 +30,12 @@ def test_restored_even_when_the_checks_raise(monkeypatch):
     assert S.mixture_tables is SM._FROZEN_MIXTURE_TABLES
 
 
-def test_no_gate_path_reader_uses_the_cdf_table():
+def test_no_gate_path_reader_uses_the_cdf_table(monkeypatch):
     """score_game / integrity_checks / eval_game consume the tables only through structural.counts (thr, inv) and
-    structural.mixture_pmf (pmf, inv, starts); none of them index the table dict themselves."""
+    structural.mixture_pmf (pmf, inv, starts); none of them index the table dict themselves. Pinned with the P2 PTS
+    family off (its own invariants: tests/test_pts_compound.py)."""
+    from cbb_platform.prod import pts_compound as PTC
+    monkeypatch.setattr(PTC, "PHI_N", None)
     for fn in (S.counts, S.mixture_pmf, JP.score_game, JP.integrity_checks, F.eval_game):
         assert '"cdf"' not in inspect.getsource(fn) and "'cdf'" not in inspect.getsource(fn), fn.__name__
     rng = np.random.default_rng(7)
