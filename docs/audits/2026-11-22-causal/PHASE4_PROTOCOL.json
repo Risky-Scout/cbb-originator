@@ -64,18 +64,19 @@
   "declared_at": "2026-11-24T07:05:00+00:00",
   "declared_before": "any replay metric of an alpha = 0 arm",
   "defect": "JM1 production scorer uses mean anchor alpha = 1 (no anchor): PMF mean = mu_1B x E_d[exp(b0 + c log(M/min_mu) + env)]. With minutes elasticity c > 1 (PTS 1.30, FG3M 1.37, REB 1.08, AST 1.07) the Jensen term grows with minutes CV^2; the GLM intercept absorbs only the population average (starter dominated). Live 2026-27 incumbent PMFs, PTS: PMF/marginal 1.121 (min_mu 5-10) vs analytic E[(M/mu)^c] 1.106; 1.064 vs 1.057 (10-15); 1.00 for 25+. Realized/PMF PTS 0.77 (5-10), FG3M 0.73.",
-  "fix": "alpha = 0 in structural.anchor: E_d[mu_ib] = mu_1B for every (player, stat); the conditional structure (minutes, environment, residual dependence) is unchanged. No probability scaling, no new parameter, nothing fitted.",
+  "fix": "MNA: lm_ib = lm_full_ib + s_i, s_i = log E_d[exp(lm_nominutes_ib)] - log E_d[exp(lm_full_ib)], where lm_nominutes uses the same draws and every JM1 term except log_minutes_ratio. E_d[mu] then equals the JM1 mean without the minutes-convexity (Jensen) term; the intercept, environment context, per-draw minutes variation and residual dependence are unchanged. No parameter fitted, no probability scaling.",
   "arms": {
-   "PROD": "current production: A2 means for AST/FG3M/STL, alpha 1",
-   "INC0": "incumbent means, alpha 0",
-   "A2ALL0": "A2 means for all 7 stats, alpha 0",
-   "INC": "incumbent means, alpha 1 (reference)",
-   "A2ALL": "A2 all, alpha 1 (reference)"
+   "INC": "incumbent means, alpha 1 (p4 replay, same seeds)",
+   "A2ALL": "A2 all 7 stats, alpha 1 (p4 replay, same seeds)",
+   "INCM": "incumbent means, MNA",
+   "A2M": "A2 all 7 stats, MNA",
+   "PROD": "stage 2: current production (A2 AST/FG3M/STL, alpha 1) - combos",
+   "P1": "stage 2: MNA + per-stat mean choice - combos"
   },
   "scorer": "p4_replay.py, production score_game, frozen opening artifacts, SIMS 2000, common random numbers (same game seeds) across arms",
   "datasets": "F2026 and LIVE as in this protocol",
-  "per_stat_mean_choice": "under alpha 0, stat s uses A2 means iff A2ALL0 vs INC0 passes G1-G4 of gate_per_stat; else incumbent means",
-  "candidate": "P1 = alpha 0 + the per-stat mean choice above",
+  "per_stat_mean_choice": "under MNA, stat s uses A2 means iff A2M vs INCM passes G1-G4 of gate_per_stat; else incumbent means",
+  "candidate": "P1 = MNA + the per-stat mean choice; marginal stats of PROD / P1 are assembled per stat from the INC / A2ALL / INCM / A2M arms (a stat's PMF depends only on its own mean under common random numbers); combos need the stage-2 PROD and P1 arms.",
   "gate_P1_vs_PROD": {
    "H1": "F2026 and LIVE: stacked 7-stat d log loss upper bound < 0",
    "H2": "F2026 and LIVE: no single stat d log loss upper bound > +0.0005",
@@ -85,6 +86,8 @@
    "decision": "PROMOTE P1 iff H1-H5 pass; one anchor law for every stat, promoted or rejected as a whole"
   },
   "also_reported": "RPS, calibration-in-the-large by role, PIT / 50% and 80% central interval coverage, variance ratio, OVER/UNDER at the median line, cold_start_class cells",
-  "no_tuning": "alpha is set to the boundary value 0 (exact anchor); no intermediate alpha is searched"
+  "no_tuning": "alpha is set to the boundary value 0 (exact anchor); no intermediate alpha is searched",
+  "amended_at": "2026-11-24T07:25:00+00:00",
+  "amendment": "alpha 0 REPLACED by the minutes-neutral anchor (MNA) before any full-run metric. Reason (code reading, not metrics): the environment draws carry each team's pregame pace / efficiency expectation (P3._game_input env), so alpha 0 would also anchor away opponent / pace context, which is a separate Phase 6 question. Only a 3-game smoke of INC vs INC0 (alpha 0) was looked at (pipeline check)."
  }
 }
