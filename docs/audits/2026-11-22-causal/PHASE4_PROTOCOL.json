@@ -46,6 +46,18 @@
    "G2": "F2026: no stat x cold_start_class cell upper bound > +0.002",
    "G3": "LIVE early season: stacked upper bound <= +0.0005",
    "decision": "one minutes law feeds every stat, so M1 is promoted or rejected as a whole"
+  },
+  "addendum_production_arm": {
+   "declared_at": "2026-11-24T08:05:00+00:00",
+   "declared_before": "any M1 metric (no M1 replay has been run)",
+   "reason": "production changed since 11-23 (REB A2 promoted; P2 PTS family pending its decision); the production decision must be made on top of the current production configuration",
+   "arms": {
+    "PRODX": "current production configuration at decision time (A2 AST/FG3M/STL/REB; + P2 phiN 0 iff P2 is promoted)",
+    "PRODXM1": "PRODX with min_sigma x s[cold_start_class] (the frozen TRAIN ratios declared 2026-11-23)"
+   },
+   "gate": "the declared M1 gate G1-G3 applied to PRODXM1 vs PRODX, plus: target classes (COLD_EARLY_SEASON / COLD_NO_HISTORY / COLD_TRANSFER_IN) stacked d log loss ub < 0 on F2026 and LIVE; combos PRA/PR/PA/RA/STOCKS d RPS ub <= 0",
+   "also_reported": "minutes bias, MAE, SD ratio and 50/80 % minutes interval coverage by class (forecast normal vs realized played minutes); prop Brier at the main line",
+   "decision": "PROMOTE iff all pass; the declared INC/A2 arms (M1, A2M1) are run too for the record"
   }
  },
  "phase4_results_A2_production_scorer": {

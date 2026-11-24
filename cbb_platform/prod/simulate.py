@@ -24,7 +24,7 @@ from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import config as PC
+from cbb_platform.prod import config as PC, pts_compound as PTC
 from cbb_platform.v2 import dependence as D, jm1_final_production as JP, joint as J, structural as S
 
 PMF_TOL = 1e-9
@@ -50,7 +50,7 @@ def bounded_mixture_tables(lm: np.ndarray, phi: np.ndarray, kmax: int = S.L.KMAX
     step = block_players * S.NS if d % S.NS == 0 else d      # not player-aligned: one block (the frozen call itself)
     tabs = []
     for a in range(0, d, step):
-        t = _FROZEN_MIXTURE_TABLES(lm[:, a:a + step], phi, kmax)
+        t = PTC.apply(_FROZEN_MIXTURE_TABLES(lm[:, a:a + step], phi, kmax), lm[:, a:a + step], kmax)   # P2 (off: identity)
         tabs.append({k: v for k, v in t.items() if k in keep or k in ("inv", "starts")})
         del t
     off = np.concatenate([[0], np.cumsum([t["starts"][-1] for t in tabs])])
