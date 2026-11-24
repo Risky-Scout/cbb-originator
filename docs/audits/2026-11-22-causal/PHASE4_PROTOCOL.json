@@ -111,6 +111,23 @@
    "K4": "F2026 and LIVE: PRA, PR, PA d RPS upper bound <= 0",
    "decision": "PROMOTE iff K1-K4 pass"
   },
-  "also_reported": "RPS, PIT, 50 / 80 % central coverage, P(0), variance ratio, calibration by role"
+  "also_reported": "RPS, PIT, 50 / 80 % central coverage, P(0), variance ratio, calibration by role",
+  "phiN_selected": {
+   "recorded_at": "2026-11-24T07:45:00+00:00",
+   "phiN": 0.0,
+   "F2025_PTS_mean_log_loss": {
+    "NB_incumbent": 2.75765,
+    "C0": 2.64858,
+    "C03": 2.6505,
+    "C06": 2.65388,
+    "C12": 2.66328
+   },
+   "F2025_PTS_RPS": {
+    "NB_incumbent": 2.67102,
+    "C0": 2.64481
+   },
+   "note": "boundary of the declared grid; not extended (no tuning)",
+   "final_evaluation": "exactly one run: PROD vs P2(phiN 0) on F2026 (5,748 games) and LIVE (873 games), scripts/p5_replay.py tag p2final"
+  }
  }
 }

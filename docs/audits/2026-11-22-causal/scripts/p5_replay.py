@@ -176,6 +176,7 @@ for gi, gid in enumerate(games):
             r = JP.score_game(prod, gid, gp, envd, SIMS)
         rows, pmf = r["rows"], r["pmf"]
         K = pmf.shape[2]
+        base_mean = {}
         for j, s in enumerate(L.STATS):
             y = rows[f"y_{s}"].to_numpy(float)
             P = pmf[:, j, :]
@@ -187,27 +188,35 @@ for gi, gid in enumerate(games):
             m = (P * k).sum(1)
             v = (P * (k[None, :] - m[:, None]) ** 2).sum(1)
             Fy = cdf[np.arange(len(y)), yi]
+            base_mean[s] = m
+            l0 = np.floor(m).astype(int)                            # main line l0 + 0.5; alternates +-2
+            cl = {o: cdf[np.arange(len(y)), np.clip(l0 + o, 0, K - 1)] * (l0 + o >= 0) for o in (-2, 0, 2)}
             for i in range(len(y)):
                 cells.append((arm, gid, rows.at[i, "player_game_example_id"], s, float(y[i]), float(m[i]), float(v[i]),
                               float(-np.log(max(p_y[i], 1e-300))), float(rps[i]), float(rows.at[i, "min_mu"]),
-                              str(rows.at[i, "cold_start_class"]), float(Fy[i] - p_y[i]), float(Fy[i])))
+                              str(rows.at[i, "cold_start_class"]), float(Fy[i] - p_y[i]), float(Fy[i]),
+                              float(P[i, 0]), float(P[i, 1]), int(l0[i]), float(cl[-2][i]), float(cl[0][i]), float(cl[2][i])))
         dr = r["draws"]                                             # sims x n x 7, the production combo source
         ix = {s: j for j, s in enumerate(L.STATS)}
         for cname, parts in COMBOS.items():
             cd = sum(dr[:, :, ix[p]] for p in parts).astype(np.int64)  # sims x n
             y = sum(rows[f"y_{p}"].to_numpy(float) for p in parts)
             Kc = int(max(cd.max(), y.max())) + 2
+            l0c = np.floor(sum(base_mean[p] for p in parts)).astype(int)
             for i in range(len(y)):
                 h = np.bincount(cd[:, i], minlength=Kc)[:Kc] / cd.shape[0]
                 c_ = np.cumsum(h); yi = int(round(y[i]))
                 rps = float(((c_[:-1] - (np.arange(Kc - 1) >= yi)) ** 2).sum())
                 p_y = (h[yi] * cd.shape[0] + 0.5) / (cd.shape[0] + 0.5 * Kc)
+                cg = lambda o: float(c_[min(l0c[i] + o, Kc - 1)]) if l0c[i] + o >= 0 else 0.0
                 cells.append((arm, gid, rows.at[i, "player_game_example_id"], cname, float(y[i]), float(cd[:, i].mean()),
                               float(cd[:, i].var()), float(-np.log(p_y)), rps, float(rows.at[i, "min_mu"]),
-                              str(rows.at[i, "cold_start_class"]), float(c_[yi] - h[yi]), float(c_[yi])))
+                              str(rows.at[i, "cold_start_class"]), float(c_[yi] - h[yi]), float(c_[yi]),
+                              float(h[0]), float(h[1]), int(l0c[i]), cg(-2), cg(0), cg(2)))
     if gi % 100 == 0:
         print(f"{gi}/{len(games)} {time.time() - t0:.0f}s", flush=True)
-cdf_ = pd.DataFrame(cells, columns=["arm", "game_id", "pgx", "stat", "y", "mean", "var", "nll", "rps", "min_mu", "cold", "F_lo", "F_hi"])
+cdf_ = pd.DataFrame(cells, columns=["arm", "game_id", "pgx", "stat", "y", "mean", "var", "nll", "rps", "min_mu", "cold", "F_lo", "F_hi",
+                                    "p0", "p1", "l0", "c_m2", "c_0", "c_p2"])
 cdf_["early"] = cdf_["pgx"].map(early_day).le(14)
 (D / "p4").mkdir(exist_ok=True)
 cdf_.to_parquet(D / f"p4/p5_{ds}_{tag}.parquet", index=False)
