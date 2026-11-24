@@ -278,5 +278,38 @@
    }
   },
   "decision": "PASS: production joint dependence validated on both datasets"
+ },
+ "challenger_M2_cold_rate_uncertainty": {
+  "declared_utc": "2026-11-24T10:20Z",
+  "declared_before": "any F2026 / LIVE metric of M2",
+  "defect": "COLD_START_DISPERSION: production-configuration scorer variance ratio (realized / forecast) on TRAIN 2024-25 (p5_F2025_train3, A2+P2+T1): EARLY 1.101, NO_HISTORY 1.390, TRANSFER_IN 1.062, WARM 0.940; LIVE cold 1.18-1.37. M1 (minutes SD) rejected 11-24.",
+  "mechanism": "rate uncertainty of a cold player: lm[sim, player, stat] += sigma_c * eps - sigma_c^2 / 2, eps ~ N(0,1) iid per (sim, player, stat) from its own seeded generator (common random numbers for every other draw); mean-preserving in expectation; WARM sigma = 0 (target cold populations only, no global inflation); same mechanism for every stat (PTS through the P2 compound).",
+  "fit": "sigma_c^2 = log(1 + (r_c - 1) * sum var / sum mean^2) over the 7 base stats of class c on TRAIN rows only (r_c = pooled TRAIN variance ratio); frozen before evaluation",
+  "evaluation": "arm PRODXM2 = production (A2 AST/FG3M/STL/REB + P2 + T1) + sigma_c vs PRODXT1 of p5_{F2026,LIVE}_t1 (identical configuration and seeds), single run, no refit",
+  "gate": "identical to M1 addendum: G1 stacked 7-stat dLL ub < 0 (F2026 and LIVE) and no stat ub > +0.0005; G2 F2026 stat x class cells ub <= +0.002; G3 LIVE early ub <= +0.0005; TARGET cold classes stacked ub < 0 (both); COMBOS PRA/PR/PA/RA/STOCKS dRPS ub <= 0 (both). PROMOTE iff all pass.",
+  "sigma_fit_TRAIN": {
+   "COLD_EARLY_SEASON": 0.22328055437747132,
+   "COLD_NO_HISTORY": 0.5605920742835369,
+   "COLD_TRANSFER_IN": 0.16301444206251742
+  },
+  "result": {
+   "utc": "2026-11-24T10:40Z",
+   "evaluator": "scripts/p13_m2_eval.py -> results/m2_eval.json",
+   "F2026": "stacked -0.00027 (ub -0.00022); target -0.00284 (ub -0.00230); early ub -0.00162; per-stat ub <= +0.00001",
+   "LIVE": "stacked -0.00221 (ub -0.00182); target -0.00431 (ub -0.00360); early ub -0.00256; every stat ub < 0; PRA/PR/PA RPS ub -0.003",
+   "gates": {
+    "G1": true,
+    "G2": false,
+    "G3": true,
+    "TARGET": true,
+    "COMBOS": false
+   },
+   "failures": {
+    "G2": "F2026 STL x NO_HISTORY ub +0.0068, TOV x NO_HISTORY ub +0.0025",
+    "COMBOS": "STOCKS dRPS ub +0.00003 (F2026), +0.00011 (LIVE)"
+   },
+   "decision": "REJECT. No retuning.",
+   "classification": "M1 and M2 fail at the same place: STL / STOCKS for COLD_NO_HISTORY (~450 F2026 rows). The pooled TRAIN sigma for NO_HISTORY (0.56) comes mostly from its BLK / REB variance (TRAIN n = 359 rows) and over-widens STL. A per-stat sigma would be fitted after seeing which cell failed, so it goes to the architect for a decision instead of being run as a third challenger."
+  }
  }
 }

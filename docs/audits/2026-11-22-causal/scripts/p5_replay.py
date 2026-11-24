@@ -137,7 +137,7 @@ def tables(lm, phi, pts_phiN=None):
     return {"inv": inv, "starts": starts, "pmf": pmf, "cdf": cdf, "thr": thr}
 
 
-def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None):
+def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None, cold_sigma=None):
     """= JP.score_game with the minutes-neutral anchor (challenger_P1_mean_anchor.fix) and / or the P2 PTS family."""
     from cbb_platform.v2 import dependence as D, jm1_final as F, joint as J, structural as S
     gi = P3._game_input(gid, gp, envd)
@@ -154,6 +154,10 @@ def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None):
     full = S.log_mu_terms(base_lm, mm, team, sv, prod["struct"]["glm"], JM.JM_TERMS)
     nom = S.log_mu_terms(base_lm, mm, team, sv, prod["struct"]["glm"], tuple(t for t in JM.JM_TERMS if t != "log_minutes_ratio"))
     lm = full + (np.log(np.exp(nom).mean(axis=0)) - np.log(np.exp(full).mean(axis=0)))[None] if mna else S.anchor(full, base_lm, JM.JM1_ALPHA)[0]
+    if cold_sigma:                                        # challenger M2: cold-player rate uncertainty (own generator)
+        sg = rows["cold_start_class"].astype(str).map(cold_sigma).fillna(0.0).to_numpy(float)
+        eps = np.random.default_rng([D.game_seed(J.SIM_SEED, gid), 2]).standard_normal(lm.shape)
+        lm = lm + (sg[None, :, None] * eps - 0.5 * sg[None, :, None] ** 2).reshape(lm.shape)
     tab = tables(lm.reshape(sims, n * J.NS), np.array([prod["s4"]["dispersion"][s]["phi"] for s in L.STATS]), pts_phiN)
     draws = S.counts(tab, z).reshape(sims, n, J.NS)
     return {"rows": rows, "draws": draws, "pmf": S.mixture_pmf(tab, sims).reshape(n, J.NS, -1)}
@@ -183,7 +187,8 @@ for gi, gid in enumerate(games):
             zi = [{"pace": 0, "own": 1, "opp": 2}[c] for c in spec["env_zero"]]
             ev = {k: np.where(np.isin(np.arange(len(v)), zi), 0.0, v) for k, v in envd.items()}
         if spec.get("anchor") == "MNA" or "pts_phiN" in spec:
-            r = score_mna(prod, gid, gp, ev, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"))
+            r = score_mna(prod, gid, gp, ev, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"),
+                          cold_sigma=spec.get("cold_sigma"))
         else:
             r = JP.score_game(prod, gid, gp, ev, SIMS)
         rows, pmf = r["rows"], r["pmf"]
