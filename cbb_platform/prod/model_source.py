@@ -56,3 +56,19 @@ def resolve(source: str = DEFAULT_SOURCE, as_of=None, store_root: Path | None = 
             raise ModelSourceUnavailable(source, f"FUTURE_LEAKAGE: {ident['model_version']} trained through {tc} > as_of {aso}")
     ident["model_source"] = source
     return model
+
+
+def scoring_model(as_of, store_root: Path | None, artifact_paths: dict | None = None) -> LD.FrozenModel:
+    """THE production scorer model rule, shared by every scoring path (lifecycle forecasts AND quote-tick scoring):
+    the ACTIVE walk-forward version whose training cutoff <= as_of, else the frozen opening artifacts (both
+    hash-verified). store_root None = the frozen opening artifacts only (tests / explicit frozen runs).
+
+    2026-11-24: quote ticks called run.daily without a model and scored every near-tip PMF with the frozen
+    through-2025-26 artifacts while the lifecycle forecasts used the promoted daily fit (~76% of the 11-23 frozen
+    evaluations came from tick PMFs labelled cbb-v2-jm1-final-shadow-1.0.0). One rule now serves both."""
+    if store_root is None:
+        return LD.load(artifact_paths)
+    try:
+        return resolve("ACTIVE_DAILY", as_of, store_root)
+    except ModelSourceUnavailable:
+        return LD.load(artifact_paths)

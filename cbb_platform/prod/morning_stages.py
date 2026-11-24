@@ -386,7 +386,8 @@ def run_prep(life, day: date) -> tuple[int, dict]:
     log_event(life.ops_root, day, {"stage": "PREP", "action": "RUN"})
     try:
         ctx = SH.Ctx(ops_root=Path(life.ops_root), prod_root=Path(life.prod_root), history_db=life.history_db,
-                     clock=life.clock, artifact_paths=life.artifact_paths, sims=life.sims)
+                     clock=life.clock, artifact_paths=life.artifact_paths, sims=life.sims,
+                     model_root=_model_root(life))
         t = SH.tick(ctx)                                         # prior-night ingestion + settlement (idempotent)
         life.history_db = life.history_db or ctx.history_db
         prior = L._brief(L.exports_for(life, day - timedelta(days=1)))

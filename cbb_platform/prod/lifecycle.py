@@ -197,10 +197,8 @@ def snapshots(life: Life, day: date | None = None) -> list[dict]:
 def _model(life: Life, now: pd.Timestamp):
     """The ACTIVE walk-forward version (its training cutoff <= now), else the frozen opening artifacts. Hash-verified."""
     from cbb_platform.prod import model_source as MS
-    try:
-        return MS.resolve("ACTIVE_DAILY", now, life.model_root)
-    except MS.ModelSourceUnavailable:
-        return LD.load(life.artifact_paths)
+    from cbb_platform.walkforward import config as WC
+    return MS.scoring_model(now, Path(life.model_root or WC.STORE_ROOT), life.artifact_paths)
 
 
 # ============================================================================ RotoWire availability refresh

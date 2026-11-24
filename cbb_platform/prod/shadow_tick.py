@@ -17,7 +17,8 @@ A second run with no new information makes no network call, no prediction, no qu
 and no commit: every step is gated by a due test on durable state (registry, ledgers, markers, state pointer).
 
 Nothing here fits, refits, recalibrates, re-simulates historically or changes a forecast: scoring is run.daily on the
-frozen e1353e5 artifacts, which the loader hash-verifies on every run. Readiness never exceeds SHADOW_ONLY and
+production scorer model (model_source.scoring_model: the ACTIVE walk-forward version, else the frozen e1353e5
+artifacts), hash-verified on every run. Readiness never exceeds SHADOW_ONLY and
 WAGERING_ENABLED stays False. Historical PTS research is closed: no warning here triggers any model change.
 """
 from __future__ import annotations
@@ -39,6 +40,7 @@ import numpy as np
 import pandas as pd
 
 from cbb_platform.prod import (config as PC, history_extract as HX, ledger as LG, loader as LD, matching as MT,
+                               model_source as MS,
                                odds_acquire as OA, odds_feed as OF, ops_store as OS, pmf_evidence as PE,
                                prospective_monitor as PM, quote_cert as QC, quote_obs as QO,
                                run as RN, slate as SL, state as ST, sync as Y)
@@ -115,6 +117,8 @@ class Ctx:
     odds_credential: object = None
     sims: int = PC.SIMS
     artifact_paths: dict | None = None
+    model_root: Path | None = None            # walk-forward store root: scoring uses its ACTIVE daily version
+                                              # (model_source.scoring_model); None = frozen opening artifacts (tests)
     assets: object = None                     # asset backend (working set): ops_store.DirAssets, or the encrypted
                                               # private-release backend of cbb_platform/ops_persistence.py
     commit: object = None                     # (ops_root, message) -> dict: evidence-tree commit / push (ops_persistence)
@@ -817,7 +821,8 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                  ledger_path=tdir / "shadow_ledger.jsonl", run_root=ctx.runs, horizon_hours=PC.ODDS_PROP_WINDOW_HOURS,
                  sims=ctx.sims, artifact_paths=ctx.artifact_paths, game_ids=list(timing), sync_log=ctx.sync_log,
                  odds_cache_root=ctx.cache_raw, odds_collections=None, odds_ledger=ctx.odds_ledger,
-                 odds_record=ctx.odds_record, side_monitor_path=tdir / "side_monitor.jsonl")
+                 odds_record=ctx.odds_record, side_monitor_path=tdir / "side_monitor.jsonl",
+                 model=MS.scoring_model(aso, ctx.model_root, ctx.artifact_paths))
     banks = s.get("banks", {})
     if paths:
         days = {r.canonical_game_id: _utc(r.scheduled_tip_utc).tz_convert("America/New_York").date().isoformat()
@@ -1158,7 +1163,7 @@ def main(argv=None) -> None:
         if a.commit or a.push:
             commit = lambda root, msg: OP.git_commit_push(root, msg, push=a.push)    # noqa: E731
     ctx = Ctx(ops_root=a.ops_root, assets=assets, commit=commit, restore=a.restore, persist=a.persist,
-              allow_revalidation=a.allow_revalidation)
+              allow_revalidation=a.allow_revalidation, model_root=WC.STORE_ROOT)
     out = tick(ctx)
     keep = ("tick_id", "status", "reason", "frozen_model_hash_gate", "did_work", "sync", "events", "quote_validation",
             "quote_snapshots", "registry", "settlement", "first_live_completed_game_ingestion", "git", "working_set",
