@@ -17,6 +17,14 @@ from cbb_platform.v2 import structural as S
 from tests.test_prod_shadow_tick import Clock, _ctx
 
 
+
+@pytest.fixture(autouse=True)
+def _p2_off(monkeypatch):
+    """These tests pin the block-partition memory refactor against the frozen function; the P2 PTS family
+    (prod.pts_compound, applied inside the same blocks) is pinned by tests/test_pts_compound.py."""
+    from cbb_platform.prod import pts_compound as PTC
+    monkeypatch.setattr(PTC, "PHI_N", None)
+
 def _lm(rng, sims, players, spread):
     base = np.log(rng.uniform(0.05, 25.0, size=players * S.NS))
     return base[None, :] + spread * rng.standard_normal((sims, players * S.NS))

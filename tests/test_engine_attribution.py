@@ -6,16 +6,17 @@ import json
 import pandas as pd
 import pytest
 
-from cbb_platform.prod import engine as ENG, pmf_evidence as PE, rate_a2 as RA2
+from cbb_platform.prod import engine as ENG, pmf_evidence as PE, pts_compound as PTC, rate_a2 as RA2
 
 A2_SWITCH = "2026-11-22T21:45:31.499302+00:00"           # Droplet `current` -> 01d4ab1 (symlink mtime)
 
 
 def test_engine_id_is_deterministic_in_the_mathematics():
     eid = ENG.engine_id()
-    assert eid == "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]#c2b7a68aada8" == ENG.engine_id()
+    assert eid == "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]#3345558c7120" == ENG.engine_id()
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(RA2, "PARAMS", {})
+        mp.setattr(PTC, "PHI_N", None)
         assert ENG.engine_id() == "JM1_FINAL"
     with pytest.MonkeyPatch.context() as mp:                # one changed constant -> a different engine
         mp.setattr(RA2, "PARAMS", {**RA2.PARAMS, "STL": RA2.PARAMS["STL"][:4] + (1.0,)})

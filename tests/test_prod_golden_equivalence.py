@@ -127,11 +127,12 @@ def compare(got: dict, gold: dict) -> list[str]:
 
 
 def capture_incumbent(work: Path) -> dict:
-    """The frozen-champion path: the 2026-11-22 rate_a2 promotion disabled (its stats keep the incumbent rate). The
+    """The frozen-champion path: the 2026-11-22 rate_a2 and 2026-11-24 PTS compound promotions disabled (its stats keep the incumbent rate). The
     golden file pins this path exactly; the promotion's own effect is pinned by test_rate_a2_changes_only_its_stats."""
-    from cbb_platform.prod import rate_a2 as RA2
+    from cbb_platform.prod import pts_compound as PTC, rate_a2 as RA2
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(RA2, "PARAMS", {})
+        mp.setattr(PTC, "PHI_N", None)                     # 2026-11-24 P2 PTS family off: incumbent NB
         return capture(work)
 
 
@@ -177,6 +178,36 @@ def test_rate_a2_changes_only_its_stats(captured, captured_a2):
                 assert _close(a[c], b[c], 1e-12), (a["key"], c)
     assert moved == changed
     assert captured_a2["identity"] == captured["identity"] and captured_a2["game_reasons"] == captured["game_reasons"]
+
+
+@pytest.fixture(scope="module")
+def captured_a2_nop2(tmp_path_factory):
+    from cbb_platform.prod import pts_compound as PTC
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(PTC, "PHI_N", None)
+        return capture(tmp_path_factory.mktemp("golden_a2_nop2"))
+
+
+def test_pts_compound_changes_only_pts_and_its_combos(captured_a2, captured_a2_nop2):
+    """Promotion 2026-11-24 (prod.pts_compound): model inputs identical; every prediction of a market that does not
+    contain PTS is identical; PTS / PRA / PR / PA predictions move (shape) while the PTS projection is preserved."""
+    on, off = captured_a2, captured_a2_nop2
+    assert on["model_inputs"] == off["model_inputs"] and on["game_reasons"] == off["game_reasons"]
+    po, pf = {p["key"]: p for p in on["predictions"]}, {p["key"]: p for p in off["predictions"]}
+    assert po.keys() == pf.keys()
+    moved = set()
+    for k, a in po.items():
+        mkt = k.split("|")[2]
+        b = pf[k]
+        if mkt in ("PTS", "PRA", "PR", "PA"):
+            if any(not _close(a[c], b[c], 1e-12) for c in PRED_NUM):
+                moved.add(mkt)
+        else:
+            assert all(_close(a[c], b[c], 1e-12) for c in PRED_NUM), (k, mkt)
+    assert moved >= {"PTS"}
+    for k, a in po.items():
+        if k.split("|")[2] == "PTS" and "projection" in a:
+            assert _close(a["projection"], pf[k]["projection"], 1e-6), k
 
 
 if __name__ == "__main__":
