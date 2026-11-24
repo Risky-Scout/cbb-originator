@@ -58,6 +58,28 @@
    "gate": "the declared M1 gate G1-G3 applied to PRODXM1 vs PRODX, plus: target classes (COLD_EARLY_SEASON / COLD_NO_HISTORY / COLD_TRANSFER_IN) stacked d log loss ub < 0 on F2026 and LIVE; combos PRA/PR/PA/RA/STOCKS d RPS ub <= 0",
    "also_reported": "minutes bias, MAE, SD ratio and 50/80 % minutes interval coverage by class (forecast normal vs realized played minutes); prop Brier at the main line",
    "decision": "PROMOTE iff all pass; the declared INC/A2 arms (M1, A2M1) are run too for the record"
+  },
+  "result": {
+   "utc": "2026-11-24T09:45Z",
+   "evaluator": "scripts/p9_m1_eval.py -> results/m1_eval.json",
+   "PRODXM1_vs_PRODX": {
+    "F2026": "stacked -0.00017 (ub -0.00013); target classes -0.00184 (ub -0.00148); every stat ub <= +0.00001",
+    "LIVE": "stacked -0.00168 (ub -0.00140); target -0.00347 (ub -0.00298); early ub -0.00215; every stat ub < 0; PRA/PR/PA RPS ub -0.006/-0.004/-0.003"
+   },
+   "gates": {
+    "G1": true,
+    "G2": false,
+    "G3": true,
+    "TARGET": true,
+    "COMBOS": false
+   },
+   "failures": {
+    "G2": "F2026 STL x COLD_NO_HISTORY ub +0.0022 (> +0.002; ~450 rows)",
+    "COMBOS": "F2026 STOCKS dRPS mean -0.000002, ub +0.00001 (> 0)"
+   },
+   "decision": "REJECT (declared: PROMOTE iff all pass). No retuning, no gate revision.",
+   "minutes": "LIVE cold-class minutes SD ratio 1.27-1.38 (INC) -> 1.13-1.17 (M1); 80% coverage .61-.70 -> .72-.80: M1 helps but still under-disperses live",
+   "classification": "OPEN defect COLD_START_DISPERSION (live cold-start stat variance ratio 1.18-1.37 vs WARM ~1.0; tails: LIVE cold two-sided 10% exceedance .11-.16). A cold-only rerun of the same minutes scaling cannot clear G2 (the failing cell depends only on cold players' own sigma). Any successor needs a different mechanism and a fresh declaration."
   }
  },
  "phase4_results_A2_production_scorer": {
@@ -179,5 +201,20 @@
    "gate": "TOV log loss ub < 0 on F2026 and LIVE; F2026 minutes-bin cells (<10,10-20,20-30,30+) ub <= 0.002; LIVE early (<=14 days) ub <= 0.0005; every other stat bit-identical.",
    "if_pass": "prod module applying the multiplier to model_inputs TOV_mu by game date (as prod.rate_a2), engine correction TOVS1[b]."
   }
+ },
+ "context_ablation": {
+  "declared_utc": "2026-11-24T09:20Z",
+  "declared_before_metrics": true,
+  "arms": {
+   "ENV0": "all three scorer environment deviations (pace, own efficiency, opponent efficiency) set to 0",
+   "OPP0": "opponent efficiency deviation only set to 0"
+  },
+  "baseline": "PRODX (production configuration: A2 AST/FG3M/STL/REB + P2), common random numbers",
+  "reading": "per stat and stacked base-7 log loss ABL - PRODX, game-clustered 95% CI. A component is evidenced as useful when the ablation's lower bound > 0 on F2026 and LIVE; HARMFUL (a defect) when the ablation's upper bound < 0 on both; otherwise UNRESOLVED (kept, no change). No retuning of env coefficients in this phase."
+ },
+ "tails": {
+  "utc": "2026-11-24T09:15Z",
+  "F2026": "base stats tail-calibrated (>q95 .046-.051, <q05 .050-.053); PTS and its combos shifted (>q95 .042-.044, <q05 .060-.062) = the documented low-minute PTS mean over-forecast, not tail shape",
+  "LIVE": "both tails heavy for nearly all stats; split: WARM var ratio ~1.0 (two-tail .10-.11), COLD 1.18-1.37 (two-tail .11-.16) -> COLD_START_DISPERSION (see M1)"
  }
 }

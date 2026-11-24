@@ -178,10 +178,14 @@ for gi, gid in enumerate(games):
         if spec.get("min_sd"):
             cls = gp["cold_start_class"].astype(str)
             gp["min_sigma"] = gp["min_sigma"] * cls.map(spec["min_sd"]).fillna(1.0).to_numpy(float)
+        ev = envd
+        if spec.get("env_zero"):                          # context ablation (2026-11-24): zero env components
+            zi = [{"pace": 0, "own": 1, "opp": 2}[c] for c in spec["env_zero"]]
+            ev = {k: np.where(np.isin(np.arange(len(v)), zi), 0.0, v) for k, v in envd.items()}
         if spec.get("anchor") == "MNA" or "pts_phiN" in spec:
-            r = score_mna(prod, gid, gp, envd, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"))
+            r = score_mna(prod, gid, gp, ev, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"))
         else:
-            r = JP.score_game(prod, gid, gp, envd, SIMS)
+            r = JP.score_game(prod, gid, gp, ev, SIMS)
         rows, pmf = r["rows"], r["pmf"]
         K = pmf.shape[2]
         base_mean = {}
@@ -204,9 +208,15 @@ for gi, gid in enumerate(games):
                               float(-np.log(max(p_y[i], 1e-300))), float(rps[i]), float(rows.at[i, "min_mu"]),
                               str(rows.at[i, "cold_start_class"]), float(Fy[i] - p_y[i]), float(Fy[i]),
                               float(P[i, 0]), float(P[i, 1]), int(l0[i]), float(cl[-2][i]), float(cl[0][i]), float(cl[2][i])))
-        dr = r["draws"]                                             # sims x n x 7, the production combo source
+        dr0 = r["draws"]                                            # sims x n x 7, the production combo source
         ix = {s: j for j, s in enumerate(L.STATS)}
-        for cname, parts in COMBOS.items():
+        # dependence test (2026-11-24): "<COMBO>_IND" = the same marginal draws, each stat permuted independently over
+        # sims (within-player dependence removed, marginals bit-identical)
+        prm = np.random.default_rng(gi + 7919)
+        drI = dr0.copy()
+        for j in range(dr0.shape[2]):
+            drI[:, :, j] = dr0[prm.permutation(dr0.shape[0]), :, j]
+        for cname, parts, dr in [(c, p_, dr0) for c, p_ in COMBOS.items()] + [(c + "_IND", p_, drI) for c, p_ in COMBOS.items()]:
             cd = sum(dr[:, :, ix[p]] for p in parts).astype(np.int64)  # sims x n
             y = sum(rows[f"y_{p}"].to_numpy(float) for p in parts)
             Kc = int(max(cd.max(), y.max())) + 2
