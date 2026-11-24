@@ -209,6 +209,19 @@ mkdir -p "$LOCK_DIR"
 if [ "$CMD" = "lifecycle-refresh" ]; then
   exec "${RUN[@]}"                       # no wrapper writer lock: the orchestrator takes it for Phase B only
 fi
+PRIORITY="$LOCK_DIR/cbb-originator.writer.priority"
+if [ "$CMD" = "tick" ] && [ -f "$PRIORITY" ] && [ -n "$(find "$PRIORITY" -mmin -"${CBB_PRIORITY_MAX_AGE_MIN:-50}" 2>/dev/null)" ]; then
+  # An availability refresh is waiting for Phase B (cbb_platform/availability_refresh.py writes this marker only while it
+  # waits). 2026-11-24 on a 77-game slate: a tick ran > 10 min, systemd started the next one the instant it ended, and
+  # the lock passed tick -> tick so every refresh exited 75. A new tick yields (close evidence still captured) while the
+  # marker's refresh process is alive; a stale marker (dead pid or older than the unit budget) is ignored.
+  PPID_REF="$(sed -n 's/^pid=//p' "$PRIORITY" 2>/dev/null | head -1)"
+  if [[ "$PPID_REF" =~ ^[0-9]+$ ]] && kill -0 "$PPID_REF" 2>/dev/null; then
+    set +e; "$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" game-close-capture >/dev/null; CRC=$?; set -e
+    log "availability refresh waiting for the writer lock ($(sed -n 's/^refresh_id=//p' "$PRIORITY" | head -1)); tick yields; close-window game-line capture under the game-quotes lock (rc=$CRC)"
+    exit 75
+  fi
+fi
 exec 9>>"$WRITER_LOCK"
 if [ "$CMD" = "tick" ] && ! flock -n 9; then
   # Another CBB writer (availability Phase B, the morning chain, exports) holds the writer lock. Game-line CLOSE evidence

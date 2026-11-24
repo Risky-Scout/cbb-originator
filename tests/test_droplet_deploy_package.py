@@ -489,6 +489,29 @@ def test_tick_with_writer_lock_busy_captures_close_evidence_before_waiting(app):
     assert not [c for c in log.read_text().splitlines() if "game-close-capture" in c]
 
 
+@needs_flock
+def test_tick_yields_to_a_live_waiting_availability_refresh_and_ignores_a_stale_marker(app):
+    """2026-11-24 15/18/21Z: >10-min ticks ran back-to-back and passed the writer lock tick -> tick, so every availability
+    refresh exited 75. While a live refresh waits (priority marker with its pid), a new tick captures close evidence and
+    yields; a marker whose pid is dead is ignored."""
+    import os
+    log = _fake_venv(app, "false")
+    lockd = app["state"] / "locks"
+    lockd.mkdir(parents=True)
+    marker = lockd / "cbb-originator.writer.priority"
+    marker.write_text(f"pid={os.getpid()}\nrefresh_id=R-test\nwindow=16:00\n")
+    r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")
+    assert r.returncode == 75 and "tick yields" in r.stderr and "R-test" in r.stderr, r.stderr
+    calls = log.read_text().splitlines()
+    assert len(calls) == 1 and calls[0].endswith(" game-close-capture")          # nothing ran without the writer lock
+    log.unlink()
+    dead = subprocess.Popen(["true"]); dead.wait()
+    marker.write_text(f"pid={dead.pid}\nrefresh_id=R-dead\n")
+    r = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER")
+    assert r.returncode == 0 and "tick yields" not in r.stderr, r.stderr
+    assert not [c for c in log.read_text().splitlines() if "game-close-capture" in c]
+
+
 def test_selection_audit_unit_is_read_only_lock_free_and_small():
     u = (D / "systemd" / AUDIT_UNIT).read_text()
     lines = u.splitlines()

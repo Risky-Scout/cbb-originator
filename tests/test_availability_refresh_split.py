@@ -493,6 +493,34 @@ def test_retries_are_anchored_at_the_first_wait_start_so_attempts_are_contiguous
     assert rec["PHASE_B_LOCK_WAIT_SEC"] >= 3.9 and after_a < 4.6, rec    # 4 x 1 s contiguous; the old schedule left a 1-s gap (5 s)
 
 
+def test_priority_marker_exists_only_while_phase_b_waits(world):
+    marker = world["lock"].parent / "cbb-originator.writer.priority"
+    q = _holder(world, 3.0, "QUOTE_TICK")
+    _wait_for(world, "ENTER")
+    p = _orchestrate(world, limits=dict(writer_wait_max_sec=30.0), wait=False)
+    seen, t0 = None, time.time()
+    while time.time() - t0 < 20 and seen is None:
+        if marker.exists():
+            seen = marker.read_text()
+        time.sleep(0.05)
+    out, err = p.communicate(timeout=120)
+    q.wait(timeout=30)
+    rec = json.loads(out.strip().splitlines()[-1])
+    assert seen and seen.startswith(f"pid={p.pid}\n") and "refresh_id=" in seen, (seen, err)
+    assert p.returncode == 0 and rec["STATUS"] == "PUBLISHED" and not marker.exists(), err
+
+
+def test_priority_marker_is_cleared_after_a_deferred_exit(world):
+    marker = world["lock"].parent / "cbb-originator.writer.priority"
+    q = _holder(world, 30.0, "MORNING")
+    _wait_for(world, "ENTER")
+    try:
+        code, rec, err = _orchestrate(world, limits=dict(writer_wait_max_sec=0.5, retry_delay_sec=0.5))
+    finally:
+        q.kill(); q.wait()
+    assert code == 75 and not marker.exists(), err
+
+
 def test_stale_receipt_is_replaced_by_a_fresh_phase_a_outside_the_lock(world):
     q = _holder(world, 4.0, "MORNING")
     _wait_for(world, "ENTER")

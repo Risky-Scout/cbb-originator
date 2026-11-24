@@ -179,6 +179,29 @@ class Refresh:
                     return None
                 self.sleep(min(self.L.poll_sec, max(0.0, deadline - self.clock())))
 
+    # ------------------------------------------------------------------ writer-lock priority marker
+    @property
+    def priority_path(self) -> Path:
+        return self.lock.parent / "cbb-originator.writer.priority"
+
+    def _priority_set(self) -> None:
+        """While Phase B waits, a NEW quote tick yields (deploy/droplet/bin/cbb-originator-run): ticks on a large slate run
+        back-to-back and hand the lock to each other, so a polling waiter never saw it free (2026-11-24 15/18/21Z -> 75)."""
+        try:
+            self.lock.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.priority_path.with_name(f".{self.priority_path.name}.{os.getpid()}")
+            tmp.write_text(f"pid={os.getpid()}\nrefresh_id={self.rid}\nwindow={self.window}\nat={_iso(_utcnow())}\n")
+            os.replace(tmp, self.priority_path)
+        except OSError as e:                             # the marker is an optimisation; the bounded wait still applies
+            self._log(f"priority marker not written: {type(e).__name__}: {e}")
+
+    def _priority_clear(self) -> None:
+        try:
+            if self.priority_path.read_text().startswith(f"pid={os.getpid()}\n"):
+                self.priority_path.unlink()
+        except OSError:
+            pass
+
     def _b_cost(self) -> float:
         return self.L.watchdog_sec + self.L.kill_grace_sec + self.L.margin_sec
 
@@ -242,7 +265,10 @@ class Refresh:
         self.mark("SERVICE_START")
         n_acq = 1
         acq = self.phase_a(n_acq)
-        code = self._run_after_a(acq, n_acq)
+        try:
+            code = self._run_after_a(acq, n_acq)
+        finally:
+            self._priority_clear()
         self.rec["TOTAL_REFRESH_SEC"] = round(self.elapsed(), 1)
         self.mark("SERVICE_END", status=self.rec.get("STATUS"))
         self.rec["SERVICE_END"] = _iso(_utcnow())
@@ -264,7 +290,10 @@ class Refresh:
             self.mark("PHASE_B_LOCK_WAIT_START", max_wait_sec=round(wait, 1), attempt=retries + 1)
             t = self.clock()
             first_wait = first_wait if first_wait is not None else t   # retry schedule anchor
+            self._priority_set()
             fd = self._lock(wait)
+            if fd is not None:
+                self._priority_clear()
             waited = self.clock() - t
             self.rec["PHASE_B_LOCK_WAIT_SEC"] = round(self.rec.get("PHASE_B_LOCK_WAIT_SEC", 0.0) + waited, 1)
             if fd is None:
