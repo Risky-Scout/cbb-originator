@@ -1122,6 +1122,7 @@ def daily(date: str, *, ops_root: Path = PC.OPS_ROOT, runs_root: Path = RUNS_ROO
                              "audit": str(out_dir / BOARD_AUDIT), "audit_rows": cnt["audit_rows"],
                              "receipt": receipt, **{sname: len(sh[sname]) for sname in MX.BOARD_SHEETS}}
             rep["evaluations"] = MX.freeze(ops_root, date, pmfs, names, pctx, cutoffs_all, at)
+            rep["public_contract"] = public_contract(out_dir, date, at, brows, glines)
     else:
         rep["boards"] = {"status": "MISSING_EVIDENCE",
                          "missing": f"no persisted PMF (forecast snapshot / official tick) for ET slate date {date}"}
@@ -1225,6 +1226,26 @@ def game_grades(day: str, ops_root: Path, state_root, names: dict) -> dict | Non
     rows = GX.graded(ops_root, day, _finals(state_root, sorted(tips)), GQ.closing(q, tips), names)
     return {"status": "WRITTEN", "rows": rows, "evaluations": len(ev),
             "results": pd.Series([r["RESULT"] for r in rows]).value_counts().to_dict() if rows else {}}
+
+
+def public_contract(out_dir: Path, date: str, at, brows: list, glines: dict | None) -> dict:
+    """CBB_PUBLIC_DATA_CONTRACT_V1 (prod.public_contract): the publishable payload + mobile page built from the SAME
+    internal rows as the boards workbook, with row-for-row QA. Written to <export day>/public/; never raises."""
+    try:
+        from cbb_platform.prod import game_exports as GXP, market_exports as MXP, public_contract as PUB
+        lines = (glines or {}).get("rows") or []
+        pay = PUB.payload(PUB.game_records(lines, GXP.LINE_COLS), PUB.prop_records(brows, MXP.BOARD_COLS),
+                          pd.Timestamp(at).isoformat(), date)
+        qa = PUB.qa_rows(pay, lines, GXP.LINE_COLS, brows, MXP.BOARD_COLS)
+        d = out_dir / "public"
+        d.mkdir(parents=True, exist_ok=True)
+        for name, body in (("cbb_public_v1.json", json.dumps(pay, sort_keys=True, default=str)), ("index.html", PUB.render_html(pay))):
+            tmp = d / (name + ".tmp")
+            tmp.write_text(body)
+            os.replace(tmp, d / name)
+        return {"status": "WRITTEN", "contract": PUB.CONTRACT_ID, "dir": str(d), **qa}
+    except Exception as e:                                       # noqa: BLE001 -- publication artifact only
+        return {"status": "FAILED", "error": f"{type(e).__name__}: {str(e)[:300]}", "WIZARDOFODDS_ROW_QA": "FAIL"}
 
 
 def boards_shadow_workbook(brows: list, glines: list, path: Path) -> Path:

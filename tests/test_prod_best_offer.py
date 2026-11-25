@@ -335,6 +335,11 @@ def test_23_24_25_quote_refresh_no_refit_no_network_no_artifacts(tmp_path, monke
     rep = _daily(tree, now=(CUT - pd.Timedelta(minutes=2)).isoformat())
     assert rep["network_calls"] == 0 and rep["refits_triggered"] == 0
     assert rep["boards"]["status"] == "WRITTEN" and rep["boards"]["rows_with_valid_market"] == 1
+    pub = rep["public_contract"]                                  # 2026-11-25 CBB_PUBLIC_DATA_CONTRACT_V1 from the same rows
+    assert pub["status"] == "WRITTEN" and pub["WIZARDOFODDS_ROW_QA"] == "PASS" and pub["prop_rows"] == rep["boards"]["rows"]
+    pj = json.loads((Path(pub["dir"]) / "cbb_public_v1.json").read_text())
+    assert pj["contract"] == "CBB_PUBLIC_DATA_CONTRACT_V1" and pj["actionability_validated"] is False
+    assert (Path(pub["dir"]) / "index.html").read_text().startswith("<!doctype html>")
     life = L.Life(ops_root=tree["ops_root"], prod_root=tmp_path / "t", clock=lambda: CUT - pd.Timedelta(minutes=2),
                   history_db=Path("/nonexistent"))
     out = L.exports_now(life)
