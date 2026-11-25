@@ -1,6 +1,6 @@
 """CBB_PUBLIC_DATA_CONTRACT_V1 (frozen 2026-11-25): the only CBB fields that may leave the Droplet for a public page.
 
-Two tabs: "Game Lines & Totals" (default) and "Player Props". Built ONLY from the approved internal export rows
+Two tabs: "Game Lines & Totals" (default) and "Player Props" (only player x stat rows with a quoted market line). Built ONLY from the approved internal export rows
 (prod.game_exports.LINE_COLS board rows, prod.market_exports.BOARD_COLS board rows); every public field is a pure function
 of one internal field (row-for-row QA: qa_rows). Never exposed: environment / credentials, raw model state, fit artifacts,
 PMFs and hashes, quote ids, private research, internal QA, raw provider data.
@@ -108,6 +108,8 @@ def prop_records(board_rows: list[list], cols: tuple) -> list[dict]:
     out = []
     for row in board_rows:
         r = dict(zip(cols, row))
+        if _num(r.get("Best Market Line")) is None:                      # model-only rows: nothing to display
+            continue
         side = r.get("Preferred Side")
         out.append({"game": r["Game"], "tip_et": r["Tip Time ET"], "player": r["Player"], "team": r["Team"],
                     "opponent": r["Opponent"], "stat": r["Stat"], "projection": _r(r.get("Model Projection"), 2),

@@ -1239,7 +1239,8 @@ def public_contract(out_dir: Path, date: str, at, brows: list, glines: dict | No
         qa = PUB.qa_rows(pay, lines, GXP.LINE_COLS, brows, MXP.BOARD_COLS)
         d = out_dir / "public"
         d.mkdir(parents=True, exist_ok=True)
-        for name, body in (("cbb_public_v1.json", json.dumps(pay, sort_keys=True, default=str)), ("index.html", PUB.render_html(pay))):
+        for name, body in (("cbb_public_v1.json", json.dumps(pay, sort_keys=True, default=str)), ("index.html", PUB.render_html(pay)),
+                           ("qa_receipt.json", json.dumps({**qa, "generated_at": pay["generated_at"]}, default=str))):
             tmp = d / (name + ".tmp")
             tmp.write_text(body)
             os.replace(tmp, d / name)

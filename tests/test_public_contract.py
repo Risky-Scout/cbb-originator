@@ -65,3 +65,8 @@ def test_mobile_page_has_two_tabs_default_game_lines_and_no_external_requests():
     assert "width=device-width" in h and "Game Lines &amp; Totals" in h or "Game Lines & Totals" in h
     assert "<section id='p' class='grid' hidden>" in h and "<section id='g' class='grid'>" in h
     assert "http://" not in h and "https://" not in h and "<script src" not in h
+
+
+def test_model_only_prop_rows_are_not_published():
+    rows = [_prop(), _prop(Player="No Line", **{"Best Market Line": None, "Preferred Side": None})]
+    assert [r["player"] for r in PCT.prop_records(rows, ME.BOARD_COLS)] == ["P One"]
