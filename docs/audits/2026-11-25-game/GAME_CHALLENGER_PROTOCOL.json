@@ -1,0 +1,16 @@
+{
+ "declared_at": "2026-11-25T05:10Z",
+ "declared_before": "any challenger metric; only the production baseline (g1_base, g2_vs_market_base) had been computed",
+ "motivation": "g2_vs_market_base: market better everywhere; largest gap at ngp0-3; 2026-27 encompassing b_model -0.37 -> prior / carryover dependence suspected",
+ "challengers": {
+  "GC1_rho_carry_0.6": {"override": {"rho_carry": 0.6}, "cause": "prior carryover too strong (roster turnover)"},
+  "GC2_lam_half": {"override": {"lam_off": 2.5, "lam_def": 2.5}, "cause": "prior shrinkage too slow to release in-season evidence"}
+ },
+ "one_at_a_time": true,
+ "gates": {
+  "G1": "paired (challenger - base) margin MSE AND total MSE, all games, date-block bootstrap 95% upper bound < 0 on BOTH 2024 and 2025",
+  "G2": "same diffs on 2027 live: point estimate <= 0 (not worse)",
+  "G3": "moneyline logloss diff upper bound <= 0 on 2024 and 2025",
+  "promotion": "only if G1-G3 pass; no parameter search beyond these two declared points; market is never an input"
+ }
+}

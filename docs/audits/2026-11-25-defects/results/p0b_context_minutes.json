@@ -1,0 +1,170 @@
+{
+ "F2026": {
+  "PTS": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.259
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.52
+   }
+  },
+  "REB": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.674
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.379
+   }
+  },
+  "AST": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.54
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.434
+   }
+  },
+  "FG3M": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.519
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.272
+   }
+  },
+  "STL": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.531
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.295
+   }
+  },
+  "BLK": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.444
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.099
+   }
+  },
+  "TOV": {
+   "opp": {
+    "n_groups": 365,
+    "split_half_corr": 0.645
+   },
+   "team": {
+    "n_groups": 365,
+    "split_half_corr": 0.311
+   }
+  },
+  "minutes_slope": {
+   "False": {
+    "n": 99358,
+    "intercept": -0.19,
+    "slope": 1.012
+   },
+   "True": {
+    "n": 12292,
+    "intercept": 1.07,
+    "slope": 0.941
+   }
+  }
+ },
+ "LIVE": {
+  "PTS": {
+   "opp": {
+    "n_groups": 364,
+    "split_half_corr": 0.04
+   },
+   "team": {
+    "n_groups": 364,
+    "split_half_corr": 0.287
+   }
+  },
+  "REB": {
+   "opp": {
+    "n_groups": 364,
+    "split_half_corr": 0.299
+   },
+   "team": {
+    "n_groups": 364,
+    "split_half_corr": 0.153
+   }
+  },
+  "AST": {
+   "opp": {
+    "n_groups": 364,
+    "split_half_corr": 0.166
+   },
+   "team": {
+    "n_groups": 364,
+    "split_half_corr": 0.277
+   }
+  },
+  "FG3M": {
+   "opp": {
+    "n_groups": 364,
+    "split_half_corr": 0.077
+   },
+   "team": {
+    "n_groups": 362,
+    "split_half_corr": 0.077
+   }
+  },
+  "STL": {
+   "opp": {
+    "n_groups": 362,
+    "split_half_corr": 0.119
+   },
+   "team": {
+    "n_groups": 364,
+    "split_half_corr": 0.11
+   }
+  },
+  "BLK": {
+   "opp": {
+    "n_groups": 352,
+    "split_half_corr": 0.128
+   },
+   "team": {
+    "n_groups": 353,
+    "split_half_corr": 0.046
+   }
+  },
+  "TOV": {
+   "opp": {
+    "n_groups": 364,
+    "split_half_corr": 0.163
+   },
+   "team": {
+    "n_groups": 364,
+    "split_half_corr": 0.086
+   }
+  },
+  "minutes_slope": {
+   "False": {
+    "n": 5014,
+    "intercept": 0.08,
+    "slope": 0.999
+   },
+   "True": {
+    "n": 11343,
+    "intercept": 0.78,
+    "slope": 0.965
+   }
+  }
+ }
+}

@@ -334,5 +334,73 @@
    "decision": "REJECT. No retuning.",
    "classification": "MNA corrects the low-minute PTS over-forecast but lowers starters, who are already under-forecast (LIVE 20-30 realized 9.80 vs 9.09). The remaining PTS mean defect is role-dependent rate compression (bench per-minute over, starters under), not convexity alone: any successor needs a role-aware rate model, not a mean anchor. OPEN: PTS_ROLE_RATE_COMPRESSION."
   }
+ },
+ "challenger_S1_D1_C1": {
+  "declared_utc": "2026-11-25T03:30Z",
+  "declared_before": "any F2026 / LIVE metric of C1, S1, D1 (only TRAIN fits read: results/p16_s1_d1_train_fit.json)",
+  "motivation": "results/p15_defect_map.json (current engine PRODXT1, F2026 + LIVE): (1) PTS per-minute rate compression, both datasets: realized/forecast <10 min .725/.674, bench .936/.840, top-5 1.032/1.021, minutes ratio ~1.0 -> per-minute, root cause: rate prior = position-only mean (0.358 pts/min, sd .005) with k=31 pseudo-minutes, no role conditioning (real per-minute 0.246 at min_mu<5 vs prior 0.358). (2) early-season STL under-forecast both datasets (1.074/1.069, season-level F2026 0.990): within-season trend, the T1 mechanism. (3) cold-class under-dispersion both datasets, stat-dependent (var ratio COLD 1.04-1.86, WARM .91-1.06).",
+  "C1": {
+   "what": "A2 role-aware rate for PTS on top of production (A2[AST,FG3M,STL,REB]+P2+T1)",
+   "constants": "frozen A2 A_full PTS (alpha, beta, gamma, SCALE) from the 2026-11-22 F2024+F2025 fit (results/challenger_a2_*), NO refit",
+   "why_now": "A2-PTS failed G3 on 11-24 on the pre-P2 scorer; P2 changed the PTS family since -> new configuration"
+  },
+  "S1": {
+   "what": "STL_mu *= exp(b (u - ubar)), u = (cutoff ET - Nov 1)/100 days",
+   "fit_TRAIN": {
+    "b": -0.07327655565459593,
+    "se_b": 0.006579374309362207,
+    "a_level_not_used": -0.01898031398000408,
+    "ubar": 0.7213194232871556,
+    "n": 223196
+   }
+  },
+  "D1": {
+   "what": "cold-player rate uncertainty per (class, stat): lm += sigma eps - sigma^2/2 (own seeded generator, mean-preserving); WARM 0",
+   "fit_TRAIN": "sigma^2 = log(1 + (r_s - 1) sum var / sum mean^2), r_s = 1 + (r - 1) n / (n + 1000) (sparse-cell shrinkage, n = TRAIN rows of the cell), p5_F2025_train3 PRODX3",
+   "sigma": {
+    "COLD_EARLY_SEASON": {
+     "AST": 0.2786234745417172,
+     "BLK": 0.3109666335081569,
+     "FG3M": 0.22693242151438472,
+     "PTS": 0.1961551861887778,
+     "REB": 0.21983368746777365,
+     "STL": 0.3448218550510008,
+     "TOV": 0.38247758973253043
+    },
+    "COLD_NO_HISTORY": {
+     "AST": 0.42464888187950656,
+     "BLK": 1.057444171974184,
+     "FG3M": 0.3835218638709333,
+     "PTS": 0.286594821053654,
+     "REB": 0.37507988291821726,
+     "STL": 0.0,
+     "TOV": 0.0
+    },
+    "COLD_TRANSFER_IN": {
+     "AST": 0.0950218077325704,
+     "BLK": 0.31161054869978744,
+     "FG3M": 0.03775860902704086,
+     "PTS": 0.13248654616986374,
+     "REB": 0.1628323291343243,
+     "STL": 0.3265312783249922,
+     "TOV": 0.19608229330786012
+    }
+   },
+   "differs_from_M2": "M2 used one sigma per class for all stats (0.56 NO_HISTORY) and failed exactly on STL/TOV x NO_HISTORY whose TRAIN variance ratio is <= 1 (.95/.76) -> sigma 0 here"
+  },
+  "arms": {
+   "PRODXT1": "baseline (identical spec and seeds as p5_*_t1)",
+   "PRODC1": "+C1",
+   "PRODS1": "+S1",
+   "PRODD1": "+D1",
+   "PRODALL": "+C1+S1+D1"
+  },
+  "gates_per_component": {
+   "C1": "G1 PTS dLL ub < 0 on F2026 and LIVE; G2 F2026 PTS x role and PTS x minutes-band cells ub <= +0.002; G3 LIVE early PTS ub <= +0.0005; G4 LIVE PTS max |realized/mean - 1| over role decreases; COMBOS PRA/PR/PA dRPS ub <= 0 both datasets; other base stats bit-identical",
+   "S1": "STL dLL ub < 0 on F2026 and LIVE; F2026 STL cells (role, minutes band, cold class) ub <= +0.002; STOCKS dRPS ub <= 0 both; other base stats bit-identical",
+   "D1": "stacked 7-stat dLL ub < 0 both datasets and no stat ub > +0.0005; F2026 stat x class cells ub <= +0.002; LIVE early ub <= +0.0005; target cold classes stacked ub < 0 both; COMBOS dRPS ub <= 0 both",
+   "ALL": "reported; promoted set = the components that pass individually, re-verified on PRODALL with the same gates (no component promoted if the combination breaks a gate)"
+  },
+  "no_tuning": "single replay run per dataset; no constant changes after any evaluation metric is read"
  }
 }

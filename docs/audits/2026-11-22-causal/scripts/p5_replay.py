@@ -6,7 +6,7 @@ on point-in-time OOS inputs, arms differing only in the Phase 1B means fed to it
 
 arms json: {"ARM": {"a2": [stats], "min_sd": null | {"class": scale}, "anchor": "MNA"}}; INC = {} always included.
 Writes per-cell rows (gitignored data dir) and an aggregate summary (results/)."""
-import json, sys, time
+import json, os, sys, time
 import numpy as np, pandas as pd
 from cbb_platform import config as C
 from cbb_platform.prod import inputs as IN, loader as LD
@@ -160,16 +160,28 @@ def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None, cold_sigma=Non
     else:
         lm = full + (np.log(np.exp(nom).mean(axis=0)) - np.log(np.exp(full).mean(axis=0)))[None] if mna else S.anchor(full, base_lm, JM.JM1_ALPHA)[0]
     if cold_sigma:                                        # challenger M2: cold-player rate uncertainty (own generator)
-        sg = rows["cold_start_class"].astype(str).map(cold_sigma).fillna(0.0).to_numpy(float)
+        cls_ = rows["cold_start_class"].astype(str)
+        if any(isinstance(v, dict) for v in cold_sigma.values()):   # challenger D1: sigma per (class, stat)
+            sg = np.array([[float(cold_sigma.get(c, {}).get(s, 0.0)) for s in L.STATS] for c in cls_])   # n x NS
+        else:
+            sg = np.repeat(cls_.map(cold_sigma).fillna(0.0).to_numpy(float)[:, None], len(L.STATS), axis=1)
         eps = np.random.default_rng([D.game_seed(J.SIM_SEED, gid), 2]).standard_normal(lm.shape)
-        lm = lm + (sg[None, :, None] * eps - 0.5 * sg[None, :, None] ** 2).reshape(lm.shape)
+        lm = lm + (sg[None] * eps.reshape(sims, n, -1) - 0.5 * sg[None] ** 2).reshape(lm.shape)
     tab = tables(lm.reshape(sims, n * J.NS), np.array([prod["s4"]["dispersion"][s]["phi"] for s in L.STATS]), pts_phiN)
     draws = S.counts(tab, z).reshape(sims, n, J.NS)
     return {"rows": rows, "draws": draws, "pmf": S.mixture_pmf(tab, sims).reshape(n, J.NS, -1)}
 
 
 cells = []
+_RM = {}
+line_cells = []
+LINES = None
+if os.environ.get("REPLAY_LINES"):                        # parquet: game_id, pgx, stat, line
+    _lq = pd.read_parquet(os.environ["REPLAY_LINES"])
+    LINES = {g: h[["pgx", "stat", "line"]].to_dict("records") for g, h in _lq.groupby("game_id")}
 games = sorted(df["game_id"].unique())[:max_games]
+if LINES is not None:
+    games = [g for g in games if g in LINES]
 t0 = time.time()
 for gi, gid in enumerate(games):
     gp0 = df[df["game_id"] == gid].reset_index(drop=True)
@@ -184,6 +196,19 @@ for gi, gid in enumerate(games):
             yr = ts.dt.year.where(ts.dt.month >= 7, ts.dt.year - 1)
             u = (ts - pd.to_datetime(yr.astype(str) + "-11-01")).dt.days.to_numpy(float) / 100.0
             gp["TOV_mu"] = gp["TOV_mu"].to_numpy(float) * np.exp(tt["b"] * (u - tt["ubar"]))
+        for st_, tt in (spec.get("season_trend") or {}).items():   # challenger S1 (generic T1 recipe per stat)
+            ts = pd.to_datetime(gp["game_id"].map(GAME_CUTOFF), utc=True).dt.tz_convert("America/New_York").dt.tz_localize(None)
+            yr = ts.dt.year.where(ts.dt.month >= 7, ts.dt.year - 1)
+            u = (ts - pd.to_datetime(yr.astype(str) + "-11-01")).dt.days.to_numpy(float) / 100.0
+            gp[f"{st_}_mu"] = gp[f"{st_}_mu"].to_numpy(float) * np.exp(tt["b"] * (u - tt["ubar"]))
+        if spec.get("row_mult"):                          # 2026-11-25 DEFECT_PROTOCOL: point-in-time per-row mean multipliers
+            if spec["row_mult"] not in _RM:
+                _RM[spec["row_mult"]] = pd.read_parquet(spec["row_mult"].replace("{DS}", ds)).set_index("pgx")
+            mt = _RM[spec["row_mult"]]
+            for s in L.STATS:
+                if f"{s}_m" in mt:
+                    mm_ = gp["player_game_example_id"].map(mt[f"{s}_m"]).fillna(1.0).to_numpy(float)
+                    gp[f"{s}_mu"] = gp[f"{s}_mu"].to_numpy(float) * mm_
         if spec.get("min_sd"):
             cls = gp["cold_start_class"].astype(str)
             gp["min_sigma"] = gp["min_sigma"] * cls.map(spec["min_sd"]).fillna(1.0).to_numpy(float)
@@ -197,6 +222,19 @@ for gi, gid in enumerate(games):
         else:
             r = JP.score_game(prod, gid, gp, ev, SIMS)
         rows, pmf = r["rows"], r["pmf"]
+        if LINES is not None:                             # 2026-11-25 market re-pricing: P(stat > line) at captured lines
+            for q in LINES.get(gid, []):
+                ii = np.flatnonzero(rows["player_game_example_id"].to_numpy() == q["pgx"])
+                if not len(ii):
+                    continue
+                i, fl = int(ii[0]), int(np.floor(q["line"]))
+                if q["stat"] in L.STATS:
+                    P = pmf[i, L.STATS.index(q["stat"]), :]
+                    p_le = float(P[: max(fl + 1, 0)].sum()); p_eq = float(P[fl]) if float(q["line"]).is_integer() else 0.0
+                else:
+                    cd = sum(r["draws"][:, i, L.STATS.index(c)] for c in COMBOS[q["stat"]])
+                    p_le = float((cd <= fl).mean()); p_eq = float((cd == fl).mean()) if float(q["line"]).is_integer() else 0.0
+                line_cells.append((arm, gid, q["pgx"], q["stat"], float(q["line"]), 1.0 - p_le, p_eq))
         K = pmf.shape[2]
         base_mean = {}
         for j, s in enumerate(L.STATS):
@@ -248,4 +286,7 @@ cdf_ = pd.DataFrame(cells, columns=["arm", "game_id", "pgx", "stat", "y", "mean"
 cdf_["early"] = cdf_["pgx"].map(early_day).le(14)
 (D / "p4").mkdir(exist_ok=True)
 cdf_.to_parquet(D / f"p4/p5_{ds}_{tag}.parquet", index=False)
+if LINES is not None:
+    pd.DataFrame(line_cells, columns=["arm", "game_id", "pgx", "stat", "line", "p_over", "p_push"]).to_parquet(
+        D / f"p4/p5_{ds}_{tag}_lines.parquet", index=False)
 print("cells", len(cdf_), "games", len(games), f"{time.time() - t0:.0f}s")

@@ -35,7 +35,7 @@ ENGINE_HISTORY = (
 
 def _corrections() -> list[tuple[str, dict]]:
     """(tag, frozen constants) of every promoted scoring-time correction, in application order."""
-    from cbb_platform.prod import pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
+    from cbb_platform.prod import dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
     out = []
     if RA2.PARAMS:
         out.append((f"RA2V1[{','.join(RA2.PARAMS)}]", {"id": RA2.ID, "params": RA2.PARAMS, "w": list(RA2.W),
@@ -45,6 +45,8 @@ def _corrections() -> list[tuple[str, dict]]:
         out.append((f"PTSC1[{PTC.PHI_N:g}]", {"id": PTC.ID, "pv": list(PTC.PV), "phi_n": PTC.PHI_N, "nmax": PTC.NMAX}))
     if TT.enabled():
         out.append(("TOVT1", {"id": TT.ID, "b": TT.B, "ubar": TT.UBAR}))
+    if DV.enabled():
+        out.append(("DEV1", {"id": DV.ID, "delta": {k: list(v) for k, v in DV.DELTA.items()}, "w": list(DV.W), "k": DV.K_MINUTES}))
     return out
 
 

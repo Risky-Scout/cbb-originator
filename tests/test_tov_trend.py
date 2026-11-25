@@ -37,7 +37,7 @@ def test_only_tov_mean_changes_and_rows_are_matched_by_example_id():
 
 
 def test_disabled_is_identity_and_names_itself_in_the_engine(monkeypatch):
-    assert "+TOVT1#" in ENG.engine_id()
+    assert "+TOVT1" in ENG.engine_id()
     rows, cand = _frames()
     monkeypatch.setattr(TT, "ENABLED", False)
     out, _ = TT.apply(rows, cand)

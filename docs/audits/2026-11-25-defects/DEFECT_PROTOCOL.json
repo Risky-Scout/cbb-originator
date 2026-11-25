@@ -1,0 +1,34 @@
+{
+ "declared_at": "2026-11-25T07:00Z",
+ "declared_before": "any DV1 / OC1 / OT1 metric; only the incumbent diagnostics p0_location_decomp, p0b_context_minutes and the F2026 rate slices had been computed",
+ "incumbent": "PRODXT1 (= production 4f0de48 config)",
+ "root_causes": {
+  "R_DEV": "returning players' offensive per-minute rates under-forecast early season (PTS CORE 1.115 / ROT 1.092 d0-30, decays to ~1.0 by d91+); no-prior players unbiased -> prior-season rates carried with no year-over-year development",
+  "R_OPP": "per-minute residuals persist by DEFENDING OPPONENT (F2026 split-half corr REB .67 TOV .65 AST .54 STL .53 FG3M .52 BLK .44) after the generic env terms -> stat-specific opponent tendency missing",
+  "R_TEAM": "per-minute residuals persist by OWN TEAM (F2026 PTS .52 AST .43 REB .38) -> stat-specific own-team context missing"
+ },
+ "candidates": {
+  "DV1": "mean_s *= 1 + delta_{s,same_team} * s_prev; s_prev = (.5 h1 + .25 h2 + .125 h3)_min / (cur + .5 h1 + .25 h2 + .125 h3 + 31)_min; delta fit by Poisson MLE on TRAIN (F2025, arm PRODX3, actual-minutes counterfactual) for ALL 7 stats x {same team, transfer}; no stat selection",
+  "OC1": "mean_s *= (Y_opp + kappa_s) / (CF_opp + kappa_s); Y/CF = sums of actual stat / incumbent actual-minutes counterfactual of all players who faced this opponent on EARLIER dates of the current season; kappa_s chosen on TRAIN only from grid {5,10,20,40,80,160,320,640,inf}",
+  "OT1": "same as OC1 keyed by the player's OWN team (excluding nothing else); kappa from TRAIN",
+  "ALL": "components that pass, re-verified jointly"
+ },
+ "gates_per_candidate": {
+  "G1": "stacked base-7 dNLL game-clustered 95% ub < 0 on BOTH F2026 and LIVE",
+  "G2": "every base stat dNLL ub <= +0.0005 on both (protected stats)",
+  "G3_DV1": "target population (s_prev > 0, min_mu >= 20, season_day <= 30) PTS+AST+FG3M+TOV pooled dNLL ub < 0 on F2026 and point < 0 on LIVE",
+  "G3_OC1_OT1": "F2026 stacked ub < 0 restricted to rows whose factor used >= 5 prior opponent (team) games; LIVE point <= 0",
+  "G4": "combos PRA/PR/PA/RA/STOCKS dRPS ub <= +0.0005 on both",
+  "G5_market": "LIVE graded prop events with a de-vigged fair probability: challenger logloss - incumbent logloss point <= +0.005 (not materially worse); reported Brier too",
+  "protected": "CORE_30_PLUS and ROTATION_20_TO_30 base-stat cells: no cell ub > +0.002 on F2026",
+  "no_relaxation": "gates fixed here; a failed candidate is rejected; no re-tuning of delta or kappa"
+ },
+ "amendment_1": {
+  "declared_at": "2026-11-25T08:30Z",
+  "after": "p2_eval (DV1 PASS, OT1 PASS, OC1 FAIL excl. G5)",
+  "OC2": "OC1 with PTS factor = 1. Causal reason: PTS already receives the opponent defensive-efficiency env term (opp_eff_dev) in the JM GLM, so an opponent PTS factor double-counts; same kappas, no refit",
+  "ALL_A": "DV1 x OT1 (multipliers multiplied)",
+  "ALL_B": "DV1 x OT1 x OC2",
+  "gates": "identical to gates_per_candidate (G1-G5, protected) for OC2, ALL_A, ALL_B; OC2 is post-hoc so it is ALSO required to pass on ALL_B jointly; no further amendments to the opponent hypothesis"
+ }
+}
