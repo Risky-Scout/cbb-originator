@@ -3,8 +3,19 @@
  "declared_before": "any challenger metric; only the production baseline (g1_base, g2_vs_market_base) had been computed",
  "motivation": "g2_vs_market_base: market better everywhere; largest gap at ngp0-3; 2026-27 encompassing b_model -0.37 -> prior / carryover dependence suspected",
  "challengers": {
-  "GC1_rho_carry_0.6": {"override": {"rho_carry": 0.6}, "cause": "prior carryover too strong (roster turnover)"},
-  "GC2_lam_half": {"override": {"lam_off": 2.5, "lam_def": 2.5}, "cause": "prior shrinkage too slow to release in-season evidence"}
+  "GC1_rho_carry_0.6": {
+   "override": {
+    "rho_carry": 0.6
+   },
+   "cause": "prior carryover too strong (roster turnover)"
+  },
+  "GC2_lam_half": {
+   "override": {
+    "lam_off": 2.5,
+    "lam_def": 2.5
+   },
+   "cause": "prior shrinkage too slow to release in-season evidence"
+  }
  },
  "one_at_a_time": true,
  "gates": {
@@ -12,5 +23,37 @@
   "G2": "same diffs on 2027 live: point estimate <= 0 (not worse)",
   "G3": "moneyline logloss diff upper bound <= 0 on 2024 and 2025",
   "promotion": "only if G1-G3 pass; no parameter search beyond these two declared points; market is never an input"
+ },
+ "amendment_GC3": {
+  "declared_at": "2026-11-25T21:00Z",
+  "after": "GC1/GC2 FAIL; GC1 improved TOTAL in 2024/2025/2027 but hurt margin",
+  "decomposition": "eff_h = mu + off_h + dfn_a: margin depends on strength s = off - dfn only; total on level l = off + dfn and pace",
+  "challengers": {
+   "GC3p": {
+    "carry": {
+     "strength": 1.0,
+     "level": 1.0,
+     "pace": 0.6
+    },
+    "cause": "pace carryover too persistent"
+   },
+   "GC3l": {
+    "carry": {
+     "strength": 1.0,
+     "level": 0.6,
+     "pace": 1.0
+    },
+    "cause": "scoring-level carryover too persistent"
+   }
+  },
+  "value_0.6": "the GC1 declared point (no new search)",
+  "gates": {
+   "T1": "total MSE diff ub < 0 on BOTH 2024 and 2025",
+   "T2": "margin MSE diff ub <= +0.5 on 2024 and 2025 (strength protected)",
+   "T3": "2027 live total diff point <= 0 and margin diff point <= +1.0",
+   "T4": "ML logloss diff ub <= 0.001 on 2024 and 2025",
+   "T5": "protected |market spread| >= 12 band: margin MSE diff point <= +0.5 on 2024 and 2025",
+   "combination": "if both pass, GC3pl (both) must pass the same gates before promotion"
+  }
  }
 }

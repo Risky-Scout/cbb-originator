@@ -31,6 +31,8 @@ class RatingParams:
     lam_pace: float = 8.0
     rho_carry: float = 0.7          # prior-season carryover shrink for O, D, P
     lam_league: float = 1.0         # weak anchor of mu / h / pi to the previous season
+    carry_level: float = 1.0        # GC3 (2026-11-25): extra carryover of the scoring level l = off + def (total only)
+    carry_pace: float = 1.0         # GC3 (2026-11-25): extra carryover of pace; strength s = off - def keeps rho_carry
 
     def as_dict(self) -> dict:
         return dict(self.__dict__)
@@ -50,10 +52,16 @@ class Ratings:
     def index(self) -> dict:
         return {t: i for i, t in enumerate(self.teams)}
 
-    def prior_for(self, rho: float) -> "Ratings":
-        """The next season's prior: team terms shrunk by rho toward the league mean (0), league terms carried."""
-        return Ratings(list(self.teams), rho * self.off, rho * self.dfn, rho * self.pace, self.mu, self.hca, self.pi,
-                       {"prior_of": self.meta.get("state_id"), "rho": rho})
+    def prior_for(self, rho: float, level: float = 1.0, pace: float = 1.0) -> "Ratings":
+        """The next season's prior: team terms shrunk by rho toward the league mean (0), league terms carried.
+        GC3 component carryover: margin strength s = off - def keeps rho; the scoring level l = off + def is carried by
+        rho * level and pace by rho * pace (margin depends on s only: eff_h - eff_a = s_h - s_a + 2 h)."""
+        if level == 1.0 and pace == 1.0:                         # the original (bit-identical) carryover
+            return Ratings(list(self.teams), rho * self.off, rho * self.dfn, rho * self.pace, self.mu, self.hca, self.pi,
+                           {"prior_of": self.meta.get("state_id"), "rho": rho})
+        s, l = rho * (self.off - self.dfn), rho * level * (self.off + self.dfn)
+        return Ratings(list(self.teams), (s + l) / 2, (l - s) / 2, rho * pace * self.pace, self.mu, self.hca, self.pi,
+                       {"prior_of": self.meta.get("state_id"), "rho": rho, "carry_level": level, "carry_pace": pace})
 
     def predict(self, home, away, neutral) -> pd.DataFrame:
         """Expected possessions / home / away points for aligned arrays of team ids (unknown team -> league mean)."""

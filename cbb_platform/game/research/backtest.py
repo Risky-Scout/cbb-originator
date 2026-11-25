@@ -30,7 +30,7 @@ def prior_chain(games: pd.DataFrame, first: int, upto: int, p: GR.RatingParams) 
     for s in range(first, upto + 1):
         out[s] = pri
         fin = season_final(games, s, pri, p)
-        pri = fin.prior_for(p.rho_carry)
+        pri = fin.prior_for(p.rho_carry, p.carry_level, p.carry_pace)
     return out
 
 

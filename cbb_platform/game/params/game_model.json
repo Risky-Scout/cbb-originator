@@ -4,10 +4,13 @@
   "gamma": 0.3
  },
  "adjust_note": "beta selected walk-forward on 2024-25 (2023-24 fold has no p_play); OLS -0.077 (2024-25), -0.008 (2025-26); every beta>0 raised RMSE. gamma is a conservative prior (not fitted), SHADOW only.",
- "model_version": "cbb-game-model-1.0.0",
- "params_sha256": "4174a1760f7175eb9e495d2c5a208c09a3f95b3541105f977b416369962059a7",
+ "model_version": "cbb-game-model-1.1.0",
+ "params_sha256": "ffb91c4375c0c0081f35ddefb533d1bbdecff3cfac5b4173bdddae6977fcf70c",
  "prior_exposure": "2026-11-18 design prototype computed 2025-26 margin RMSE (12.69 / 12.52) as a diagnostic; no parameter was chosen on 2025-26",
  "ratings": {
+  "carry_level": 0.6,
+  "carry_note": "GC3 (docs/audits/2026-11-25-game/GAME_CHALLENGER_PROTOCOL.json amendment_GC3): scoring level and pace carried by rho*0.6; margin strength by rho (protected)",
+  "carry_pace": 0.6,
   "lam_def": 5,
   "lam_league": 10,
   "lam_off": 5,
@@ -19,15 +22,16 @@
  },
  "ratings_prior": {
   "2027": {
-   "file": "ratings_prior_2027.parquet",
+   "file": "ratings_prior_2027_gc3.parquet",
    "league": {
-    "hca": 2.073206305316281,
-    "mu": 108.53303687666572,
-    "pi": 68.08162296508894
+    "hca": 2.0732063053162766,
+    "mu": 108.54325093596867,
+    "pi": 68.05007413586073
    },
-   "sha256": "b4c5fcd183abc71ebe5804cd283562e942416f0223a83a34a5ca37dbc374962c",
-   "source": "season-final ratings chain 2014..2026 (2025-26 final) from the canonical history, shrunk by rho_carry",
-   "state_id": "TR-0a2155b13dd15fbb",
+   "replaces": "ratings_prior_2027.parquet b4c5fcd183ab (TR-0a2155b13dd15fbb)",
+   "sha256": "05f4e80a0149da42debec60aec59155222cb98c0016da29cceec5f8e6267557a",
+   "source": "season-final ratings chain 2014..2026 (2025-26 final) from the canonical history, GC3 component carryover (strength rho, level rho*.6, pace rho*.6)",
+   "state_id": "TR-10eb402ea932e538",
    "teams": 368
   }
  },

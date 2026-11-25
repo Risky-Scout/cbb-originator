@@ -28,6 +28,14 @@ D = C.PROJECT_ROOT / "data/qa/large/game_20261125"
 LOCK = C.PROJECT_ROOT / "data/lockbox_2025_26/canonical/cbb.duckdb"
 tag = sys.argv[1]
 ov = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
+CARRY = ov.pop("carry", None)                         # GC3: component carryover {strength, level, pace}
+if CARRY:
+    def _prior_for(self, rho, _c=CARRY):
+        s, l = self.off - self.dfn, self.off + self.dfn
+        s, l = rho * _c["strength"] * s, rho * _c["level"] * l
+        return GR.Ratings(list(self.teams), (s + l) / 2, (l - s) / 2, rho * _c["pace"] * self.pace, self.mu, self.hca, self.pi,
+                          {"prior_of": self.meta.get("state_id"), "rho": rho, "carry": _c})
+    GR.Ratings.prior_for = _prior_for
 gm = GP.game_model()
 rp = GR.RatingParams(**{**{k: gm["ratings"][k] for k in ("tau_days", "lam_off", "lam_def", "lam_pace", "rho_carry", "lam_league")}, **ov})
 
@@ -90,7 +98,7 @@ if __name__ == "__main__":
         for s in (2024, 2025):
             preds.append(walk(hist[hist.season == s], chain[s]))
         g27 = GF.season_games(inc, 2027)
-        if any(k in ov for k in ("rho_carry", "lam_off", "lam_def", "lam_pace", "lam_league", "tau_days")):
+        if CARRY or any(k in ov for k in ("rho_carry", "lam_off", "lam_def", "lam_pace", "lam_league", "tau_days")):
             pri27 = BT.season_final(hist, 2026, chain[2026], rp).prior_for(rp.rho_carry)
         else:
             pri27 = GF.prior(2027)
