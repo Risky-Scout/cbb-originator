@@ -30,5 +30,25 @@
   "ALL_A": "DV1 x OT1 (multipliers multiplied)",
   "ALL_B": "DV1 x OT1 x OC2",
   "gates": "identical to gates_per_candidate (G1-G5, protected) for OC2, ALL_A, ALL_B; OC2 is post-hoc so it is ALSO required to pass on ALL_B jointly; no further amendments to the opponent hypothesis"
+ },
+ "P7_decision": {
+  "declared": "2026-11-25T21:30Z",
+  "player": {
+   "observed": "early-phase variance ratio (realized sq err / PMF var), PRODALLB: F2026 LIM 1.253 ROT 1.237 CORE 1.075; LIVE 1.345 / 1.220 / 1.137; non-early ~1.0 (results/p4_dispersion.json + final benchmark)",
+   "root_cause": "cold-start minutes uncertainty understated (m1_eval minutes sd_ratio EARLY 1.19, NO_HISTORY 1.38, TRANSFER_IN 1.13; WARM 0.98), proven in two periods",
+   "prior_candidates": {
+    "D1": "REJECTED 2026-11-22",
+    "M1": "REJECTED 2026-11-22: G2 STL x COLD_NO_HISTORY ub +0.0022 > +0.002; COMBOS STOCKS ub +0.00001 > 0 (all other cells improved in both periods)"
+   },
+   "next_causal_fix_M3": {
+    "design": "minutes-sigma scale (M1 TRAIN ratios, unchanged) applied to the minutes channel of PTS/REB/AST/FG3M/TOV only; STL/BLK keep the incumbent minutes draw (requires a second minutes channel in v2.jm1_final: structural simulator change)",
+    "gates": "M1 gates unchanged (G1-G3, TARGET, COMBOS); no relaxation",
+    "status": "DECLARED_NOT_RUN: structural dependence-model change + two full 2000-sim replays; deferred past the release freeze; open risk (early-season player intervals too narrow; expected impact <= ~0.003 log loss early phase)"
+   }
+  },
+  "game": {
+   "observed": "2027 margin coverage low (12+ band in80 0.748, ngp4-8 0.764, 155+ total in80 0.737); 2024 / 2025 nominal (in80 0.80-0.84)",
+   "decision": "DOCUMENTED, NO CANDIDATE: single period (2027, ~980 games), fails the more-than-one-period rule; game stays SHADOW"
+  }
  }
 }
