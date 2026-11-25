@@ -129,8 +129,9 @@ def compare(got: dict, gold: dict) -> list[str]:
 def capture_incumbent(work: Path) -> dict:
     """The frozen-champion path: the 2026-11-22 rate_a2 and 2026-11-24 PTS compound promotions disabled (its stats keep the incumbent rate). The
     golden file pins this path exactly; the promotion's own effect is pinned by test_rate_a2_changes_only_its_stats."""
-    from cbb_platform.prod import dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
+    from cbb_platform.prod import context_adj as CX, dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
     with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(CX, "ENABLED", False)                   # 2026-11-25 OT1 + OC2 context off
         mp.setattr(DV, "ENABLED", False)                   # 2026-11-25 DV1 returning development off
         mp.setattr(RA2, "PARAMS", {})
         mp.setattr(PTC, "PHI_N", None)                     # 2026-11-24 P2 PTS family off: incumbent NB

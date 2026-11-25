@@ -197,6 +197,20 @@ def training_state(day: date, root: Path, state_root: Path, history_db: Path, cf
     return out
 
 
+def context_ledger(root: Path, ts: dict, log=print) -> dict:
+    """Update the OT1 / OC2 context ledger (prod.context_adj) from this morning's point-in-time OOS frames: incumbent
+    = opening marginal + the pre-context production corrections. Diagnostic-grade: any failure is recorded, never raised."""
+    try:
+        from cbb_platform.prod import context_adj as CX, engine as ENG, loader as LD
+        if not CX.enabled():
+            return {"status": "DISABLED"}
+        opening = SO.load_version(root, WC.version_id(WC.OPENING_DATE))
+        return CX.update_ledger(root, PC.PRODUCTION_SEASON, ts, LD.load(), opening.v0_state, ENG.pre_context_tag(), log)
+    except Exception as e:                                       # noqa: BLE001
+        log(f"context ledger update failed: {type(e).__name__}: {e}")
+        return {"status": "FAILED", "error": f"{type(e).__name__}: {str(e)[:300]}"}
+
+
 # ============================================================================ the candidate version
 def serialize(f: dict, cfg: dict, meta: dict) -> dict:
     """Artifact bytes exactly as the frozen writers produce them (props_v1_refit.dumps for the marginal: positional
@@ -341,6 +355,9 @@ def _morning(day: date, root: Path, state_root: Path, history_db: Path, now, log
         _stage("eligibility", done="settle_and_monitor")
         t = time.time()
         ts = training_state(day, root, state_root, history_db, cfg, log)
+        t = time.time()
+        rec["context_ledger"] = context_ledger(root, ts, log)          # 2026-11-25 OT1/OC2 inputs; never blocks the refit
+        rec["timings"]["context_ledger_s"] = time.time() - t
         _stage("run_identity", done=PROGRESS["stage"])
         rec["timings"]["ingestion_s"] = time.time() - t
         rec["timings"].update(ts["timings"])

@@ -35,7 +35,7 @@ ENGINE_HISTORY = (
 
 def _corrections() -> list[tuple[str, dict]]:
     """(tag, frozen constants) of every promoted scoring-time correction, in application order."""
-    from cbb_platform.prod import dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
+    from cbb_platform.prod import context_adj as CX, dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
     out = []
     if RA2.PARAMS:
         out.append((f"RA2V1[{','.join(RA2.PARAMS)}]", {"id": RA2.ID, "params": RA2.PARAMS, "w": list(RA2.W),
@@ -47,7 +47,17 @@ def _corrections() -> list[tuple[str, dict]]:
         out.append(("TOVT1", {"id": TT.ID, "b": TT.B, "ubar": TT.UBAR}))
     if DV.enabled():
         out.append(("DEV1", {"id": DV.ID, "delta": {k: list(v) for k, v in DV.DELTA.items()}, "w": list(DV.W), "k": DV.K_MINUTES}))
+    if CX.enabled():
+        out.append(("CTX1", {"id": CX.ID, "kappa_team": CX.KAPPA_TEAM, "kappa_opp": {k: (None if v == float("inf") else v)
+                                                                                   for k, v in CX.KAPPA_OPP.items()},
+                             "sims": CX.LEDGER_SIMS}))
     return out
+
+
+def pre_context_tag() -> str:
+    """Identity of the context ledger's incumbent: every promoted correction applied before DV1 / CTX1."""
+    cs = [c for t, c in _corrections() if t not in ("DEV1", "CTX1")]
+    return hashlib.sha256(json.dumps(cs, sort_keys=True, default=float).encode()).hexdigest()[:12]
 
 
 def engine_id() -> str:

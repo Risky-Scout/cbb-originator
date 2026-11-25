@@ -36,7 +36,7 @@ def test_formula_and_example_id_matching():
 
 
 def test_disabled_is_identity_and_names_itself_in_the_engine(monkeypatch):
-    assert "+DEV1#" in ENG.engine_id()
+    assert "+DEV1" in ENG.engine_id()
     rows, cand = _frames()
     monkeypatch.setattr(DV, "ENABLED", False)
     out, _ = DV.apply(rows, cand)
