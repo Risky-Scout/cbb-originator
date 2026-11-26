@@ -129,8 +129,11 @@ def compare(got: dict, gold: dict) -> list[str]:
 def capture_incumbent(work: Path) -> dict:
     """The frozen-champion path: the 2026-11-22 rate_a2 and 2026-11-24 PTS compound promotions disabled (its stats keep the incumbent rate). The
     golden file pins this path exactly; the promotion's own effect is pinned by test_rate_a2_changes_only_its_stats."""
-    from cbb_platform.prod import context_adj as CX, dev_trend as DV, pts_compound as PTC, rate_a2 as RA2, tov_trend as TT
+    from cbb_platform.prod import (context_adj as CX, dev_trend as DV, minutes_state as MS2, preseason_prior as PI,
+                                   pts_compound as PTC, rate_a2 as RA2, tov_trend as TT)
     with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(PI, "ENABLED", False)                   # 2026-11-26 PI2 preseason information state off
+        mp.setattr(MS2, "ENABLED", False)                  # 2026-11-26 PS2 state-calibrated minutes draw off
         mp.setattr(CX, "ENABLED", False)                   # 2026-11-25 OT1 + OC2 context off
         mp.setattr(DV, "ENABLED", False)                   # 2026-11-25 DV1 returning development off
         mp.setattr(RA2, "PARAMS", {})
@@ -172,6 +175,8 @@ def test_rate_a2_changes_only_its_stats(captured, captured_a2):
     assert [r["key"] for r in captured_a2["model_inputs"]] == [r["key"] for r in captured["model_inputs"]]
     changed = {f"{s}_mu" for s in RA2.PARAMS} | ({"TOV_mu"} if TT.enabled() else set())      # + T1 (2026-11-24)
     changed |= {f"{s}_mu" for s in DV.DELTA} if DV.enabled() else set()                     # + DV1 (2026-11-25)
+    from cbb_platform.prod import preseason_prior as PI
+    changed |= {f"{s}_mu" for s in PI.STATS} if PI.enabled() else set()                    # + PI2 (2026-11-26)
     moved = set()
     for a, b in zip(captured_a2["model_inputs"], captured["model_inputs"]):
         for c in INPUT_COLS:
