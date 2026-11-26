@@ -513,13 +513,27 @@ def warm_features(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.S
     out["cached_before"] = int(gc["canonical_game_id"].isin(have).sum())
     cuts = sorted(todo["prediction_cutoff_utc"].unique())
     out["cutoffs_todo"] = len(cuts)
+    # one batch per IDENTICAL information state (training_rows.information_state_groups), oldest first; feature_rows
+    # re-derives the same single build for each batch. No new build starts after budget_s.
+    groups, nostate = {}, []
     for c in cuts:
+        stc = EL.state_asof(state_root, c)
+        gids = todo.loc[todo["prediction_cutoff_utc"] == c, "canonical_game_id"].tolist()
+        if stc is None:
+            nostate.append(c)
+        else:
+            groups.setdefault((TR._utc(c), stc["state_version"]), (stc, []))[1].extend(gids)
+    batches = [[c] for c in nostate] + [sorted({TR._utc(c) for c in v[2].values()})
+                                          for _, v in TR.information_state_groups(groups, history_db)]
+    batches.sort(key=lambda b: b[0])
+    out["information_state_builds"] = len(batches)
+    for b in batches:
         if clock() - t0 > budget_s:
             out["status"] = "BUDGET_EXHAUSTED"
             break
-        part = todo[todo["prediction_cutoff_utc"] == c]
+        part = todo[todo["prediction_cutoff_utc"].map(TR._utc).isin(b)]
         res = TR.feature_rows(SO.paths(root)["training"], state_root, part, history_db, cfg, log=log)
-        out["cutoffs_built"] += 1
+        out["cutoffs_built"] += len(b)
         out["games_built"] += sum(1 for g in part["canonical_game_id"] if res["meta"].get(g, {}).get("status"))
     else:
         out["status"] = "COMPLETE"

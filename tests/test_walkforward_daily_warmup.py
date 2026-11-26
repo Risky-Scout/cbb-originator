@@ -32,7 +32,12 @@ def fake(monkeypatch, tmp_path):
         calls.append(sorted(games["canonical_game_id"]))
         return {"meta": {g: {"status": "BUILT"} for g in games["canonical_game_id"]}}
     monkeypatch.setattr(WD.TR, "feature_rows", fr)
-    return {"root": root, "calls": calls, "tmp": tmp_path}
+    # as_of-mask instants (prod.features.as_of_mask_instants): by default one between every pair of cutoffs, so each
+    # cutoff is its own information state (the incumbent one-build-per-cutoff behaviour)
+    inst = {"t": pd.to_datetime(["2026-11-02T23:30Z", "2026-11-03T00:30Z"])}
+    monkeypatch.setattr(WD.TR.PF, "as_of_mask_instants", lambda h, i, s, lo, hi: [
+        t.isoformat() for t in inst["t"] if pd.Timestamp(lo) < t <= pd.Timestamp(hi)])
+    return {"root": root, "calls": calls, "tmp": tmp_path, "inst": inst}
 
 
 def test_warmup_builds_only_uncached_games_oldest_cutoff_first_with_the_same_builder(fake):
@@ -42,6 +47,20 @@ def test_warmup_builds_only_uncached_games_oldest_cutoff_first_with_the_same_bui
     assert not (SO.paths(fake["root"])["manifests"] / "outcome_available_at.json").exists()   # no manifest write
     assert not (SO.paths(fake["root"])["locks"] / "morning.lock").exists()                    # never the morning lock
     assert not SO.paths(fake["root"])["models"].exists() and not SO.paths(fake["root"])["active"].exists()
+
+
+def test_warmup_builds_once_per_identical_information_state(fake):
+    """2026-11-26: ~220 s per Stage 3 build whatever the game count; 27..39 builds per morning. Cutoffs with no as_of-mask
+    instant between them (same state version) are ONE build; an instant splits them."""
+    fake["inst"]["t"] = pd.to_datetime(["2026-11-03T00:30Z"])        # nothing between 23:00Z and 00:00Z
+    out = WD.warm_features(date(2026, 11, 10), root=fake["root"], state_root=fake["tmp"], history_db=Path("h"))
+    assert fake["calls"] == [["G2", "G3"], ["G4"]]
+    assert out["status"] == "COMPLETE" and out["cutoffs_built"] == 3 and out["information_state_builds"] == 2
+    fake["calls"].clear()
+    fake["inst"]["t"] = pd.to_datetime([])
+    (SO.paths(fake["root"])["training"] / "features" / "G2").mkdir()
+    out = WD.warm_features(date(2026, 11, 10), root=fake["root"], state_root=fake["tmp"], history_db=Path("h"))
+    assert fake["calls"] == [["G3", "G4"]] and out["information_state_builds"] == 1
 
 
 def test_warmup_stops_starting_cutoffs_after_its_budget(fake):

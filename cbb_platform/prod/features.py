@@ -171,6 +171,40 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
             "sources": srcs, "blank_targets": blank_targets}
 
 
+def as_of_mask_instants(history_db: Path, increment_db: Path | None, target_season: int, lo, hi) -> list[str]:
+    """Every instant t in (lo, hi] at which compact_canonical's as_of mask can admit a row: the knowable time of a
+    completed schedule row (KNOWABLE) and the historical_knowable_at of a team / player outcome or substitution row,
+    over the SAME sources and season filters compact_canonical reads. compact_canonical depends on as_of ONLY through
+    these masks (every other relation is copied whole), so for fixed (history_db, increment_db, targets, season) an
+    empty list proves the masked canonical DB -- hence the frozen Stage 3 output -- is identical for every as_of in
+    [lo, hi]. Conservative by construction: target games and the `canonical_game_id IN flagship.games` filter are not
+    excluded and substitutions of every season are scanned, so an instant can only be over-reported (an extra build),
+    never missed."""
+    lo_s, hi_s = _ts(lo), _ts(hi)
+    if pd.Timestamp(lo) > pd.Timestamp(hi):
+        raise FeatureBuildError(f"as_of window reversed: {lo_s} > {hi_s}")
+    con = duckdb.connect(config={"threads": 1})
+    con.execute("SET TimeZone = 'UTC'")
+    con.execute(f"ATTACH '{history_db}' AS hist (READ_ONLY)")
+    srcs = ["hist"]
+    if increment_db is not None:
+        con.execute(f"ATTACH '{increment_db}' AS inc (READ_ONLY)")
+        srcs.append("inc")
+    hi_season = PC.TRAINING_THROUGH
+    parts = []
+    for d in srcs:
+        g = (f"{d}.flagship.played_games WHERE season BETWEEN {PC.HISTORY_FIRST_SEASON} AND {hi_season}" if d == "hist"
+             else f"{d}.flagship.games WHERE season = {PC.PRODUCTION_SEASON}")
+        parts.append(f"SELECT {KNOWABLE.format(t='g')} AS t FROM (SELECT * FROM {g}) g WHERE g.home_points IS NOT NULL")
+        for rel in ("team_game_outcomes", "player_game_outcomes", "substitutions"):
+            if d == "hist" or _has(con, d, f"flagship.{rel}"):
+                parts.append(f"SELECT historical_knowable_at AS t FROM {d}.flagship.{rel}")
+    rows = con.execute(f"""SELECT DISTINCT t FROM ({' UNION ALL '.join(parts)}) x
+                           WHERE t > TIMESTAMPTZ '{lo_s}' AND t <= TIMESTAMPTZ '{hi_s}' ORDER BY t""").fetchall()
+    con.close()
+    return [pd.Timestamp(r[0]).isoformat() for r in rows]
+
+
 def _universe(con) -> None:
     if universe.MEMBERSHIP_SQL.count(TS_ORIGINAL) != 1:
         raise FeatureBuildError("frozen Stage 3 membership SQL changed: production adaptation P-1 no longer applies")

@@ -96,6 +96,20 @@ def bounded_integrity_checks(prod: dict) -> dict:
     return out
 
 
+def build_as_of_legal(meta: dict) -> bool:
+    """A pregame row is built at its own cutoff, OR (training_rows.information_state_groups) at an EARLIER as_of whose
+    recorded proof covers the row: same state version, as_of <= own cutoff <= equivalent_through, zero as_of-mask
+    instants in the window (the masked canonical DB is byte-identical over it). A later as_of is never legal."""
+    b = meta["build"]
+    a, c = pd.Timestamp(b["as_of"]), pd.Timestamp(meta["prediction_cutoff_utc"])
+    if a == c:
+        return True
+    i = b.get("information_state") or {}
+    return bool(a < c and i.get("rule") == "IDENTICAL_AS_OF_MASKED_CANONICAL" and i.get("as_of_mask_instants_in_window") == 0
+                and i.get("state_version") == meta.get("state_version") and pd.Timestamp(i.get("as_of")) == a
+                and c <= pd.Timestamp(i.get("equivalent_through")))
+
+
 def evaluate(cand_dir: Path, version: str, ctx: dict, log=print) -> dict:
     """ctx: training (pit / leakage evidence), fits (first, repeat), opening artifacts, previous active version."""
     g = {}
@@ -116,7 +130,7 @@ def evaluate(cand_dir: Path, version: str, ctx: dict, log=print) -> dict:
     # ---- point in time
     pit_bad = [gid for gid in tr["trained_games"] if metas[gid]["pit_audit"]["violations"]
                or metas[gid]["build"]["post_as_of_rows"] or pd.Timestamp(metas[gid]["state_created_at"]) > pd.Timestamp(metas[gid]["prediction_cutoff_utc"])
-               or pd.Timestamp(metas[gid]["build"]["as_of"]) != pd.Timestamp(metas[gid]["prediction_cutoff_utc"])]
+               or not build_as_of_legal(metas[gid])]
     late_rows = 0 if fr is None else int((pd.to_datetime(fr["frame"]["prediction_cutoff_utc"], utc=True) >= cut).sum())
     el = tr["eligibility"]
     ei = el[el["game_id"].isin(tr["trained_games"])]

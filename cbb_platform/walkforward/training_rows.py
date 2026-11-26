@@ -104,6 +104,46 @@ def _pit_audit(fdb: Path, game_ids) -> dict:
     return out
 
 
+def information_state_groups(groups: dict, history_db: Path, season: int = WC.PRODUCTION_SEASON) -> list:
+    """Coalesce the per-(cutoff, state version) pregame builds into one build per IDENTICAL information state.
+
+    Root cause (2026-11-26, warmup receipts 11-19 .. 11-26): one frozen Stage 3 build costs ~220 s whatever the number
+    of target games (Droplet profile: compact 11 s, Stage 3 218 s, frames 8 s for 5 games), and the warmup ran one build
+    per distinct cutoff -- 27..39 builds, 51 -> 135 min. A pregame build is a pure function of (history DB, the state
+    version's increment DB, the target games, the season, the as_of mask). Within one state version, consecutive cutoffs
+    c_1 < ... < c_k with NO as_of-mask instant in (c_1, c_k] (prod.features.as_of_mask_instants) see a byte-identical
+    masked canonical DB, so ONE build at as_of = c_1 (the earliest: the strictest mask) yields exactly their rows.
+    Each row keeps its own prediction_cutoff_utc (Stage 3 derives it from the schedule, never from as_of) and the frozen
+    per-row PIT audit still runs. The proof is recorded per game in meta build.information_state.
+
+    groups: {(cut, state_version): (st, [game ids])}. Returns [((as_of, sv), (st, gids, {gid: own cutoff}, info))];
+    info is None for a single-cutoff build (the incumbent meta, byte-for-byte)."""
+    out, cur = [], None
+    items = sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1]))
+    inst: dict = {}
+    for sv in {sv for (_, sv) in groups}:                    # one instant scan per state version over its cutoff span
+        cuts = sorted(c for (c, s) in groups if s == sv)
+        if len(cuts) > 1:
+            inc = next(st for (c, s), (st, _) in groups.items() if s == sv)["increment_db"]
+            inst[sv] = [pd.Timestamp(t) for t in PF.as_of_mask_instants(history_db, inc, season, cuts[0], cuts[-1])]
+    for (cut, sv), (st, gids) in items:
+        if cur is not None and cur["sv"] == sv and not any(cur["cut"] < t <= cut for t in inst.get(sv, ())):
+            cur["cuts"].append(cut)
+            cur["gcut"].update({g: cut for g in gids})
+            cur["gids"] += gids
+            continue
+        cur = {"cut": cut, "sv": sv, "st": st, "gids": list(gids), "gcut": {g: cut for g in gids}, "cuts": [cut]}
+        out.append(cur)
+    res = []
+    for g in out:
+        info = None if len(g["cuts"]) == 1 else {
+            "rule": "IDENTICAL_AS_OF_MASKED_CANONICAL", "as_of": g["cut"].isoformat(), "state_version": g["sv"],
+            "equivalent_through": g["cuts"][-1].isoformat(), "group_cutoffs": len(g["cuts"]),
+            "as_of_mask_instants_in_window": 0}
+        res.append(((g["cut"], g["sv"]), (g["st"], g["gids"], g["gcut"], info)))
+    return res
+
+
 def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, history_db: Path, cfg: dict,
                  season: int = WC.PRODUCTION_SEASON, log=print) -> dict:
     """games: canonical_game_id + prediction_cutoff_utc. Returns {"cand", "team", "meta"} for every game (cached rows
@@ -125,7 +165,7 @@ def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, histor
                                           "prediction_cutoff_utc": _utc(r.prediction_cutoff_utc).isoformat()}
             continue
         groups.setdefault((_utc(r.prediction_cutoff_utc), st["state_version"]), (st, []))[1].append(r.canonical_game_id)
-    for (cut, sv), (st, gids) in sorted(groups.items()):
+    for (cut, sv), (st, gids, gcut, info) in information_state_groups(groups, history_db, season):
         work = root / f".work-{uuid.uuid4().hex}"
         try:
             fr = PF.build(work, gids, season, cut, cfg, history_db, st["increment_db"])
@@ -143,18 +183,20 @@ def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, histor
                 c.to_parquet(tmp / "cand.parquet", index=False)
                 t.to_parquet(tmp / "team.parquet", index=False)
                 meta = {"game_id": gid, "status": "BUILT" if len(c) and len(t) == 2 else "NO_PREGAME_EXAMPLES",
-                        "prediction_cutoff_utc": cut.isoformat(), "state_version": sv,
+                        "prediction_cutoff_utc": gcut[gid].isoformat(), "state_version": sv,
                         "state_created_at": st["created_at"].isoformat(), "candidate_rows": int(len(c)),
                         "team_rows": int(len(t)), "cand_sha256": _sha_df(c), "team_sha256": _sha_df(t),
                         "build": {"target_outcome_rows": prov["target_outcome_rows"], "post_as_of_rows": prov["post_as_of_rows"],
-                                  "as_of": prov["as_of"], "group_games": len(gids)}, "pit_audit": pit}
+                                  "as_of": prov["as_of"], "group_games": len(gids),
+                                  **({"information_state": info} if info else {})}, "pit_audit": pit}
                 (tmp / "meta.json").write_text(json.dumps(meta, indent=1, default=str))
                 if gdir.exists():                                   # concurrent builder won: keep the first (immutable)
                     shutil.rmtree(tmp)
                 else:
                     os.replace(tmp, gdir)
                 metas[gid] = json.loads((gdir / "meta.json").read_text())
-            log(f"pregame features {cut.isoformat()} ({len(gids)} games, state {sv})")
+            log(f"pregame features {cut.isoformat()} ({len(gids)} games, state {sv}"
+                + (f", {info['group_cutoffs']} cutoffs through {info['equivalent_through']})" if info else ")"))
         finally:
             shutil.rmtree(work, ignore_errors=True)
     built = [g for g, m in metas.items() if m.get("status") == "BUILT"]

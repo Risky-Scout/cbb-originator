@@ -30,7 +30,7 @@ import pytest
 from cbb_platform import config as C
 from cbb_platform.prod import config as PC, fixtures as FX, ledger as LG, side_monitor as SD, state as ST
 from cbb_platform.v2 import phase1b as B, provenance as PV
-from cbb_platform.walkforward import config as WC, daily as DL, eligibility as EL, monitor as MON, store as SO
+from cbb_platform.walkforward import config as WC, daily as DL, eligibility as EL, gates as GT, monitor as MON, store as SO
 
 HIST = PC.HISTORY_CANONICAL
 NEEDED = (PV.LB_FEATURES, PV.LB_LABELS, HIST, B.OOS_PATH)
@@ -217,8 +217,9 @@ def test_future_and_late_arriving_outcomes_never_enter_training(tl):
     assert v[m7["STATE_VERSION"]]["created_at"] <= WC.refit_cutoff(D7)
     assert (e7["scheduled_tip_utc"] < WC.refit_cutoff(D7)).all()
     tm = json.loads((SO.version_dir(tl["root"], D7) / "training_manifest.json").read_text())
-    for gid, b in tm["feature_builds"].items():               # every pregame row built at its own cutoff, from older state
-        assert pd.Timestamp(b["build"]["as_of"]) == pd.Timestamp(b["prediction_cutoff_utc"])
+    for gid, b in tm["feature_builds"].items():               # every pregame row built at its own cutoff (or at an earlier
+        assert GT.build_as_of_legal(b)                        # as_of proven to carry the identical information state)
+        assert pd.Timestamp(b["build"]["as_of"]) <= pd.Timestamp(b["prediction_cutoff_utc"])
         assert pd.Timestamp(b["state_created_at"]) <= pd.Timestamp(b["prediction_cutoff_utc"])
         assert b["build"]["target_outcome_rows"] == 0 and b["pit_audit"]["violations"] == 0
     assert _el(tl["root"], D11).loc[s["late"], "decision"] == "INCLUDED"
