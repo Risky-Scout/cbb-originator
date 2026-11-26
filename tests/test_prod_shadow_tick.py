@@ -949,3 +949,46 @@ def test_persistent_host_tick_mirrors_evidence_ledgers_in(tmp_path):
     TK._restore(ctx, {})                                           # idempotent: the longer working copy is kept
     assert work.read_text().endswith('{"r": 3}\n')
     assert OS.mirror_out(ops, prod) == ["ledgers/cbbd_production_requests.jsonl"]
+
+
+# ============================================================================ availability (root-cause repair 2026-11-26)
+def test_official_tick_availability_inputs_follow_lifecycle_rule(tmp_path):
+    off = TK.availability_inputs(TK.Ctx(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", extra={"rotowire_enabled": False}))
+    assert off == {"state": "DISABLED", "rotowire_root": None}
+    on = TK.availability_inputs(TK.Ctx(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", extra={"rotowire_enabled": True}))
+    assert on["state"] == "ENABLED"
+    assert on["rotowire_root"] == tmp_path / "prod" / "availability" / "rotowire"
+    assert on["rotowire_ledger"] == tmp_path / "prod" / "cache" / "rotowire_production_requests.jsonl"
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_official_tick_scoring_consumes_availability_state(life, tmp_path, monkeypatch, enabled):
+    w = tmp_path
+    shutil.copytree(life["w"] / "prod" / "state", w / "prod" / "state")
+    (w / "ops").mkdir()
+    OS.write_json(w / "ops" / "OPERATION.json", {"operation_started_at": "2026-11-01T00:00:00+00:00"})
+    seen = {}
+
+    class Stop(Exception):
+        pass
+
+    def fake_daily(*a, **k):
+        seen.update(k)
+        raise Stop
+    monkeypatch.setattr(RN, "daily", fake_daily)
+    ctx = _ctx(w, life["hist"], Clock("2026-11-10T22:00Z"), FF.FakeCBBD({}), OX.FakeOdds([]))
+    ctx.extra["rotowire_enabled"] = enabled
+    st = ST.current(w / "prod" / "state")
+    for t in pd.date_range("2026-11-10T12:00Z", "2026-11-11T06:00Z", freq="30min"):
+        p = TK.plan(ctx, st, t)
+        if len(p["score"]):
+            break
+    assert len(p["score"]), "fixture has a due game"
+    tick = {"tick_id": "Kav"}
+    with pytest.raises(Stop):
+        TK.step_score(ctx, p, st, tick, w / "t")
+    assert tick["availability_source_state"] == ("ENABLED" if enabled else "DISABLED")
+    if enabled:
+        assert seen["rotowire_root"] == w / "prod" / "availability" / "rotowire"
+    else:
+        assert seen.get("rotowire_root") is None

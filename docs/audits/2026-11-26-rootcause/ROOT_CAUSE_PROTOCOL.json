@@ -133,7 +133,19 @@
   "basis": "RD1 failure localized to band <10 PTS (F2026, a TRAIN-disjoint period): for low-minute players the absence gain is a minutes / P(meaningful minutes) effect, while a mean multiplier on the zero-inflated low-minute PTS PMF over-scales",
   "fix": "RD1 unchanged except band <10: multiplier capped at 1.15 for every stat (TRAIN-fitted theta otherwise unchanged)",
   "gates": "RD1 gates G1-G5 unchanged",
-  "caveat": "same-period re-test; live power is low (39 team-games), so promotion also requires prospective confirmation; production trigger additionally requires a pre-cutoff RotoWire OUT (see ROTOWIRE_RESPONSE_AUDIT: cadence approval)"
+  "caveat": "same-period re-test; live power is low (39 team-games), so promotion also requires prospective confirmation; production trigger additionally requires a pre-cutoff RotoWire OUT (see ROTOWIRE_RESPONSE_AUDIT: cadence approval)",
+  "result": {
+   "evaluator": "results/r11_rd2_PRODRD2_eval.json",
+   "gates": {
+    "G1": false,
+    "G2": false,
+    "G3": true,
+    "G4": false,
+    "G5": true
+   },
+   "summary": "F2026 (TRAIN-disjoint): stacked -0.00043 [-0.00055,-0.00033], target -0.00741 [-0.00935,-0.00561], no cell over. LIVE: stacked -0.00011 [-0.00039,+0.00012], target -0.00467 [-0.0158,+0.0063] on 39 absent team-games; combos PRA -0.0016 [-0.0042,+0.0009]; all LIVE point estimates now improvements, intervals cross zero",
+   "decision": "REJECTED on the declared gates (live power). Not closed: root cause proven (r6 box truth; F2026 replicated)"
+  }
  },
  "TP1P_production_feature_equivalence": {
   "declared_utc": "2026-11-26T02:54Z",
@@ -169,5 +181,12 @@
   "COMMERCIAL_USE_RIGHTS": "UNVERIFIED (RotoWire, CBBD API, BALLDONTLIE); Starter Pack RESEARCH_ONLY",
   "decision": "no increase in RotoWire request frequency (HUMAN_BLOCKED on the subscription terms); the response architecture is repaired provider-agnostically and fails closed on stale state",
   "history_lineage": "PRE-EXISTING: production history player-game and game rows (flagship.player_game_outcomes, flagship.games, core.team_seasons) are CBBD_STARTER_PACK lineage and feed the incumbent fits and the 2027 player priors; core.rosters / recruits / transfers are CBBD_API. The user's CBBD API returns identical records (r12_api_vs_pack_2025.json), so the remedy is re-acquisition through the user's key: 2014-2025 permitted now; 2025-26 requires LOCKBOX_OPEN_DECISION_2025_26 (human approver) or a production prior-season acquisition"
+ },
+ "RD2_prospective": {
+  "declared_utc": "2026-11-26T03:01Z",
+  "data": "live absent-regular team-games with tip after this declaration (never observed)",
+  "gates": "RD1/RD2 G1-G5 unchanged, evaluated on prospective live rows only",
+  "evaluate_when": ">= 100 absent-regular team-games (about 7 weeks at the observed rate)",
+  "production_mode": "RD2 computed in SHADOW alongside the incumbent (never alters P_model) so the prospective test is engine-pure"
  }
 }

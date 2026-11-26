@@ -775,6 +775,20 @@ def scoring_evidence(ctx: Ctx, tdir: Path, s: dict, timing: dict, sch: pd.DataFr
     return out
 
 
+def availability_inputs(ctx: Ctx) -> dict:
+    """Root-cause repair 2026-11-26 (ROTOWIRE_RESPONSE_AUDIT class 8): the official T-1h tick consumes the canonical
+    availability state. Same enablement rule as the lifecycle forecasts (lifecycle.rotowire_state), same event store and
+    request ledger (under ctx.prod_root); a stale state fails each game closed through rotowire_feed.freshness (the
+    existing policy), it never suppresses the forecast. ctx.extra["rotowire_enabled"] overrides (tests)."""
+    from types import SimpleNamespace
+    from cbb_platform.prod import lifecycle as LC              # lazy: lifecycle imports this module
+    state = LC.rotowire_state(SimpleNamespace(rotowire_enabled=ctx.extra.get("rotowire_enabled"), ops_root=ctx.ops_root))
+    rel = lambda q: Path(ctx.prod_root) / Path(q).relative_to(PC.PROD_ROOT)
+    if state != "ENABLED":
+        return {"state": state, "rotowire_root": None}
+    return {"state": state, "rotowire_root": rel(PC.ROTOWIRE_ROOT), "rotowire_ledger": rel(PC.ROTOWIRE_REQUEST_LEDGER)}
+
+
 def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
     due = p["score"].sort_values(["cutoff", "canonical_game_id"])
     vstate = _validation_state(ctx, ctx.now())
@@ -817,12 +831,15 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                                     "timing_deviation_seconds": float((r.cutoff - aso).total_seconds()),
                                     "timing_note": "prediction made BEFORE the cutoff by timing_deviation_seconds"}
               for r in due.itertuples(index=False)}
+    av = availability_inputs(ctx)
+    tick["availability_source_state"] = av["state"]
     s = RN.daily(aso, quotes_paths=paths, state_root=ctx.state_root, history_db=ctx.history_db,
                  ledger_path=tdir / "shadow_ledger.jsonl", run_root=ctx.runs, horizon_hours=PC.ODDS_PROP_WINDOW_HOURS,
                  sims=ctx.sims, artifact_paths=ctx.artifact_paths, game_ids=list(timing), sync_log=ctx.sync_log,
                  odds_cache_root=ctx.cache_raw, odds_collections=None, odds_ledger=ctx.odds_ledger,
                  odds_record=ctx.odds_record, side_monitor_path=tdir / "side_monitor.jsonl",
-                 model=MS.scoring_model(aso, ctx.model_root, ctx.artifact_paths))
+                 model=MS.scoring_model(aso, ctx.model_root, ctx.artifact_paths),
+                 **{k: v for k, v in av.items() if k != "state"})
     banks = s.get("banks", {})
     if paths:
         days = {r.canonical_game_id: _utc(r.scheduled_tip_utc).tz_convert("America/New_York").date().isoformat()
