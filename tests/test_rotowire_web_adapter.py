@@ -1060,15 +1060,17 @@ def test_shipped_player_states_table_is_valid_and_exempts_only_documented_player
     from cbb_platform.prod import roster_omissions as RO
     s = PS.load()                                                          # the production table validates
     assert set(s["operational_class"]) <= set(PS.CURATED) and (s["evidence"].str.len() > 40).all()
-    at = pd.Timestamp("2026-11-09T23:00Z")
+    at = pd.Timestamp("2026-11-27T15:00Z")                                # re-verification of 2026-11-26
     exempt = {p for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]) if PS.non_blocking(s, p, t, at)}
-    assert exempt == {"20532", "20395", "20354", "20474", "20936", "20575", "20923", "21195", "20703", "26727", "20593",
-                      "21070", "25207", "27904", "26154", "21059", "22964", "21227", "27852"}
+    assert exempt == {"20532", "20395", "20354", "20474", "20936", "21195", "26727", "20593", "21070", "27904", "26154",
+                      "21227", "27852", "20406", "21537", "21956", "22239", "22939", "23053"}
     assert PS.classify(s, "23921", "T-7dd7b1683d08fb35", at) == PS.SOURCE_CONFLICT          # Maclin keeps blocking
-    assert PS.classify(s, "21059", "T-84846d5112415644", at) == PS.AFFILIATED_ROSTER_LIMIT  # Avila: no pro contract
-    assert PS.classify(s, "21227", "T-46677ad8b399306a", at) == PS.ROSTERED_LONG_TERM_OUT
+    assert PS.classify(s, "22939", "T-1515439d0974808f", at) == PS.ROSTERED_LONG_TERM_OUT  # Council (pre-map event)
+    assert PS.classify(s, "26154", "T-aacc10aee85ee832", at) is None                       # Nwuli: Seton Hall row only
+    for pid in ("20703", "21059", "20923", "20575", "25207", "22964"):  # played (Luis, Avila@TCU) or not re-verified
+        assert not any(PS.non_blocking(s, pid, t, at) for t in s["affiliated_team_id"])    # -> lapsed, fails closed
     assert not PS.non_blocking(s, "20593", "T-0d7c299d41bf5c14", pd.Timestamp("2026-12-18T15:00Z"))  # Odum: eligible
-    assert not PS.non_blocking(s, "20395", "T-5b19c5328a174ffa", pd.Timestamp("2026-11-10T15:00Z"))  # hearing: re-verify
+    assert not PS.non_blocking(s, "20395", "T-5b19c5328a174ffa", pd.Timestamp("2026-12-10T15:00Z"))  # re-verify
     assert not any(PS.non_blocking(s, p, t, pd.Timestamp("2027-01-04T15:00Z"))                     # every row lapses
                    for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]))
     om = RO.load()                                                         # verified CBBD roster omissions
@@ -1306,7 +1308,7 @@ def test_conflict_availability_table_validation_and_model_isolation(tmp_path):
     s = PS.load()
     mac = s[s["rotowire_player_id"] == "23921"].iloc[0]
     assert (mac["operational_class"], mac["current_game_available"]) == (PS.SOURCE_CONFLICT, "FALSE")
-    assert mac["review_by"] == "2026-11-16" and "SOURCE_CONFLICT retained" in mac["evidence"]
+    assert mac["review_by"] == "2026-12-10" and "SOURCE_CONFLICT retained" in mac["evidence"]
     prod = Path(PS.__file__).parent
     for m in ("inputs.py", "features.py", "universe.py", "simulate.py", "pricing.py"):
         txt = (prod / m).read_text()
