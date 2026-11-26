@@ -46,12 +46,15 @@
    "status": "FAIL",
    "evidence": "the official T-1h shadow tick (prod.shadow_tick -> run.daily) is called WITHOUT rotowire_root / availability: run_summary.availability = null in 27 of 31 runs on 2026-11-25 (only the 4 availability-refresh forecasts apply RotoWire); exports use the official tick prediction when it exists (exports.distribution_records), so the published / graded PMF never conditions on RotoWire",
    "class": "8 PMFs FAILED TO REGENERATE WITH THE INFORMATION at the official checkpoint",
-   "fix": "pass the RotoWire store to the tick's run.daily once ingestion is cutoff-aligned (otherwise the 20-min freshness bound fails every game closed)"
+   "fix": "pass the RotoWire store to the tick's run.daily once ingestion is cutoff-aligned (otherwise the 20-min freshness bound fails every game closed)",
+   "repair_status": "FIXED in code (shadow_tick.availability_inputs, commit ce2b211): the official tick consumes the canonical availability state; stale state fails closed through the existing freshness policy"
   },
   "GAME_PMF": {
-   "status": "FAIL",
-   "evidence": "GameJointPMF uses team ratings only; no player availability input",
-   "class": "9 GAME MODEL FAILED TO REACT"
+   "status": "PARTIAL",
+   "evidence": "game.forecast: exp_team += gamma x (S_now - S_first_snapshot), S = sum p_play x PTS_mu of the team's model inputs after availability removal; adjust = {beta 0.0, gamma 0.3}, gamma NOT fitted ('conservative prior'). An absence already known at the day's first snapshot never moves the game (delta 0 by construction); the teammates' absorption is not represented",
+   "class": "9 GAME MODEL REACTS ONLY TO INTRADAY DELTAS, UNFITTED",
+   "correction_note": "2026-11-26: replaces the earlier 'GameJointPMF uses team ratings only' statement (imprecise)",
+   "repair": "BR1 (absolute absent-regular loss, fitted) replacing the gamma delta term to avoid double counting"
   },
   "BOARD": {
    "status": "PASS_FAIL_CLOSED",
