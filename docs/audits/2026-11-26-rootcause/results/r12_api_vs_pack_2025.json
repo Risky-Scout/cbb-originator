@@ -1,0 +1,32 @@
+{
+ "season": 2025,
+ "matched_player_seasons": 5134,
+ "pack_rows": 5144,
+ "api_rows": 9819,
+ "corr": {
+  "games": 0.999998,
+  "minutes": 0.999999,
+  "PORPAG": 0.99993,
+  "usage": 0.999441,
+  "offensiveRating": 0.999996
+ },
+ "max_abs_diff": {
+  "games": 1.0,
+  "minutes": 31.0,
+  "PORPAG": 0.2
+ },
+ "also_checked": {
+  "2019": {
+   "games": 1.0,
+   "minutes": 1.0,
+   "PORPAG": 0.99993
+  },
+  "2023": {
+   "games": 1.0,
+   "minutes": 1.0,
+   "PORPAG": 0.99994
+  }
+ },
+ "d1_rule": "API stats/team/season rows with non-null conference == Starter Pack team_season_stats team set (2020: 353 / 353; the 311 others have null conference, 1-6 games)",
+ "requests": "data/qa/large/rootcause_20261126/cbbd_api_pss/requests.jsonl (24 calls, user CBBD key via research client; 2025-26 refused by the lockbox)"
+}

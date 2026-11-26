@@ -24,8 +24,9 @@ def main():
     idm27 = dict(c2.execute("select source_record_key, canonical_game_id from flagship.games where season = 2027").fetchall()); c2.close()
     L.append(ns["lines"](2027, {str(k).removeprefix("id="): v for k, v in idm27.items()}))
     LN = pd.concat(L, ignore_index=True).drop_duplicates("game_id")
-    P = pd.read_parquet(D / "g1_TP1_walk.parquet")
-    out = D / "g1_TP1.parquet"
+    TAG = os.environ.get("TP_TAG", "TP1")
+    P = pd.read_parquet(D / f"g1_{TAG}_walk.parquet")
+    out = D / f"g1_{TAG}.parquet"
     if out.exists():
         s = pd.read_parquet(out)
     else:
@@ -56,7 +57,7 @@ def main():
     G["T5"] = all(r[k]["big12_margin_point"] <= 0.5 for k in r)
     G["T6"] = r[2024]["early_margin_point"] < 0 and r[2025]["early_margin_point"] < 0
     G["DECISION"] = "PROMOTE" if all(G[k] for k in ("T1", "T2", "T3", "T4", "T5", "T6")) else "REJECT"
-    json.dump({"results": R, "gates": G}, open(os.path.join(ROOT, "docs/audits/2026-11-26-rootcause/results/r10_tp1_gates.json"), "w"), indent=1)
+    json.dump({"results": R, "gates": G}, open(os.path.join(ROOT, f"docs/audits/2026-11-26-rootcause/results/r10_{TAG.lower()}_gates.json"), "w"), indent=1)
     for k, v in R.items():
         print(k, v["n"], "margin dMSE %+.2f [%+.2f,%+.2f]" % tuple(v["margin"]), "total %+.2f [%+.2f,%+.2f]" % tuple(v["total"]), "ML %+.4f [%+.4f,%+.4f]" % tuple(v["ml_ll"]),
               "12+ %+.2f early %+.2f (n %d) RMSE %.2f -> %.2f" % (v["big12_margin_point"], v["early_margin_point"], v["early_n"], *v["rmse_margin"]))

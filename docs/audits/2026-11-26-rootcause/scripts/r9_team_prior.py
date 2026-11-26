@@ -12,11 +12,11 @@ LOCK = os.path.join(ROOT, "data/lockbox_2025_26/canonical/cbb.duckdb")
 FEAT = ["x0", "x0ret", "RV", "LV", "TV", "TVd", "RC"]
 
 
-def features():
+def features(src="pack"):
     c = duckdb.connect(LOCK, read_only=True)
     pmap = dict(c.execute("select provider_player_key, canonical_player_id from metadata.player_id_map where provider='CBBD'").fetchall())
     tmap = dict(c.execute("select provider_team_key, canonical_team_id from metadata.team_id_map where provider='CBBD'").fetchall())
-    ros = c.execute("select distinct canonical_player_id p, canonical_team_id t, season from core.rosters where season between 2015 and 2026").df()
+    ros = c.execute("select distinct canonical_player_id p, canonical_team_id t, season from core.rosters where season between 2014 and 2026").df()
     rc = c.execute("""select committed_source_team_id st, recruit_year y, coalesce(rating, 0) rating from core.recruits
                       where committed_source_team_id is not null""").df()
     c.close()
@@ -31,7 +31,9 @@ def features():
     STR = {(t, s): v for t, s, v in zip(fin.team, fin.season, fin.strength)}
     ps = {}
     for y in range(2014, 2027):
-        d = pd.read_csv(f"{SP}/player_season_stats/{y}.csv", usecols=["teamId", "athleteId", "games", "minutes", "PORPAG"])
+        d = load_pss(y, src)
+        if src == "api":                                   # research definition = D-I teams (that season's CBBD rosters)
+            d = d[d.teamId.isin(d1_teams(y))]
         d = d.sort_values("minutes", ascending=False).drop_duplicates("athleteId")
         d["p"] = d.athleteId.astype(str).map(pmap); d["t"] = d.teamId.astype(str).map(tmap)
         d["v"] = d.PORPAG.fillna(0) * d.games.fillna(0) / 30.0
@@ -60,6 +62,50 @@ def features():
         rows.append(g)
     F = pd.concat(rows, ignore_index=True).rename(columns={"t": "team"})
     return F
+
+
+API = os.path.join(O, "cbbd_api_pss/raw/cbbd/stats_player_season")
+
+
+def load_pss(y, src):
+    """Player-season value inputs. src='pack': Starter Pack CSV (research). src='api': the user's CBBD API
+    stats/player/season payload (production lineage); 2025-26 is lockbox-refused for the research client, so it falls
+    back to the pack file (research stand-in, ROOT_CAUSE_PROTOCOL.TP1P)."""
+    cols = ["teamId", "athleteId", "games", "minutes", "PORPAG"]
+    if src == "api":
+        global _SEEN
+        if _SEEN is None:
+            _SEEN = _api_seasons()
+        if y in _SEEN:
+            return _SEEN[y]
+    return pd.read_csv(f"{SP}/player_season_stats/{y}.csv", usecols=cols)
+
+
+_SEEN = None
+
+
+def d1_teams(y):
+    """D-I team ids (CBBD teamId) for season y: the user's CBBD API stats/team/season rows with a conference (exactly the
+    Starter Pack team_season_stats team set, 353 / 353 in 2020). 2025-26 is lockbox-refused: pack team set (stand-in)."""
+    for f in glob.glob(f"{O}/cbbd_api_pss/raw/cbbd/stats_team_season/*.json"):
+        if f.endswith(".meta.json") or json.load(open(f + ".meta.json"))["params"]["season"] != y:
+            continue
+        return {int(r["teamId"]) for r in json.load(open(f)) if r.get("conference")}
+    return set(pd.read_csv(f"{SP}/team_season_stats/{y}.csv", usecols=["teamId"]).teamId.astype(int))
+
+
+def _api_seasons():
+    cols = ["teamId", "athleteId", "games", "minutes", "PORPAG"]
+    if True:
+        seen = {}
+        for f in sorted(glob.glob(f"{API}/*.json")):
+            if f.endswith(".meta.json"):
+                continue
+            m = json.load(open(f + ".meta.json")) if os.path.exists(f + ".meta.json") else {}
+            body = json.load(open(f))
+            yy = int((m.get("params") or {}).get("season") or (body[0].get("season") if body else 0))
+            seen[yy] = pd.DataFrame(body)[cols]
+        return seen
 
 
 def fit_predict(F):
@@ -106,14 +152,15 @@ if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "walk":
     gm = GP.game_model()
     rp = GR.RatingParams(**{k: gm["ratings"][k] for k in ("tau_days", "lam_off", "lam_def", "lam_pace", "rho_carry", "lam_league", "carry_level", "carry_pace")})
     ns["rp"] = rp                                                       # production 1.1.0 params (GC3 carry) for the walk
-    TP = pd.read_parquet(f"{O}/tp1_priors.parquet")
+    TAG = os.environ.get("TP_TAG", "TP1")
+    TP = pd.read_parquet(f"{O}/{TAG.lower()}_priors.parquet")
     def inject(pri, s):
         m = dict(zip(TP[TP.season == s].team, TP[TP.season == s].tp1))
         st = np.array([m.get(t, o - d) for t, o, d in zip(pri.teams, pri.off, pri.dfn)])
         lv = pri.off + pri.dfn
-        return GR.Ratings(list(pri.teams), (st + lv) / 2, (lv - st) / 2, pri.pace, pri.mu, pri.hca, pri.pi, {"prior_of": "TP1", "season": s})
+        return GR.Ratings(list(pri.teams), (st + lv) / 2, (lv - st) / 2, pri.pace, pri.mu, pri.hca, pri.pi, {"prior_of": TAG, "season": s})
     D = ns["D"]
-    ck = D / "g1_TP1_walk.parquet"
+    ck = D / f"g1_{TAG}_walk.parquet"
     if ck.exists():
         P = pd.read_parquet(ck)
     else:

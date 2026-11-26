@@ -147,6 +147,27 @@
    "E3": "team-level OOS RMSE TP1P < GC3 every season 2018-2026 and mean improvement >= 0.8 x TP1's",
    "E4": "game-level T1-T6 (TP1 gates, unchanged) pass for TP1P",
    "rule": "TP1_PRODUCTIONIZED requires E1-E4; otherwise TP1 is not deployed"
+  },
+  "run1": {
+   "result": "E1 FAIL (min Spearman 0.91-0.94; RV / LV worst), E2 PASS (0.967-1.0), E3 PASS (mean improvement 0.7263 vs TP1 0.7261)",
+   "cause": "implementation mismatch, not the value field: the API returns player-seasons for ~700 teams (D-I plus non-D-I opponents); the Starter Pack file the research feature was defined on is D-I only (364 teams). On D-I teams API rows == pack rows (5,134 / 5,144; PORPAG corr 0.99993)"
+  },
+  "correction_declared_utc": "2026-11-26T02:56Z",
+  "correction": "production feature restricted to the research definition: API player-season rows of teams on that season's CBBD teams/roster (core.rosters, CBBD_API lineage = D-I); gates E1-E4 unchanged",
+  "run2_d1_correction": {
+   "note": "the core.rosters team set includes non-D-I programs; the research feature is D-I-only (pack). Production D-I set = API stats/team/season with conference (exact pack set). Gates unchanged.",
+   "E1": "PASS (min Spearman 0.997-1.000)",
+   "E2": "PASS (>= 0.999)",
+   "E3": "PASS (mean improvement 0.7254 vs TP1 0.7261)",
+   "E4": "pending (game walk)"
   }
+ },
+ "DATA_LINEAGE_AND_RIGHTS_FINDINGS": {
+  "recorded": "2026-11-26",
+  "AVAILABILITY_SOURCE_METHOD": "RotoWire subscriber web pages retrieved with an authenticated session cookie (ROTOWIRE_SOURCE=WEB; prod/rotowire_web_acquire.py); the documented RotoWire REST API adapter exists (prod/rotowire_acquire.py) but no ROTOWIRE_API_KEY is configured",
+  "AUTOMATION_RIGHTS": "UNVERIFIED (docs/COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY.md; docs/ROTOWIRE_AVAILABILITY_2026_27.md section 7: rights register entry UNVERIFIED)",
+  "COMMERCIAL_USE_RIGHTS": "UNVERIFIED (RotoWire, CBBD API, BALLDONTLIE); Starter Pack RESEARCH_ONLY",
+  "decision": "no increase in RotoWire request frequency (HUMAN_BLOCKED on the subscription terms); the response architecture is repaired provider-agnostically and fails closed on stale state",
+  "history_lineage": "PRE-EXISTING: production history player-game and game rows (flagship.player_game_outcomes, flagship.games, core.team_seasons) are CBBD_STARTER_PACK lineage and feed the incumbent fits and the 2027 player priors; core.rosters / recruits / transfers are CBBD_API. The user's CBBD API returns identical records (r12_api_vs_pack_2025.json), so the remedy is re-acquisition through the user's key: 2014-2025 permitted now; 2025-26 requires LOCKBOX_OPEN_DECISION_2025_26 (human approver) or a production prior-season acquisition"
  }
 }
