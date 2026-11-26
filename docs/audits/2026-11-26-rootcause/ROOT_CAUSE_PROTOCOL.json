@@ -50,5 +50,23 @@
    "PROD_COVERAGE": "report the share of realized absent regulars with a pregame RotoWire OUT event (information availability; not a gate)",
    "rule": "PROMOTE iff G1-G4 pass; no post-result change"
   }
+ },
+ "TP1_preseason_team_roster_prior": {
+  "declared_utc": "2026-11-26T01:23Z",
+  "declared_before": "any feature build, fit or game-level metric of TP1",
+  "observed": "game model 1.1.0 vs market: MARKET BETTER every season; 2027 close margin MSE +28.6; encompassing b_model ~ 0 (docs/audits/2026-11-25-game/results/g2_vs_market_GC3pl.json)",
+  "root_cause_hypothesis": "the preseason team prior (GC3: rho x last season's final strength) uses no roster information: returning minutes / value, transfers in / out, recruits (all known before the season from CBBD rosters, portal, recruiting)",
+  "features": "per (team, season s), roster(s) = CBBD teams/roster membership (historical core.rosters; 2027 production cache 2026-11-12) joined by athleteId-anchored canonical ids to season s-1 stats: RET = returning minutes share of s-1 team minutes; RV / LV = returning / lost value; TV = transfers-in value; TVd = transfers-in value x clip(dest - origin internal strength, -25, 25)/10; RC = recruit class (year s-1) rating sum; value v = PORPAG x games / 30 (s-1)",
+  "model": "strength_s = b0 + b1 x0 + b2 x0 (RET - 0.5) + b3 RV + b4 LV + b5 TV + b6 TVd + b7 RC, x0 = rho_carry x final strength_{s-1} (the GC3 strength prior); ridge (lambda 1 on standardized features), rolling: for target season s fit on seasons 2016 .. s-1 only (final internal strength = target); level and pace keep GC3",
+  "injection": "the season-s Ratings prior: strength replaced by the TP1 prediction, level = GC3 level; GR.fit / predict unchanged; 2024, 2025 (historical) and 2027 (live) walk-forward exactly as g1_backtest",
+  "gates": {
+   "T1": "margin squared-error diff (TP1 - GC3) game bootstrap ub < 0 on 2024 AND 2025",
+   "T2": "2027 margin MSE diff point <= 0",
+   "T3": "total MSE diff ub <= +0.5 on 2024 and 2025; 2027 point <= +1.0",
+   "T4": "moneyline log loss diff ub <= +0.001 on 2024 and 2025",
+   "T5": "PROTECTED |model margin| >= 12 band margin MSE diff point <= +0.5 each season",
+   "T6": "TARGET early season (min games played <= 8) margin MSE diff point < 0 on 2024 and 2025",
+   "rule": "PROMOTE iff T1-T6 pass; no post-result change"
+  }
  }
 }
