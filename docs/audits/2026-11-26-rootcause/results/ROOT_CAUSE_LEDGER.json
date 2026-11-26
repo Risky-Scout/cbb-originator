@@ -145,5 +145,126 @@
    "fix": "re-acquire through the user's CBBD key (2014-2025 permitted; 2025-26 lockbox)",
    "terminal": "HUMAN_BLOCKED (LOCKBOX_OPEN_DECISION_2025_26 needs a named approver; commercial rights of CBBD/RotoWire UNVERIFIED)"
   }
- ]
+ ],
+ "workstream_closure_20261126": {
+  "recorded_at": "2026-11-26T23:45Z",
+  "release": {
+   "current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "previous_rollback_retained": "c30c17304b419bbcab32b792e7b35a19f9b9b135",
+   "deployed_at": "2026-11-26T22:48Z",
+   "preflight": "PREFLIGHT OK (commit 9f65e7f; publication/wagering disabled)",
+   "release_sha256sums": "INTEGRITY_OK (822 files)",
+   "branches": "origin production/root-cause-20261126 = origin research/root-cause-20261126 = 9f65e7f at deploy; this ledger commit is docs-only on top"
+  },
+  "repairs": {
+   "46e07f3": "feature warm-up: one Stage 3 build per identical as_of-masked information state (features.as_of_mask_instants, training_rows.information_state_groups, gates.build_as_of_legal)",
+   "10d1538": "light availability poll acquires outside the CBB writer lock; immutable receipt (ops/availability_polls) + bounded health merge (MERGED / DEFERRED_WRITER_LOCK, folded in by health())",
+   "bc72eb7": "RotoWire snapshot ingest emits IDENTITY_RERESOLVED when identity changes with status unchanged",
+   "cae2a02": "sync roster_as_of counts the ledger re-verification (FETCHED_UNCHANGED) of the same payload sha",
+   "9f65e7f": "rotowire_player_states.csv re-verified 2026-11-26 with dated evidence (short review_by; all lapse by 2027-01-04)"
+  },
+  "tests": {
+   "ci_cae2a02": "run 45902537082 success: 1121 passed, 34 skipped",
+   "ci_9f65e7f": "run 45904931318 success: 1121 passed, 34 skipped",
+   "old_failure_reproduced": "each new regression test fails on the pre-repair source and passes after (warm-up 4+1, poll 3, identity 1, roster_as_of 1, curated table 2 pins)",
+   "local": "tests/test_walkforward_daily.py 12/12 (710 s); RotoWire+live-feed suites 178/178"
+  },
+  "warmup_equivalence": {
+   "games": 33,
+   "cutoffs": 15,
+   "state_version": "S20261125T152533Z-fbba09a7a326",
+   "single_build_as_of": "2026-11-25T16:00Z",
+   "cand_team_sha256_identical": "33/33",
+   "leakage_rows": 0,
+   "pit_violations": 0,
+   "build_seconds": "250 vs ~65 min incumbent",
+   "projected_builds": {
+    "2026-11-26": [
+     27,
+     8
+    ],
+    "2026-11-25": [
+     32,
+     21
+    ],
+    "2026-11-24": [
+     21,
+     16
+    ],
+    "2026-11-21": [
+     17,
+     7
+    ],
+    "2026-11-19": [
+     12,
+     9
+    ]
+   },
+   "residual": "cost = distinct information states x frozen Stage 3 build (160-230 s); Stage 3 itself is frozen and not incrementalized",
+   "status": "PASS (offline); runtime/deadline improvement UNVERIFIED until the natural 2026-11-27 11:10Z morning"
+  },
+  "availability_lock": {
+   "evidence": "controlled contention tests: poll acquires while another process holds the writer lock; health never replaced by an older receipt; wrapper runs poll outside flock",
+   "natural_23z_refresh": "R20261126T230001Z-ed50c0: Phase A 12.0 s, Phase B lock wait 206.1 s, held 513.2 s, total 731.3 s, PUBLISHED",
+   "status": "UNVERIFIED unattended until the natural 2026-11-27 13:30Z (08:30 ET) poll writes a receipt"
+  },
+  "natural_23z_refresh_receipt": {
+   "run": "R20261126T230340Z-6bc1ea30",
+   "forecast": "F20261126T230340Z-7f5614",
+   "code_commit": "9f65e7f",
+   "player_engine": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+   "active_fit": "cbb-jm1-2026-27-20261126 (ACTIVE_DAILY, training_cutoff 2026-11-26T11:00Z)",
+   "game_model": "cbb-game-model-1.2.0 / cbb-game-joint-1.0.0, SHADOW, 5/5 PMFs, ratings TR-15c7547b8bf4ba18 (REBUILT_RECOVERY_NOT_FRESH: 1 D-1 final awaiting)",
+   "availability": "acquisition 23:00:11Z (snapshot) / 23:00:09Z (news), 872 events, age 3.5 min at scoring",
+   "roster_as_of": "2026-11-26T18:30:10Z (was frozen at 2026-11-12T17:40Z)",
+   "run_reasons": [],
+   "identity": "IDENTITY_RERESOLVED x3 at 23:00:11Z: 26128 Eli Ellis RESOLVED, 22939 Melvin Council RESOLVED, 26154 Nwuli re-resolved to Rutgers (UNMATCHED)",
+   "predictions": 2844,
+   "run_board_rows": "0 (PLAYER_PROP_MARKET_NOT_YET_POSTED on all 5 late games)",
+   "day_exports": "Boards 7488 rows / 727 valid market / 0 duplicate keys; Distributions 7488; Game Lines 100 rows, lineage PASS; public V1 payload + row QA PASS (727 prop, 100 game, 0 mismatches)",
+   "publication": {
+    "data_acquisition": "PASS",
+    "forecast_generation": "PASS",
+    "local_artifacts": "PASS",
+    "external_publication": "DISABLED (WIZARDOFODDS_PUBLICATION=disabled) - BLOCKED_EXTERNAL"
+   }
+  },
+  "effect_before_after": {
+   "STALE_ROSTER_runs": "every 2026-11-26 run except 18:40Z/19:40Z (real re-fetch) carried STALE_ROSTER on 60c7a44..c30c173; 0 since cae2a02 (23:03Z run)",
+   "AVAILABILITY_IDENTITY_UNRESOLVED_games": "21:03Z 8/8, 18:03Z 14/14, 15:03Z 19/19 (null-team 26128 blocked ALL) -> 23:03Z 1/5",
+   "unresolved_nonactive_records": "24 -> 22 (2 re-resolved); blocking after curated table: 22 team/all blocks -> 5 team blocks",
+   "remaining_blocks": {
+    "20703 RJ Luis (LSU)": "active player absent from CBBD 2026-27 roster",
+    "21059 Robbie Avila (TCU)": "active player absent from CBBD roster",
+    "20923 Drew Carter (Oregon)": "insufficient evidence; blocks the 23:03Z Oregon game",
+    "23921 Brandon Maclin (DePaul)": "SOURCE_CONFLICT by design",
+    "26154 Chris Nwuli (Rutgers)": "curated row names Seton Hall; live record re-resolved to Rutgers -> row needs Rutgers team id"
+   },
+   "player_prop_eligibility": "before: 100% BLOCKED (STALE_ROSTER run-level); after: run-level gate clear; per-row eligibility on a posted prop slate is first measurable on 2026-11-27"
+  },
+  "remaining_internal_defects": [
+   "Nwuli curated row team id (Seton Hall -> Rutgers)",
+   "CBBD roster gaps Luis/Avila (fail-closed)",
+   "Game Lines sheet still carries 30 pre-fix cbb-game-model-1.0.0 rows from 11-26 morning",
+   "game ratings REBUILT_RECOVERY_NOT_FRESH (1 D-1 final awaiting)",
+   "Stage 3 per-build cost (frozen)",
+   "Phase 4 counterfactual synthetic fixtures not built (minutes conservation measured: E[team min] 206.2 mean, 193-226)"
+  ],
+  "external_blockers": [
+   "RotoWire commercial data rights",
+   "WizardOfOdds deploy key / publication disabled"
+  ],
+  "pending_20261127": [
+   "11:10Z morning: information_state_builds << cutoffs_todo, walk-forward gate PASS, deadline met",
+   "13:30Z 08:30-ET poll: receipt written, health MERGED or DEFERRED then folded",
+   "14:10Z official scoring: STALE_ROSTER absent, per-row eligibility on posted props"
+  ],
+  "phase5_export_math": {
+   "board_win_push_fair_ev_max_err": 4e-14,
+   "projection_max_err": "5e-4 (3-dp display)",
+   "game_markets": "100/100 recomputed from float32 joint PMF: ML/team totals <=2.2e-16; spread/total MODEL% = P(win)/(1-P(push)) by design (markets.model_prob), EV <=6.7e-16",
+   "grades": "407 graded, 0 pending, by-engine attribution present"
+  }
+ }
 }
