@@ -32,6 +32,17 @@
    "G4": "COMBOS PRA/PR/PA/RA/STOCKS dRPS ub <= +0.0002 on both",
    "G5": "MARKET: live graded prop events (p5 paired OVER reconstruction) model LL point <= PRODALLB point + 0.002",
    "rule": "PROMOTE iff G1-G5 all pass. No post-result gate change. Root cause proven + candidate fails -> design a better causal fix; hypothesis disproven -> close."
+  },
+  "result": {
+   "evaluator": "scripts/r11_eval.py -> results/r11_pi1_eval.json",
+   "gates": {
+    "G1": true,
+    "G3": false,
+    "G4": false,
+    "G2": true
+   },
+   "failures": "LIVE per-stat REB ub +0.00128, STL ub +0.00073 (> +0.0005); LIVE STOCKS dRPS ub +0.00045 (> +0.0002); F2026 all cells pass; returners unchanged",
+   "decision": "REJECT (no post-result gate change). Root cause PROVEN: TRANSFER dLL F2026 -0.00179 (ub -0.00146), LIVE -0.00431 (ub -0.00292); NO_PRIOR F2026 -0.00135 (ub -0.00102)"
   }
  },
  "RD1_rotation_redistribution": {
@@ -68,5 +79,13 @@
    "T6": "TARGET early season (min games played <= 8) margin MSE diff point < 0 on 2024 and 2025",
    "rule": "PROMOTE iff T1-T6 pass; no post-result change"
   }
+ },
+ "PI2_amendment": {
+  "declared_utc": "2026-11-26T01:45Z",
+  "declared_before": "any PI2 replay metric",
+  "basis": "design correction after the PI1 rejection, stated causes: (1) REB: the TRAIN arm PRODX3 (A2 AST/FG3M/STL) predates production's REB A2 rate correction, so PI1's REB coefficients were fitted on a different REB base (double correction); (2) STL / BLK were never part of the root-cause diagnostic (r2: PTS/REB/AST/FG3M/TOV)",
+  "fix": "PI1 multipliers (same TRAIN coefficients, unchanged) for PTS, AST, FG3M, TOV only; REB / STL / BLK = ALLB",
+  "gates": "PI1 gates G1-G5 unchanged",
+  "caveat": "same-period re-test (F2026 / LIVE already seen for PI1): promotion additionally requires prospective confirmation on graded live events after deployment (shadow comparison)"
  }
 }

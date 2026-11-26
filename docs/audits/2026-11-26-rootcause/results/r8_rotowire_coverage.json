@@ -1,0 +1,100 @@
+{
+ "absent_regulars": 40,
+ "coverage": {
+  "NO_PREGAME_EVENT": 34,
+  "GTD": 5,
+  "LAST=NOT_LISTED": 1
+ },
+ "ever_listed": 17,
+ "failure_classes": {
+  "SOURCE_SILENT_NEVER_LISTED": 21,
+  "SOURCE_LATE_FIRST_EVENT_AFTER_TIP": 10,
+  "RESOLVED_PREGAME_GTD": 5,
+  "IDENTITY_UNMATCHED_CANDIDATE": 1,
+  "RESOLVED_BUT_NO_EVENT_NEAR_GAME": 1,
+  "RESOLVED_PREGAME_NOT_LISTED": 1,
+  "NO_NAME": 1
+ },
+ "late_cases": [
+  {
+   "tip_et": "2026-11-17 19:00",
+   "first_event_collected_et": "2026-11-18 08:41",
+   "news_displayed_date": "2026-11-17",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "POSTGAME_ONLY"
+  },
+  {
+   "tip_et": "2026-11-18 19:00",
+   "first_event_collected_et": "2026-11-18 18:00",
+   "news_displayed_date": "2026-11-18",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-18 21:00",
+   "first_event_collected_et": "2026-11-19 10:00",
+   "news_displayed_date": "2026-11-19",
+   "posted_on_or_before_game_day": false,
+   "kind": "NEWS_UPDATE",
+   "status": "POSTGAME_ONLY"
+  },
+  {
+   "tip_et": "2026-11-13 19:00",
+   "first_event_collected_et": "2026-11-13 18:00",
+   "news_displayed_date": "2026-11-13",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-14 14:00",
+   "first_event_collected_et": "2026-11-14 16:00",
+   "news_displayed_date": "2026-11-14",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-15 13:30",
+   "first_event_collected_et": "2026-11-15 13:00",
+   "news_displayed_date": "2026-11-15",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-20 20:00",
+   "first_event_collected_et": "2026-11-21 08:32",
+   "news_displayed_date": "2026-11-20",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-14 19:00",
+   "first_event_collected_et": "2026-11-15 08:30",
+   "news_displayed_date": "2026-11-14",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "POSTGAME_ONLY"
+  },
+  {
+   "tip_et": "2026-11-19 20:00",
+   "first_event_collected_et": "2026-11-20 08:30",
+   "news_displayed_date": "2026-11-19",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  },
+  {
+   "tip_et": "2026-11-14 14:00",
+   "first_event_collected_et": "2026-11-14 16:00",
+   "news_displayed_date": "2026-11-14",
+   "posted_on_or_before_game_day": true,
+   "kind": "NEWS_UPDATE",
+   "status": "OUT"
+  }
+ ]
+}
