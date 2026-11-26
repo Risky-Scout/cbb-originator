@@ -635,6 +635,8 @@ def test_identity_context_tolerates_missing_mascots(tmp_path, monkeypatch):
 # ============================================================================ curated team aliases (2026-11-08 review)
 OBSERVED_ALIAS_NAMES = ["Connecticut", "Louisiana State", "Mississippi", "St. Joseph's", "Texas-Arlington",
                         "Texas-San Antonio", "UNC-Charlotte", "Wisconsin-Green Bay"]
+# later reviews: name -> (canonical_display_name, verified_on, evidence acquisition)
+REVIEWED_LATER = {"College of Charleston": ("Charleston Cougars", "2026-11-26", "W20261126T150008Z-66c51b")}
 
 
 def aliases(**m):
@@ -642,8 +644,14 @@ def aliases(**m):
                           "verified_on": "2026-11-08", "evidence": "test"} for k, v in m.items()], columns=W.ALIAS_COLS)
 
 
-def test_committed_alias_file_is_exactly_the_reviewed_eight_and_valid(tmp_path):
-    m = W.team_aliases()
+def test_committed_alias_file_is_exactly_the_reviewed_set_and_valid(tmp_path):
+    full = W.team_aliases()
+    assert sorted(full["rotowire_team_name"]) == sorted(OBSERVED_ALIAS_NAMES + list(REVIEWED_LATER))
+    assert full["canonical_team_id"].str.fullmatch(r"T-[0-9a-f]{16}").all() and full["canonical_team_id"].is_unique
+    for name, (disp, on, ev) in REVIEWED_LATER.items():
+        r = full[full["rotowire_team_name"] == name].iloc[0]
+        assert r["canonical_display_name"] == disp and r["verified_on"] == on and ev in r["evidence"]
+    m = full[full["rotowire_team_name"].isin(OBSERVED_ALIAS_NAMES)].reset_index(drop=True)
     assert list(m["rotowire_team_name"]) == OBSERVED_ALIAS_NAMES
     assert m["canonical_team_id"].str.fullmatch(r"T-[0-9a-f]{16}").all() and m["canonical_team_id"].is_unique
     assert (m["verified_on"] == "2026-11-08").all() and m["evidence"].str.contains("W20261108T150352Z-60c436").all()
