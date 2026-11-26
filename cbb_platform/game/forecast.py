@@ -217,7 +217,7 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
             "pmf_sha256": g.sha256(), "h_min": int(g.h_min), "a_min": int(g.a_min), "rows": int(g.p.shape[0]),
             "cols": int(g.p.shape[1]), "pmf_zlib": encode(g), "tie_mass": float(g.tie_mass()),
             "pmf_sum": float(g.p.sum()), "coherent": True,
-            "joint_version": J.JOINT_VERSION, "model_version": GMod.MODEL_VERSION,
+            "joint_version": J.JOINT_VERSION, "model_version": gm["model_version"],   # the sealed params' version
             "params_sha256": gm["params_sha256"], "endgame_ot_sha256": eot.sha256,
             "moment_match_error": float(g0.meta.get("match_max_abs_err", 0.0)),
             "match_iterations": int(g0.meta.get("match_iterations", 0)), "status": "FORECAST"})

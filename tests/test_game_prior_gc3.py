@@ -45,3 +45,16 @@ def test_component_carryover_keeps_margin_strength_and_shrinks_level_and_pace():
     pb, pg = base.predict(h, a, n), gc3.predict(h, a, n)
     eff = lambda p: (p.exp_home - p.exp_away) * 100 / p.poss                            # noqa: E731 margin per 100 poss
     assert np.allclose(eff(pb), eff(pg), atol=1e-9)
+
+
+def test_game_pmf_rows_carry_the_sealed_params_model_version():
+    """2026-11-26 lineage defect: a module constant stamped cbb-game-model-1.0.0 on every live PMF row while the scorer
+    ran the 1.2.0 params (abe0533360f9). The row identity must come from the sealed game_model.json only."""
+    import ast, inspect
+    from cbb_platform.game import model as GMod
+    assert not hasattr(GMod, "MODEL_VERSION")
+    tree = ast.parse(inspect.getsource(GF.forecast))
+    mv = [kv for d in ast.walk(tree) if isinstance(d, ast.Dict) for kv in zip(d.keys, d.values)
+          if isinstance(kv[0], ast.Constant) and kv[0].value == "model_version"]
+    assert len(mv) == 1 and ast.unparse(mv[0][1]) == "gm['model_version']"
+    assert GP.game_model()["model_version"] == "cbb-game-model-1.2.0"

@@ -20,7 +20,9 @@ import numpy as np
 
 from cbb_platform.game import joint as J
 
-MODEL_VERSION = "cbb-game-model-1.0.0"
+# The game model version is params/game_model.json "model_version" (sealed with params_sha256). A module constant
+# here stamped "cbb-game-model-1.0.0" on every PMF row through 1.1.0 and 1.2.0 (fixed 2026-11-26); rows written before
+# the fix are identified by their params_sha256 (ffb91c4375c0 = 1.1.0, abe0533360f9 = 1.2.0).
 
 
 @dataclass(frozen=True)
