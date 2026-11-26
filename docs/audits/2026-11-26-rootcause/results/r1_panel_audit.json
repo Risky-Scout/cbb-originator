@@ -1,0 +1,295 @@
+{
+ "seasons": [
+  2005,
+  2006,
+  2007,
+  2008,
+  2009,
+  2010,
+  2011,
+  2012,
+  2013,
+  2014,
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025,
+  2026
+ ],
+ "dup_athlete_ids_dropped": {
+  "2005": 0,
+  "2006": 1,
+  "2007": 0,
+  "2008": 1,
+  "2009": 0,
+  "2010": 0,
+  "2011": 0,
+  "2012": 0,
+  "2013": 0,
+  "2014": 1,
+  "2015": 11,
+  "2016": 0,
+  "2017": 103,
+  "2018": 1,
+  "2019": 0,
+  "2020": 21,
+  "2021": 4,
+  "2022": 5,
+  "2023": 0,
+  "2024": 0,
+  "2025": 20,
+  "2026": 0
+ },
+ "unmatched": {
+  "2006": {
+   "rows": 4396,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2444,
+    "NO_PRIOR_HISTORY": 1931,
+    "TRANSFER": 21
+   },
+   "transfer_no_origin_strength": 21
+  },
+  "2007": {
+   "rows": 4398,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2449,
+    "NO_PRIOR_HISTORY": 1925,
+    "TRANSFER": 24
+   },
+   "transfer_no_origin_strength": 24
+  },
+  "2008": {
+   "rows": 4439,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2490,
+    "NO_PRIOR_HISTORY": 1927,
+    "TRANSFER": 22
+   },
+   "transfer_no_origin_strength": 22
+  },
+  "2009": {
+   "rows": 4438,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2495,
+    "NO_PRIOR_HISTORY": 1912,
+    "TRANSFER": 31
+   },
+   "transfer_no_origin_strength": 31
+  },
+  "2010": {
+   "rows": 4574,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2633,
+    "NO_PRIOR_HISTORY": 1918,
+    "TRANSFER": 23
+   },
+   "transfer_no_origin_strength": 23
+  },
+  "2011": {
+   "rows": 4635,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2583,
+    "NO_PRIOR_HISTORY": 1999,
+    "TRANSFER": 53
+   },
+   "transfer_no_origin_strength": 53
+  },
+  "2012": {
+   "rows": 4626,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2583,
+    "NO_PRIOR_HISTORY": 1991,
+    "TRANSFER": 52
+   },
+   "transfer_no_origin_strength": 52
+  },
+  "2013": {
+   "rows": 4667,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2581,
+    "NO_PRIOR_HISTORY": 2010,
+    "TRANSFER": 76
+   },
+   "transfer_no_origin_strength": 76
+  },
+  "2014": {
+   "rows": 4779,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2604,
+    "NO_PRIOR_HISTORY": 2079,
+    "TRANSFER": 96
+   },
+   "transfer_no_origin_strength": 96
+  },
+  "2015": {
+   "rows": 4776,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2603,
+    "NO_PRIOR_HISTORY": 2050,
+    "TRANSFER": 123
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2016": {
+   "rows": 4768,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2617,
+    "NO_PRIOR_HISTORY": 2048,
+    "TRANSFER": 103
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2017": {
+   "rows": 4792,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2658,
+    "NO_PRIOR_HISTORY": 2029,
+    "TRANSFER": 105
+   },
+   "transfer_no_origin_strength": 1
+  },
+  "2018": {
+   "rows": 4762,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2577,
+    "NO_PRIOR_HISTORY": 2044,
+    "TRANSFER": 141
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2019": {
+   "rows": 4796,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2495,
+    "NO_PRIOR_HISTORY": 2144,
+    "TRANSFER": 157
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2020": {
+   "rows": 4796,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2486,
+    "NO_PRIOR_HISTORY": 2070,
+    "TRANSFER": 240
+   },
+   "transfer_no_origin_strength": 3
+  },
+  "2021": {
+   "rows": 5020,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2431,
+    "NO_PRIOR_HISTORY": 2153,
+    "TRANSFER": 436
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2022": {
+   "rows": 5091,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2700,
+    "NO_PRIOR_HISTORY": 1569,
+    "TRANSFER": 822
+   },
+   "transfer_no_origin_strength": 3
+  },
+  "2023": {
+   "rows": 5102,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2385,
+    "NO_PRIOR_HISTORY": 1913,
+    "TRANSFER": 804
+   },
+   "transfer_no_origin_strength": 6
+  },
+  "2024": {
+   "rows": 5063,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2317,
+    "NO_PRIOR_HISTORY": 1822,
+    "TRANSFER": 924
+   },
+   "transfer_no_origin_strength": 10
+  },
+  "2025": {
+   "rows": 5124,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "SAME_TEAM_RETURNER": 2006,
+    "NO_PRIOR_HISTORY": 1931,
+    "TRANSFER": 1187
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2026": {
+   "rows": 5035,
+   "no_canonical_player": 0,
+   "no_canonical_team": 0,
+   "cls": {
+    "NO_PRIOR_HISTORY": 2074,
+    "SAME_TEAM_RETURNER": 1593,
+    "TRANSFER": 1368
+   },
+   "transfer_no_origin_strength": 0
+  },
+  "2027": {
+   "rows": 5583,
+   "no_canonical_player": 1858,
+   "no_canonical_team": 0,
+   "cls": {
+    "NO_PRIOR_HISTORY": 2465,
+    "TRANSFER": 1586,
+    "SAME_TEAM_RETURNER": 1532
+   },
+   "transfer_no_origin_strength": 0
+  }
+ },
+ "rights": "Starter Pack = RESEARCH_ONLY (rights register); 2027 roster = production CBBD API cache; panel is research-only, gitignored"
+}

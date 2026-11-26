@@ -1,0 +1,37 @@
+{
+ "id": "ROOT_CAUSE_PROTOCOL_2026-11-26",
+ "incumbent": {
+  "release": "60c7a44acc8132c5859ae8c872e55e1ccd1983bd",
+  "rollback": "2cd85a693ac39db8cd3624191f76b81b18e634aa",
+  "player_engine": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1#03e534d236e2",
+  "player_fit": "cbb-jm1-2026-27-20261125 (daily walk-forward)",
+  "game_model": "cbb-game-model-1.1.0 (params ffb91c4375c0)",
+  "public_contract": "CBB_PUBLIC_DATA_CONTRACT_V1",
+  "benchmark": "docs/audits/2026-11-25-final/results/CBB_ORIGINATOR_FINAL_BENCHMARK.json",
+  "replay_arm": "PRODALLB (= production player engine in the chronological replay)"
+ },
+ "PI1_player_information_state": {
+  "declared_utc": "2026-11-26T01:12Z",
+  "declared_before": "any TRAIN fit of PI1 and any F2026 / LIVE metric of PI1",
+  "observed": "results/r2_transfer_diag.json: transfer realized/forecast monotone in dstr (dest - origin prior-season adjusted net) in F2025 / F2026 / LIVE (<=-10: 1.058/1.068/1.146; >=+10: 0.896/0.938/0.929) and in prior mpg / usage; NO_PRIOR_HISTORY over-forecast 0.953/0.955/0.902",
+  "root_cause": "(a) transfer prior-season rates ported without competition-level translation and with too little regression for heavy-role transfers; (b) the no-history population prior is too high",
+  "classes": "athleteId transition panel (r1): SAME_TEAM_RETURNER / TRANSFER / NO_PRIOR_HISTORY (season-level, known before the season)",
+  "fix": {
+   "TRANSFER": "mu_s *= (1 + s_prev * d_s(x)) / (1 + s_prev * DV1_other_s)  [replaces DV1's constant transfer delta]; d_s(x) = a_s + b_s z_d + c_s z_m; z_d = clip(dest_strength_prev - origin_strength_prev, -25, 25) / 10 with strength = INTERNAL game-model season-final off - def (r3_team_finals, production-native); z_m = (clip(pps_min_per_app, 0, 36) - 20) / 8; s_prev = DV1 prior share",
+   "NO_PRIOR_HISTORY": "mu_s *= 1 + w * e_s, w = 31 / (cur_min + 31)",
+   "SAME_TEAM_RETURNER": "unchanged (DV1 kept)",
+   "clip": "final multiplier in [0.7, 1.3]",
+   "stats": "all 7 base stats; combos follow from the joint simulator"
+  },
+  "fit_TRAIN": "F2025 replay p5_F2025_train3 arm PRODX3 (no DV1 / CTX1) only; Poisson-weighted least squares of (y - mean)/mean on s_prev*[1, z_d, z_m] (TRANSFER) and w (NO_PRIOR_HISTORY), weights = mean, ridge N(0, 0.5^2) per coefficient; frozen before evaluation; the same fit is used for F2026 and LIVE",
+  "evaluation": "row_mult arm PRODPI1 = PRODALLB multipliers x PI1 multipliers vs PRODALLB, p5_replay common random numbers, SIMS 2000, single run each on F2026 then LIVE (sequential, 1 process, 1 BLAS thread)",
+  "gates": {
+   "G1": "stacked 7-stat dLL (PI1 - ALLB) 95% game-cluster ub < 0 on F2026 AND LIVE",
+   "G2": "TARGET (TRANSFER + NO_PRIOR_HISTORY rows) stacked ub < 0 on F2026 AND LIVE",
+   "G3": "PROTECTED: SAME_TEAM_RETURNER stacked ub <= +0.0002 on both; no F2026 stat x class cell ub > +0.002; no stat ub > +0.0005 (both)",
+   "G4": "COMBOS PRA/PR/PA/RA/STOCKS dRPS ub <= +0.0002 on both",
+   "G5": "MARKET: live graded prop events (p5 paired OVER reconstruction) model LL point <= PRODALLB point + 0.002",
+   "rule": "PROMOTE iff G1-G5 all pass. No post-result gate change. Root cause proven + candidate fails -> design a better causal fix; hypothesis disproven -> close."
+  }
+ }
+}

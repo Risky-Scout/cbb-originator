@@ -1,0 +1,515 @@
+{
+ "F2025": {
+  "class_ratio": [
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "AST",
+    "n": 34895.0,
+    "ratio": 0.966
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "FG3M",
+    "n": 34895.0,
+    "ratio": 0.964
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "PTS",
+    "n": 34895.0,
+    "ratio": 0.924
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "REB",
+    "n": 34895.0,
+    "ratio": 0.993
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "TOV",
+    "n": 34895.0,
+    "ratio": 1.008
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "AST",
+    "n": 46119.0,
+    "ratio": 1.022
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "FG3M",
+    "n": 46119.0,
+    "ratio": 1.023
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "PTS",
+    "n": 46119.0,
+    "ratio": 1.025
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "REB",
+    "n": 46119.0,
+    "ratio": 1.0
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "TOV",
+    "n": 46119.0,
+    "ratio": 1.014
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "AST",
+    "n": 31109.0,
+    "ratio": 0.992
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "FG3M",
+    "n": 31109.0,
+    "ratio": 1.003
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "PTS",
+    "n": 31109.0,
+    "ratio": 0.98
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "REB",
+    "n": 31109.0,
+    "ratio": 0.992
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "TOV",
+    "n": 31109.0,
+    "ratio": 0.993
+   }
+  ],
+  "transfer_by_dstr": [
+   {
+    "dbin": "(-99, -10]",
+    "n": "35690.0",
+    "ratio": "1.058"
+   },
+   {
+    "dbin": "(-10, -3]",
+    "n": "26055.0",
+    "ratio": "1.027"
+   },
+   {
+    "dbin": "(-3, 3]",
+    "n": "25620.0",
+    "ratio": "1.01"
+   },
+   {
+    "dbin": "(3, 10]",
+    "n": "28070.0",
+    "ratio": "0.954"
+   },
+   {
+    "dbin": "(10, 99]",
+    "n": "39975.0",
+    "ratio": "0.896"
+   }
+  ],
+  "transfer_by_usage": [
+   {
+    "ubin": "(0, 16]",
+    "n": "35090.0",
+    "ratio": "1.044"
+   },
+   {
+    "ubin": "(16, 20]",
+    "n": "40245.0",
+    "ratio": "1.016"
+   },
+   {
+    "ubin": "(20, 24]",
+    "n": "41580.0",
+    "ratio": "0.987"
+   },
+   {
+    "ubin": "(24, 99]",
+    "n": "38350.0",
+    "ratio": "0.928"
+   }
+  ],
+  "transfer_by_mpg": [
+   {
+    "mbin": "(0, 10]",
+    "n": "29365.0",
+    "ratio": "1.043"
+   },
+   {
+    "mbin": "(10, 20]",
+    "n": "40865.0",
+    "ratio": "1.013"
+   },
+   {
+    "mbin": "(20, 28]",
+    "n": "38500.0",
+    "ratio": "0.991"
+   },
+   {
+    "mbin": "(28, 99]",
+    "n": "46715.0",
+    "ratio": "0.941"
+   }
+  ],
+  "cold_vs_panel": {
+   "NO_PRIOR_HISTORY": {
+    "COLD_EARLY_SEASON": 14745,
+    "COLD_NO_HISTORY": 1775,
+    "COLD_TRANSFER_IN": 555,
+    "WARM": 157400
+   },
+   "SAME_TEAM_RETURNER": {
+    "COLD_EARLY_SEASON": 23455,
+    "COLD_NO_HISTORY": 5,
+    "COLD_TRANSFER_IN": 25,
+    "WARM": 207110
+   },
+   "TRANSFER": {
+    "COLD_EARLY_SEASON": 0,
+    "COLD_NO_HISTORY": 0,
+    "COLD_TRANSFER_IN": 13410,
+    "WARM": 142135
+   }
+  }
+ },
+ "F2026": {
+  "class_ratio": [
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "AST",
+    "n": 40548.0,
+    "ratio": 0.967
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "FG3M",
+    "n": 40548.0,
+    "ratio": 0.96
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "PTS",
+    "n": 40548.0,
+    "ratio": 0.93
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "REB",
+    "n": 40548.0,
+    "ratio": 0.999
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "TOV",
+    "n": 40548.0,
+    "ratio": 0.984
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "AST",
+    "n": 35922.0,
+    "ratio": 0.985
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "FG3M",
+    "n": 35922.0,
+    "ratio": 0.989
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "PTS",
+    "n": 35922.0,
+    "ratio": 0.993
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "REB",
+    "n": 35922.0,
+    "ratio": 1.009
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "TOV",
+    "n": 35922.0,
+    "ratio": 0.988
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "AST",
+    "n": 35180.0,
+    "ratio": 0.996
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "FG3M",
+    "n": 35180.0,
+    "ratio": 0.995
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "PTS",
+    "n": 35180.0,
+    "ratio": 1.016
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "REB",
+    "n": 35180.0,
+    "ratio": 1.011
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "TOV",
+    "n": 35180.0,
+    "ratio": 1.0
+   }
+  ],
+  "transfer_by_dstr": [
+   {
+    "dbin": "(-99, -10]",
+    "n": "37885.0",
+    "ratio": "1.068"
+   },
+   {
+    "dbin": "(-10, -3]",
+    "n": "29150.0",
+    "ratio": "1.039"
+   },
+   {
+    "dbin": "(-3, 3]",
+    "n": "30620.0",
+    "ratio": "1.037"
+   },
+   {
+    "dbin": "(3, 10]",
+    "n": "30950.0",
+    "ratio": "0.994"
+   },
+   {
+    "dbin": "(10, 99]",
+    "n": "47040.0",
+    "ratio": "0.938"
+   }
+  ],
+  "transfer_by_usage": [
+   {
+    "ubin": "(0, 16]",
+    "n": "40260.0",
+    "ratio": "1.056"
+   },
+   {
+    "ubin": "(16, 20]",
+    "n": "50765.0",
+    "ratio": "1.037"
+   },
+   {
+    "ubin": "(20, 24]",
+    "n": "43610.0",
+    "ratio": "1.0"
+   },
+   {
+    "ubin": "(24, 99]",
+    "n": "40805.0",
+    "ratio": "0.964"
+   }
+  ],
+  "transfer_by_mpg": [
+   {
+    "mbin": "(0, 10]",
+    "n": "32925.0",
+    "ratio": "1.043"
+   },
+   {
+    "mbin": "(10, 20]",
+    "n": "47560.0",
+    "ratio": "1.044"
+   },
+   {
+    "mbin": "(20, 28]",
+    "n": "49405.0",
+    "ratio": "1.004"
+   },
+   {
+    "mbin": "(28, 99]",
+    "n": "46010.0",
+    "ratio": "0.972"
+   }
+  ],
+  "cold_vs_panel": {
+   "NO_PRIOR_HISTORY": {
+    "COLD_EARLY_SEASON": 16350,
+    "COLD_NO_HISTORY": 2215,
+    "COLD_TRANSFER_IN": 735,
+    "WARM": 183440
+   },
+   "SAME_TEAM_RETURNER": {
+    "COLD_EARLY_SEASON": 18585,
+    "COLD_NO_HISTORY": 5,
+    "COLD_TRANSFER_IN": 15,
+    "WARM": 161005
+   },
+   "TRANSFER": {
+    "COLD_EARLY_SEASON": 70,
+    "COLD_NO_HISTORY": 0,
+    "COLD_TRANSFER_IN": 15175,
+    "WARM": 160655
+   }
+  }
+ },
+ "LIVE": {
+  "class_ratio": [
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "AST",
+    "n": 5373.0,
+    "ratio": 0.911
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "FG3M",
+    "n": 5373.0,
+    "ratio": 0.892
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "PTS",
+    "n": 5373.0,
+    "ratio": 0.867
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "REB",
+    "n": 5373.0,
+    "ratio": 0.96
+   },
+   {
+    "cls": "NO_PRIOR_HISTORY",
+    "stat": "TOV",
+    "n": 5373.0,
+    "ratio": 0.976
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "AST",
+    "n": 5237.0,
+    "ratio": 1.019
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "FG3M",
+    "n": 5237.0,
+    "ratio": 0.983
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "PTS",
+    "n": 5237.0,
+    "ratio": 1.021
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "REB",
+    "n": 5237.0,
+    "ratio": 1.031
+   },
+   {
+    "cls": "SAME_TEAM_RETURNER",
+    "stat": "TOV",
+    "n": 5237.0,
+    "ratio": 1.043
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "AST",
+    "n": 5817.0,
+    "ratio": 1.025
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "FG3M",
+    "n": 5817.0,
+    "ratio": 1.025
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "PTS",
+    "n": 5817.0,
+    "ratio": 1.049
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "REB",
+    "n": 5817.0,
+    "ratio": 1.022
+   },
+   {
+    "cls": "TRANSFER",
+    "stat": "TOV",
+    "n": 5817.0,
+    "ratio": 1.073
+   }
+  ],
+  "transfer_by_dstr": [
+   {
+    "dbin": "(-99, -10]",
+    "n": "7100.0",
+    "ratio": "1.146"
+   },
+   {
+    "dbin": "(-10, -3]",
+    "n": "4850.0",
+    "ratio": "1.068"
+   },
+   {
+    "dbin": "(-3, 3]",
+    "n": "4730.0",
+    "ratio": "1.097"
+   },
+   {
+    "dbin": "(3, 10]",
+    "n": "4445.0",
+    "ratio": "0.999"
+   },
+   {
+    "dbin": "(10, 99]",
+    "n": "7930.0",
+    "ratio": "0.929"
+   }
+  ],
+  "transfer_by_usage": [],
+  "transfer_by_mpg": [],
+  "cold_vs_panel": {
+   "NO_PRIOR_HISTORY": {
+    "COLD_EARLY_SEASON": 8410,
+    "COLD_NO_HISTORY": 3235,
+    "COLD_TRANSFER_IN": 710,
+    "WARM": 14510
+   },
+   "SAME_TEAM_RETURNER": {
+    "COLD_EARLY_SEASON": 14945,
+    "COLD_NO_HISTORY": 0,
+    "COLD_TRANSFER_IN": 0,
+    "WARM": 11240
+   },
+   "TRANSFER": {
+    "COLD_EARLY_SEASON": 5,
+    "COLD_NO_HISTORY": 0,
+    "COLD_TRANSFER_IN": 14830,
+    "WARM": 14250
+   }
+  }
+ }
+}
