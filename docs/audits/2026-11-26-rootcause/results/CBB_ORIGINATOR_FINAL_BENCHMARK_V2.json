@@ -1,0 +1,369 @@
+{
+ "id": "CBB_ORIGINATOR_FINAL_BENCHMARK_V2",
+ "generated": "2026-11-26",
+ "engine": {
+  "player": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9 (engine-pure replay)",
+  "game": "cbb-game-model-1.2.0 (TP1P prior)"
+ },
+ "labels": "research replay of the final engine on live 2026-27 events; predecessor-engine production outcomes are NOT mixed in",
+ "player_vs_market": {
+  "ALL": {
+   "n": 700,
+   "logloss_model": 0.7033850591283229,
+   "logloss_market": 0.6884253107531187,
+   "brier_model": 0.2543810642397596,
+   "brier_market": 0.24762261850622286,
+   "model_minus_market_logloss": [
+    0.014959748375204245,
+    -0.011535805641572765,
+    0.04365269767567819
+   ],
+   "class": "INDISTINGUISHABLE"
+  },
+  "stat": {
+   "AST": {
+    "n": 121,
+    "logloss_model": 0.7092203528674536,
+    "logloss_market": 0.6758181082758294,
+    "brier_model": 0.2578782062489019,
+    "brier_market": 0.24148624154043005,
+    "model_minus_market_logloss": [
+     0.03340224459162413,
+     -0.012146036332879856,
+     0.08042234216738219
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "FG3M": {
+    "n": 110,
+    "logloss_model": 0.7045112351657211,
+    "logloss_market": 0.7089842881281272,
+    "brier_model": 0.25487243323339526,
+    "brier_market": 0.2575291987661203,
+    "model_minus_market_logloss": [
+     -0.004473052962406038,
+     -0.03667212727965976,
+     0.026120725016356143
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "PR": {
+    "n": 18,
+    "logloss_model": 0.6484175170901478,
+    "logloss_market": 0.707611247284786,
+    "brier_model": 0.22980001388888885,
+    "brier_market": 0.2572278964427367,
+    "model_minus_market_logloss": [
+     -0.059193730194638174,
+     -0.1742163726631153,
+     0.09808069035087248
+    ],
+    "class": "INSUFFICIENT SAMPLE"
+   },
+   "PRA": {
+    "n": 132,
+    "logloss_model": 0.7146291995980985,
+    "logloss_market": 0.6980033640622691,
+    "brier_model": 0.25891226325757577,
+    "brier_market": 0.252423674759176,
+    "model_minus_market_logloss": [
+     0.01662583553582919,
+     -0.02817489025154006,
+     0.06483711942422617
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "PTS": {
+    "n": 165,
+    "logloss_model": 0.7338046220981732,
+    "logloss_market": 0.6843610333842397,
+    "brier_model": 0.2680318346259564,
+    "brier_market": 0.24562465263586575,
+    "model_minus_market_logloss": [
+     0.049443588713933576,
+     -0.004972826451995538,
+     0.110057416213352
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "REB": {
+    "n": 154,
+    "logloss_model": 0.6621903280770429,
+    "logloss_market": 0.6775482968569384,
+    "brier_model": 0.2356457314464823,
+    "brier_market": 0.24227072061423632,
+    "model_minus_market_logloss": [
+     -0.015357968779895391,
+     -0.05185839244203341,
+     0.0238000357063585
+    ],
+    "class": "INDISTINGUISHABLE"
+   }
+  },
+  "cls": {
+   "NO_PRIOR_HISTORY": {
+    "n": 72,
+    "logloss_model": 0.6245220854155201,
+    "logloss_market": 0.6754214843316474,
+    "brier_model": 0.21769067924726013,
+    "brier_market": 0.24118087885646697,
+    "model_minus_market_logloss": [
+     -0.05089939891612747,
+     -0.12297765053917124,
+     0.025753917065873787
+    ],
+    "class": "INSUFFICIENT SAMPLE"
+   },
+   "SAME_TEAM_RETURNER": {
+    "n": 369,
+    "logloss_model": 0.7184320830262086,
+    "logloss_market": 0.688222293891606,
+    "brier_model": 0.2613742032216526,
+    "brier_market": 0.2475555908583629,
+    "model_minus_market_logloss": [
+     0.030209789134602667,
+     -0.010386768011194541,
+     0.06602692097356945
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "TRANSFER": {
+    "n": 259,
+    "logloss_model": 0.7038707050318055,
+    "logloss_market": 0.6923295143216286,
+    "brier_model": 0.2546175099352863,
+    "brier_market": 0.24950886737434158,
+    "model_minus_market_logloss": [
+     0.0115411907101767,
+     -0.027176626113799028,
+     0.05676050187357807
+    ],
+    "class": "INDISTINGUISHABLE"
+   }
+  },
+  "role": {
+   "BENCH/LIMITED": {
+    "n": 15,
+    "logloss_model": 0.5379994725697393,
+    "logloss_market": 0.6798045203079026,
+    "brier_model": 0.17408981569861715,
+    "brier_market": 0.24338149986673024,
+    "model_minus_market_logloss": [
+     -0.14180504773816333,
+     -0.22347764590578734,
+     -0.08132678858388503
+    ],
+    "class": "INSUFFICIENT SAMPLE"
+   },
+   "ROTATION": {
+    "n": 312,
+    "logloss_model": 0.7023413590407385,
+    "logloss_market": 0.6867806866877859,
+    "brier_model": 0.2539048712174498,
+    "brier_market": 0.24688642802174243,
+    "model_minus_market_logloss": [
+     0.015560672352952477,
+     -0.01980553816249752,
+     0.05366803117263955
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "STARTER": {
+    "n": 373,
+    "logloss_model": 0.7109089685806154,
+    "logloss_market": 0.6901476554315692,
+    "brier_model": 0.2580082517761611,
+    "brier_market": 0.2484089675967062,
+    "model_minus_market_logloss": [
+     0.02076131314904624,
+     -0.012155018026688022,
+     0.053367828783960264
+    ],
+    "class": "INDISTINGUISHABLE"
+   }
+  },
+  "side": {
+   "OVER": {
+    "n": 119,
+    "logloss_model": 0.6920463673675625,
+    "logloss_market": 0.6976665111776704,
+    "brier_model": 0.24863724242693905,
+    "brier_market": 0.2521261826970374,
+    "model_minus_market_logloss": [
+     -0.0056201438101077675,
+     -0.028657055207244646,
+     0.019562926983783365
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   "UNDER": {
+    "n": 581,
+    "logloss_model": 0.7057074417781173,
+    "logloss_market": 0.6865325347625479,
+    "brier_model": 0.2555575096713011,
+    "brier_market": 0.24670020174424875,
+    "model_minus_market_logloss": [
+     0.01917490701556935,
+     -0.01314418265763341,
+     0.051778656729411975
+    ],
+    "class": "INDISTINGUISHABLE"
+   }
+  },
+  "pbucket": {
+   ".40-.50": {
+    "n": 350,
+    "logloss_model": 0.7023745309934148,
+    "logloss_market": 0.6875716062695614,
+    "brier_model": 0.2541318513712775,
+    "brier_market": 0.24723347604437285,
+    "model_minus_market_logloss": [
+     0.014802924723853438,
+     -0.015427305846912641,
+     0.04712052018953707
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   ".50-.60": {
+    "n": 282,
+    "logloss_model": 0.7084820402822785,
+    "logloss_market": 0.6851814273127349,
+    "brier_model": 0.25648145020252944,
+    "brier_market": 0.24604714026714694,
+    "model_minus_market_logloss": [
+     0.023300612969543496,
+     -0.009904725350805076,
+     0.058158500574003666
+    ],
+    "class": "INDISTINGUISHABLE"
+   },
+   ".60+": {
+    "n": 33,
+    "logloss_model": 0.6833061745362221,
+    "logloss_market": 0.657876931451775,
+    "brier_model": 0.24458627557146745,
+    "brier_market": 0.23249637876723836,
+    "model_minus_market_logloss": [
+     0.02542924308444727,
+     -0.07290544988884466,
+     0.11384711618387257
+    ],
+    "class": "INSUFFICIENT SAMPLE"
+   },
+   "<.40": {
+    "n": 35,
+    "logloss_model": 0.6913547549380863,
+    "logloss_market": 0.7519015455067651,
+    "brier_model": 0.2491851696260809,
+    "brier_market": 0.2784697795477489,
+    "model_minus_market_logloss": [
+     -0.06054679056867883,
+     -0.11493158443402479,
+     0.007587051975275559
+    ],
+    "class": "INSUFFICIENT SAMPLE"
+   }
+  }
+ },
+ "game_vs_market": {
+  "2024": {
+   "moneyline": {
+    "n": 5278,
+    "logloss_model": 0.5380165420143374,
+    "logloss_market": 0.530455584313471,
+    "brier_model": 0.18175862436716397,
+    "brier_market": 0.17880673712859585,
+    "model_minus_market_logloss": [
+     0.007560957700866539,
+     0.004138099693940757,
+     0.011059032186254862
+    ],
+    "class": "MARKET BETTER"
+   },
+   "spread_margin_mse_model_minus_close": {
+    "n": 5297,
+    "diff": [
+     3.4606887952598444,
+     2.1228087711740224,
+     4.828777228643147
+    ],
+    "class": "MARKET BETTER"
+   },
+   "total_mse_model_minus_close": {
+    "n": 5297,
+    "diff": [
+     8.81375022989052,
+     6.1915885838806375,
+     11.347274282892284
+    ],
+    "class": "MARKET BETTER"
+   }
+  },
+  "2025": {
+   "moneyline": {
+    "n": 5272,
+    "logloss_model": 0.5257201797051279,
+    "logloss_market": 0.5202703230562089,
+    "brier_model": 0.1778863299032423,
+    "brier_market": 0.1752911035355394,
+    "model_minus_market_logloss": [
+     0.005449856648919001,
+     0.00224893705294071,
+     0.00863441836681753
+    ],
+    "class": "MARKET BETTER"
+   },
+   "spread_margin_mse_model_minus_close": {
+    "n": 5426,
+    "diff": [
+     5.174882297512582,
+     3.8671653411784312,
+     6.442224887764246
+    ],
+    "class": "MARKET BETTER"
+   },
+   "total_mse_model_minus_close": {
+    "n": 5425,
+    "diff": [
+     9.568713656838668,
+     6.745024327694902,
+     12.215732623377912
+    ],
+    "class": "MARKET BETTER"
+   }
+  },
+  "2027": {
+   "moneyline": {
+    "n": 900,
+    "logloss_model": 0.47883074008257054,
+    "logloss_market": 0.4544656010841844,
+    "brier_model": 0.16263961834040888,
+    "brier_market": 0.15273669005608154,
+    "model_minus_market_logloss": [
+     0.024365138998386198,
+     0.013879388435041181,
+     0.03455311549104672
+    ],
+    "class": "MARKET BETTER"
+   },
+   "spread_margin_mse_model_minus_close": {
+    "n": 981,
+    "diff": [
+     14.892476703381423,
+     9.803553170582813,
+     19.946258554360725
+    ],
+    "class": "MARKET BETTER"
+   },
+   "total_mse_model_minus_close": {
+    "n": 981,
+    "diff": [
+     17.17980354576964,
+     6.253676260095011,
+     27.644748860005507
+    ],
+    "class": "MARKET BETTER"
+   }
+  }
+ }
+}
