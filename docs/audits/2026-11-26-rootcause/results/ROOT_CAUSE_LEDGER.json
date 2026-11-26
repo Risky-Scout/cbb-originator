@@ -1,0 +1,149 @@
+{
+ "id": "ROOT_CAUSE_LEDGER",
+ "generated": "2026-11-26",
+ "defects": [
+  {
+   "defect": "Transfer preseason rates not translated for competition level",
+   "symptom": "down-transfers under-forecast 6-15%, up-transfers over-forecast 6-10% (3 periods)",
+   "root_cause": "prior-season rates carried unadjusted to the destination team",
+   "evidence": "r2_transfer_diag.json",
+   "data": "CBBD athleteId panel, team finals",
+   "fix": "PI2 transfer translation (PTS/AST/FG3M/TOV)",
+   "oos": "TRANSFER dLL F2026 -0.00147, LIVE -0.00404 (ub<0)",
+   "market": "props INDISTINGUISHABLE (0.7034 vs 0.6884, interval spans 0)",
+   "production": "implemented (prod/preseason_prior.py), CI + deploy pending",
+   "terminal": "FIXED"
+  },
+  {
+   "defect": "No-history players initialised too high",
+   "symptom": "PTS ratio 0.90-0.95, ~0.67 at first appearances",
+   "root_cause": "no shrink of the cold-start mean",
+   "evidence": "r4_pi1_fit.json",
+   "data": "replay frames",
+   "fix": "PI2 no-history shrink",
+   "oos": "NO_PRIOR dLL F2026 -0.00129, LIVE -0.00192 (ub<0)",
+   "market": "INSUFFICIENT SAMPLE (72 props)",
+   "production": "implemented",
+   "terminal": "FIXED"
+  },
+  {
+   "defect": "PI1 (REB/STL/BLK) rejected",
+   "symptom": "LIVE REB/STL/STOCKS over tolerance",
+   "root_cause": "REB double correction; STL/BLK outside diagnosis",
+   "evidence": "r11_pi1_eval.json",
+   "fix": "PI2 restriction",
+   "terminal": "FIXED (via PI2)"
+  },
+  {
+   "defect": "Player state / minutes draw miscalibrated",
+   "symptom": "STARTER mass .186 vs .242, BENCH .346 vs .285 (live, given playing)",
+   "root_cause": "unimodal minutes draw",
+   "evidence": "r15_state_calibration.json",
+   "fix": "PS2 state-calibrated minutes draw",
+   "oos": "stacked F2026 -0.00090, LIVE -0.00076; all stats improve",
+   "market": "0.7034 vs PI2 0.7047",
+   "production": "implemented (prod/minutes_state.py)",
+   "terminal": "FIXED"
+  },
+  {
+   "defect": "P(play) calibration by class",
+   "symptom": "no-history OUT .650 vs .752; returners .376 vs .286 (live)",
+   "root_cause": "participation model not class-aware",
+   "evidence": "r15_state_calibration.json",
+   "fix": "none needed for pricing: prop PMFs are conditional on playing (void on DNP); used only by the game bridge, whose absolute form showed no measurable value (BR1)",
+   "terminal": "DISPROVEN (not material to any priced output)"
+  },
+  {
+   "defect": "Preseason team strength ignores roster",
+   "symptom": "game model MARKET BETTER every season; 2027 margin MSE +28.6 vs close",
+   "root_cause": "GC3 prior = last season's final strength only",
+   "evidence": "r9 / r10_tp1_gates.json, r12_tp1p_equivalence.json, r10_tp1p_gates.json",
+   "data": "CBBD API rosters / portal / recruits / player-season PORPAG",
+   "fix": "TP1P (game model 1.2.0)",
+   "oos": "margin MSE 2024 -2.67, 2025 -3.80, 2027 -13.71 (ub<0); ML -0.005/-0.006/-0.019",
+   "market": "MARKET BETTER (gap narrowed)",
+   "production": "sealed in game_model.json 1.2.0",
+   "terminal": "FIXED"
+  },
+  {
+   "defect": "RotoWire not used by the official tick",
+   "symptom": "27 of 31 runs on 11-25 had availability = null",
+   "root_cause": "shadow_tick called run.daily without rotowire_root",
+   "evidence": "ROTOWIRE_RESPONSE_AUDIT.json class 8",
+   "fix": "shadow_tick.availability_inputs (lifecycle rule, fail closed on stale)",
+   "production": "implemented + tests",
+   "terminal": "FIXED"
+  },
+  {
+   "defect": "RotoWire acquisition too sparse",
+   "symptom": "48% of news first collected next day; 7 OUTs missed before cutoff",
+   "root_cause": "5 fixed windows ending 18:00 ET",
+   "evidence": "ROTOWIRE_RESPONSE_AUDIT.json class 2",
+   "fix": "cutoff-aligned acquisition (designed, PROPOSED_NOT_APPROVED)",
+   "production": "not changed",
+   "terminal": "HUMAN_BLOCKED (automated request cadence against subscriber web pages: AUTOMATION_RIGHTS UNVERIFIED)"
+  },
+  {
+   "defect": "Absences never listed by the source",
+   "symptom": "21 of 40 live absent regulars never on the acquired pages",
+   "root_cause": "source coverage",
+   "evidence": "r8_rotowire_coverage.json",
+   "terminal": "INFORMATION_LIMITED"
+  },
+  {
+   "defect": "No lineup source",
+   "symptom": "starter confirmation unavailable",
+   "root_cause": "lineup pages not acquired",
+   "terminal": "HUMAN_BLOCKED (same RotoWire automation rights)"
+  },
+  {
+   "defect": "No teammate redistribution",
+   "symptom": "one regular out: teammates minutes x1.12, PTS x1.17 (box truth)",
+   "root_cause": "availability removes the player only",
+   "evidence": "r6_redistribution_truth.json, r11_rd2_PRODRD2_eval.json",
+   "fix": "RD2",
+   "oos": "F2026 target -0.00741 (ub<0); LIVE -0.00467 [-0.0158,+0.0063] on 39 team-games",
+   "terminal": "OPEN -> prospective re-test declared (RD2_prospective, >= 100 live absent team-games); production trigger also needs pre-cutoff RotoWire OUT (HUMAN_BLOCKED cadence)"
+  },
+  {
+   "defect": "Game model ignores availability",
+   "symptom": "audit class 9",
+   "root_cause": "corrected: intraday delta bridge exists (gamma 0.3); absolute level bridge absent",
+   "evidence": "PLAYER_TEAM_BRIDGE_REPORT.json, r13_br1_gates.json",
+   "fix": "BR1 tested",
+   "oos": "2025 absence games -0.90 [-3.00,+1.20]",
+   "terminal": "DISPROVEN (absolute bridge not material; coherence invariant PASS)"
+  },
+  {
+   "defect": "Early-season / no-history player under-dispersion",
+   "symptom": "LIVE var ratio early 1.19, no-history 1.27 after PI2/PS2",
+   "root_cause": "cold-start minutes uncertainty understated",
+   "evidence": "r17_post_fix_diagnostics.json",
+   "fix": "M3A declared (two-channel minutes sigma)",
+   "terminal": "OPEN (declared candidate not yet run)"
+  },
+  {
+   "defect": "Game interval coverage (2027 too confident)",
+   "symptom": "1.1.0 margin in95 .932",
+   "root_cause": "mean error from preseason prior",
+   "fix": "TP1P",
+   "oos": "1.2.0 .519/.811/.939",
+   "terminal": "DISPROVEN_AFTER_UPSTREAM_FIX"
+  },
+  {
+   "defect": "Close / medium spreads",
+   "symptom": "model worse than close",
+   "root_cause": "uniform information gap, not band-specific",
+   "evidence": "r17 spread_bands",
+   "terminal": "DISPROVEN (no band-specific defect); residual = MARKET BETTER"
+  },
+  {
+   "defect": "Production history lineage",
+   "symptom": "player-game / game history rows are CBBD_STARTER_PACK lineage (incumbent dependency)",
+   "root_cause": "history store built from the pack",
+   "evidence": "r12_api_vs_pack_2025.json (API identical)",
+   "fix": "re-acquire through the user's CBBD key (2014-2025 permitted; 2025-26 lockbox)",
+   "terminal": "HUMAN_BLOCKED (LOCKBOX_OPEN_DECISION_2025_26 needs a named approver; commercial rights of CBBD/RotoWire UNVERIFIED)"
+  }
+ ]
+}
