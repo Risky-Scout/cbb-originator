@@ -1,0 +1,152 @@
+{
+ "id": "PRESEASON_TEAM_PRIOR_REPORT",
+ "candidate": "TP1 (ROOT_CAUSE_PROTOCOL.json, declared 2026-11-26T01:23Z before build)",
+ "incumbent": "cbb-game-model-1.1.0 GC3 carry: season-s strength prior = rho x final strength s-1 (no roster information)",
+ "features": "returning-minutes share, returning value, lost value, transfers-in value, transfers-in value x competition-level change, recruit class rating; athleteId-anchored ids; season s-1 stats only",
+ "validation": "rolling: fit on seasons 2016..s-1, predict s; game-level walk-forward 2024, 2025 (historical) and 2027 (live late holdout) through the unchanged GR.fit / V.run",
+ "team_level_oos_rmse": {
+  "2018": {
+   "GC3": 5.803629772075622,
+   "TP1": 5.184785461067966,
+   "teams": 810
+  },
+  "2019": {
+   "GC3": 5.564290223312706,
+   "TP1": 5.008586248894648,
+   "teams": 824
+  },
+  "2020": {
+   "GC3": 5.415198912641793,
+   "TP1": 4.586166396201212,
+   "teams": 800
+  },
+  "2021": {
+   "GC3": 4.999776415358587,
+   "TP1": 4.683839157505316,
+   "teams": 763
+  },
+  "2022": {
+   "GC3": 5.535263224510445,
+   "TP1": 5.03514948548946,
+   "teams": 803
+  },
+  "2023": {
+   "GC3": 5.779390900848123,
+   "TP1": 4.962566121008267,
+   "teams": 821
+  },
+  "2024": {
+   "GC3": 5.811531351904897,
+   "TP1": 4.974719806830566,
+   "teams": 811
+  },
+  "2025": {
+   "GC3": 6.204434408057224,
+   "TP1": 5.210967346748058,
+   "teams": 702
+  },
+  "2026": {
+   "GC3": 6.29435699899523,
+   "TP1": 5.226497565433475,
+   "teams": 365
+  },
+  "2027": {
+   "GC3": null,
+   "TP1": null,
+   "teams": 365
+  }
+ },
+ "game_level": {
+  "2024": {
+   "n": 5719,
+   "margin": [
+    -2.667308948251494,
+    -3.509442681942125,
+    -1.8906026727501521
+   ],
+   "total": [
+    1.4193575414656035e-05,
+    -1.3049260464425835e-05,
+    4.3121534661664256e-05
+   ],
+   "ml_ll": [
+    -0.005130591377360126,
+    -0.007239022510633502,
+    -0.003085290745055714
+   ],
+   "big12_margin_point": -4.581044118549604,
+   "early_margin_point": -6.178070993884442,
+   "early_n": 1733,
+   "rmse_margin": [
+    11.44535161093294,
+    11.32822865895784
+   ]
+  },
+  "2025": {
+   "n": 5753,
+   "margin": [
+    -3.8032932552742245,
+    -5.099350841660149,
+    -2.5521466693488972
+   ],
+   "total": [
+    -2.80692776066852e-06,
+    -3.552813410185548e-05,
+    2.7716656105641598e-05
+   ],
+   "ml_ll": [
+    -0.006420473744868456,
+    -0.008756356452437001,
+    -0.0039967429047127745
+   ],
+   "big12_margin_point": -4.759560119158473,
+   "early_margin_point": -7.852308039223822,
+   "early_n": 1754,
+   "rmse_margin": [
+    11.578436253802709,
+    11.413014186800027
+   ]
+  },
+  "2027": {
+   "n": 986,
+   "margin": [
+    -13.710711632385898,
+    -18.466957900768328,
+    -8.86526538064644
+   ],
+   "total": [
+    3.525342866470477e-05,
+    -0.00013372826164286545,
+    0.00022347447476621027
+   ],
+   "ml_ll": [
+    -0.018644405791381054,
+    -0.02875589006170702,
+    -0.009074626634024273
+   ],
+   "big12_margin_point": -16.552409760456996,
+   "early_margin_point": -13.710711632385898,
+   "early_n": 986,
+   "rmse_margin": [
+    13.079733414025144,
+    12.544668770022586
+   ]
+  }
+ },
+ "gates": {
+  "T1": true,
+  "T2": true,
+  "T3": true,
+  "T4": true,
+  "T5": true,
+  "T6": true,
+  "DECISION": "PROMOTE"
+ },
+ "leakage_notes": [
+  "features use only season s-1 stats plus the season-s roster and recruit class (both public before the season)",
+  "historical core.rosters may include a few mid-season additions; the 2027 roster is the 2026-11-12 production pull (preseason)",
+  "level and pace priors unchanged, so game totals are unaffected by design"
+ ],
+ "production_status": "PROMOTED_IN_RESEARCH; production implementation (roster + portal + recruits already acquired by prod/cbbd_acquire.py; prior-season player stats needed in production) pending CI and certification",
+ "rights": "research features drew player-season PORPAG from the Starter Pack (RESEARCH_ONLY); production must compute the value term from the CBBD API / production player-game history"
+}
