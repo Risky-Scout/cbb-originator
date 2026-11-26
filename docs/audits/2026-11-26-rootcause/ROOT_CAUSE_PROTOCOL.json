@@ -205,6 +205,18 @@
    "B4": "PROTECTED |incumbent margin| >= 12: margin MSE diff point <= +0.5 each season",
    "B5": "on the TP1P walk (if TP1P promoted): B1 on 2025 holds",
    "rule": "PROMOTE iff B1-B5; no post-result change"
+  },
+  "result": {
+   "gates": {
+    "B1": false,
+    "B2": true,
+    "B3": true,
+    "B4": true,
+    "B5": false,
+    "DECISION": "REJECT"
+   },
+   "summary": "2025 absence games (n 716): margin MSE -0.90 [-3.00,+1.20]; live (n 38) +3.45 [-8.2,+15.2]; ML all games 2025 -0.0007 (ub -0.0001); totals +0.05; 12+ +0.44; on TP1P: 2025 -0.75 [-2.72,+1.19]",
+   "decision": "REJECT. The measured value of an absolute absent-regular bridge is indistinguishable from zero at n = 716 (point -0.4% of margin MSE): the rating fit already absorbs persistent absences. The existing intraday bridge (game.forecast gamma x delta expected player points) is retained unchanged"
   }
  },
  "PS1_player_state_diagnostic": {
@@ -235,6 +247,20 @@
    "G5": "live graded prop events log loss <= PRODPI2 + 0.002",
    "S1": "state calibration, LIVE conditional on playing: |pred - obs| for STARTER and LIMITED each smaller than the incumbent's",
    "rule": "PROMOTE iff G1-G5 and S1; no post-result change"
+  },
+  "result": {
+   "evaluator": "BASE=PRODPI2 r11_eval.py ps2 PRODPS2 -> results/r11_ps2_PRODPS2_eval.json; S1 results/r16_ps2_S1.json",
+   "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true,
+    "G5": true,
+    "S1": true
+   },
+   "summary": "stacked dLL F2026 -0.00090 [-0.00097,-0.00081], LIVE -0.00076 [-0.00100,-0.00054]; every stat improves in both periods (worst per-stat ub +0.00002 LIVE TOV); PRA dRPS -0.0099 / -0.0101; live props log loss 0.7034 vs 0.7047; state calibration LIVE given playing LIMITED .196->.210 (obs .222), STARTER .186->.198 (obs .242)",
+   "evaluator_note": "r11_eval gained a BASE override (default PRODALLB) so PS2 is compared with its declared base PRODPI2; gates unchanged",
+   "decision": "PROMOTE"
   }
  }
 }

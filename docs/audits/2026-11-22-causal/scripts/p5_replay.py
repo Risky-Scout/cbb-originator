@@ -137,6 +137,42 @@ def tables(lm, phi, pts_phiN=None):
     return {"inv": inv, "starts": starts, "pmf": pmf, "cdf": cdf, "thr": thr}
 
 
+
+_QM = {}
+
+
+def _with_qmap(path, fn):
+    """Run fn with joint_minutes_v2.raw_minutes drawing eps' = Q_band(Phi(eps)) (ROOT_CAUSE_PROTOCOL PS2)."""
+    import json as _json
+    from math import erf, sqrt
+    if path not in _QM:
+        _QM[path] = _json.load(open(path))
+    qm = _QM[path]
+    U = np.asarray(qm["u"]); edges = np.asarray(qm["edges"]); Q = [np.asarray(b["q"]) for b in qm["bands"]]
+    phi = np.vectorize(lambda z: 0.5 * (1 + erf(z / sqrt(2))))
+    zlo, zhi = -2.3263478740408408, 2.3263478740408408       # Phi^-1(0.01), Phi^-1(0.99)
+    orig = JM.raw_minutes
+
+    def mapped(min_mu, min_sigma, z, dur, e_dur):
+        b = np.clip(np.searchsorted(edges, np.asarray(min_mu, float), side="right") - 1, 0, len(Q) - 1)
+        u = phi(z)
+        z2 = np.empty_like(z)
+        for k in range(len(Q)):
+            c = b == k
+            if not c.any():
+                continue
+            zz, uu = z[:, c], u[:, c]
+            v = np.interp(uu, U, Q[k])
+            v = np.where(zz < zlo, Q[k][0] + (zz - zlo), v)
+            v = np.where(zz > zhi, Q[k][-1] + (zz - zhi), v)
+            z2[:, c] = v
+        return orig(min_mu, min_sigma, z2, dur, e_dur)
+    JM.raw_minutes = mapped
+    try:
+        return fn()
+    finally:
+        JM.raw_minutes = orig
+
 def score_mna(prod, gid, gp, envd, sims, mna=True, pts_phiN=None, cold_sigma=None, mna_stats=None):
     """= JP.score_game with the minutes-neutral anchor (challenger_P1_mean_anchor.fix) and / or the P2 PTS family."""
     from cbb_platform.v2 import dependence as D, jm1_final as F, joint as J, structural as S
@@ -217,10 +253,12 @@ for gi, gid in enumerate(games):
             zi = [{"pace": 0, "own": 1, "opp": 2}[c] for c in spec["env_zero"]]
             ev = {k: np.where(np.isin(np.arange(len(v)), zi), 0.0, v) for k, v in envd.items()}
         if spec.get("anchor") == "MNA" or "pts_phiN" in spec:
-            r = score_mna(prod, gid, gp, ev, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"),
-                          cold_sigma=spec.get("cold_sigma"), mna_stats=spec.get("mna_stats"))
+            call = lambda: score_mna(prod, gid, gp, ev, SIMS, mna=spec.get("anchor") == "MNA", pts_phiN=spec.get("pts_phiN"),  # noqa: E731
+                                     cold_sigma=spec.get("cold_sigma"), mna_stats=spec.get("mna_stats"))
         else:
-            r = JP.score_game(prod, gid, gp, ev, SIMS)
+            call = lambda: JP.score_game(prod, gid, gp, ev, SIMS)  # noqa: E731
+        # 2026-11-26 PS2: state-calibrated minutes draw (eps quantile map) around whichever scorer the arm uses
+        r = _with_qmap(spec["min_qmap"], call) if spec.get("min_qmap") else call()
         rows, pmf = r["rows"], r["pmf"]
         if LINES is not None:                             # 2026-11-25 market re-pricing: P(stat > line) at captured lines
             for q in LINES.get(gid, []):

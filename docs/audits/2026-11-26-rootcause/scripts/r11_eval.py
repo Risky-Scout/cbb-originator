@@ -8,6 +8,7 @@ Q = os.path.join(ROOT, "data/qa/large/causal_20261122")
 O = os.path.join(ROOT, "data/qa/large/rootcause_20261126")
 RES = os.path.join(ROOT, "docs/audits/2026-11-26-rootcause/results")
 tag, ARM = sys.argv[1], sys.argv[2]
+BASEARM = os.environ.get("BASE", "PRODALLB")
 BASE7 = ["PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV"]
 COMBOS = ["PRA", "PR", "PA", "RA", "STOCKS"]
 rng = np.random.default_rng(20261126)
@@ -34,7 +35,7 @@ def evaluate(ds):
     d = pd.read_parquet(f"{Q}/p4/p5_{ds}_{tag}.parquet", columns=["arm", "game_id", "pgx", "stat", "nll", "rps"])
     d = d[~d.stat.str.endswith("_IND")]
     k = ["game_id", "pgx", "stat"]
-    a, b = d[d.arm == ARM].set_index(k), d[d.arm == "PRODALLB"].set_index(k)
+    a, b = d[d.arm == ARM].set_index(k), d[d.arm == BASEARM].set_index(k)
     ix = a.index.intersection(b.index)
     x = pd.DataFrame({"dll": a.loc[ix, "nll"].to_numpy() - b.loc[ix, "nll"].to_numpy(),
                       "drps": a.loc[ix, "rps"].to_numpy() - b.loc[ix, "rps"].to_numpy()}, index=ix).reset_index()
@@ -103,7 +104,7 @@ def g5():
     x["p"] = np.where(x.side == "OVER", x.p_over, 1 - x.p_over - x.p_push) / np.clip(1 - x.p_push, 1e-9, None)
     x["y"] = (x.result == "WIN").astype(float)
     llf = lambda p, y: -(y * np.log(np.clip(p, 1e-6, 1 - 1e-6)) + (1 - y) * np.log(np.clip(1 - p, 1e-6, 1)))
-    a, b = x[x.arm == ARM].set_index("eval_key"), x[x.arm == "PRODALLB"].set_index("eval_key")
+    a, b = x[x.arm == ARM].set_index("eval_key"), x[x.arm == BASEARM].set_index("eval_key")
     ix = a.index.intersection(b.index)
     la, lb, lm = llf(a.loc[ix, "p"], a.loc[ix, "y"]).mean(), llf(b.loc[ix, "p"], b.loc[ix, "y"]).mean(), llf(a.loc[ix, "fair_probability"], a.loc[ix, "y"]).mean()
     return {"n": int(len(ix)), "logloss_arm": float(la), "logloss_ALLB": float(lb), "logloss_market": float(lm), "pass": bool(la <= lb + 0.002)}
