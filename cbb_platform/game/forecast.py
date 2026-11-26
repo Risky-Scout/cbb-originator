@@ -93,10 +93,15 @@ def games_played(games: pd.DataFrame, cutoff: pd.Timestamp) -> dict:
 
 # ============================================================================ the player-layer availability term
 def team_strength(model_inputs: pd.DataFrame | None) -> dict:
-    """{(game_id, team_id): sum_k p_play_k * PTS_mu_k} -- the model's own expected points (a signal, not a team score)."""
+    """{(game_id, team_id): sum_k p_play_k * PTS_mu_k} over the player layer's SCORED set -- the model's own expected
+    points (a signal, not a team score). prod.inputs.apply_availability keeps a confirmed-unavailable player as a row
+    flagged player_suppression (it is never simulated); 2026-11-26 fix: such a row no longer counts toward S (before,
+    a confirmed OUT never moved the game layer in production)."""
     if model_inputs is None or not len(model_inputs) or not {"p_play", "PTS_mu"} <= set(model_inputs.columns):
         return {}
     m = model_inputs.drop_duplicates(["game_id", "player_id"])
+    if "player_suppression" in m:
+        m = m[m["player_suppression"].fillna("").astype(str) == ""]
     s = (m["p_play"].astype(float).fillna(0) * m["PTS_mu"].astype(float).fillna(0)).groupby(
         [m["game_id"], m["team_id"]]).sum()
     return {k: float(v) for k, v in s.items()}

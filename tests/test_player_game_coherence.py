@@ -20,9 +20,31 @@ def _pmf(dh: float, da: float = 0.0):
     return t, GF.canonical(GMod.build(t, GP.endgame_ot()))
 
 
+def _production_rows(status_h0: str | None):
+    """The production representation: prod.inputs.apply_availability keeps every row and flags a confirmed
+    unavailable player (player_suppression), exactly as model_inputs.parquet stores it."""
+    import numpy as np
+    from cbb_platform.prod import inputs as IN
+    r = _inputs().assign(min_mu=30.0, min_sigma=4.0, role_diagnostic="TOP5_MINUTES",
+                         **{f"{s}_mu": 1.0 for s in IN.L.STATS if s != "PTS"})
+    av = None if status_h0 is None else pd.DataFrame([{"game_id": "G1", "player_id": "h0", "status": status_h0,
+                                                       "received_at": pd.Timestamp("2026-11-26T15:00Z")}])
+    rows, _ = IN.apply_availability(r, av)
+    assert np.isfinite(rows["p_play"]).all()
+    return rows.drop(columns=["_scored"])
+
+
+def test_flagged_out_row_leaves_team_strength_and_questionable_does_not():
+    base, out, q = _production_rows(None), _production_rows("OUT"), _production_rows("QUESTIONABLE")
+    assert (out.loc[out.player_id == "h0", "player_suppression"] == "CONFIRMED_UNAVAILABLE").all() and len(out) == len(base)
+    s0, s1, sq = GF.team_strength(base), GF.team_strength(out), GF.team_strength(q)
+    assert abs((s0[("G1", "H")] - s1[("G1", "H")]) - 18.0) < 1e-12 and s1[("G1", "A")] == s0[("G1", "A")]
+    assert sq == s0                                               # questionable: the model's own p_play, unchanged
+
+
 def test_starter_out_moves_player_and_game_layers_coherently():
-    before = _inputs()
-    after = before[before.player_id != "h0"]                    # the starter is OUT: removed from model inputs
+    before = _production_rows(None)
+    after = _production_rows("OUT")                             # the starter is OUT: flagged, never simulated
     s0, s1 = GF.team_strength(before), GF.team_strength(after)
     assert s1[("G1", "H")] < s0[("G1", "H")] and s1[("G1", "A")] == s0[("G1", "A")]
     dh = s1[("G1", "H")] - s0[("G1", "H")]
