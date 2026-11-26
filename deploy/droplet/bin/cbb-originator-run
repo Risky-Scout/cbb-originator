@@ -22,8 +22,9 @@
 #                                               min; 15-min watchdog with faulthandler stack dumps). The wrapper does NOT
 #                                               take the writer lock for this command; the orchestrator takes it for
 #                                               Phase B only.
-#   cbb-originator-run availability-poll HH:MM  08:30 ET light RotoWire poll: acquisition only (writer lock; NEVER the
-#                                               heavy lock; no forecast / refit / simulation / PMF)
+#   cbb-originator-run availability-poll HH:MM  08:30 ET light RotoWire poll: acquisition only, WITHOUT the writer
+#                                               lock (narrow locks; immutable receipt), then the writer lock (<= 60 s) for
+#                                               the health merge only; NEVER the heavy lock; no forecast / refit / PMF
 #   cbb-originator-run features-warmup         MANUAL ONLY (no timer since 2026-11-18; the morning warmup stage replaces
 #                                               it): pre-build the per-game pregame feature cache for the next
 #                                               walk-forward (shared heavy lock, budget CBB_WARMUP_BUDGET_MIN; NO writer
@@ -167,9 +168,8 @@ case "$CMD" in
                           --prep-evidence "the walk-forward attempt MORNING_0700 started in the same 07:00 process; prep precedes it")
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;
   lifecycle-refresh) RUN=("$PY" -m cbb_platform.availability_refresh --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" --window "$2" --writer-lock "$WRITER_LOCK") ;;
-  availability-poll) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" availability-poll --window "$2")
-                     unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC            # structurally never the shared heavy lock
-                     WRITER_WAIT_SEC="${CBB_POLL_WRITER_LOCK_WAIT_SEC:-1500}" ;;  # waits out a quote run / a long morning
+  availability-poll) RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" availability-poll --window "$2" --writer-lock "$WRITER_LOCK")
+                     unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;          # structurally never the shared heavy lock
   features-warmup)   RUN=("$PY" -m cbb_platform.prod.lifecycle --ops-root "$OPS" --prod-root "$CBB_PROD_ROOT" features-warmup) ;;
   prune-scratch)     RUN=("$PY" -m cbb_platform.prod.retention --runs-root "$CBB_PROD_ROOT/runs" --ops-root "$OPS" ${2:+"$2"})
                      unset CBB_HEAVY_LOCK CBB_HEAVY_LOCK_WAIT_SEC ;;           # structurally never the shared heavy lock
@@ -183,6 +183,10 @@ if [ "$CMD" = "selection-audit" ]; then
 fi
 if [ "$DRY" = "1" ] && [ "$CMD" = "features-warmup" ]; then
   log "DRY RUN: no CBB writer lock; heavy lock ${CBB_HEAVY_LOCK:-NONE} for the whole warmup (budget ${CBB_WARMUP_BUDGET_MIN:-150} min), run: ${RUN[*]}"
+  exit 0
+fi
+if [ "$DRY" = "1" ] && [ "$CMD" = "availability-poll" ]; then
+  log "DRY RUN: acquisition without the CBB writer lock (narrow locks only); health merge takes $WRITER_LOCK (wait <= 60 s, else deferred to the next health write); heavy lock NONE, run: ${RUN[*]}"
   exit 0
 fi
 if [ "$DRY" = "1" ] && [ "$CMD" = "lifecycle-refresh" ]; then
@@ -208,6 +212,12 @@ fi
 mkdir -p "$LOCK_DIR"
 if [ "$CMD" = "lifecycle-refresh" ]; then
   exec "${RUN[@]}"                       # no wrapper writer lock: the orchestrator takes it for Phase B only
+fi
+if [ "$CMD" = "availability-poll" ]; then
+  # 2026-11-26: under the wrapper writer lock the 08:30 poll waited 1500 s behind the morning WALK_FORWARD stage and
+  # exited 75 without acquiring anything. The acquisition needs only its narrow locks (lifecycle.web_acquire); the
+  # poll takes the writer lock itself, bounded, for the health merge only (an immutable receipt is written first).
+  exec "${RUN[@]}"
 fi
 PRIORITY="$LOCK_DIR/cbb-originator.writer.priority"
 if [ "$CMD" = "tick" ] && [ -f "$PRIORITY" ] && [ -n "$(find "$PRIORITY" -mmin -"${CBB_PRIORITY_MAX_AGE_MIN:-50}" 2>/dev/null)" ]; then

@@ -1,5 +1,5 @@
 # CBB Originator: 08:30 ET LIGHT RotoWire availability poll -- acquisition only (no forecast / refit / simulation / PMF).
-# CBB writer lock only; NEVER the shared heavy lock (no heavy group, no heavy lock path, nothing under /run/lock).
+# Acquisition WITHOUT the CBB writer lock (narrow locks only); writer lock <= 60 s for the health merge only; NEVER the shared heavy lock (no heavy group, no heavy lock path, nothing under /run/lock).
 # Code: immutable release via /opt/sports-models/cbb-originator/current. State: /var/lib/sports-models/cbb-originator only. No secrets here; never publishes or wagers.
 [Unit]
 Description=CBB Originator 08:30 ET light RotoWire availability poll

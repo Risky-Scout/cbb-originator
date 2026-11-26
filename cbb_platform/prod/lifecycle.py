@@ -66,7 +66,7 @@ TZ = "America/New_York"
 MORNING_TIME_ET = "06:10"
 FEATURES_WARMUP_TIME_ET = None        # no standalone timer: the warmup is morning stage 2/6 (FEATURE_WARMUP)
 ROTOWIRE_REFRESH_TIMES_ET = ("10:00", "13:00", "16:00", "18:00")       # exactly four; no other fixed refresh time
-ROTOWIRE_LIGHT_POLL_TIMES_ET = ("08:30",)   # acquisition ONLY (no forecast / fit / simulation / PMF); writer lock only
+ROTOWIRE_LIGHT_POLL_TIMES_ET = ("08:30",)   # acquisition ONLY (no forecast / fit / simulation / PMF); writer lock for health only
 SCHEDULE_ET = ((MORNING_TIME_ET, "MORNING"),) + tuple((t, "ROTOWIRE_REFRESH") for t in ROTOWIRE_REFRESH_TIMES_ET)
 INITIAL = "INITIAL"
 # ---- shared cross-model heavy-job lock (operational only; nothing here reaches a forecast). Only the walk-forward step
@@ -607,6 +607,10 @@ def health(life: Life, day: date, **sections) -> dict:
               "automatic_wagering": "DISABLED", "wizardofodds_publication": "DISABLED"})
     for k, v in sections.items():
         h[k] = v
+    for k, v in latest_poll_receipts(life.ops_root, day).items():   # light polls acquired outside the writer lock
+        cur = h.get(k)
+        if k not in sections and (not isinstance(cur, dict) or str(cur.get("finished_at") or "") < str(v["finished_at"])):
+            h[k] = v
     h["training_freshness"] = training_freshness(life, day)   # durable model store + forecast index (never a fit)
     h["retention"] = retention_state(life)
     for k, v in sections.items():                  # the newest forecast of the day (morning, retry or refresh)
@@ -929,20 +933,74 @@ def web_acquire(life: Life, lock_wait_s: float = WEB_ACQUIRE_LOCK_WAIT_SEC) -> d
     return out
 
 
-def availability_poll(life: Life, window: str = ROTOWIRE_LIGHT_POLL_TIMES_ET[0]) -> dict:
+POLL_HEALTH_WRITER_WAIT_SEC = 60.0      # the poll waits this long for the writer lock for its health merge ONLY
+
+
+def poll_receipt_dir(ops_root: Path) -> Path:
+    return Path(ops_root) / "availability_polls"
+
+
+def latest_poll_receipts(ops_root: Path, day: date) -> dict:
+    """{"availability_poll_HHMM": rec}: the newest (finished_at) immutable light-poll receipt of each window of ET `day`."""
+    out: dict = {}
+    d = poll_receipt_dir(ops_root)
+    for p in sorted(d.glob(f"{day.isoformat()}-*.json")) if d.exists() else ():
+        r = OS.read_json(p, None)
+        if not isinstance(r, dict) or not r.get("window") or not r.get("finished_at"):
+            continue
+        k = f"availability_poll_{str(r['window']).replace(':', '')}"
+        if k not in out or str(out[k]["finished_at"]) < str(r["finished_at"]):
+            out[k] = r
+    return out
+
+
+def availability_poll(life: Life, window: str = ROTOWIRE_LIGHT_POLL_TIMES_ET[0], writer_lock: str | None = None,
+                      health_wait_s: float = POLL_HEALTH_WRITER_WAIT_SEC) -> dict:
     """Light RotoWire availability poll: ONE web acquisition into the event store and nothing else -- never a
-    forecast, fit, simulation, PMF or export (the next refresh / official tick consumes the events). Records itself in
-    the health file. Inert unless ROTOWIRE_SOURCE=WEB is ENABLED (session + PASS acceptance marker)."""
+    forecast, fit, simulation, PMF or export (the next refresh / official tick consumes the events). Inert unless
+    ROTOWIRE_SOURCE=WEB is ENABLED (session + PASS acceptance marker).
+
+    writer_lock (the scheduled 08:30 unit, cbb-originator-run): the acquisition runs WITHOUT the CBB writer lock (narrow
+    locks only: web_acquire's web-acquisition lock, the EventStore lock, the request-ledger lock -- exactly availability
+    Phase A). 2026-11-26: the wrapper held the writer lock around the whole poll, so while the morning WALK_FORWARD stage
+    held it (13:13-14:0xZ) the 08:30 poll waited 1500 s and exited 75 without requesting anything; the INITIAL forecast
+    then read the previous night's events. The result is first persisted as an immutable receipt
+    (<ops>/availability_polls/<ET date>-<HHMM>-*.json); the writer lock is then taken for at most health_wait_s ONLY to
+    merge the health section (health() is a read-modify-write that relies on the writer lock). Busy -> the merge is
+    deferred, never lost: every later health() write (always under the writer lock) folds in the newest receipt, and a
+    receipt never replaces a newer section. writer_lock None (direct CLI / callers already holding it): health is
+    written directly, as before."""
     if window not in ROTOWIRE_LIGHT_POLL_TIMES_ET:
         raise ValueError(f"light poll window {window!r} is not one of {ROTOWIRE_LIGHT_POLL_TIMES_ET}")
+    day = et_date(life.now())
     st = rotowire_state(life)
     rec = {"lifecycle": "AVAILABILITY_POLL", "window": window, "rotowire_source": PC.rotowire_source(),
-           "rotowire_refresh": st, "forecast": None}
+           "rotowire_refresh": st, "forecast": None, "started_at": life.now().isoformat(),
+           "GLOBAL_WRITER_LOCK_HELD_DURING_WEB_ACQUIRE": "UNKNOWN_CALLER" if writer_lock is None else "NO"}
     if PC.rotowire_source() == "WEB" and st == "ENABLED":
         rec["rotowire_web_acquisition"] = web_acquire(life)
     else:
         rec["note"] = "no availability source enabled: nothing requested"
-    health(life, et_date(life.now()), **{f"availability_poll_{window.replace(':', '')}": rec})
+    rec["finished_at"] = life.now().isoformat()
+    key = f"availability_poll_{window.replace(':', '')}"
+    if writer_lock is None:
+        health(life, day, **{key: rec})
+        return rec
+    stamp = life.now().strftime("%Y%m%dT%H%M%S%fZ")
+    rp = poll_receipt_dir(life.ops_root) / f"{day.isoformat()}-{window.replace(':', '')}-{stamp}-{uuid.uuid4().hex[:6]}.json"
+    if not OS.create_once(rp, rec):
+        raise FileExistsError(f"poll receipt {rp} already exists (receipts are immutable)")
+    rec["receipt"] = str(rp)
+    Path(writer_lock).parent.mkdir(parents=True, exist_ok=True)
+    fd = acquire_heavy_lock(str(writer_lock), health_wait_s, sleep=lambda s: time.sleep(min(s, 1.0)))   # bounded flock
+    if fd is None:
+        rec["health"] = "DEFERRED_WRITER_LOCK"           # folded in by the next health() write (latest_poll_receipts)
+        return rec
+    try:
+        health(life, day)                                # folds in this receipt (and any newer one), under the lock
+        rec["health"] = "MERGED"
+    finally:
+        os.close(fd)
     return rec
 
 
@@ -1356,6 +1414,7 @@ def main(argv=None) -> None:
     r.add_argument("--window", required=True, choices=ROTOWIRE_REFRESH_TIMES_ET)
     ap_ = sub.add_parser("availability-poll")
     ap_.add_argument("--window", required=True, choices=ROTOWIRE_LIGHT_POLL_TIMES_ET)
+    ap_.add_argument("--writer-lock", default=None, help="acquire WITHOUT this lock; take it (bounded) for the health merge only")
     f = sub.add_parser("forecast")
     f.add_argument("--window", default=INITIAL, choices=(INITIAL,) + ROTOWIRE_REFRESH_TIMES_ET)
     sub.add_parser("schedule")
@@ -1397,7 +1456,7 @@ def main(argv=None) -> None:
     elif a.cmd == "refresh":
         out = refresh(life, a.window)
     elif a.cmd == "availability-poll":
-        out = availability_poll(life, a.window)
+        out = availability_poll(life, a.window, writer_lock=a.writer_lock)
     elif a.cmd == "forecast":
         out = forecast(life, a.window)
     elif a.cmd == "exports":

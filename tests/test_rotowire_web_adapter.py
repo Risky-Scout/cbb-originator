@@ -989,6 +989,73 @@ def test_light_poll_only_acquires_never_forecasts_fits_or_simulates(monkeypatch,
     assert L.schedule_spec()["rotowire_light_poll"]["at"] == ["08:30"]
 
 
+def _web_poll_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("ROTOWIRE_SOURCE", "WEB")
+    monkeypatch.setenv(PC.ROTOWIRE_WEB_COOKIE_ENV, str(tmp_path / "ck"))
+    W.OS.write_json(tmp_path / "ops" / "markers" / W.ACCEPTANCE_MARKER, {"status": "PASS"})
+
+
+def test_light_poll_acquires_while_another_writer_holds_the_writer_lock_and_health_folds_in_later(monkeypatch, tmp_path):
+    """2026-11-26 13:30Z: the morning WALK_FORWARD stage held the CBB writer lock; the poll (then wholly under that lock)
+    waited 1500 s and exited 75 with NO acquisition. Now: acquisition outside the writer lock, immutable receipt, health
+    merge deferred while the lock is busy and folded in by the next health() write (which always holds the lock)."""
+    import fcntl
+    _web_poll_env(monkeypatch, tmp_path)
+    calls = []
+    monkeypatch.setattr(L, "web_acquire", lambda life: calls.append(1) or {"auth": "PASS", "news_continuity": "CONTINUOUS"})
+    life = L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", clock=lambda: T0)
+    lock = tmp_path / "locks" / "cbb-originator.writer.lock"
+    lock.parent.mkdir()
+    holder = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o660)
+    fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)                # another CBB writer (walk-forward) holds it
+    hp = tmp_path / "prod" / "health" / f"{L.et_date(T0).isoformat()}.json"
+    try:
+        out = L.availability_poll(life, writer_lock=str(lock), health_wait_s=0.2)
+    finally:
+        fcntl.flock(holder, fcntl.LOCK_UN)
+        os.close(holder)
+    assert calls == [1] and out["rotowire_web_acquisition"]["auth"] == "PASS"            # acquired despite the lock
+    assert out["health"] == "DEFERRED_WRITER_LOCK" and out["GLOBAL_WRITER_LOCK_HELD_DURING_WEB_ACQUIRE"] == "NO"
+    assert not hp.exists()                                                          # nothing written without the lock
+    rcpt = json.loads(Path(out["receipt"]).read_text())
+    assert rcpt["rotowire_web_acquisition"]["auth"] == "PASS" and rcpt["window"] == "08:30"
+    h = L.health(life, L.et_date(T0), forecast={"status": "FORECAST"})               # next writer (under the lock)
+    assert h["availability_poll_0830"]["finished_at"] == rcpt["finished_at"]
+    assert L.availability_state(h)["AVAILABILITY_STATE"] == "PASS"
+    # lock free -> merged immediately; a second, later receipt supersedes the first, an older one never wins
+    later = L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", clock=lambda: T0 + timedelta(minutes=5))
+    out2 = L.availability_poll(later, writer_lock=str(lock), health_wait_s=0.2)
+    assert out2["health"] == "MERGED"
+    assert json.loads(hp.read_text())["availability_poll_0830"]["finished_at"] == out2["finished_at"]
+    assert L.latest_poll_receipts(life.ops_root, L.et_date(T0))["availability_poll_0830"]["finished_at"] == out2["finished_at"]
+    L.health(life, L.et_date(T0))
+    assert json.loads(hp.read_text())["availability_poll_0830"]["finished_at"] == out2["finished_at"]
+    assert W.OS.create_once(Path(out["receipt"]), {"x": 1}) is False                # receipts are immutable
+    assert json.loads(Path(out["receipt"]).read_text())["window"] == "08:30"
+    assert len(list(L.poll_receipt_dir(life.ops_root).glob("*.json"))) == 2
+
+
+def test_light_poll_health_section_is_never_replaced_by_an_older_receipt(monkeypatch, tmp_path):
+    _web_poll_env(monkeypatch, tmp_path)
+    monkeypatch.setattr(L, "web_acquire", lambda life: {"auth": "PASS"})
+    life = L.Life(ops_root=tmp_path / "ops", prod_root=tmp_path / "prod", clock=lambda: T0)
+    day = L.et_date(T0)
+    newer = {"lifecycle": "AVAILABILITY_POLL", "window": "08:30", "finished_at": (T0 + timedelta(hours=1)).isoformat()}
+    L.health(life, day, availability_poll_0830=newer)                               # a newer direct section
+    out = L.availability_poll(life, writer_lock=str(tmp_path / "locks" / "w.lock"), health_wait_s=0.2)
+    assert out["health"] == "MERGED"
+    hp = tmp_path / "prod" / "health" / f"{day.isoformat()}.json"
+    assert json.loads(hp.read_text())["availability_poll_0830"]["finished_at"] == newer["finished_at"]
+    assert L.latest_poll_receipts(life.ops_root, day + timedelta(days=1)) == {}       # other ET dates never fold in
+
+
+def test_wrapper_runs_the_light_poll_outside_the_writer_lock():
+    r = (Path(__file__).resolve().parents[1] / "deploy" / "droplet" / "bin" / "cbb-originator-run").read_text()
+    pre = r[:r.index('exec 9>>"$WRITER_LOCK"')]
+    assert 'if [ "$CMD" = "availability-poll" ]; then' in pre and 'availability-poll --window "$2" --writer-lock "$WRITER_LOCK"' in r
+    assert "CBB_POLL_WRITER_LOCK_WAIT_SEC" not in r
+
+
 def test_shipped_player_states_table_is_valid_and_exempts_only_documented_players():
     from cbb_platform.prod import roster_omissions as RO
     s = PS.load()                                                          # the production table validates
