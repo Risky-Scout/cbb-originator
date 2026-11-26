@@ -11,6 +11,12 @@ def main():
     ns = {"__file__": G1, "__name__": "g1lib"}; exec(compile(src, G1, "exec"), ns)
     import duckdb, numpy as np, pandas as pd
     D, V, GR, gm = ns["D"], ns["V"], ns["GR"], ns["gm"]
+    class _Serial:                                      # in-process executor: same score_rows, no process pool
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def map(self, f, it): return map(f, it)
+    V.ProcessPoolExecutor = _Serial
     con = duckdb.connect(str(ns["LOCK"]), read_only=True)
     idm = dict(con.execute("select provider_game_key, canonical_game_id from metadata.game_id_map where provider='CBBD'").fetchall()); con.close()
     L = [ns["lines"](s, idm) for s in (2024, 2025)]

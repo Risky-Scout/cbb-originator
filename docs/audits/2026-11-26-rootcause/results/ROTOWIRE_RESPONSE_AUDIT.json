@@ -1,0 +1,162 @@
+{
+ "id": "ROTOWIRE_RESPONSE_AUDIT",
+ "generated": "2026-11-26",
+ "release": "60c7a44",
+ "question": "Is RotoWire information arriving correctly and, if so, exactly where is the model failing to USE it?",
+ "chain": {
+  "SOURCE_EVENT": {
+   "status": "PARTIAL",
+   "evidence": "40 live absences of regulars (trailing-5 >= 24 min, played previous game): 21 never listed on the acquired RotoWire pages (injury report + injury news), 3 postgame-only DNP notes; RotoWire CBB injury news is DATE_ONLY (no provider time)",
+   "class": "1 SOURCE (silent / postgame-only) for 24 of 40 = INFORMATION-LIMITED with the acquired pages"
+  },
+  "INGEST": {
+   "status": "FAIL",
+   "evidence": "acquisition only at 08:30/10:00/13:00/16:00/18:00 ET; 127 of 266 news items (48%) first collected the day after their displayed date (106 at the 08:00-08:30 ET run); 7 of 10 late live cases had a same-day OUT posted before tip but collected after the prediction cutoff (two 20:00 tips collected next morning)",
+   "class": "2 INGESTION LATE (refresh cadence)",
+   "fix": "cutoff-aligned acquisitions (Phase A, no writer lock) so every game's T-1h cutoff has an acquisition within the 20-min freshness bound; the designed cadence ROTOWIRE_POLL_MINUTES (GAME_DAY 10 / CRITICAL_PRE_TIP 5) is PROPOSED_NOT_APPROVED",
+   "blocker": "HUMAN: approve the automated request cadence against the RotoWire subscriber web pages (terms of the subscription)"
+  },
+  "PLAYER_ID": {
+   "status": "MOSTLY_PASS",
+   "evidence": "748 / 832 events RESOLVED (89.9%); 84 UNMATCHED fail their games closed; 1 of 40 live absences an unmatched-identity candidate",
+   "class": "3 IDENTITY (minor)"
+  },
+  "STATUS": {
+   "status": "PASS_WITH_NOTE",
+   "evidence": "Out/Out For Season/ruled out/won't play -> OUT / LONG_TERM_OUT; GTD -> GTD; 'expected to play' -> QUESTIONABLE (conservative)",
+   "class": "4 STATUS MAPPING (minor)"
+  },
+  "LINEUP_STATE": {
+   "status": "NOT_ACQUIRED",
+   "evidence": "no projected / confirmed lineup page is acquired (only injury report + injury news)",
+   "class": "5 LINEUP MAPPING: source not ingested"
+  },
+  "PLAYER_STATE_MIXTURE": {
+   "status": "FAIL_CLOSED",
+   "evidence": "OUT -> player removed (CONFIRMED_UNAVAILABLE); GTD / uncertain -> row gated (AVAILABILITY_UNCERTAIN_ROTATION); no state mixture (P(play) never conditioned on status)",
+   "class": "6 PLAYER STATE: binary remove / gate only"
+  },
+  "TEAMMATE_REDISTRIBUTION": {
+   "status": "FAIL",
+   "evidence": "prod/inputs.apply_availability removes the player and flags UNSUPPORTED_ROTATION_SHOCK; JM1 has no team-minutes reconciliation. Box truth: one regular out -> teammates minutes x1.12, PTS x1.17 (2024-25: see r6), {\"2025\": {\"m_ratio\": 1.1179, \"pts_ratio\": 1.1684, \"reb_ratio\": 1.1426, \"ast_ratio\": 1.1962}, \"2026\": {\"m_ratio\": 1.1223, \"pts_ratio\": 1.1686, \"reb_ratio\": 1.1414, \"ast_ratio\": 1.1744}}",
+   "class": "7 REDISTRIBUTION FAILED",
+   "repair": "RD1 (ROOT_CAUSE_PROTOCOL.json)"
+  },
+  "PLAYER_PMFS": {
+   "status": "FAIL",
+   "evidence": "the official T-1h shadow tick (prod.shadow_tick -> run.daily) is called WITHOUT rotowire_root / availability: run_summary.availability = null in 27 of 31 runs on 2026-11-25 (only the 4 availability-refresh forecasts apply RotoWire); exports use the official tick prediction when it exists (exports.distribution_records), so the published / graded PMF never conditions on RotoWire",
+   "class": "8 PMFs FAILED TO REGENERATE WITH THE INFORMATION at the official checkpoint",
+   "fix": "pass the RotoWire store to the tick's run.daily once ingestion is cutoff-aligned (otherwise the 20-min freshness bound fails every game closed)"
+  },
+  "GAME_PMF": {
+   "status": "FAIL",
+   "evidence": "GameJointPMF uses team ratings only; no player availability input",
+   "class": "9 GAME MODEL FAILED TO REACT"
+  },
+  "BOARD": {
+   "status": "PASS_FAIL_CLOSED",
+   "evidence": "UNSUPPORTED_ROTATION_SHOCK / AVAILABILITY_UNCERTAIN_ROTATION games are never wager-eligible; still shadow-published",
+   "class": "10 publication reacts by flag only"
+  }
+ },
+ "coverage_live": {
+  "absent_regulars": 40,
+  "coverage": {
+   "NO_PREGAME_EVENT": 34,
+   "GTD": 5,
+   "LAST=NOT_LISTED": 1
+  },
+  "ever_listed": 17,
+  "failure_classes": {
+   "SOURCE_SILENT_NEVER_LISTED": 21,
+   "SOURCE_LATE_FIRST_EVENT_AFTER_TIP": 10,
+   "RESOLVED_PREGAME_GTD": 5,
+   "IDENTITY_UNMATCHED_CANDIDATE": 1,
+   "RESOLVED_BUT_NO_EVENT_NEAR_GAME": 1,
+   "RESOLVED_PREGAME_NOT_LISTED": 1,
+   "NO_NAME": 1
+  },
+  "late_cases": [
+   {
+    "tip_et": "2026-11-17 19:00",
+    "first_event_collected_et": "2026-11-18 08:41",
+    "news_displayed_date": "2026-11-17",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "POSTGAME_ONLY"
+   },
+   {
+    "tip_et": "2026-11-18 19:00",
+    "first_event_collected_et": "2026-11-18 18:00",
+    "news_displayed_date": "2026-11-18",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-18 21:00",
+    "first_event_collected_et": "2026-11-19 10:00",
+    "news_displayed_date": "2026-11-19",
+    "posted_on_or_before_game_day": false,
+    "kind": "NEWS_UPDATE",
+    "status": "POSTGAME_ONLY"
+   },
+   {
+    "tip_et": "2026-11-13 19:00",
+    "first_event_collected_et": "2026-11-13 18:00",
+    "news_displayed_date": "2026-11-13",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-14 14:00",
+    "first_event_collected_et": "2026-11-14 16:00",
+    "news_displayed_date": "2026-11-14",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-15 13:30",
+    "first_event_collected_et": "2026-11-15 13:00",
+    "news_displayed_date": "2026-11-15",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-20 20:00",
+    "first_event_collected_et": "2026-11-21 08:32",
+    "news_displayed_date": "2026-11-20",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-14 19:00",
+    "first_event_collected_et": "2026-11-15 08:30",
+    "news_displayed_date": "2026-11-14",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "POSTGAME_ONLY"
+   },
+   {
+    "tip_et": "2026-11-19 20:00",
+    "first_event_collected_et": "2026-11-20 08:30",
+    "news_displayed_date": "2026-11-19",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   },
+   {
+    "tip_et": "2026-11-14 14:00",
+    "first_event_collected_et": "2026-11-14 16:00",
+    "news_displayed_date": "2026-11-14",
+    "posted_on_or_before_game_day": true,
+    "kind": "NEWS_UPDATE",
+    "status": "OUT"
+   }
+  ]
+ }
+}

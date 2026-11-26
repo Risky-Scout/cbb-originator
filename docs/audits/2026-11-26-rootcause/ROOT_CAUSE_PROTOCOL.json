@@ -78,6 +78,20 @@
    "T5": "PROTECTED |model margin| >= 12 band margin MSE diff point <= +0.5 each season",
    "T6": "TARGET early season (min games played <= 8) margin MSE diff point < 0 on 2024 and 2025",
    "rule": "PROMOTE iff T1-T6 pass; no post-result change"
+  },
+  "result": {
+   "evaluator": "scripts/r10_tp1_score.py -> results/r10_tp1_gates.json (same V.run scoring and lines as g1_GC3pl)",
+   "gates": {
+    "T1": true,
+    "T2": true,
+    "T3": true,
+    "T4": true,
+    "T5": true,
+    "T6": true,
+    "DECISION": "PROMOTE"
+   },
+   "summary": "margin dMSE 2024 -2.67 [-3.51,-1.89], 2025 -3.80 [-5.10,-2.55], 2027 -13.71 [-18.47,-8.87]; margin RMSE 11.45->11.33, 11.58->11.41, 13.08->12.54; ML log loss -0.0051/-0.0064/-0.0186 (all ub<0); totals unchanged (strength-only prior); 12+ band improved every season",
+   "decision": "PROMOTE (research); production implementation + CI + certification pending"
   }
  },
  "PI2_amendment": {
