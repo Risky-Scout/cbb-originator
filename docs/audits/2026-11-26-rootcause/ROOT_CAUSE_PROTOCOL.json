@@ -188,5 +188,22 @@
   "gates": "RD1/RD2 G1-G5 unchanged, evaluated on prospective live rows only",
   "evaluate_when": ">= 100 absent-regular team-games (about 7 weeks at the observed rate)",
   "production_mode": "RD2 computed in SHADOW alongside the incumbent (never alters P_model) so the prospective test is engine-pure"
+ },
+ "BR1_player_team_bridge": {
+  "declared_utc": "2026-11-26T03:06Z",
+  "declared_before": "any BR1 feature, fit or metric",
+  "root_cause": "GameJointPMF uses team ratings only: a known absence of a regular changes player PMFs (removal) but never the team's scoring expectation (ROTOWIRE_RESPONSE_AUDIT class 9)",
+  "feature": "L_team = sum of absent regulars' trailing-5 PTS / (absent + playing players' trailing-5 PTS) per team-game; absent regular = RD1 definition (trailing-5 minutes >= 24, played the team's previous game, absent now)",
+  "model": "delta expected team points = a * L_self + b * L_opp (OLS, no intercept) on TRAIN 2023-24 (season 2024) residuals: actual team points - incumbent game-model expectation (g1_GC3pl walk)",
+  "application": "exp_home += a L_home + b L_away; exp_away += a L_away + b L_home; the unchanged validator / GameJointPMF variance (V.run) scores it",
+  "evaluation": "TEST 2024-25 (season 2025) and live 2026-27 (late holdout), realized absences (upper bound of production, where the trigger is a pre-cutoff RotoWire OUT)",
+  "gates": {
+   "B1": "margin MSE diff (BR1 - incumbent) on games with any absence: 2025 bootstrap ub < 0; 2027 point <= 0",
+   "B2": "ML log loss diff, all games: 2025 ub <= +0.001",
+   "B3": "total MSE diff, all games: 2025 ub <= +0.5; 2027 point <= +1.0",
+   "B4": "PROTECTED |incumbent margin| >= 12: margin MSE diff point <= +0.5 each season",
+   "B5": "on the TP1P walk (if TP1P promoted): B1 on 2025 holds",
+   "rule": "PROMOTE iff B1-B5; no post-result change"
+  }
  }
 }
