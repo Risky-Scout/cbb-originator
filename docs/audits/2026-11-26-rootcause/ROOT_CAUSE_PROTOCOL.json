@@ -262,5 +262,175 @@
    "evaluator_note": "r11_eval gained a BASE override (default PRODALLB) so PS2 is compared with its declared base PRODPI2; gates unchanged",
    "decision": "PROMOTE"
   }
+ },
+ "STEP9_dispersion_after_upstream": {
+  "recorded": "2026-11-26T04:25Z",
+  "measure": "sum (y - mean)^2 / sum PMF var, PS2 engine (results/r17_post_fix_diagnostics.json)",
+  "result": {
+   "F2026": {
+    "all": 0.971,
+    "early": 1.171
+   },
+   "LIVE": {
+    "all": 1.146,
+    "no_prior": 1.274,
+    "early": 1.192,
+    "late": 1.044
+   }
+  },
+  "conclusion": "NOT disproven: early-season and no-history under-dispersion remains after PI2 / PS2 (LIVE 1.19 early, 1.27 no-history; 2025-26 early 1.17)"
+ },
+ "M3A_amendment": {
+  "declared_utc": "2026-11-26T04:25Z",
+  "declared_before": "any M3A replay metric",
+  "design": "DEFECT_PROTOCOL P7 M3 on the PS2 engine: min_sigma x s[cold_start_class] with the frozen M1 TRAIN ratios (COLD_EARLY_SEASON 1.115, COLD_NO_HISTORY 1.257, COLD_TRANSFER_IN 1.09, WARM 0.972) for the minutes channel of PTS / REB / AST / FG3M / TOV; STL / BLK keep the unscaled (PS2) minutes channel; both channels from the same eps stream",
+  "base": "PRODPS2",
+  "gates": "M1 gates unchanged (G1-G3, TARGET, COMBOS) + G5 market",
+  "status": "DECLARED; requires a two-channel exposure in the scorer (research replay + production substitution); scheduled after the current release"
+ },
+ "STEP10_game_uncertainty": {
+  "result": "game model 1.2.0 (TP1P) 2027 margin coverage 50/80/95 = .519/.811/.939 (1.1.0: .484/.785/.932); totals .545/.830/.957; 2024/2025 nominal",
+  "conclusion": "DISPROVEN_AFTER_UPSTREAM_FIX: residual 95% shortfall 1.4 standard errors on 986 games; no variance change"
+ },
+ "STEP11_spread_bands": {
+  "result": {
+   "GC3pl": {
+    "2024": {
+     "<3": {
+      "n": 1151,
+      "model_rmse": 11.25082593325565,
+      "market_rmse": 10.937693773882364
+     },
+     "3-7": {
+      "n": 1823,
+      "model_rmse": 11.365931258841886,
+      "market_rmse": 11.100195695892445
+     },
+     "7-12": {
+      "n": 1240,
+      "model_rmse": 11.426135702395786,
+      "market_rmse": 11.277296633273362
+     },
+     "12+": {
+      "n": 1083,
+      "model_rmse": 11.86159802630505,
+      "market_rmse": 11.54391630658522
+     }
+    },
+    "2025": {
+     "<3": {
+      "n": 1238,
+      "model_rmse": 10.940358091998073,
+      "market_rmse": 10.605097533710634
+     },
+     "3-7": {
+      "n": 1781,
+      "model_rmse": 11.68810885507351,
+      "market_rmse": 11.35895983604971
+     },
+     "7-12": {
+      "n": 1227,
+      "model_rmse": 11.106838679666845,
+      "market_rmse": 10.84598972305131
+     },
+     "12+": {
+      "n": 1180,
+      "model_rmse": 12.280050499789168,
+      "market_rmse": 11.569722320620802
+     }
+    },
+    "2027": {
+     "<3": {
+      "n": 178,
+      "model_rmse": 12.122477408167448,
+      "market_rmse": 11.395470221672895
+     },
+     "3-7": {
+      "n": 196,
+      "model_rmse": 11.88707736439572,
+      "market_rmse": 10.84750512085331
+     },
+     "7-12": {
+      "n": 174,
+      "model_rmse": 13.273019518188509,
+      "market_rmse": 12.112380860712006
+     },
+     "12+": {
+      "n": 433,
+      "model_rmse": 13.889152051676108,
+      "market_rmse": 12.55328136302277
+     }
+    }
+   },
+   "TP1P": {
+    "2024": {
+     "<3": {
+      "n": 1151,
+      "model_rmse": 11.168400900095255,
+      "market_rmse": 10.937693773882364
+     },
+     "3-7": {
+      "n": 1823,
+      "model_rmse": 11.227588398101892,
+      "market_rmse": 11.100195695892445
+     },
+     "7-12": {
+      "n": 1240,
+      "model_rmse": 11.362606421149767,
+      "market_rmse": 11.277296633273362
+     },
+     "12+": {
+      "n": 1083,
+      "model_rmse": 11.737495144438276,
+      "market_rmse": 11.54391630658522
+     }
+    },
+    "2025": {
+     "<3": {
+      "n": 1238,
+      "model_rmse": 10.814831824072145,
+      "market_rmse": 10.605097533710634
+     },
+     "3-7": {
+      "n": 1781,
+      "model_rmse": 11.54883800167534,
+      "market_rmse": 11.35895983604971
+     },
+     "7-12": {
+      "n": 1227,
+      "model_rmse": 10.95199432945158,
+      "market_rmse": 10.84598972305131
+     },
+     "12+": {
+      "n": 1180,
+      "model_rmse": 11.998876802854374,
+      "market_rmse": 11.569722320620802
+     }
+    },
+    "2027": {
+     "<3": {
+      "n": 178,
+      "model_rmse": 11.891262608521975,
+      "market_rmse": 11.395470221672895
+     },
+     "3-7": {
+      "n": 196,
+      "model_rmse": 11.384250775506045,
+      "market_rmse": 10.84750512085331
+     },
+     "7-12": {
+      "n": 174,
+      "model_rmse": 12.60947562419938,
+      "market_rmse": 12.112380860712006
+     },
+     "12+": {
+      "n": 433,
+      "model_rmse": 13.27550996061647,
+      "market_rmse": 12.55328136302277
+     }
+    }
+   }
+  },
+  "conclusion": "the market's RMSE edge is uniform across <3 / 3-7 / 7-12 / 12+ (0.1-0.7 points) and TP1P narrows every band; no close/mid-specific defect. Decomposition already performed upstream: roster quality (TP1 fixed), lineup information (BR1: no measurable value), variance (coverage nominal)"
  }
 }
