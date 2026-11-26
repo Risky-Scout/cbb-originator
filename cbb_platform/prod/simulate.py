@@ -24,7 +24,7 @@ from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 
-from cbb_platform.prod import config as PC, pts_compound as PTC
+from cbb_platform.prod import config as PC, minutes_state as MS2, pts_compound as PTC
 from cbb_platform.v2 import dependence as D, jm1_final_production as JP, joint as J, structural as S
 
 PMF_TOL = 1e-9
@@ -79,7 +79,7 @@ def simulate_game(prod: dict, gid: str, gp: pd.DataFrame, envd: dict, sims: int 
     if gp.loc[gp["_scored"], "team_id"].nunique() != 2:
         raise ScoringFailure("MISSING_PLAYER_STATE", f"{gid}: priced players on fewer than two teams")
     try:
-        with _bounded_tables():
+        with _bounded_tables(), MS2.calibrated_minutes():          # PS2 (promoted 2026-11-26): state-calibrated minutes
             r = JP.score_game(prod, gid, gp.reset_index(drop=True), envd, sims)
     except D.V2Phase2DataViolation as e:
         raise ScoringFailure("NON_PSD_DEPENDENCE", str(e)) from e

@@ -35,7 +35,7 @@ ENGINE_HISTORY = (
 
 def _corrections() -> list[tuple[str, dict]]:
     """(tag, frozen constants) of every promoted scoring-time correction, in application order."""
-    from cbb_platform.prod import (context_adj as CX, dev_trend as DV, preseason_prior as PI, pts_compound as PTC,
+    from cbb_platform.prod import (context_adj as CX, dev_trend as DV, minutes_state as MS2, preseason_prior as PI, pts_compound as PTC,
                                    rate_a2 as RA2, tov_trend as TT)
     out = []
     if RA2.PARAMS:
@@ -55,12 +55,14 @@ def _corrections() -> list[tuple[str, dict]]:
     if PI.enabled():
         out.append(("PI2", {"id": PI.ID, "coef": {k: list(v) for k, v in PI.COEF.items()}, "clip": list(PI.CLIP),
                             "k": PI.K_NO_PRIOR, "table_sha256": PI.TABLE_SHA256}))
+    if MS2.enabled():
+        out.append(("PS2", {"id": MS2.ID, "qmap_sha256": MS2.QMAP_SHA256, "z_knot": MS2.Z_KNOT}))
     return out
 
 
 def pre_context_tag() -> str:
     """Identity of the context ledger's incumbent: every promoted correction applied before DV1 / CTX1."""
-    cs = [c for t, c in _corrections() if t not in ("DEV1", "CTX1", "PI2")]    # PI2 runs after CTX1
+    cs = [c for t, c in _corrections() if t not in ("DEV1", "CTX1", "PI2", "PS2")]    # PI2 / PS2 act after CTX1
     return hashlib.sha256(json.dumps(cs, sort_keys=True, default=float).encode()).hexdigest()[:12]
 
 

@@ -62,5 +62,5 @@ def test_apply_clips_total_factor_and_leaves_returners(monkeypatch):
 
 def test_engine_attribution_names_pi2_after_ctx1():
     e = ENG.engine_id()
-    assert "+CTX1+PI2#" in e
+    assert "+CTX1+PI2+" in e or e.endswith("+CTX1+PI2") or "+CTX1+PI2#" in e
     assert "PI2" not in ENG.pre_context_tag()
