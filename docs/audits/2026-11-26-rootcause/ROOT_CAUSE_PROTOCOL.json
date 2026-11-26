@@ -33,5 +33,22 @@
    "G5": "MARKET: live graded prop events (p5 paired OVER reconstruction) model LL point <= PRODALLB point + 0.002",
    "rule": "PROMOTE iff G1-G5 all pass. No post-result gate change. Root cause proven + candidate fails -> design a better causal fix; hypothesis disproven -> close."
   }
+ },
+ "RD1_rotation_redistribution": {
+  "declared_utc": "2026-11-26T01:17Z",
+  "declared_before": "any TRAIN fit of RD1 and any replay metric of RD1",
+  "observed": "results/r6_redistribution_truth.json (box scores; descriptive): one regular out -> teammates minutes x1.12, PTS x1.17, AST x1.17, REB x1.14 (2024-25 and 2025-26); 2+ out PTS x1.42; ~74% of lost minutes absorbed",
+  "root_cause": "no teammate redistribution of an absent player's minutes / opportunity (prod/inputs.apply_availability removes the player and flags UNSUPPORTED_ROTATION_SHOCK; JM1 has no team-minutes reconciliation); the game model never sees player availability",
+  "fix": "for each team-game with absent regular(s) (pregame: trailing-5 minutes >= 24 and played the previous team game; production trigger = RotoWire OUT / LONG_TERM_OUT resolved before the cutoff): every remaining player's stat mean mu_s *= 1 + theta_s[band] * L_s, L_s = lost_s / (team_s - lost_s) (lost trailing stat of the absent regulars over the trailing stat of the remaining players); band = remaining player's trailing minutes {<10, 10-20, 20-28, 28+}; theta = 1 for all bands would be exact pro-rata conservation of the lost opportunity",
+  "fit_TRAIN": "2024-25 box panel only (redistribution_panel season 2025): WLS of (y / trailing - 1) on L_s per (stat, band), weights = trailing stat, ridge N(0,1); frozen",
+  "evaluation": "row_mult arm PRODRD1 = PRODALLB x RD1 (oracle absence = best-case pregame information) vs PRODALLB on F2026 and LIVE (absences derived from the season's own played rows), common random numbers",
+  "gates": {
+   "G1": "stacked dLL ub < 0 on F2026 AND LIVE",
+   "G2": "TARGET rows (teammates in team-games with an absent regular) stacked ub < 0 on both",
+   "G3": "no stat ub > +0.0005 (both); no F2026 stat x band cell ub > +0.002",
+   "G4": "COMBOS PRA/PR/PA/RA/STOCKS dRPS ub <= +0.0002 (both)",
+   "PROD_COVERAGE": "report the share of realized absent regulars with a pregame RotoWire OUT event (information availability; not a gate)",
+   "rule": "PROMOTE iff G1-G4 pass; no post-result change"
+  }
  }
 }

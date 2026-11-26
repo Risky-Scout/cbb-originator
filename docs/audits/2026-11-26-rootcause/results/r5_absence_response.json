@@ -1,0 +1,63 @@
+{
+ "F2026": {
+  "minutes": {
+   "NONE_ABSENT": {
+    "players": 111673.0,
+    "teams": 11499.0,
+    "min_ratio": 1.002
+   }
+  },
+  "team_minutes": {
+   "NONE_ABSENT": {
+    "forecast_team_min": 199.2,
+    "realized_team_min": 199.6
+   }
+  },
+  "stat_ratio": {
+   "NONE_ABSENT": {
+    "AST": 0.984,
+    "FG3M": 0.983,
+    "PTS": 0.982,
+    "REB": 1.007
+   }
+  }
+ },
+ "LIVE": {
+  "minutes": {
+   "NONE_ABSENT": {
+    "players": 16393.0,
+    "teams": 1751.0,
+    "min_ratio": 1.005
+   },
+   "ONE_REGULAR_ABSENT": {
+    "players": 10.0,
+    "teams": 1.0,
+    "min_ratio": 1.102
+   }
+  },
+  "team_minutes": {
+   "NONE_ABSENT": {
+    "forecast_team_min": 176.5,
+    "realized_team_min": 177.4
+   },
+   "ONE_REGULAR_ABSENT": {
+    "forecast_team_min": 177.0,
+    "realized_team_min": 195.0
+   }
+  },
+  "stat_ratio": {
+   "NONE_ABSENT": {
+    "AST": 0.996,
+    "FG3M": 0.978,
+    "PTS": 0.992,
+    "REB": 1.011
+   },
+   "ONE_REGULAR_ABSENT": {
+    "AST": 0.707,
+    "FG3M": 1.38,
+    "PTS": 1.076,
+    "REB": 1.093
+   }
+  }
+ }
+}

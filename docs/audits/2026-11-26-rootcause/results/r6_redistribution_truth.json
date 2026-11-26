@@ -1,0 +1,134 @@
+{
+ "2025": {
+  "NONE": {
+   "player_games": 92016,
+   "team_games": 9792,
+   "m_ratio": 0.9976,
+   "fga_ratio": 0.9924,
+   "fta_ratio": 0.9817,
+   "tpa_ratio": 0.9908,
+   "pts_ratio": 0.9853,
+   "reb_ratio": 0.9855,
+   "ast_ratio": 0.9803,
+   "tov_ratio": 0.9856
+  },
+  "ONE_REGULAR_OUT": {
+   "player_games": 6453,
+   "team_games": 740,
+   "m_ratio": 1.1179,
+   "fga_ratio": 1.1433,
+   "fta_ratio": 1.1422,
+   "tpa_ratio": 1.1388,
+   "pts_ratio": 1.1684,
+   "reb_ratio": 1.1426,
+   "ast_ratio": 1.1962,
+   "tov_ratio": 1.096
+  },
+  "TWO_PLUS_OUT": {
+   "player_games": 454,
+   "team_games": 56,
+   "m_ratio": 1.3219,
+   "fga_ratio": 1.4249,
+   "fta_ratio": 1.4499,
+   "tpa_ratio": 1.4649,
+   "pts_ratio": 1.4502,
+   "reb_ratio": 1.3445,
+   "ast_ratio": 1.5234,
+   "tov_ratio": 1.3556
+  },
+  "redistribution": {
+   "by_teammate_band": {
+    "<10": {
+     "n": 1272.0,
+     "extra_min_per_player": 4.379,
+     "extra_fga_per_player": 1.145
+    },
+    "10-20": {
+     "n": 1926.0,
+     "extra_min_per_player": 3.602,
+     "extra_fga_per_player": 0.93
+    },
+    "20-28": {
+     "n": 1647.0,
+     "extra_min_per_player": 1.851,
+     "extra_fga_per_player": 0.928
+    },
+    "28+": {
+     "n": 1608.0,
+     "extra_min_per_player": -0.203,
+     "extra_fga_per_player": 0.309
+    }
+   },
+   "team_extra_minutes_mean": 20.57768018018018,
+   "lost_minutes_mean": 29.2370045045045,
+   "absorbed_share": 0.7400381275408334,
+   "none_group_team_extra": -0.47200095315904167
+  }
+ },
+ "2026": {
+  "NONE": {
+   "player_games": 92502,
+   "team_games": 9836,
+   "m_ratio": 0.9984,
+   "fga_ratio": 0.9921,
+   "fta_ratio": 0.982,
+   "tpa_ratio": 0.9904,
+   "pts_ratio": 0.9844,
+   "reb_ratio": 0.9862,
+   "ast_ratio": 0.9809,
+   "tov_ratio": 0.9818
+  },
+  "ONE_REGULAR_OUT": {
+   "player_games": 6306,
+   "team_games": 716,
+   "m_ratio": 1.1223,
+   "fga_ratio": 1.1486,
+   "fta_ratio": 1.1259,
+   "tpa_ratio": 1.15,
+   "pts_ratio": 1.1686,
+   "reb_ratio": 1.1414,
+   "ast_ratio": 1.1744,
+   "tov_ratio": 1.1092
+  },
+  "TWO_PLUS_OUT": {
+   "player_games": 287,
+   "team_games": 36,
+   "m_ratio": 1.2741,
+   "fga_ratio": 1.3552,
+   "fta_ratio": 1.5839,
+   "tpa_ratio": 1.3341,
+   "pts_ratio": 1.4176,
+   "reb_ratio": 1.4451,
+   "ast_ratio": 1.3862,
+   "tov_ratio": 1.5397
+  },
+  "redistribution": {
+   "by_teammate_band": {
+    "<10": {
+     "n": 1228.0,
+     "extra_min_per_player": 4.415,
+     "extra_fga_per_player": 1.061
+    },
+    "10-20": {
+     "n": 1952.0,
+     "extra_min_per_player": 3.255,
+     "extra_fga_per_player": 0.994
+    },
+    "20-28": {
+     "n": 1605.0,
+     "extra_min_per_player": 2.141,
+     "extra_fga_per_player": 0.868
+    },
+    "28+": {
+     "n": 1521.0,
+     "extra_min_per_player": 0.014,
+     "extra_fga_per_player": 0.427
+    }
+   },
+   "team_extra_minutes_mean": 21.277513966480445,
+   "lost_minutes_mean": 29.21052141527002,
+   "absorbed_share": 0.7458377404316998,
+   "none_group_team_extra": -0.3165107767385117
+  }
+ }
+}
