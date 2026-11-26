@@ -71,7 +71,7 @@ G = {"G1": all(ub(R[ds]["stacked"]) < 0 for ds in R),
      "G3": all(ub(R[ds]["class"].get("SAME_TEAM_RETURNER", [0, 0, 0])) <= 0.0002 for ds in R) and
            all(ub(v) <= 0.002 for v in R["F2026"]["cells"].values()) and all(ub(v) <= 0.0005 for ds in R for v in R[ds]["per_stat"].values()),
      "G4": all(ub(v) <= 0.0002 for ds in R for v in R[ds]["combos_rps"].values())}
-if ARM == "PRODPI1":
+if ARM in ("PRODPI1", "PRODPI2"):
     G["G2"] = all(ub(R[ds]["target_PI1"]) < 0 for ds in R)
     G["G3_protected_returner_ub"] = {ds: ub(R[ds]["class"].get("SAME_TEAM_RETURNER", [0, 0, 0])) for ds in R}
 else:
@@ -84,8 +84,33 @@ G["failures"] = {ds: {"per_stat_over": {k: v for k, v in R[ds]["per_stat"].items
 json.dump({"results": R, "gates": G}, open(f"{RES}/r11_{tag}_eval.json", "w"), indent=1, default=str)
 for ds in R:
     r = R[ds]
-    print(ds, "stacked", np.round(r["stacked"], 5), "target", np.round(r.get("target_PI1" if ARM == "PRODPI1" else "target_RD1"), 5))
+    print(ds, "stacked", np.round(r["stacked"], 5), "target", np.round(r.get("target_PI1" if ARM in ("PRODPI1", "PRODPI2") else "target_RD1"), 5))
     print("  class", {k: np.round(v, 5).tolist() for k, v in r["class"].items()})
     print("  per_stat", {k: np.round(v, 5).tolist() for k, v in r["per_stat"].items()})
     print("  combos", {k: np.round(v, 5).tolist() for k, v in r["combos_rps"].items()})
 print({k: v for k, v in G.items() if k != "failures"}); print(json.dumps(G["failures"], default=str)[:1500])
+
+
+def g5():
+    """G5: graded live prop events with a de-vigged fair probability; arm vs PRODALLB log loss (p3_joint_eval.market pattern)."""
+    Lp = f"{Q}/p4/p5_LIVE_{tag}lines_lines.parquet"
+    if not os.path.exists(Lp):
+        return None
+    L = pd.read_parquet(Lp)
+    g = pd.read_parquet(os.path.join(ROOT, "data/qa/large/market_20261125/perf_live_overlap.parquet"))
+    g = g[g.result.isin(["WIN", "LOSS"])].dropna(subset=["fair_probability"])
+    x = g.merge(L, on=["game_id", "pgx", "stat", "line"])
+    x["p"] = np.where(x.side == "OVER", x.p_over, 1 - x.p_over - x.p_push) / np.clip(1 - x.p_push, 1e-9, None)
+    x["y"] = (x.result == "WIN").astype(float)
+    llf = lambda p, y: -(y * np.log(np.clip(p, 1e-6, 1 - 1e-6)) + (1 - y) * np.log(np.clip(1 - p, 1e-6, 1)))
+    a, b = x[x.arm == ARM].set_index("eval_key"), x[x.arm == "PRODALLB"].set_index("eval_key")
+    ix = a.index.intersection(b.index)
+    la, lb, lm = llf(a.loc[ix, "p"], a.loc[ix, "y"]).mean(), llf(b.loc[ix, "p"], b.loc[ix, "y"]).mean(), llf(a.loc[ix, "fair_probability"], a.loc[ix, "y"]).mean()
+    return {"n": int(len(ix)), "logloss_arm": float(la), "logloss_ALLB": float(lb), "logloss_market": float(lm), "pass": bool(la <= lb + 0.002)}
+
+
+G5 = g5()
+if G5:
+    G["G5"] = G5["pass"]
+    json.dump({"results": R, "gates": G, "G5": G5}, open(f"{RES}/r11_{tag}_{ARM}_eval.json", "w"), indent=1, default=str)
+    print("G5", G5)

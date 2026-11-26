@@ -60,6 +60,18 @@
    "G4": "COMBOS PRA/PR/PA/RA/STOCKS dRPS ub <= +0.0002 (both)",
    "PROD_COVERAGE": "report the share of realized absent regulars with a pregame RotoWire OUT event (information availability; not a gate)",
    "rule": "PROMOTE iff G1-G4 pass; no post-result change"
+  },
+  "result": {
+   "evaluator": "results/r11_pr_PRODRD1_eval.json",
+   "gates": {
+    "G1": false,
+    "G2": false,
+    "G3": false,
+    "G4": false,
+    "G5": true
+   },
+   "summary": "F2026 target (absent-teammate rows) dLL -0.00575 [-0.00816,-0.00347] and stacked -0.00033 (ub<0); F2026 cell PTS|band<10 ub +0.0032 over; LIVE stacked +0.00006 [-0.00035,+0.00043], target +0.00264 [-0.0146,+0.0193] on 39 team-games (underpowered)",
+   "decision": "REJECT. Defect NOT closed: redistribution root cause proven (r6 box truth, F2026 target gain); repair candidate over-scales low-minute bench PTS"
   }
  },
  "TP1_preseason_team_roster_prior": {
@@ -100,6 +112,27 @@
   "basis": "design correction after the PI1 rejection, stated causes: (1) REB: the TRAIN arm PRODX3 (A2 AST/FG3M/STL) predates production's REB A2 rate correction, so PI1's REB coefficients were fitted on a different REB base (double correction); (2) STL / BLK were never part of the root-cause diagnostic (r2: PTS/REB/AST/FG3M/TOV)",
   "fix": "PI1 multipliers (same TRAIN coefficients, unchanged) for PTS, AST, FG3M, TOV only; REB / STL / BLK = ALLB",
   "gates": "PI1 gates G1-G5 unchanged",
-  "caveat": "same-period re-test (F2026 / LIVE already seen for PI1): promotion additionally requires prospective confirmation on graded live events after deployment (shadow comparison)"
+  "caveat": "same-period re-test (F2026 / LIVE already seen for PI1): promotion additionally requires prospective confirmation on graded live events after deployment (shadow comparison)",
+  "result": {
+   "evaluator": "scripts/r11_eval.py pr PRODPI2 -> results/r11_pr_PRODPI2_eval.json",
+   "evaluator_fix_note": "first PI2 run scored PI2 against the RD1 target / band G3 (dispatch bug: any arm != PRODPI1 took the RD1 branch); fixed to PI1's declared gates; gates themselves unchanged",
+   "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true,
+    "G5": true
+   },
+   "summary": "stacked dLL F2026 -0.00093 [-0.00106,-0.00080], LIVE -0.00206 [-0.00282,-0.00134]; TRANSFER F2026 -0.00147, LIVE -0.00404; NO_PRIOR -0.00129 / -0.00192 (ub<0 both); returners unchanged; PRA dRPS -0.0138 / -0.0353; live market log loss 0.7047 vs ALLB 0.7080 (market 0.6884, n 700)",
+   "decision": "PROMOTE (research), subject to the declared prospective confirmation on graded live events after deployment"
+  }
+ },
+ "RD2_amendment": {
+  "declared_utc": "2026-11-26T02:31Z",
+  "declared_before": "any RD2 replay metric",
+  "basis": "RD1 failure localized to band <10 PTS (F2026, a TRAIN-disjoint period): for low-minute players the absence gain is a minutes / P(meaningful minutes) effect, while a mean multiplier on the zero-inflated low-minute PTS PMF over-scales",
+  "fix": "RD1 unchanged except band <10: multiplier capped at 1.15 for every stat (TRAIN-fitted theta otherwise unchanged)",
+  "gates": "RD1 gates G1-G5 unchanged",
+  "caveat": "same-period re-test; live power is low (39 team-games), so promotion also requires prospective confirmation; production trigger additionally requires a pre-cutoff RotoWire OUT (see ROTOWIRE_RESPONSE_AUDIT: cadence approval)"
  }
 }
