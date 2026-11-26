@@ -22,7 +22,7 @@ import pandas as pd
 
 from cbb_platform.prod import (board as BO, bundle as BD, config as PC, engine as ENG, features as PF, identity_conflicts as IC, pool_grain as PG, run_receipts as RR,
                                inputs as IN, ledger as LG, loader as LD, matching as MT, model_source as MS, odds_feed as OF, quotes as QT, readiness as RD,
-                               rate_a2 as RA2, roster_omissions as RO, tov_trend as TT, dev_trend as DV, context_adj as CX, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
+                               rate_a2 as RA2, roster_omissions as RO, tov_trend as TT, dev_trend as DV, context_adj as CX, preseason_prior as PI, rotowire_acquire as RA, rotowire_feed as RW, side_monitor as SD, simulate as SM, slate as SL, state as ST, universe as UV)
 
 FIXTURE_LABEL = "FIXTURE (synthetic production-format data; NOT live)"
 
@@ -222,6 +222,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         if len(rows):                                            # promoted 2026-11-22: AST / FG3M / STL role-aware rate
             rows, summary["player_rate_adjustment"] = RA2.apply(rows, cand, model.marginal_cfg, model.v0_state)
             rows, summary["tov_season_trend"] = TT.apply(rows, cand)     # promoted 2026-11-24: TOV within-season trend
+            base_mu = rows[[f"{s}_mu" for s in PI.STATS]].copy()   # PI2 clips the total mean-correction factor
             rows, summary["returning_development"] = DV.apply(rows, cand)   # promoted 2026-11-25: DV1
             sl = slate.set_index("canonical_game_id")
             hm, aw = rows["game_id"].map(sl["home_team_id"]), rows["game_id"].map(sl["away_team_id"])
@@ -229,6 +230,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             from cbb_platform.walkforward import config as WFC
             led, lst = CX.load_ledger(WFC.STORE_ROOT, PC.PRODUCTION_SEASON, aso)
             rows, summary["team_opponent_context"] = CX.apply(rows, opp, led, lst)   # promoted 2026-11-25: OT1 + OC2
+            rows, summary["preseason_prior"] = PI.apply(rows, cand, base_mu)   # promoted 2026-11-26: PI2
         envd = IN.environment(fr["team"], model.jm1["struct"]["env"]) if len(cand) else {}
         if len(rows):
             rows, aflags = IN.apply_availability(rows, availability)

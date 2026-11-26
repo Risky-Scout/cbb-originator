@@ -69,7 +69,7 @@ def test_update_ledger_is_incremental_and_rebuilds_on_a_new_incumbent(tmp_path, 
 
 
 def test_engine_names_the_correction_and_the_ledger_incumbent(monkeypatch):
-    assert "+DEV1+CTX1#" in ENG.engine_id()
+    assert "+DEV1+CTX1+" in ENG.engine_id()
     assert ENG.pre_context_tag() == "a4b0cb644c60"                 # = the engine the context factors were fit against
     monkeypatch.setattr(CX, "ENABLED", False)
     assert "CTX1" not in ENG.engine_id()
