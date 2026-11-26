@@ -219,5 +219,21 @@
   },
   "root_cause": "PROVEN: the unimodal minutes draw concentrates mass in BENCH / ROTATION; the true role distribution has heavier LIMITED and STARTER mass, and P(play) is too high for no-history players and too low for returners",
   "status": "OPEN -> repair candidate PS2 to be declared before any result (state-mixture minutes draw inside the existing simulator; GameJointPMF / JM1 conditional stat model unchanged)"
+ },
+ "PS2_state_mixture_minutes": {
+  "declared_utc": "2026-11-26T03:10Z",
+  "declared_before": "any PS2 fit output or replay metric",
+  "root_cause": "PS1: the minutes draw clip(min_mu + min_sigma eps, 0, KMAX), eps ~ N(0,1), under-weights the LIMITED and STARTER states given playing",
+  "fix": "conditional-on-playing state calibration inside the existing simulator: eps' = Q_b(Phi(eps)), Q_b = empirical quantile function (99 knots, linear, clamped) of standardized realized minutes residuals z = (y_min - min_mu) / min_sigma of played rows, per min_mu band b in {<10, 10-20, 20-28, 28+}; TRAIN 2024-25 played rows only. Same eps stream (common random numbers, copula, conditional stat model, P(play) untouched)",
+  "arms": "PRODPI2 (new incumbent) vs PRODPS2 = PRODPI2 + minutes map",
+  "gates": {
+   "G1": "stacked base-stat dLL ub < 0 on F2026 and LIVE",
+   "G2": "per-stat ub <= +0.0005 both periods",
+   "G3": "F2026 cells stat x band ub <= +0.002",
+   "G4": "combos dRPS ub <= +0.0002 both periods",
+   "G5": "live graded prop events log loss <= PRODPI2 + 0.002",
+   "S1": "state calibration, LIVE conditional on playing: |pred - obs| for STARTER and LIMITED each smaller than the incumbent's",
+   "rule": "PROMOTE iff G1-G5 and S1; no post-result change"
+  }
  }
 }
