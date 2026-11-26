@@ -134,5 +134,19 @@
   "fix": "RD1 unchanged except band <10: multiplier capped at 1.15 for every stat (TRAIN-fitted theta otherwise unchanged)",
   "gates": "RD1 gates G1-G5 unchanged",
   "caveat": "same-period re-test; live power is low (39 team-games), so promotion also requires prospective confirmation; production trigger additionally requires a pre-cutoff RotoWire OUT (see ROTOWIRE_RESPONSE_AUDIT: cadence approval)"
+ },
+ "TP1P_production_feature_equivalence": {
+  "declared_utc": "2026-11-26T02:54Z",
+  "declared_before": "any TP1P feature, fit or metric",
+  "basis": "TP1 used Starter Pack player_season_stats PORPAG (RESEARCH_ONLY). The user's CBBD API stats/player/season returns the same field: 2025 check, 5,134 matched player-seasons, PORPAG corr 0.99993 (max abs diff 0.2), minutes corr 0.999999 (results/r12_api_vs_pack_2025.json)",
+  "production_source": "CBBD API stats/player/season (user key) for the value term; rosters / recruits / transfers already CBBD_API lineage; team final strength from the production rating fit",
+  "research_stand_in": "season 2025-26 (needed only for the 2027 prior) is refused by the research lockbox (LOCKBOX_OPEN_DECISION_2025_26 requires a human approver); research validation uses the pack 2025-26 file, production acquires it through prod/cbbd_acquire (prior-season stats/player/season, guarded)",
+  "gates": {
+   "E1": "team-level features RV, LV, TV, TVd: Spearman(API vs research) >= 0.95 every season 2015-2026",
+   "E2": "sign agreement of (TP1P - GC3 prior) vs (TP1 - GC3 prior) >= 0.95 of teams every season 2018-2027",
+   "E3": "team-level OOS RMSE TP1P < GC3 every season 2018-2026 and mean improvement >= 0.8 x TP1's",
+   "E4": "game-level T1-T6 (TP1 gates, unchanged) pass for TP1P",
+   "rule": "TP1_PRODUCTIONIZED requires E1-E4; otherwise TP1 is not deployed"
+  }
  }
 }
