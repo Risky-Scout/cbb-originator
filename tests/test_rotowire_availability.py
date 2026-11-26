@@ -428,6 +428,36 @@ def test_snapshot_change_without_matching_news_update(tmp_path, ctx):
     assert fr.set_index("player_id").loc["P5", "status"] == "NO_REPORT"
 
 
+def test_identity_resolved_after_the_last_status_change_reaches_the_state_and_unblocks_the_slate(tmp_path, ctx):
+    """2026-11-26: RotoWire 26128 (College of Charleston) was ingested OUT on 11-23 with an unmapped team; the curated
+    alias was added 11-26 but his status never changed, so every later snapshot was skipped and his stale no-team identity
+    blocked EVERY game (AVAILABILITY_IDENTITY_UNRESOLVED). A re-resolved identity is now a new observation."""
+    store, clock = RW.EventStore(tmp_path / "ev"), [T0]
+    body = {"Players": [snap("r9", "Eli", "Ell", "OUT", team=("1009", "Mystery College"))]}
+    _ingest(tmp_path, ctx, store, clock, "snapshot", body)                       # team unmapped: no canonical team
+    t1 = clock[0] + pd.Timedelta(seconds=1)
+    assert pd.isna(_state(store, t1).loc["r9", "canonical_team_id"])
+    _, reasons = RW.availability_frame(store.frame(), GAMES, t1)
+    assert reasons["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]                # an unrelated game is blocked
+    fixed = RW.IdentityContext(ctx.teams, pd.concat([ctx.roster, pd.DataFrame(
+        [("P9", "T2", "Eli", "Ell", "Eli Ell", "Guard")], columns=ctx.roster.columns)], ignore_index=True),
+        team_map=pd.DataFrame({"rotowire_team_id": ["1009"], "canonical_team_id": ["T2"]}))
+    clock[0] = T0 + pd.Timedelta(minutes=30)
+    assert _ingest(tmp_path, fixed, store, clock, "snapshot", body)["events_new"] == 1
+    obs = store.load()[-1]
+    assert (obs["reconciliation"], obs["normalized_status"], obs["identity_resolution_status"]) == (
+        "IDENTITY_RERESOLVED", "OUT", "RESOLVED")
+    t2 = clock[0] + pd.Timedelta(seconds=1)
+    st = _state(store, t2)
+    assert (st.loc["r9", "canonical_team_id"], st.loc["r9", "canonical_player_id"], st.loc["r9", "effective_status"]) == (
+        "T2", "P9", "OUT")
+    fr, reasons = RW.availability_frame(store.frame(), GAMES, t2)
+    assert reasons["G1"] == [] and fr.set_index("player_id").loc["P9", "status"] == "OUT"
+    assert pd.isna(_state(store, t1).loc["r9", "canonical_team_id"])          # point in time: the earlier state is untouched
+    clock[0] = T0 + pd.Timedelta(minutes=40)
+    assert _ingest(tmp_path, fixed, store, clock, "snapshot", body)["events_new"] == 0       # idempotent once resolved
+
+
 # ============================================================================ end to end through run.daily
 @pytest.fixture(scope="module")
 def smoke_state(tmp_path_factory):

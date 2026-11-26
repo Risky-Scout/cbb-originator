@@ -629,6 +629,14 @@ def ingest(fetch: dict, endpoint: str, ctx: IdentityContext, store: EventStore, 
     return ingest_parsed(parsed, len(recs), malformed, fetch, endpoint, ctx, store, session)
 
 
+IDENTITY_KEYS = ("canonical_player_id", "canonical_team_id", "identity_resolution_status")
+
+
+def _same_identity(prev: dict, ident: dict) -> bool:
+    n = lambda x: None if x is None or (isinstance(x, float) and pd.isna(x)) else str(x)
+    return all(n(prev.get(k)) == n(ident.get(k)) for k in IDENTITY_KEYS)
+
+
 def ingest_parsed(parsed: list[dict], n_records: int, malformed: int, fetch: dict, endpoint: str, ctx, store: EventStore,
                   session, extra: dict | None = None) -> dict:
     """Already-extracted records (extract() field layout) -> new events (idempotent) + a PROCESSED ledger entry.
@@ -656,10 +664,19 @@ def ingest_parsed(parsed: list[dict], n_records: int, malformed: int, fetch: dic
             pid = f["rotowire_player_id"]
             seen.add(pid)
             prev = last_snap.get(pid)
-            if prev is not None and prev["normalized_status"] == f["normalized_status"] and prev["raw_status"] == f["raw_status"]:
+            ident = ctx.resolve(f)
+            same_status = prev is not None and prev["normalized_status"] == f["normalized_status"] \
+                and prev["raw_status"] == f["raw_status"]
+            if same_status and _same_identity(prev, ident):
                 continue
-            rec = "MATCHES_LATEST_NEWS" if last_news.get(pid) == f["normalized_status"] else "NO_MATCHING_NEWS_UPDATE"
-            e = _event({**f, "source_datetime": None}, ctx.resolve(f), kind, endpoint, collected, fetch["raw_payload_sha256"],
+            # 2026-11-26: an unchanged status was skipped even when the IDENTITY had since resolved (a curated team alias
+            # added after the player's last status change), so player_state kept the stale UNMATCHED / no-team identity
+            # forever and one such record failed every game of every slate closed (AVAILABILITY_IDENTITY_UNRESOLVED:
+            # RotoWire 26128, College of Charleston, 11-23 21:00Z onward). The re-resolved identity is a new observation
+            # knowable from THIS collection on; earlier states are untouched.
+            rec = ("IDENTITY_RERESOLVED" if same_status else
+                   "MATCHES_LATEST_NEWS" if last_news.get(pid) == f["normalized_status"] else "NO_MATCHING_NEWS_UPDATE")
+            e = _event({**f, "source_datetime": None}, ident, kind, endpoint, collected, fetch["raw_payload_sha256"],
                        reconciliation=rec, **extra)
             e["semantic_key"] = semantic_key({**e, "source_datetime": collected})   # a snapshot change is a new observation
             e["event_id"] = "RW-" + e["semantic_key"][:20]
