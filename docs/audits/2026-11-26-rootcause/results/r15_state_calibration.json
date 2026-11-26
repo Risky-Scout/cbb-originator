@@ -1,0 +1,190 @@
+{
+ "F2026": {
+  "ALL": {
+   "n": 111673,
+   "OUT": {
+    "pred": 0.1171,
+    "obs": 0.0
+   },
+   "LIMITED": {
+    "pred": 0.1346,
+    "obs": 0.2006
+   },
+   "BENCH": {
+    "pred": 0.2443,
+    "obs": 0.25
+   },
+   "ROTATION": {
+    "pred": 0.2383,
+    "obs": 0.2351
+   },
+   "STARTER": {
+    "pred": 0.2657,
+    "obs": 0.3143
+   }
+  },
+  "NO_PRIOR_HISTORY": {
+   "n": 40551,
+   "OUT": {
+    "pred": 0.1578,
+    "obs": 0.0
+   },
+   "LIMITED": {
+    "pred": 0.1879,
+    "obs": 0.2952
+   },
+   "BENCH": {
+    "pred": 0.2794,
+    "obs": 0.2892
+   },
+   "ROTATION": {
+    "pred": 0.205,
+    "obs": 0.2031
+   },
+   "STARTER": {
+    "pred": 0.1699,
+    "obs": 0.2126
+   }
+  },
+  "SAME_TEAM_RETURNER": {
+   "n": 35937,
+   "OUT": {
+    "pred": 0.1123,
+    "obs": 0.0
+   },
+   "LIMITED": {
+    "pred": 0.1109,
+    "obs": 0.1656
+   },
+   "BENCH": {
+    "pred": 0.212,
+    "obs": 0.2192
+   },
+   "ROTATION": {
+    "pred": 0.2407,
+    "obs": 0.2364
+   },
+   "STARTER": {
+    "pred": 0.3241,
+    "obs": 0.3787
+   }
+  },
+  "TRANSFER": {
+   "n": 35185,
+   "OUT": {
+    "pred": 0.0751,
+    "obs": 0.0
+   },
+   "LIMITED": {
+    "pred": 0.0974,
+    "obs": 0.1274
+   },
+   "BENCH": {
+    "pred": 0.2367,
+    "obs": 0.2363
+   },
+   "ROTATION": {
+    "pred": 0.2743,
+    "obs": 0.2706
+   },
+   "STARTER": {
+    "pred": 0.3164,
+    "obs": 0.3657
+   }
+  }
+ },
+ "LIVE": {
+  "ALL": {
+   "n": 37679,
+   "OUT": {
+    "pred": 0.5201,
+    "obs": 0.5647
+   },
+   "LIMITED": {
+    "pred": 0.0974,
+    "obs": 0.0965
+   },
+   "BENCH": {
+    "pred": 0.1689,
+    "obs": 0.1242
+   },
+   "ROTATION": {
+    "pred": 0.1299,
+    "obs": 0.1093
+   },
+   "STARTER": {
+    "pred": 0.0837,
+    "obs": 0.1053
+   }
+  },
+  "NO_PRIOR_HISTORY": {
+   "n": 21586,
+   "OUT": {
+    "pred": 0.6505,
+    "obs": 0.7524
+   },
+   "LIMITED": {
+    "pred": 0.095,
+    "obs": 0.0871
+   },
+   "BENCH": {
+    "pred": 0.1373,
+    "obs": 0.0791
+   },
+   "ROTATION": {
+    "pred": 0.0811,
+    "obs": 0.0457
+   },
+   "STARTER": {
+    "pred": 0.0361,
+    "obs": 0.0357
+   }
+  },
+  "SAME_TEAM_RETURNER": {
+   "n": 7329,
+   "OUT": {
+    "pred": 0.3755,
+    "obs": 0.2863
+   },
+   "LIMITED": {
+    "pred": 0.1127,
+    "obs": 0.1347
+   },
+   "BENCH": {
+    "pred": 0.1939,
+    "obs": 0.1734
+   },
+   "ROTATION": {
+    "pred": 0.1746,
+    "obs": 0.1938
+   },
+   "STARTER": {
+    "pred": 0.1432,
+    "obs": 0.2119
+   }
+  },
+  "TRANSFER": {
+   "n": 8764,
+   "OUT": {
+    "pred": 0.3198,
+    "obs": 0.335
+   },
+   "LIMITED": {
+    "pred": 0.0905,
+    "obs": 0.0879
+   },
+   "BENCH": {
+    "pred": 0.2256,
+    "obs": 0.1941
+   },
+   "ROTATION": {
+    "pred": 0.2129,
+    "obs": 0.1955
+   },
+   "STARTER": {
+    "pred": 0.1512,
+    "obs": 0.1876
+   }
+  }
+ }
+}

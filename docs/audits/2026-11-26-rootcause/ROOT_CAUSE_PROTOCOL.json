@@ -205,5 +205,19 @@
    "B5": "on the TP1P walk (if TP1P promoted): B1 on 2025 holds",
    "rule": "PROMOTE iff B1-B5; no post-result change"
   }
+ },
+ "PS1_player_state_diagnostic": {
+  "recorded": "2026-11-26",
+  "script": "scripts/r15_state_calibration.py -> results/r15_state_calibration.json (no fit)",
+  "construction": "production minutes draw clip(N(min_mu, min_sigma), 0, 48) as an explicit mixture over OUT / LIMITED <10 / BENCH 10-20 / ROTATION 20-28 / STARTER 28+, P(OUT) = 1 - p_play",
+  "finding": {
+   "LIVE_all": "OUT .520/.565, LIMITED .097/.097, BENCH .169/.124, ROTATION .130/.109, STARTER .084/.105 (pred/obs)",
+   "LIVE_returner": "OUT .376/.286, STARTER .143/.212",
+   "LIVE_transfer": "STARTER .151/.188",
+   "LIVE_no_prior": "OUT .650/.752, BENCH .137/.079",
+   "F2026_conditional_on_playing": "LIMITED .153/.201, STARTER .301/.314 (played-only frame)"
+  },
+  "root_cause": "PROVEN: the unimodal minutes draw concentrates mass in BENCH / ROTATION; the true role distribution has heavier LIMITED and STARTER mass, and P(play) is too high for no-history players and too low for returners",
+  "status": "OPEN -> repair candidate PS2 to be declared before any result (state-mixture minutes draw inside the existing simulator; GameJointPMF / JM1 conditional stat model unchanged)"
  }
 }
