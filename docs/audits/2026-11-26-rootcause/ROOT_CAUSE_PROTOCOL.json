@@ -171,8 +171,9 @@
    "E1": "PASS (min Spearman 0.997-1.000)",
    "E2": "PASS (>= 0.999)",
    "E3": "PASS (mean improvement 0.7254 vs TP1 0.7261)",
-   "E4": "pending (game walk)"
-  }
+   "E4": "PASS {\"T1\": true, \"T2\": true, \"T3\": true, \"T4\": true, \"T5\": true, \"T6\": true, \"DECISION\": \"PROMOTE\"}"
+  },
+  "decision": "TP1_PRODUCTIONIZED = PASS (E1-E4); sealed as game model 1.2.0 ratings prior"
  },
  "DATA_LINEAGE_AND_RIGHTS_FINDINGS": {
   "recorded": "2026-11-26",

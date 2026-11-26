@@ -4,8 +4,8 @@
   "gamma": 0.3
  },
  "adjust_note": "beta selected walk-forward on 2024-25 (2023-24 fold has no p_play); OLS -0.077 (2024-25), -0.008 (2025-26); every beta>0 raised RMSE. gamma is a conservative prior (not fitted), SHADOW only.",
- "model_version": "cbb-game-model-1.1.0",
- "params_sha256": "ffb91c4375c0c0081f35ddefb533d1bbdecff3cfac5b4173bdddae6977fcf70c",
+ "model_version": "cbb-game-model-1.2.0",
+ "params_sha256": "abe0533360f9dd1c385080e2130a9a4768b5e8570ad68aad9124284c57391be4",
  "prior_exposure": "2026-11-18 design prototype computed 2025-26 margin RMSE (12.69 / 12.52) as a diagnostic; no parameter was chosen on 2025-26",
  "ratings": {
   "carry_level": 0.6,
@@ -22,17 +22,19 @@
  },
  "ratings_prior": {
   "2027": {
-   "file": "ratings_prior_2027_gc3.parquet",
+   "file": "ratings_prior_2027_tp1p.parquet",
    "league": {
     "hca": 2.0732063053162766,
     "mu": 108.54325093596867,
     "pi": 68.05007413586073
    },
-   "replaces": "ratings_prior_2027.parquet b4c5fcd183ab (TR-0a2155b13dd15fbb)",
-   "sha256": "05f4e80a0149da42debec60aec59155222cb98c0016da29cceec5f8e6267557a",
+   "replaces": "ratings_prior_2027_gc3.parquet 05f4e80a0149 (TR-10eb402ea932e538)",
+   "sha256": "e2c7494ad87941ffef344c9cae2c2ca2545bd245f9400746908c83bbe523d9b2",
    "source": "season-final ratings chain 2014..2026 (2025-26 final) from the canonical history, GC3 component carryover (strength rho, level rho*.6, pace rho*.6)",
-   "state_id": "TR-10eb402ea932e538",
-   "teams": 368
+   "state_id": "TR-e2c7494ad87941ff",
+   "strength_source": "TP1P preseason team roster prior (docs/audits/2026-11-26-rootcause/ROOT_CAUSE_PROTOCOL.json TP1 / TP1P): ridge on returning / lost / transferred-in PORPAG value, transfer competition change, recruit class and GC3 strength x continuity, fit 2016..2026; CBBD API value term (2025-26 stand-in: Starter Pack file identical to the API, lockbox-refused for the research client)",
+   "teams": 368,
+   "teams_tp1p": 364
   }
  },
  "splits": {

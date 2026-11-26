@@ -1,0 +1,26 @@
+{
+ "LIVE_conditional_on_playing": {
+  "LIMITED": {
+   "obs": 0.2217,
+   "incumbent": 0.1962,
+   "PS2": 0.21
+  },
+  "BENCH": {
+   "obs": 0.2853,
+   "incumbent": 0.3459,
+   "PS2": 0.3306
+  },
+  "ROTATION": {
+   "obs": 0.2511,
+   "incumbent": 0.2723,
+   "PS2": 0.2613
+  },
+  "STARTER": {
+   "obs": 0.2418,
+   "incumbent": 0.1856,
+   "PS2": 0.1981
+  }
+ },
+ "S1": true,
+ "n": 16403
+}
