@@ -439,6 +439,14 @@ def run(*, as_of=None, stages=("preseason", "schedule", "completed"), history_db
         # original payload file but re-verifies it)
         ver = [e["verified_at"] for ss in sessions for e in ss.entries
                if e.get("endpoint") == "teams/roster" and e.get("verified_at") and _utc(e["verified_at"]) <= cut]
+        # 2026-11-26: only THIS sync's entries were read, so every sync whose roster request was a CACHE_HIT (the TTL runs
+        # from the last re-verification) regressed roster_as_of to the payload's first receipt (2026-11-12 17:40Z) although
+        # the provider re-verified the identical payload daily (FETCHED_UNCHANGED, last 11-26 18:30Z) -> STALE_ROSTER on
+        # every row from 11-19. The ledger's latest confirmation of this exact payload (<= cut) counts too.
+        led = sessions[0] if sessions else A.Session(f"{sync_id}:roster-as-of", max_live_requests=0, **kw)
+        lv = led.last_verified(A.request_key(*PRESEASON[0]), roster_meta["sha256"])
+        if lv is not None and lv <= cut:
+            ver.append(lv.isoformat())
         roster_as_of = max([_utc(roster_meta["received_at"])] + [_utc(v) for v in ver]).isoformat()
         evidence = {"source": "CBBD_API_PRODUCTION", "roster_2027_acquired": True, "portal_2026_complete": True,
                     "recruits_2026_complete": True,

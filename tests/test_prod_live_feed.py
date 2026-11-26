@@ -382,6 +382,19 @@ def test_state_rejects_two_recruits_on_one_identity(world, tmp_path):
 
 
 # ============================================================================ point-in-time chronology
+def test_roster_as_of_counts_the_ledger_reverification_when_this_sync_hit_the_cache(world):
+    """2026-11-26: the roster payload was re-verified daily (FETCHED_UNCHANGED) but a sync whose roster request was a
+    CACHE_HIT read only its own entries, so roster_as_of regressed to the first receipt (11-12) -> STALE_ROSTER on every
+    row from 11-19. Here: s1 fetches 11-01 12:00Z, s_early re-verifies 11-05 03:00Z, s2 (03:00 + 3 h) is a CACHE_HIT and
+    promotes v2: its roster_as_of is the 03:00Z confirmation, never the 11-01 receipt (and never after its cutoff)."""
+    man = json.loads((world["w"] / "state" / "versions" / world["v2"] / "state_manifest.json").read_text())
+    led = A.ledger(world["kw"]["ledger_path"])
+    hits = [e for e in led if e["endpoint"] == "teams/roster" and e["stage"].startswith(world["s2"]["sync_id"])]
+    assert [e["status"] for e in hits] == ["CACHE_HIT"]
+    assert pd.Timestamp(man["roster_as_of"]) == pd.Timestamp(T_EARLY)
+    assert pd.Timestamp(man["roster_as_of"]) <= pd.Timestamp(man["source_cutoff"])
+
+
 def test_roster_cutoff_chronology(world, tmp_path):
     with pytest.raises(F.FeedUnavailable, match="MISSING_ROSTER"):            # no roster received by that instant
         F.snapshot([("teams/roster", {"season": 2027})], "2026-11-01T11:59Z", tmp_path / "s", world["w"] / "cache")
