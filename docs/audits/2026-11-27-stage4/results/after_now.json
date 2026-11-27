@@ -1,0 +1,304 @@
+{
+ "as_of": "2026-11-27T05:31:49.396739+00:00",
+ "state_version": "S20261127T041333Z-288bf8cbe390",
+ "participation_decisions": {
+  "MOOT_CBBD_LISTS_PLAYER": 5089,
+  "APPLIED": 18,
+  "REJECTED_COMPETING_CANONICAL_CANDIDATE": 4,
+  "WITHHELD_CURATED_NONCURRENT": 1
+ },
+ "participation_non_moot": [
+  {
+   "canonical_player_id": "P-0e25c1383446dd0d",
+   "canonical_team_id": "T-cec00129ba095ae5",
+   "player_name": "Christian Martin",
+   "box_games": 5,
+   "box_last_knowable_at": "2026-11-22T03:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-0e6745dfddc732fe",
+   "canonical_team_id": "T-eeae59b5ea19e9f1",
+   "player_name": "Lucas Morillo",
+   "box_games": 7,
+   "box_last_knowable_at": "2026-11-24T05:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-12cabea77535134e",
+   "canonical_team_id": "T-f9d5cd2db6864e1e",
+   "player_name": "Sawyer Mayhugh",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-25T03:00:00+00:00",
+   "decision": "REJECTED_COMPETING_CANONICAL_CANDIDATE"
+  },
+  {
+   "canonical_player_id": "P-34e636a73afc9254",
+   "canonical_team_id": "T-10b1df7b02225bde",
+   "player_name": "Jakub Szumert",
+   "box_games": 8,
+   "box_last_knowable_at": "2026-11-27T04:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-3a91608d01ce45d2",
+   "canonical_team_id": "T-385656c78dbfeb37",
+   "player_name": "Zak Smrekar",
+   "box_games": 7,
+   "box_last_knowable_at": "2026-11-26T22:30:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-5bdae415541b197b",
+   "canonical_team_id": "T-7807a16ec4eee464",
+   "player_name": "Sam Curvy",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-23T05:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-5ce042f648e4fb1d",
+   "canonical_team_id": "T-cf2771d63aeecf02",
+   "player_name": "Robbie Avila",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-27T03:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-63a81e1d2238000e",
+   "canonical_team_id": "T-688eef470e75f229",
+   "player_name": "Isaiah Brown",
+   "box_games": 1,
+   "box_last_knowable_at": "2026-11-03T04:30:00+00:00",
+   "decision": "REJECTED_COMPETING_CANONICAL_CANDIDATE"
+  },
+  {
+   "canonical_player_id": "P-63f77bb28e1c697e",
+   "canonical_team_id": "T-60cbc6811b64950e",
+   "player_name": "Caspian Jones",
+   "box_games": 2,
+   "box_last_knowable_at": "2026-11-26T05:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-63f7ff693a9cdb70",
+   "canonical_team_id": "T-27e2f5eec8cc801c",
+   "player_name": "Hayden Clay",
+   "box_games": 2,
+   "box_last_knowable_at": "2026-11-24T04:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-732dc5028c1fa989",
+   "canonical_team_id": "T-8105ae18388a83f9",
+   "player_name": "Navon Shabazz",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-14T05:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-8e821a9c41d7a634",
+   "canonical_team_id": "T-262cae9a09cabf1a",
+   "player_name": "Malique Ewin",
+   "box_games": 5,
+   "box_last_knowable_at": "2026-11-25T08:18:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-949d87360820c7c4",
+   "canonical_team_id": "T-41f05703b101d401",
+   "player_name": "Trashaun Combs-Pierce",
+   "box_games": 5,
+   "box_last_knowable_at": "2026-11-25T04:30:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-960c502db1a77e8b",
+   "canonical_team_id": "T-f9d5cd2db6864e1e",
+   "player_name": "Ryder Cate",
+   "box_games": 4,
+   "box_last_knowable_at": "2026-11-22T04:00:00+00:00",
+   "decision": "REJECTED_COMPETING_CANONICAL_CANDIDATE"
+  },
+  {
+   "canonical_player_id": "P-98aa1812fb299c5a",
+   "canonical_team_id": "T-2ca04378df48012d",
+   "player_name": "Alois Leyrolles",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-19T07:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-9b08b82a35f40c06",
+   "canonical_team_id": "T-635a67e34e5e2110",
+   "player_name": "Calvin Sirmans",
+   "box_games": 8,
+   "box_last_knowable_at": "2026-11-26T02:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-9b69739afaea2021",
+   "canonical_team_id": "T-61fdaf0277b7ff99",
+   "player_name": "Deion Ware",
+   "box_games": 3,
+   "box_last_knowable_at": "2026-11-25T05:30:00+00:00",
+   "decision": "REJECTED_COMPETING_CANONICAL_CANDIDATE"
+  },
+  {
+   "canonical_player_id": "P-a64cdcf86d329ebd",
+   "canonical_team_id": "T-ac5ed60df62aa41e",
+   "player_name": "RJ Luis Jr.",
+   "box_games": 1,
+   "box_last_knowable_at": "2026-11-19T05:00:00+00:00",
+   "decision": "WITHHELD_CURATED_NONCURRENT"
+  },
+  {
+   "canonical_player_id": "P-b0a40205b32b4057",
+   "canonical_team_id": "T-a0d80711e98eb6cb",
+   "player_name": "Aaron Bliss",
+   "box_games": 7,
+   "box_last_knowable_at": "2026-11-26T01:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-b17cef38253643f3",
+   "canonical_team_id": "T-8deca3ef1c52855a",
+   "player_name": "AJ Pierre-Jerome",
+   "box_games": 2,
+   "box_last_knowable_at": "2026-11-26T06:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-c18a9d943dcea78c",
+   "canonical_team_id": "T-b61f816724ae5a02",
+   "player_name": "KyeRon Lindsay-Martin",
+   "box_games": 1,
+   "box_last_knowable_at": "2026-11-23T04:40:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-d167c68d5d4bd661",
+   "canonical_team_id": "T-c4c76030a20db4ba",
+   "player_name": "John Mattingly",
+   "box_games": 2,
+   "box_last_knowable_at": "2026-11-25T04:00:00+00:00",
+   "decision": "APPLIED"
+  },
+  {
+   "canonical_player_id": "P-e589d74c4ecf6369",
+   "canonical_team_id": "T-71636d38f55f4671",
+   "player_name": "Levi Ball",
+   "box_games": 8,
+   "box_last_knowable_at": "2026-11-26T03:00:00+00:00",
+   "decision": "APPLIED"
+  }
+ ],
+ "identity_roster_sources": {
+  "CBBD": 5583,
+  "BOX_PARTICIPATION": 18
+ },
+ "max_teams_per_player_in_identity_roster": 1,
+ "participation_temporal_ok": true,
+ "avila_tcu_row_at_1120T0000Z": false,
+ "avila_tcu_row_now": true,
+ "stale_unresolved_fields": 35,
+ "would_add_player_rows": [
+  {
+   "rotowire_player_id": "28337",
+   "rotowire_player_name": "John Mattingly",
+   "canonical_player_id": "P-d167c68d5d4bd661",
+   "canonical_team_id": "T-c4c76030a20db4ba",
+   "method": "EXACT_NAME_ON_BOX_PARTICIPATION_ROSTER"
+  },
+  {
+   "rotowire_player_id": "21059",
+   "rotowire_player_name": "Robbie Avila",
+   "canonical_player_id": "P-5ce042f648e4fb1d",
+   "canonical_team_id": "T-cf2771d63aeecf02",
+   "method": "EXACT_NAME_ON_BOX_PARTICIPATION_ROSTER"
+  },
+  {
+   "rotowire_player_id": "20575",
+   "rotowire_player_name": "KyeRon Lindsay-Martin",
+   "canonical_player_id": "P-c18a9d943dcea78c",
+   "canonical_team_id": "T-b61f816724ae5a02",
+   "method": "EXACT_NAME_ON_BOX_PARTICIPATION_ROSTER"
+  }
+ ],
+ "reresolved": [
+  {
+   "rotowire_player_id": "28337",
+   "name": "John Mattingly",
+   "canonical_player_id": "P-d167c68d5d4bd661",
+   "team": "T-c4c76030a20db4ba"
+  },
+  {
+   "rotowire_player_id": "22290",
+   "name": "Macaleab Rich",
+   "canonical_player_id": "P-53980d1063e77af8",
+   "team": "T-0ef2ade650d5a7c8"
+  },
+  {
+   "rotowire_player_id": "21059",
+   "name": "Robbie Avila",
+   "canonical_player_id": "P-5ce042f648e4fb1d",
+   "team": "T-cf2771d63aeecf02"
+  },
+  {
+   "rotowire_player_id": "20575",
+   "name": "KyeRon Lindsay-Martin",
+   "canonical_player_id": "P-c18a9d943dcea78c",
+   "team": "T-b61f816724ae5a02"
+  }
+ ],
+ "games_7d": 364,
+ "blocked_before": [
+  "G-1cc361557ef95518 Rutgers@Indiana",
+  "G-7eb2c124713e7171 TCU@TBD",
+  "G-9df4d2b0d7e9a65f Oregon@UCLA",
+  "G-bd3a3ff704e8b018 Wake Forest@LSU",
+  "G-dc6bb47c27f748d0 North Alabama@DePaul"
+ ],
+ "blocked_after": [
+  "G-9df4d2b0d7e9a65f Oregon@UCLA",
+  "G-dc6bb47c27f748d0 North Alabama@DePaul"
+ ],
+ "unresolved_nonactive_after": 21,
+ "unresolved_nonactive_after_ids": [
+  "20354",
+  "20395",
+  "20406",
+  "20474",
+  "20532",
+  "20593",
+  "20703",
+  "20923",
+  "20936",
+  "21070",
+  "21195",
+  "21227",
+  "21537",
+  "21956",
+  "22239",
+  "23053",
+  "23921",
+  "26154",
+  "26727",
+  "27852",
+  "27904"
+ ],
+ "reconcile": {
+  "curated_states": 24,
+  "unresolved_nonactive": 21,
+  "action_required": 0,
+  "counts": {
+   "CURATED_STATE:APPLIES": 21,
+   "CURATED_STATE:EXPIRED": 2,
+   "CURATED_STATE:INERT_ACTIVE_OR_NOT_LISTED": 1,
+   "CURATED_STATE:IN_FORCE": 22,
+   "CURATED_STATE:NOT_OBSERVED": 1,
+   "CURATED_STATE:RESOLVED_ROW_MOOT": 1
+  },
+  "actions": []
+ }
+}

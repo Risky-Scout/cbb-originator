@@ -411,5 +411,117 @@
    "local full-tree run included 29 legacy DuckDB files beyond contract (peak RSS 8.2 GB, DuckDB threads ~190% CPU); no second suite launched"
   ],
   "next_eligible_stage": "Stage 04 NOT STARTED (awaits user directive)"
+ },
+ "stage4_roster_identity_20261127": {
+  "recorded_at": "2026-11-27T08:00Z",
+  "scope": "roster / transfer / player-identity integrity: rank-2 participation precedence, off-list identity re-resolution, curated-state maintenance; no model, PMF, simulation, feature, unit, env, wrapper, schema or export-format change",
+  "evidence": "docs/audits/2026-11-27-stage4 (README.md, DEPLOY_PROCEDURE.md, results/{population_before,after_now}.json, results/roster_gap_participation.csv, scripts/, candidate sha256sums); Droplet copy /var/lib/sports-models/cbb-originator/audit/stage4-20261127",
+  "root_causes": {
+   "RC1_rank2_participation_manual_only": "current-season participation (11-09 precedence rank 2) existed only as lapsing roster_omissions.csv rows; 23 (player,team) pairs with 2026-27 box lines lacked a CBBD roster row (1,472 min, 0.29%), 0 on another roster, 0 multi-team -> suppressed from pricing and unmappable",
+   "RC2_offlist_never_reresolved": "RotoWire players off the current snapshot kept their last UNMATCHED identity forever",
+   "RC3_no_curated_maintenance": "lapse / team change / contradiction / newly resolvable curated rows invisible until a game blocked; 5/5 blocked games traced to lapsed or mismatched rows or genuine conflict"
+  },
+  "corrections": {
+   "participation_rows": "prod/roster_omissions.participation_rows: BOX_PARTICIPATION rows from RESOLVED box lines with historical_knowable_at<=as_of; rejects multi-team, other-team CBBD roster, competing same-name candidate, identity-conflict suppressed; curated noncurrent rows withhold only",
+   "universe": "NOT_ON_CURRENT_ROSTER -> ON_CURRENT_ROSTER_BOX_PARTICIPATION (scoreable) for committed participation pairs; as-of canonical input",
+   "identity": "identity roster += participation rows; IDENTITY_RERESOLVED_OFF_LIST append-only once; EXACT_NAME_ON_BOX_PARTICIPATION_ROSTER map method; stale_identity_maps",
+   "maintenance": "rotowire_player_states.reconcile (pure) after each web acquisition -> ops/identity/curated_reconciliation/{latest.json,history.jsonl}; receipt INFORMATIONAL CURATED_IDENTITY_ACTION_REQUIRED; never extends dates, never edits tables, lapse still fails closed",
+   "curated_tables": "Nwuli re-keyed Rutgers STALE_NONCURRENT; Luis STALE_NONCURRENT; Carter SOURCE_CONFLICT/UNKNOWN; Avila (wrong team) and Lindsay-Martin rows removed (participation resolves); roster_omissions emptied (Harris/Griman CBBD-listed, Mattingly participation)"
+  },
+  "players": {
+   "Chris Nwuli 26154": "VERIFIED_CORRECTED: not with Rutgers 2026-27 (portal tracker 07-21, Setonian 05, NJ.com 07-24); STALE_NONCURRENT at Rutgers; Rutgers@Indiana unblocked",
+   "RJ Luis 20703": "VERIFIED_CORRECTED: 1 LSU game 11-18 under injunction then withdrawn (LRN 11-20, WBRZ, RotoWire 11-20 won't play); STALE_NONCURRENT; box line withheld; Wake Forest@LSU unblocked",
+   "Robbie Avila 21059": "VERIFIED_CORRECTED_BY_RULE: TCU added 11-12, 3 TCU box games from 11-19; resolved via BOX_PARTICIPATION; absent at 11-20T00:00Z",
+   "Drew Carter 20923": "GENUINE_AMBIGUITY: Fox/247 practicing vs Wikipedia/247 tracker/Daily Hoosier departed; no box line; SOURCE_CONFLICT UNKNOWN, still blocks Oregon@UCLA",
+   "Brandon Maclin 23921": "GENUINE_AMBIGUITY: Big East eligibility expired vs RotoWire/Fox awaiting decision; still blocks DePaul via CONFLICT_POSSIBLY_ACTIVE_GTD"
+  },
+  "population": {
+   "state_version": "S20261127T041333Z-288bf8cbe390",
+   "unresolved_nonactive_before": 22,
+   "unresolved_nonactive_after": 21,
+   "uncovered_blocking_before": 5,
+   "uncovered_blocking_after": 0,
+   "blocked_games_7d_before": 5,
+   "blocked_games_7d_after": 2,
+   "upcoming_games_7d": 364,
+   "reconcile_action_required_after": 0,
+   "classification_of_22": {
+    "verified_corrected": 3,
+    "obsolete_with_evidence": 7,
+    "missing_authoritative_information": 10,
+    "genuine_ambiguity": 2,
+    "external_authorization_limitation": 0
+   },
+   "identity_roster": {
+    "CBBD": 5583,
+    "BOX_PARTICIPATION": 18
+   },
+   "participation_decisions": {
+    "MOOT_CBBD_LISTS_PLAYER": 5089,
+    "APPLIED": 18,
+    "REJECTED_COMPETING_CANONICAL_CANDIDATE": 4,
+    "WITHHELD_CURATED_NONCURRENT": 1
+   },
+   "reresolved_off_list": [
+    "21059",
+    "20575",
+    "28337",
+    "22290"
+   ]
+  },
+  "predictive_effect": "operational only: +18 player-market-eligible pairs (1,321 min), 3 games released from AVAILABILITY_IDENTITY_UNRESOLVED; simulation, minutes, team strength, game forecasts mathematically unchanged; 4 competing-candidate pairs and Luis stay suppressed",
+  "temporal_integrity": {
+   "max_teams_per_player": 1,
+   "participation_knowable_at_rule": "HR-1 tip+4h",
+   "avila_tcu_row_at_1120T0000Z": false,
+   "participation_temporal_ok": true
+  },
+  "tests": {
+   "new": "tests/test_stage4_roster_identity.py (15)",
+   "focused_local": "163 passed (stage4+web_adapter+availability) ; 99 passed (live_feed, identity_conflicts, availability_refresh_split, daily_lifecycle)",
+   "full_local_tree": "NOT_RERUN (directive §7)",
+   "ci": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 45947348593,
+    "conclusion": "success"
+   }
+  },
+  "commit": "af1998f88208465bd1ea033ce7601dc290ca5e7e",
+  "lineage": [
+   "9f65e7f9196c21a15811560d14c9974cb0bb2d7f (deployed)",
+   "56f3dae71ae50680afdc4df4d799e901a4790b05",
+   "25b83ed8c945573bd1b707a68d1b6518947daa42",
+   "a3ffa1b",
+   "af1998f88208465bd1ea033ce7601dc290ca5e7e"
+  ],
+  "release_candidate": {
+   "sha": "af1998f88208465bd1ea033ce7601dc290ca5e7e",
+   "supersedes": "25b83ed (by lineage; Stage 02/03 evidence kept)",
+   "staged": "/opt/sports-models/cbb-originator/releases/af1998f88208465bd1ea033ce7601dc290ca5e7e.tmp",
+   "files": 867,
+   "hashes": "local git archive == Droplet staged tree (identical)",
+   "deployed": false,
+   "current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "procedure": "docs/audits/2026-11-27-stage4/DEPLOY_PROCEDURE.md"
+  },
+  "stage19_requirement": {
+   "id": "S19-D3.2",
+   "requirement": "idle quote wakes must not rebuild unchanged exports / recompute D-1 grades each wake: content-fingerprint skip or equivalent; reduce writer-lock occupancy from 47% (141 wakes/24 h, 11.39 h)",
+   "status": "RECORDED_FOR_STAGE_19_NOT_STARTED"
+  },
+  "commercial_authorization": "UNCHANGED_NOT_AUTHORIZED: no new provider requests in Stage 04; consumer subscription is not commercial authorization; separate from identity correctness",
+  "external_dependencies": [
+   "RotoWire commercial data rights (owner decision)",
+   "CBBD roster rows / provider ids for the 10 affiliated-inactive players",
+   "resolution of Carter and Maclin eligibility by credible sources",
+   "WizardOfOdds deploy key (Massey, unrelated system)"
+  ],
+  "remaining_natural_verification": [
+   "11-27 11:10Z morning / 13:30Z poll / 14:10Z scoring receipts on deployed 9f65e7f (deploy precondition)",
+   "post-deploy Stage 04 checks (DEPLOY_PROCEDURE.md)",
+   "post-deploy Stage 02 warm-up and Stage 03 exports_deferred checks"
+  ],
+  "next_eligible_stage": "Stage 05 only on owner instruction"
  }
 }
