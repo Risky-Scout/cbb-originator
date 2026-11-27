@@ -82,8 +82,25 @@ def code_commit() -> str | None:
     return os.environ.get("CBB_CODE_COMMIT") or os.environ.get("CBB_EXPECTED_COMMIT") or None
 
 
+RUNTIME_FLAGS = ("CBB_INITIAL_AVAILABILITY", "CBB_GAME_AVAILABILITY_BASELINE", "CBB_GAME_MEAN_BASIS", "CBB_FEATURE_CLOSURE",
+                 "CBB_GAME_MODEL", "CBB_HISTORY_SOURCE", "CBB_WF_ROOT", "CBB_WF_REFIT_TIME")
+
+
+def runtime_flags() -> dict:
+    """F9 (Stage 07): the raw value of every behaviour-changing environment flag at scoring time (None = unset, the
+    code default) and the effective game mean basis -- recorded in every run identity, never part of engine_id."""
+    out = {k: os.environ.get(k) for k in RUNTIME_FLAGS}
+    try:
+        from cbb_platform.game import joint as J
+        out["effective_game_mean_basis"] = J.mean_basis()
+        out["effective_game_joint_version"] = J.joint_version()
+    except Exception as e:                                       # noqa: BLE001 - lineage only
+        out["effective_game_mean_basis"] = f"UNRESOLVED {type(e).__name__}"
+    return out
+
+
 def identity() -> dict:
-    return {"engine_id": engine_id(), "code_commit": code_commit()}
+    return {"engine_id": engine_id(), "code_commit": code_commit(), "runtime_flags": runtime_flags()}
 
 
 def legacy_engine(prediction_as_of) -> str | None:

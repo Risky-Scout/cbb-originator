@@ -45,8 +45,19 @@ PARAMS = {
 NOT_ADJUSTED = ("PTS", "BLK", "TOV")
 
 
+# F4 (Stage 07): column -> rows defaulted to 0 (absent column = every row, recorded as ABSENT); reset per apply()
+DEFAULTED: dict = {}
+
+
 def _col(df: pd.DataFrame, c: str) -> np.ndarray:
-    return df[c].fillna(0).to_numpy(dtype=float) if c in df else np.zeros(len(df))
+    if c not in df:
+        DEFAULTED[c] = "ABSENT"
+        return np.zeros(len(df))
+    x = df[c]
+    n = int(x.isna().sum())
+    if n and DEFAULTED.get(c) != "ABSENT":
+        DEFAULTED[c] = DEFAULTED.get(c, 0) + n
+    return x.fillna(0).to_numpy(dtype=float)
 
 
 def rates(cand: pd.DataFrame, min_mu: np.ndarray, v0_state: dict) -> dict:
@@ -76,9 +87,11 @@ def apply(rows: pd.DataFrame, cand: pd.DataFrame, cfg: dict, v0_state: dict) -> 
         return rows, {"id": ID, "stats": list(PARAMS), "rows": 0}
     c = cand.set_index("player_game_example_id").loc[rows["player_game_example_id"].to_numpy()].reset_index()
     mm = rows["min_mu"].to_numpy(dtype=float)
+    DEFAULTED.clear()
     r = rates(c, mm, v0_state)
     out = rows.copy()
-    rec = {"id": ID, "stats": list(PARAMS), "not_adjusted": list(NOT_ADJUSTED), "rows": int(len(rows)), "mean_ratio": {}}
+    rec = {"id": ID, "stats": list(PARAMS), "not_adjusted": list(NOT_ADJUSTED), "rows": int(len(rows)), "mean_ratio": {},
+           "defaulted_to_0": dict(DEFAULTED)}
     for s, (_, _, _, _, scale) in PARAMS.items():
         new = np.maximum(mm * r[s] * scale, cfg["mean_floor"])
         old = out[f"{s}_mu"].to_numpy(dtype=float)

@@ -39,8 +39,19 @@ def enabled() -> bool:
     return bool(ENABLED)
 
 
+# F4 (Stage 07): column -> rows defaulted to 0 (absent column = every row, recorded as ABSENT); reset per apply()
+DEFAULTED: dict = {}
+
+
 def _col(df: pd.DataFrame, c: str) -> np.ndarray:
-    return pd.to_numeric(df[c], errors="coerce").fillna(0).to_numpy(dtype=float) if c in df else np.zeros(len(df))
+    if c not in df:
+        DEFAULTED[c] = "ABSENT"
+        return np.zeros(len(df))
+    x = pd.to_numeric(df[c], errors="coerce")
+    n = int(x.isna().sum())
+    if n and DEFAULTED.get(c) != "ABSENT":
+        DEFAULTED[c] = DEFAULTED.get(c, 0) + n
+    return x.fillna(0).to_numpy(dtype=float)
 
 
 def prior_share(cand: pd.DataFrame) -> np.ndarray:
@@ -59,9 +70,10 @@ def apply(rows: pd.DataFrame, cand: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     if not enabled() or rows.empty:
         return rows, {"id": ID, "enabled": enabled(), "rows": 0}
     c = cand.set_index("player_game_example_id").loc[rows["player_game_example_id"].to_numpy()].reset_index()
+    DEFAULTED.clear()
     m = multipliers(c)
     out = rows.copy()
     for st, v in m.items():
         out[f"{st}_mu"] = out[f"{st}_mu"].to_numpy(dtype=float) * v
-    return out, {"id": ID, "enabled": True, "rows": int(len(rows)),
+    return out, {"id": ID, "enabled": True, "rows": int(len(rows)), "defaulted_to_0": dict(DEFAULTED),
                  "multiplier_range": {st: [float(v.min()), float(v.max())] for st, v in m.items()}}

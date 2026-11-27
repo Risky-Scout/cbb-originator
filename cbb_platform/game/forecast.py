@@ -192,7 +192,8 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
     hist = season_games(increment_db, season)
     pri = prior(season, params_root)
     d1 = (pd.Timestamp(training_cutoff).tz_convert("America/New_York") - pd.Timedelta(days=1)).date()
-    r, rstat = daily_ratings(sdir.parent, hist, training_cutoff, pri, rp, pending_finals(increment_db, d1))
+    r, rstat = daily_ratings(sdir.parent, hist, training_cutoff, pri, rp, pending_finals(increment_db, d1),
+                             information_state=_information_state(increment_db))
     gp = games_played(hist[hist["game_id"].isin(set(rstat["game_ids"]))], training_cutoff)
     S = team_strength(model_inputs)
     baseline = availability_baseline()
@@ -265,6 +266,9 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
            "ratings": {k: r.meta[k] for k in ("state_id", "games", "max_game_date", "max_knowable_at", "cutoff_utc")},
            "ratings_fresh": rstat["fresh"], "ratings_source": rstat["source"], "params_sha256": gm["params_sha256"],
            "availability_baseline": baseline,
+           "availability_baseline_requested": os.environ.get(BASELINE_ENV),
+           "pending_finals_source": pending_finals_source(increment_db),
+           "information_state": _information_state(increment_db),
            "elapsed_s": round(time.monotonic() - t0, 2),
            "file_sha256": hashlib.sha256((sdir / FILE).read_bytes()).hexdigest() if len(out) else None}
     (sdir / RECEIPT).write_text(json.dumps(rec, indent=1, default=str))
@@ -274,8 +278,17 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
 RATINGS_DIR = "game_ratings"
 
 
+def _information_state(increment_db) -> dict:
+    """Stage 07 lineage: the canonical state a ratings fit read (the fit masks by the rule; the state bounds acquisition)."""
+    try:
+        man = json.loads((Path(increment_db).parent / "state_manifest.json").read_text())
+        return {k: man.get(k) for k in ("state_version", "source_cutoff", "created_at")}
+    except (OSError, ValueError, TypeError):
+        return {"state_version": None, "note": "INFORMATION_STATE_UNVERIFIED"}
+
+
 def daily_ratings(day_dir: Path, hist: pd.DataFrame, cutoff: pd.Timestamp, pri: GR.Ratings, rp: GR.RatingParams,
-                  pending_d1: int = 0):
+                  pending_d1: int = 0, information_state: dict | None = None):
     """The ONE team-ratings state of ET day D, fit at D's training cutoff and persisted
     (<day_dir>/game_ratings/<state_id>.parquet + index.jsonl). Every later snapshot of D reuses the latest persisted
     FRESH state (no intraday refit). A rebuild happens only when no fresh state exists yet (recovery: a D-1 final
@@ -308,7 +321,8 @@ def daily_ratings(day_dir: Path, hist: pd.DataFrame, cutoff: pd.Timestamp, pri: 
     r.to_frame().to_parquet(rd / f"{r.meta['state_id']}.parquet", index=False)
     rec = {"state_id": r.meta["state_id"], "cutoff_utc": pd.Timestamp(cutoff).isoformat(), "mu": r.mu, "hca": r.hca,
            "pi": r.pi, "meta": r.meta, "fresh": fr, "game_ids": used,
-           "rebuild_of": rows[-1]["state_id"] if rows else None}
+           "rebuild_of": rows[-1]["state_id"] if rows else None,
+           "information_state": information_state, "built_at": pd.Timestamp.now(tz="UTC").isoformat()}
     with idx.open("a") as f:
         f.write(json.dumps(rec, default=str) + "\n")
     src = "REBUILT_PRIOR_OR_PARAMS_CHANGED" if stale_fit else "BUILT" if not rows else "REBUILT_RECOVERY_NOT_FRESH"
@@ -326,6 +340,17 @@ def ratings_fresh(hist: pd.DataFrame, r: GR.Ratings, cutoff: pd.Timestamp, pendi
             "max_game_date": r.meta["max_game_date"],
             "TEAM_RATINGS_FRESH": bool(len(finals) == len(used) and pending_d1 == 0
                                        and (len(finals) == 0 or r.meta["max_game_date"] == d1.isoformat()))}
+
+
+def pending_finals_source(increment_db) -> str:
+    """F8 (Stage 07): SCHEDULE_TABLE, or NO_SCHEDULE_TABLE when pending_finals returned its 0 default (never silent)."""
+    con = duckdb.connect(str(increment_db), read_only=True)
+    try:
+        has = con.execute("select count(*) from duckdb_tables() where schema_name='metadata' "
+                          "and table_name='prod_schedule'").fetchone()[0]
+    finally:
+        con.close()
+    return "SCHEDULE_TABLE" if has else "NO_SCHEDULE_TABLE"
 
 
 def pending_finals(increment_db, d1) -> int:

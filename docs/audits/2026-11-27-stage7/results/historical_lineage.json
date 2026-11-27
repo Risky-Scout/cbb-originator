@@ -1,0 +1,45 @@
+{
+ "run": {
+  "n": 366,
+  "code_commit_recorded": 120,
+  "engine_recorded": 120,
+  "fit_kind": {
+   "FROZEN_OPENING_BASELINE": 206,
+   "DAILY_WALK_FORWARD": 160
+  },
+  "first_with_commit": "2026-11-23 03:10:09.309977+00:00",
+  "last_without_commit": "2026-11-23 00:40:10.228872+00:00"
+ },
+ "snapshot": {
+  "n": 81,
+  "code_commit_recorded": 20,
+  "engine_recorded": 20,
+  "fit_kind": {
+   "DAILY_WALK_FORWARD": 81
+  },
+  "first_with_commit": "2026-11-23 12:46:17.850972+00:00",
+  "last_without_commit": "2026-11-22 23:02:04.690647+00:00"
+ },
+ "tick": {
+  "n": 473,
+  "code_commit_recorded": 451,
+  "engine_recorded": 0,
+  "fit_kind": {
+   "FROZEN_OPENING_BASELINE": 204,
+   "NO_MODEL_RECORDED": 192,
+   "DAILY_WALK_FORWARD": 77
+  },
+  "first_with_commit": "2026-11-01 12:43:50.192234+00:00",
+  "last_without_commit": "NaT"
+ },
+ "code_commit_basis": {
+  "run|AMBIGUOUS_DEPLOY_BETWEEN_TICKS": 36,
+  "run|DERIVED_RELEASE_IN_FORCE (tick source_commit before and after)": 210,
+  "run|RECORDED": 120,
+  "snapshot|AMBIGUOUS_DEPLOY_BETWEEN_TICKS": 14,
+  "snapshot|DERIVED_RELEASE_IN_FORCE (tick source_commit before and after)": 47,
+  "snapshot|RECORDED": 20,
+  "tick|RECORDED": 451,
+  "tick|UNVERIFIED_PRE_ATTRIBUTION": 22
+ }
+}

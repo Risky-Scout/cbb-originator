@@ -75,8 +75,16 @@ def _has(con, db: str, rel: str) -> bool:
 
 def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int,
                       history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None,
-                      blank_targets: bool = True, closure: bool = False) -> dict:
+                      blank_targets: bool = True, closure: bool = False, allow_later_state: bool = False) -> dict:
     """Write the as_of-masked canonical input DB. Returns counts + provenance.
+
+    BITEMPORAL GUARD (Stage 07): the rule mask (historical_knowable_at <= as_of) is only sufficient when the increment's
+    information state was itself acquired by as_of. An increment whose state_manifest source_cutoff is after as_of (a
+    replay of an earlier instant over a LATER state) could expose late-arriving box scores, provider revisions, later
+    roster / portal / recruit snapshots and identity re-keys that were not yet acquired: it is REFUSED
+    (LATER_INFORMATION_STATE). Use the immutable version as-of the instant (walkforward.eligibility.state_asof).
+    allow_later_state=True is for run.daily's already-blocking POST_CUTOFF_DATA path only (recorded, never scored as
+    eligible). An increment without a manifest (unit fixtures) is recorded INFORMATION_STATE_UNVERIFIED.
 
     closure=True (pregame warm-up builds only, walkforward/training_rows.feature_rows): after masking, keep only the
     exact dependency closure of the target games (dependency_closure). The default (False) is the incumbent DB.
@@ -92,6 +100,10 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     if not targets:
         raise FeatureBuildError("no target games")
     aso = _ts(as_of)
+    info_state = information_state(increment_db, aso)
+    if info_state["check"] == "LATER_INFORMATION_STATE" and not allow_later_state:
+        raise FeatureBuildError(f"LATER_INFORMATION_STATE: state {info_state['state_version']} source_cutoff "
+                                f"{info_state['source_cutoff']} > as_of {aso} (replay must use the version as-of the instant)")
     con = duckdb.connect(str(out_path), config={"threads": 2})
     con.execute("SET TimeZone = 'UTC'")
     con.execute(f"ATTACH '{history_db}' AS hist (READ_ONLY)")
@@ -177,7 +189,26 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     if leak or late:
         raise FeatureBuildError(f"FUTURE_LEAKAGE: target-game outcome rows {leak}, post-as_of rows {late}")
     return {"targets": len(targets), "as_of": aso, "counts": counts, "target_outcome_rows": leak, "post_as_of_rows": late,
-            "sources": srcs, "blank_targets": blank_targets, **({"closure": closure_info} if closure else {})}
+            "sources": srcs, "blank_targets": blank_targets, "information_state": info_state,
+            **({"closure": closure_info} if closure else {})}
+
+
+def information_state(increment_db, as_of) -> dict:
+    """The increment's acquisition identity vs as_of: state_version, source_cutoff (every payload it holds was received
+    by then), created_at; check = OK / LATER_INFORMATION_STATE / INFORMATION_STATE_UNVERIFIED / NO_INCREMENT."""
+    if increment_db is None:
+        return {"check": "NO_INCREMENT"}
+    mp = Path(increment_db).parent / "state_manifest.json"
+    try:
+        man = json.loads(mp.read_text())
+        sc = pd.Timestamp(man["source_cutoff"])
+    except (OSError, ValueError, KeyError):
+        return {"check": "INFORMATION_STATE_UNVERIFIED", "manifest": str(mp)}
+    sc = sc.tz_localize("UTC") if sc.tzinfo is None else sc.tz_convert("UTC")
+    aso = pd.Timestamp(as_of)
+    aso = aso.tz_localize("UTC") if aso.tzinfo is None else aso.tz_convert("UTC")
+    return {"check": "LATER_INFORMATION_STATE" if sc > aso else "OK", "state_version": man.get("state_version"),
+            "source_cutoff": sc.isoformat(), "created_at": man.get("created_at")}
 
 
 # ============================================================================ exact dependency closure (warm-up builds)
@@ -391,7 +422,7 @@ def model_frame(features_db: Path, cfg: dict, target_game_ids, season: int) -> d
 
 def build(run_dir: Path, target_game_ids, target_season: int, as_of, cfg: dict,
           history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None, blank_targets: bool = True,
-          closure: bool = False) -> dict:
+          closure: bool = False, allow_later_state: bool = False) -> dict:
     """compact canonical -> Stage 3 features -> model frames, inside run_dir (scratch, gitignored)."""
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -400,7 +431,7 @@ def build(run_dir: Path, target_game_ids, target_season: int, as_of, cfg: dict,
     if closure and not blank_targets:
         raise FeatureBuildError("the dependency closure is proven for pregame (blank_targets) builds only")
     canon = compact_canonical(cdb, target_game_ids, as_of, target_season, history_db, increment_db, blank_targets,
-                              closure=closure)
+                              closure=closure, allow_later_state=allow_later_state)
     feats = build_features(cdb, fdb, target_game_ids, target_season)
     frames = model_frame(fdb, cfg, target_game_ids, target_season)
     return {**frames, "provenance": {"canonical": canon, "features": feats, "seconds": (datetime.now(timezone.utc) - t0).total_seconds(),

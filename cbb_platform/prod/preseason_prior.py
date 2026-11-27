@@ -72,6 +72,21 @@ def classes(cand: pd.DataFrame) -> np.ndarray:
     return np.where(np.isnan(s), "NO_PRIOR_HISTORY", np.where(s == 1, "SAME_TEAM_RETURNER", "TRANSFER"))
 
 
+def imputation_counts(cand: pd.DataFrame) -> dict:
+    """F3 (Stage 07): how often PI2's neutral defaults were used, per class -- never silent."""
+    t = table()
+    cls = classes(cand)
+    stp = t["strength_prev"]
+    org = cand["canonical_player_id"].map(t["origin_team"]) if "canonical_player_id" in cand else pd.Series([None] * len(cand))
+    dest = cand["canonical_team_id"] if "canonical_team_id" in cand else pd.Series([None] * len(cand))
+    tr = cls == "TRANSFER"
+    zd0 = np.array([not (isinstance(o, str) and o in stp and d in stp) for d, o in zip(dest, org)])
+    return {"transfer_rows": int(tr.sum()), "transfer_strength_diff_defaulted_0": int((tr & zd0).sum()),
+            "transfer_min_per_app_imputed_20": int((tr & np.isnan(_num(cand, "pps_min_per_app"))).sum()),
+            "no_history_rows": int((cls == "NO_PRIOR_HISTORY").sum()),
+            "no_history_cur_min_imputed_0": int(((cls == "NO_PRIOR_HISTORY") & np.isnan(_num(cand, "cur_min"))).sum())}
+
+
 def adjustments(cand: pd.DataFrame) -> tuple[dict, np.ndarray]:
     """Per-row PI2 factor per stat (1.0 for returners) and the class array."""
     t = table()
@@ -105,13 +120,17 @@ def apply(rows: pd.DataFrame, cand: pd.DataFrame, base_mu: pd.DataFrame) -> tupl
     adj, cls = adjustments(c)
     hit = cls != "SAME_TEAM_RETURNER"
     out = rows.copy()
+    clipped = {}
     for s, a in adj.items():
         cur = out[f"{s}_mu"].to_numpy(dtype=float)
         base = base_mu[f"{s}_mu"].to_numpy(dtype=float)
         prior_factor = np.divide(cur, base, out=np.ones_like(cur), where=base > 0)
-        total = np.clip(prior_factor * a, *CLIP)
+        raw = prior_factor * a
+        total = np.clip(raw, *CLIP)
+        clipped[s] = int((hit & (base > 0) & ((raw < CLIP[0]) | (raw > CLIP[1]))).sum())   # PI2 clip binding (Stage 09/10)
         out[f"{s}_mu"] = np.where(hit & (base > 0), base * total, cur)
     return out, {"id": ID, "enabled": True, "rows": int(len(rows)),
                  "classes": {k: int(v) for k, v in zip(*np.unique(cls, return_counts=True))},
                  "factor_range": {s: [float(v[hit].min()), float(v[hit].max())] if hit.any() else None for s, v in adj.items()},
-                 "table_sha256": TABLE_SHA256}
+                 "table_sha256": TABLE_SHA256, "neutral_defaults": imputation_counts(c),
+                 "clip_bound_rows": clipped}

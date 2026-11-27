@@ -92,6 +92,30 @@ def live_run_reasons(man: dict, pointer: dict, aso, sync_log: Path, odds_ledger:
 
 
 @RR.terminal
+def design_imputation(cand: pd.DataFrame, model) -> dict:
+    """F6 (Stage 07): per frozen design feature WITHOUT a missing-indicator column, the number of scored rows whose
+    value is NaN (props_v0._design imputes them to the training mean, z = 0). Visibility only; numerics unchanged."""
+    out = {}
+    for name, st in (("marginal", model.v0_state), ("participation", model.participation_state)):
+        tr = (st or {}).get("transform") or {}
+        ind = set(tr.get("ind") or [])
+        out[name] = {c: int(pd.to_numeric(cand[c], errors="coerce").isna().sum()) for c in (tr.get("mean") or {})
+                     if c not in ind and c in cand and pd.to_numeric(cand[c], errors="coerce").isna().any()}
+    return out
+
+
+def global_r_fallbacks(model, gp: pd.DataFrame) -> dict:
+    """F7 (Stage 07): residual-dependence groups of this game answered by the global correlation (no group R)."""
+    try:
+        from cbb_platform.v2 import dependence as D
+        st = model.jm1["residual_structure"]
+        gs = pd.Series(list(D.group_of(gp)))
+        miss = gs[~gs.isin(list(st.R_groups))]
+        return {str(k): int(v) for k, v in miss.value_counts().items()}
+    except Exception as e:                                   # noqa: BLE001 - lineage only
+        return {"UNRESOLVED": f"{type(e).__name__}"}
+
+
 def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, state_root: Path = PC.STATE_ROOT,
           history_db: Path = PC.HISTORY_CANONICAL, ledger_path: Path = PC.LEDGER_PATH, run_root: Path = PC.RUNS_ROOT,
           bundle_dir: Path | None = None, team_map: pd.DataFrame | None = None, player_map: pd.DataFrame | None = None,
@@ -121,6 +145,12 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
         (run_dir / "run_summary.json").write_text(json.dumps(out, indent=1, default=str))
         return out
     ident = {**model.identity, **ENG.identity()}                 # + the predictive engine that scores (prod.engine)
+    mss = model.identity.get("model_source_status") or {}
+    if mss.get("status") == "DEGRADED":                          # Stage 07: frozen substitution = priced but BLOCKED
+        run_reasons.append("MODEL_SOURCE_FALLBACK")
+        notes.append(f"MODEL_SOURCE_FALLBACK: scored with {mss['actual']['model_version']} (training cutoff "
+                     f"{mss['actual']['training_cutoff']}, age {mss.get('artifact_age_days')} d) instead of "
+                     f"{mss['expected'].get('expected_version')}: {mss.get('fallback_code')}")
     # ---------------------------------------------------------------- state (last known good)
     st = ST.current(state_root)
     if st is None:
@@ -184,7 +214,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
     teams = players = pd.DataFrame()
     if score_ids:
         fr = PF.build(run_dir / "features", score_ids, PC.PRODUCTION_SEASON, aso, model.marginal_cfg, history_db,
-                      st["increment_db"])
+                      st["increment_db"], allow_later_state=bool(stl["post_cutoff_data"]))   # already BLOCKING
         summary["feature_provenance"] = fr["provenance"]
         teams, players = _names(run_dir / "features" / "canonical_asof.duckdb")
         universe = UV.build(fr["features_db"], run_dir / "features" / "canonical_asof.duckdb", man.get("roster_as_of"),
@@ -219,6 +249,7 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             if (pd.to_datetime(gc["prediction_cutoff_utc"], utc=True) != cut[gid]).any():
                 game_reasons[gid].append("FUTURE_LEAKAGE")       # feature cutoff disagrees with the validated rule
         rows = IN.marginal_rows(cand, model.marginal_cfg, model.v0_state, model.participation_state) if len(cand) else pd.DataFrame()
+        summary["design_imputation"] = design_imputation(cand, model)        # F6 (Stage 07): never silent
         if len(rows):                                            # promoted 2026-11-22: AST / FG3M / STL role-aware rate
             rows, summary["player_rate_adjustment"] = RA2.apply(rows, cand, model.marginal_cfg, model.v0_state)
             rows, summary["tov_season_trend"] = TT.apply(rows, cand)     # promoted 2026-11-24: TOV within-season trend
@@ -228,10 +259,17 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
             hm, aw = rows["game_id"].map(sl["home_team_id"]), rows["game_id"].map(sl["away_team_id"])
             opp = np.where(rows["team_id"].to_numpy() == hm.to_numpy(), aw.to_numpy(), hm.to_numpy())
             from cbb_platform.walkforward import config as WFC
-            led, lst = CX.load_ledger(WFC.STORE_ROOT, PC.PRODUCTION_SEASON, aso)
+            led, lst = CX.load_ledger(WFC.STORE_ROOT, PC.PRODUCTION_SEASON, aso, expected_incumbent=ENG.pre_context_tag())
             rows, summary["team_opponent_context"] = CX.apply(rows, opp, led, lst)   # promoted 2026-11-25: OT1 + OC2
+            summary["team_opponent_context"]["ledger_meta"] = {k: CX.ledger_meta(WFC.STORE_ROOT, PC.PRODUCTION_SEASON).get(k)
+                                                                for k in ("incumbent", "through_date", "updated_at", "games")}
+            summary["team_opponent_context"]["expected_incumbent"] = ENG.pre_context_tag()
             rows, summary["preseason_prior"] = PI.apply(rows, cand, base_mu)   # promoted 2026-11-26: PI2
         envd = IN.environment(fr["team"], model.jm1["struct"]["env"]) if len(cand) else {}
+        if len(cand):                                            # F5 (Stage 07): scored teams without an environment term
+            summary["environment_defaulted"] = sorted(f"{g}|{t}" for g, t in
+                                                      cand[["canonical_game_id", "canonical_team_id"]].drop_duplicates().itertuples(index=False)
+                                                      if (g, t) not in envd)
         if len(rows):
             rows, aflags = IN.apply_availability(rows, availability)
             PG.assert_canonical_key_is_unique(rows, ["game_id", "player_id"], "model inputs")
@@ -258,7 +296,8 @@ def daily(as_of, quotes_paths=(), availability: pd.DataFrame | None = None, stat
                 game_reasons[gid].append("SCORING_FAILURE")
                 continue
             banks[gid] = {"bank_sha256": bank["bank_sha256"], "priced_players": int(len(bank["rows"])),
-                          "corr_min_eig": float(bank["corr_min_eig"]), "jitter": float(bank["jitter"])}
+                          "corr_min_eig": float(bank["corr_min_eig"]), "jitter": float(bank["jitter"]),
+                          "dependence_global_r_fallbacks": global_r_fallbacks(model, gp)}
             diag.append(SM.same_team_correlation(bank))
             md = SM.market_distributions(bank)
             md["game_label"] = label

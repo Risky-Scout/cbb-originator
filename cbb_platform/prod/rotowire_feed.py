@@ -582,12 +582,16 @@ def _player_news_at(events: pd.DataFrame, rotowire_player_id, as_of):
 
 
 def participation_keys(increment_db, as_of) -> set | None:
-    """{('C', canonical_player_id), ('N', team_id, normalized box name)} of every 2026-27 box-score line played before
-    as_of in the production state (read-only); None if the state has no player box table (not checkable)."""
+    """{('C', canonical_player_id), ('N', team_id, normalized box name)} of every 2026-27 box-score line KNOWABLE at
+    as_of in the production state (read-only); None if the state has no player box table (not checkable).
+
+    Stage 07: knowability is the HR-1 rule historical_knowable_at <= as_of (as every other consumer), not the game's
+    event_time -- a replay over a state that already holds a box line must not see it between tip and tip + 4 h.
+    Prospectively identical: sync admits a line only after its rule time."""
     import duckdb
     con = duckdb.connect(str(increment_db), read_only=True)
     try:
-        df = con.execute("""SELECT canonical_player_id, canonical_team_id, source_player_name, event_time
+        df = con.execute("""SELECT canonical_player_id, canonical_team_id, source_player_name, historical_knowable_at
                             FROM flagship.player_game_outcomes WHERE season = ?""", [PC.PRODUCTION_SEASON]).df()
     except duckdb.CatalogException:
         return None
@@ -595,7 +599,7 @@ def participation_keys(increment_db, as_of) -> set | None:
         con.close()
     lim = pd.Timestamp(as_of)
     lim = lim.tz_localize("UTC") if lim.tzinfo is None else lim.tz_convert("UTC")
-    df = df[pd.to_datetime(df["event_time"], utc=True) <= lim]
+    df = df[pd.to_datetime(df["historical_knowable_at"], utc=True) <= lim]
     out = {("C", p) for p in df["canonical_player_id"].dropna()}
     out |= {("N", t, MT.norm(n)) for t, n in zip(df["canonical_team_id"], df["source_player_name"]) if isinstance(n, str)}
     return out

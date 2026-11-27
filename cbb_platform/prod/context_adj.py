@@ -38,6 +38,10 @@ LEDGER_SIMS = 2000
 MAX_LEDGER_AGE_DAYS = 2
 ENABLED = True
 COLS = ["game_id", "date", "team", "opp", "stat", "y", "cf"]
+# Stage 07 bitemporal lineage per ledger row: when the row entered the ledger (= when its information was usable by the
+# daily run), the immutable state version and training cutoff it came from, and the incumbent tag it was computed under.
+# Rows written before Stage 07 have none (LEGACY): they are usable prospectively, never in an as-of replay.
+LINEAGE_COLS = ["added_at", "state_version", "training_cutoff", "incumbent"]
 
 
 def enabled() -> bool:
@@ -106,6 +110,10 @@ def update_ledger(root: Path, season: int, ts: dict, model, opening_v0: dict, en
     labelled = oos.loc[oos["y_min"].notna(), "game_id"].unique()
     todo = sorted(set(labelled) - have)
     new = ledger_rows(oos, fr["frame"], fr["team"], model, opening_v0, todo) if todo else pd.DataFrame(columns=COLS)
+    if len(new):
+        st = ts.get("state") or {}
+        new = new.assign(added_at=pd.Timestamp.now(tz="UTC").isoformat(), state_version=st.get("state_version"),
+                         training_cutoff=str(ts.get("training_cutoff")), incumbent=engine_tag)
     led = pd.concat([old, new], ignore_index=True) if len(new) else old
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_suffix(".parquet.tmp")
@@ -145,7 +153,13 @@ def factors(rows: pd.DataFrame, opp: np.ndarray, led: pd.DataFrame) -> dict:
     return out
 
 
-def load_ledger(root: Path, season: int, as_of) -> tuple[pd.DataFrame | None, str]:
+def load_ledger(root: Path, season: int, as_of, expected_incumbent: str | None = None,
+                replay: bool = False) -> tuple[pd.DataFrame | None, str]:
+    """The ledger usable at as_of. Status (never silent, recorded in the run receipt):
+    OK; LEDGER_UNAVAILABLE / LEDGER_STALE (no factors); LEDGER_FROM_FUTURE (updated after as_of: a replay reading a
+    later ledger -- no factors); INCUMBENT_MISMATCH (applied, visibly: the tag differs from the scoring engine's
+    pre-context tag until the next morning rebuild). replay=True additionally keeps only rows with added_at <= as_of and
+    refuses LEGACY rows without lineage (LEDGER_REPLAY_UNVERIFIABLE)."""
     p = ledger_path(root, season)
     if not p.exists() or not p.with_suffix(".json").exists():
         return None, "LEDGER_UNAVAILABLE"
@@ -153,9 +167,26 @@ def load_ledger(root: Path, season: int, as_of) -> tuple[pd.DataFrame | None, st
     now = pd.Timestamp(as_of)
     now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
     age = (now - pd.Timestamp(meta["updated_at"])).total_seconds() / 86400
+    led = pd.read_parquet(p)
+    if replay:
+        if "added_at" not in led or led["added_at"].isna().any():
+            return None, "LEDGER_REPLAY_UNVERIFIABLE"
+        led = led[pd.to_datetime(led["added_at"], utc=True) <= now].reset_index(drop=True)
+    elif age < 0:
+        return None, "LEDGER_FROM_FUTURE"
     if age > MAX_LEDGER_AGE_DAYS:
         return None, "LEDGER_STALE"
-    return pd.read_parquet(p), "OK"
+    if expected_incumbent is not None and meta.get("incumbent") != expected_incumbent:
+        return led, "INCUMBENT_MISMATCH"
+    return led, "OK"
+
+
+def ledger_meta(root: Path, season: int) -> dict:
+    p = ledger_path(root, season).with_suffix(".json")
+    try:
+        return json.loads(p.read_text())
+    except (OSError, ValueError):
+        return {}
 
 
 def apply(rows: pd.DataFrame, opp: np.ndarray, led: pd.DataFrame | None, status: str) -> tuple[pd.DataFrame, dict]:
@@ -168,6 +199,9 @@ def apply(rows: pd.DataFrame, opp: np.ndarray, led: pd.DataFrame | None, status:
     out = rows.copy()
     for s, v in f.items():
         out[f"{s}_mu"] = out[f"{s}_mu"].to_numpy(dtype=float) * v
+    neutral = {s: int((v == 1.0).sum()) for s, v in f.items()}        # F2: rows with no team / opp history -> factor 1
     return out, {"id": ID, "enabled": True, "rows": int(len(rows)), "status": status, "applied": True,
                  "ledger_games": int(led["game_id"].nunique()),
+                 "ledger_rows_with_lineage": int(led["added_at"].notna().sum()) if "added_at" in led else 0,
+                 "rows_factor_exactly_1": neutral,
                  "multiplier_range": {s: [float(v.min()), float(v.max())] for s, v in f.items()}}

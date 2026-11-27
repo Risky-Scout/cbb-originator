@@ -419,18 +419,23 @@ def test_completed_game_cutoff_chronology(world):
 def test_target_game_leakage_prevention(world, tmp_path):
     inc = ST.current(world["w"] / "state")["increment_db"]
     d = FF.gid("D")
-    out = PF.compact_canonical(tmp_path / "c1.duckdb", [d], "2026-11-04T23:00Z", 2027, world["hist"], inc)
+    # Stage 07: this state was acquired after these instants, so a replay is refused (LATER_INFORMATION_STATE); the rule
+    # mask itself is still exercised below with the explicit override
+    with pytest.raises(PF.FeatureBuildError, match="LATER_INFORMATION_STATE"):
+        PF.compact_canonical(tmp_path / "c0.duckdb", [d], "2026-11-04T23:00Z", 2027, world["hist"], inc)
+    out = PF.compact_canonical(tmp_path / "c1.duckdb", [d], "2026-11-04T23:00Z", 2027, world["hist"], inc,
+                               allow_later_state=True)
     assert out["target_outcome_rows"] == 0 and out["post_as_of_rows"] == 0
     con = duckdb.connect(str(tmp_path / "c1.duckdb"), read_only=True)
     assert con.execute(f"SELECT home_points FROM flagship.games WHERE canonical_game_id = '{d}'").fetchone()[0] is None
     assert con.execute(f"SELECT count(*) FROM flagship.player_game_outcomes WHERE canonical_game_id = '{d}'").fetchone()[0] == 0
     con.close()
     a = FF.gid("A")                       # a LATER game predicted before D was knowable: D's box is not in its input
-    PF.compact_canonical(tmp_path / "c2.duckdb", [a], "2026-11-05T03:59Z", 2027, world["hist"], inc)
+    PF.compact_canonical(tmp_path / "c2.duckdb", [a], "2026-11-05T03:59Z", 2027, world["hist"], inc, allow_later_state=True)
     con = duckdb.connect(str(tmp_path / "c2.duckdb"), read_only=True)
     assert con.execute(f"SELECT count(*) FROM flagship.player_game_outcomes WHERE canonical_game_id = '{d}'").fetchone()[0] == 0
     con.close()
-    PF.compact_canonical(tmp_path / "c3.duckdb", [a], "2026-11-05T04:00Z", 2027, world["hist"], inc)
+    PF.compact_canonical(tmp_path / "c3.duckdb", [a], "2026-11-05T04:00Z", 2027, world["hist"], inc, allow_later_state=True)
     con = duckdb.connect(str(tmp_path / "c3.duckdb"), read_only=True)
     assert con.execute(f"SELECT count(*) FROM flagship.player_game_outcomes WHERE canonical_game_id = '{d}'").fetchone()[0] == 22
     con.close()

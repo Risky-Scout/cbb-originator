@@ -65,6 +65,9 @@ BETTING_POLICY_FIELDS = ("eligible_sportsbook_accounts", "bankroll", "stake_sizi
 # condition: (PUBLICATION_ALLOWED, PRICING_ALLOWED, ACTIONABLE_BET_ALLOWED, RETRY_ALLOWED, ALERT_REQUIRED)
 FAIL_CLOSED_MATRIX = {
     "ARTIFACT_HASH_MISMATCH": (False, False, False, False, True),
+    # Stage 07: frozen-model substitution (prod.model_source DEGRADED): priced and recorded, never published or
+    # actionable; recover by restoring the ACTIVE daily model, then re-forecast
+    "MODEL_SOURCE_DEGRADED": (False, True, False, True, True),
     "WRONG_PRODUCTION_SEASON": (False, False, False, False, True),
     "STALE_SCHEDULE": (False, False, False, True, True),
     "GAME_IDENTITY_AMBIGUITY": (False, False, False, True, True),
@@ -104,6 +107,7 @@ def rights_gate(register: dict = RIGHTS_REGISTER, sources=PUBLIC_BOARD_SOURCES) 
 # run reason codes -> matrix condition (unknown codes block everything: fail closed)
 CODE_CONDITION = {
     "ARTIFACT_HASH_MISMATCH": "ARTIFACT_HASH_MISMATCH", "WRONG_PRODUCTION_SEASON": "WRONG_PRODUCTION_SEASON",
+    "MODEL_SOURCE_FALLBACK": "MODEL_SOURCE_DEGRADED",
     "STALE_STATE": "STALE_SCHEDULE", "MISSING_SCHEDULE": "STALE_SCHEDULE",
     "AMBIGUOUS_GAME": "GAME_IDENTITY_AMBIGUITY", "UNMATCHED_GAME": "GAME_IDENTITY_AMBIGUITY",
     "UNKNOWN_TEAM": "GAME_IDENTITY_AMBIGUITY", "NON_DI_GAME": "GAME_IDENTITY_AMBIGUITY",

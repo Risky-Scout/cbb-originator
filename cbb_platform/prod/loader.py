@@ -17,7 +17,7 @@ from cbb_platform.v2 import jm1_final_production as JP, joint as J, latent as L
 # the frozen opening identity below has none of them, so its records are unchanged
 WALK_FORWARD_IDENTITY_FIELDS = ("model_store_version", "model_kind", "training_cutoff", "training_through_date",
                                 "data_cutoff", "latest_included_game", "previous_model_version", "checkpoint",
-                                "model_source")
+                                "model_source", "model_source_status")
 
 
 class ArtifactIntegrityError(RuntimeError):

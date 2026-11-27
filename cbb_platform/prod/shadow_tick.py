@@ -856,7 +856,12 @@ def step_score(ctx: Ctx, p: dict, st: dict, tick: dict, tdir: Path) -> None:
                        "banks": banks, "one_joint_bank_per_game": bool(one_bank and len(set(b["bank_sha256"] for b in banks.values())) == len(banks)),
                        "predictions": s.get("predictions"), "quotes": s.get("quotes"), "quote_coverage": s.get("quote_coverage"),
                        "player_universe": s.get("player_universe"), "evidence": ev, "game_reasons": s.get("game_reasons"),
-                       "side_monitor": s.get("side_monitor")}
+                       "side_monitor": s.get("side_monitor"),
+                       # Stage 07: the model that actually scored this tick (the top-level artifact_sha256 is the frozen
+                       # hash gate only) and its source status (OK / DEGRADED frozen substitution)
+                       "model_identity": {k: (s.get("model_identity") or {}).get(k) for k in
+                                          ("model_version", "model_kind", "model_source", "training_cutoff",
+                                           "artifact_sha256", "engine_id", "code_commit", "model_source_status")}}
     sl = {r.canonical_game_id: r for r in due.itertuples(index=False)}
     for gid in timing:
         r = sl[gid]
@@ -1046,6 +1051,7 @@ def _tick(ctx: Ctx) -> dict:
         ident = LD.verify(ctx.artifact_paths)
         t["frozen_model_hash_gate"] = "PASS"
         t["artifact_sha256"] = ident["artifact_sha256"]
+        t["artifact_sha256_scope"] = "FROZEN_OPENING_HASH_GATE (the scoring model is tick.scoring.model_identity)"
     except LD.ArtifactIntegrityError as e:
         t.update({"frozen_model_hash_gate": "FAIL", "status": "BLOCKED", "reason": e.reason, "error": str(e)[:500]})
         tdir.mkdir(parents=True, exist_ok=True)

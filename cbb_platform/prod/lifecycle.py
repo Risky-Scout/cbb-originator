@@ -330,7 +330,8 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     scored = sorted(s.get("banks", {}))
     rec.update(status="FORECAST", run_id=s["run_id"], prediction_as_of=now.isoformat(),
                model_version=ident["model_version"], engine_id=eng, code_commit=ENG.code_commit(),
-               model_kind=ident.get("model_kind"),
+               model_kind=ident.get("model_kind"), training_cutoff=ident.get("training_cutoff"),
+               model_source_status=ident.get("model_source_status"),
                artifact_sha256=ident.get("artifact_sha256"), state_version=st["manifest"]["state_version"],
                readiness_state=s.get("readiness_state"), run_reasons=s.get("run_reasons"),
                games_forecast=len(scored), games_not_scored={g: s.get("game_reasons", {}).get(g) for g in rec["games"]
@@ -364,8 +365,10 @@ def game_forecast(sdir: Path, rec: dict, games: pd.DataFrame, st: dict, day: dat
 
 
 def _index(rec: dict) -> dict:
-    return {k: rec.get(k) for k in ("snapshot_id", "slate_date", "window", "executed_at", "prediction_as_of", "status",
-                                    "games", "cutoffs", "model_version", "pmfs_persisted", "rotowire_refresh", "availability_source")}
+    return {**{k: rec.get(k) for k in ("snapshot_id", "slate_date", "window", "executed_at", "prediction_as_of", "status",
+                                       "games", "cutoffs", "model_version", "pmfs_persisted", "rotowire_refresh",
+                                       "availability_source")},
+            "model_source_status": (rec.get("model_source_status") or {}).get("status")}
 
 
 # ============================================================================ the scheduled jobs
@@ -579,6 +582,25 @@ def training_freshness(life: Life, day: date) -> dict:
                 "reason": f"EVALUATION_ERROR {type(e).__name__}: {e}"[:300]}
 
 
+def model_source_state(life: Life, day: date) -> dict:
+    """Stage 07: every frozen-model substitution of ET date D (prod.model_source DEGRADED events: lifecycle snapshots
+    AND quote ticks) -- never silent. Unreadable log -> UNVERIFIED (also a blocker: it cannot be shown absent)."""
+    from cbb_platform.prod import model_source as MS
+    from cbb_platform.walkforward import config as WC
+    p = Path(life.model_root or WC.STORE_ROOT) / "manifests" / MS.DEGRADED_LOG
+    try:
+        recs = OS.read_jsonl(p) if p.exists() else []
+    except Exception as e:                         # noqa: BLE001
+        return {"PLAYER_MODEL_SOURCE": "UNVERIFIED", "reason": f"{type(e).__name__}: {e}"[:200]}
+    ev = [r for r in recs if SH._utc(r["as_of"]).tz_convert("America/New_York").date() == day]
+    if not ev:
+        return {"PLAYER_MODEL_SOURCE": "OK", "DEGRADED_EVENTS": 0}
+    return {"PLAYER_MODEL_SOURCE": "DEGRADED", "DEGRADED_EVENTS": len(ev),
+            "FALLBACK_CODES": sorted({r.get("fallback_code") for r in ev}),
+            "ACTUAL_MODEL": ev[-1]["actual"]["model_version"], "EXPECTED_MODEL": ev[-1]["expected"].get("expected_version"),
+            "FIRST_AT": ev[0]["as_of"], "LAST_AT": ev[-1]["as_of"], "RECOVERY": ev[-1].get("recovery")}
+
+
 RETENTION_MAX_AGE_H = 26.0              # the retention timer runs every 6 h; one missed day is visible, not silent
 
 
@@ -622,6 +644,7 @@ def health(life: Life, day: date, **sections) -> dict:
             h[k] = v
     h["training_freshness"] = training_freshness(life, day)   # durable model store + forecast index (never a fit)
     h["retention"] = retention_state(life)
+    h["model_source"] = model_source_state(life, day)
     for k, v in sections.items():                  # the newest forecast of the day (morning, retry or refresh)
         if isinstance(v, dict) and v.get("status") == "FORECAST" and (k == "forecast" or v.get("snapshot_id")):
             h["latest_forecast"] = {k: v.get(k) for k in FORECAST_SUMMARY}
@@ -749,6 +772,11 @@ def receipt(h: dict) -> dict:
         warn(f"TRAINING_DATA_LAG: all {tf.get('PREVIOUS_DAY_FINAL_GAMES')} in-scope {tf.get('PREVIOUS_DAY_DATE')} games "
              f"deferred ({tf.get('PREVIOUS_DAY_EXCLUSION_REASONS')}); latest included game date "
              f"{tf.get('LATEST_GAME_DATE_INCLUDED')}", INFORMATIONAL)
+    ms = h.get("model_source") or {}
+    if ms.get("PLAYER_MODEL_SOURCE") in ("DEGRADED", "UNVERIFIED"):   # Stage 07: a frozen substitution is never healthy
+        warn(f"MODEL_SOURCE_FALLBACK: {ms.get('DEGRADED_EVENTS')} scoring run(s) used {ms.get('ACTUAL_MODEL')} instead of "
+             f"{ms.get('EXPECTED_MODEL')} ({', '.join(ms.get('FALLBACK_CODES') or [])}){'; ' + ms['reason'] if ms.get('reason') else ''}",
+             ACTIVE_BLOCKER)
     real = bool((ex.get("raw_quote_rows") or 0) > 0 or ((h.get("quote_refresh_totals") or {}).get("receipts") or 0) > 0)
     board = board_status(st("boards"), qr, real)
     bx = ex.get("boards") if isinstance(ex.get("boards"), dict) else {}
@@ -771,7 +799,7 @@ def receipt(h: dict) -> dict:
     model_version = lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION")
     no_games = fo["STATE"] == "NOT_REQUIRED"
     operational = {                                 # DAY_OPERATIONAL = every condition true (independent of the chain)
-        "ACTIVE_MODEL": bool(model_version),
+        "ACTIVE_MODEL": bool(model_version) and ms.get("PLAYER_MODEL_SOURCE") not in ("DEGRADED", "UNVERIFIED"),
         "FORECAST": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
         "PMFS": no_games or int(lf.get("pmfs_persisted") or 0) > 0,
         "EXPORTS": (no_games or (st("boards") == "WRITTEN" and st("distributions") == "WRITTEN"))
@@ -792,6 +820,7 @@ def receipt(h: dict) -> dict:
         "D_MINUS_1_COMPLETE": tf.get("PREVIOUS_DAY_STATUS"),
         "TRAINING_FRESHNESS": tfs,
         "PLAYER_MODEL_ACTIVE": model_version,
+        "PLAYER_MODEL_SOURCE": ms.get("PLAYER_MODEL_SOURCE"),
         "TEAM_RATINGS_FRESH": gstate["TEAM_RATINGS_FRESH"],
         "PLAYER_FORECAST_COMPLETE": fo["STATE"] in (PASS_STATE, RECOVERED) or no_games,
         "GAME_FORECAST_COMPLETE": gstate["GAME_FORECAST_COMPLETE"],

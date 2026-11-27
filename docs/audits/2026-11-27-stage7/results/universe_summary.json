@@ -1,0 +1,88 @@
+{
+ "evaluation_cutoff_utc": "2026-11-27T20:40:23+00:00",
+ "evaluation_state_version": "S20261127T201352Z-8eeab0c20aef",
+ "evaluation_state_source_cutoff": "2026-11-27 20:10:28.493234+00:00",
+ "first_retained_state": "S20261102T184529Z-90adc5bbc413",
+ "first_retained_created_at": "2026-11-02 18:45:29.716250+00:00",
+ "retained_versions": 311,
+ "sync_promotions": 405,
+ "promotions_not_retained": 16,
+ "games": {
+  "scheduled_tip_by_cutoff": 1485,
+  "by_universe": {
+   "DI_VS_DI": 1164,
+   "DI_VS_NON_DI": 321
+  },
+  "outcome": {
+   "COMPLETE": 1443,
+   "MISSING_RESULT": 25,
+   "IN_PROGRESS_AT_CUTOFF": 13,
+   "POSTPONED_OR_CANCELLED": 4
+  },
+  "complete_by_universe": {
+   "DI_VS_DI": 1134,
+   "DI_VS_NON_DI": 309
+  },
+  "information_state": {
+   "EXACT_RETAINED_STATE": 1472,
+   "NO_RETAINED_STATE_BEFORE_CUTOFF": 13
+  },
+  "complete_di_information_state": {
+   "EXACT_RETAINED_STATE": 1127,
+   "NO_RETAINED_STATE_BEFORE_CUTOFF": 7
+  },
+  "prospective_forecast": 833,
+  "complete_di_with_forecast": 810,
+  "complete_di": 1134,
+  "missing_forecast_reason_complete_di": {
+   "BEFORE_DROPLET_PRODUCTION_FORECASTS": 300,
+   "NEVER_SLATED_PREGAME": 24
+  },
+  "games_with_invalid_pmfs": 0,
+  "player_market_observation_games": 514,
+  "game_market_observation_games": 349
+ },
+ "players_complete_games": {
+  "rows": 54625,
+  "category": {
+   "PLAYED_FORECAST": 16783,
+   "POOL_NO_BOX_LINE_NOT_FORECAST": 15782,
+   "PLAYED_UNEXPECTED_NOT_IN_POOL": 15254,
+   "POOL_NO_BOX_LINE_FORECAST": 6086,
+   "PLAYED_IN_POOL_NOT_FORECAST": 494,
+   "DNP_FORECAST": 128,
+   "DNP_NOT_FORECAST": 98
+  },
+  "box_lines": 32757,
+  "played": 32531,
+  "dnp_box_lines": 226,
+  "pregame_pool": 39280,
+  "forecast_players": 22997,
+  "forecast_players_all_12_stats": 22997,
+  "valid_pmfs": 989604,
+  "identity_status_box": {
+   "RESOLVED": 28642,
+   "UNRESOLVED_NO_MATCH": 4112,
+   "UNRESOLVED_AMBIGUOUS": 3
+  },
+  "roster_membership_at_pregame_played": {
+   "ON_ROSTER_BY_PREGAME": 28031,
+   "NO_ROSTER_ROW_AT_TEAM": 4184,
+   "ROSTER_ROW_FIRST_SEEN_AFTER_PREGAME": 316
+  },
+  "played_not_forecast_suppression": {
+   "NO_FROZEN_MEMBERSHIP_EVIDENCE": 402,
+   "NOT_ON_CURRENT_ROSTER": 70,
+   "AMBIGUOUS_PLAYER": 7,
+   "TRANSFERRED_OUT": 7,
+   "IDENTITY_CONFLICT_SUPPRESSED": 4,
+   "IDENTITY_CONFLICT": 3,
+   "nan": 1
+  },
+  "market_overlap_player_games": 598,
+  "market_overlap_rows": 3036
+ },
+ "pmf_rows_pregame": 1014192,
+ "pmf_rows_invalid": 0,
+ "pmf_rows_frozen_model": 218640
+}

@@ -1,0 +1,14 @@
+{
+ "ROTOWIRE_PLAYER_STATE": {
+  "rows": 24,
+  "deployed": 21,
+  "not_yet_deployed": 3,
+  "applied_before_deploy_rows": 21,
+  "backdating_h_quantiles": {
+   "0.0": 18.1,
+   "0.5": 18.1,
+   "0.9": 18.7,
+   "1.0": 42.7
+  }
+ }
+}
