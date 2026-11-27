@@ -573,5 +573,99 @@
    "preserved": "/var/lib/sports-models/cbb-originator/audit/stage4-20261127/natural_20261127"
   },
   "background_processes": "none: Droplet unit s4-deploy-af1998f stopped (inactive, never ELIGIBLE); all local waiters finished or stopped"
+ },
+ "stage5_availability_math_20261127": {
+  "recorded_at": "2026-11-27T18:45Z",
+  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE",
+  "scope": "injury / availability / confirmed-lineup mathematics: trace, counterfactuals, participation-state consistency, game bridge; no model refit, no new coefficient, no rotation model",
+  "evidence": "docs/audits/2026-11-27-stage5 (README.md, DEPLOY_PROCEDURE.md, results/, scripts/, candidate sha256sums); Droplet /var/lib/sports-models/cbb-originator/audit/stage5-20261127",
+  "implemented_mechanisms": {
+   "status_vocabulary": "OUT/LONG_TERM_OUT/SUSPENDED/UNAVAILABLE -> removed (CONFIRMED_UNAVAILABLE, not simulated/priced, out of S); GTD/DOUBTFUL/QUESTIONABLE/RETURN_DESIGNATION/UNKNOWN -> model p_play unchanged, priced, never actionable, game AVAILABILITY_UNCERTAIN_ROTATION if rotation; ACTIVE -> no effect",
+   "participation": "frozen props_v0_participation p_play; never status-conditioned",
+   "starting_probability": "NOT_IMPLEMENTED",
+   "confirmed_lineups": "NOT_ACQUIRED ('will start' collapses to ACTIVE)",
+   "minutes": "independent per-player draws; no team-minutes constraint; no redistribution",
+   "simulation": "joint bank conditional on playing for the scored set; p_play beside, never mixed",
+   "game_bridge": "mean += gamma(0.3, not fitted) * delta S, S = sum p_play*PTS_mu over scored set; beta 0"
+  },
+  "counterfactuals": {
+   "game": "G-0648df8eb36bddd3 (R20261127T150445Z, 4000 draws, fixed seed)",
+   "A_out_starter": "removed; dS -14.73 -> home -4.42 pts, P(home) -0.151; teammates identical (MC noise only in combos)",
+   "B_out_reserve": "dS -6.08 -> -1.82, P(home) -0.061",
+   "C_D_K_uncertain": "no change except flag",
+   "E_F_active_or_will_start": "no change",
+   "G_bench": "no mechanism",
+   "H_return": "no change",
+   "I_ineligible": "= A after C1",
+   "J_missing": "model p_play (NO_REPORT 0.464 vs 0.447 realized, n 13887)",
+   "L_stale": "newer wins both orders"
+  },
+  "participation_calibration_by_status": "GTD 0.269 vs 0.203 (n64); GTD rotation 0.862 vs 0.625 (n8); ACTIVE 0.571 vs 1.0 (n6); OUT 0.13 vs 0.017 (n60, removed anyway)",
+  "defects_corrected": {
+   "D5.1_verified_non_participation_ignored": "C1: in-force NON_BLOCKING curated rows with a deterministic canonical id -> UNAVAILABLE/LONG_TERM_OUT (CURATED_VERIFIED_STATE); live RESOLVED RotoWire governs; no canonical id / SOURCE_CONFLICT never; PIT verified_on; live slate 17:47Z: 16 rows / 11 players / 0 duplicate keys; before: Luis p_play 0.77/0.17/0.12 simulated, Council priced 0.32/0.26 pre-verification",
+   "D5.2_game_baseline_drift": "C2: availability delta vs same-snapshot news-free S (was vs day's INITIAL); INITIAL carries no RotoWire availability (698 INITIAL team-rows, 0 OUT) so availability content already matched since the 11-26 S fix; C2 removes non-availability input drift and covers games with no earlier snapshot; replay INITIAL mode reproduces 11-27 production 91/91 pmf_sha256; NEWS_FREE vs INITIAL: 1 game of 148 changed (|dP| 0.0015); fallback CBB_GAME_AVAILABILITY_BASELINE=INITIAL",
+   "correction_to_own_finding": "the 39.5% OUT-mass reflection 11-20..27 was the pre-11-26 S defect (already fixed in 9f65e7f), not the INITIAL baseline"
+  },
+  "acceptance": {
+   "confirmed_out_zero_participation": "PASS",
+   "ineligible_consistent": "PASS (C1)",
+   "uncertainty_probabilistic": "PASS (not status-informed: Stage 09)",
+   "missing_not_health": "PASS",
+   "stale_cannot_overwrite": "PASS",
+   "combos_coherent": "PASS",
+   "no_double_count": "PASS",
+   "historical_immutable": "PASS",
+   "pit": "PASS",
+   "unaffected_protected": "PASS (INITIAL replay bit-identical)",
+   "joint_minutes": "NOT_CERTIFIED (absent)",
+   "teammate_redistribution": "NOT_CERTIFIED (absent)"
+  },
+  "tests": {
+   "focused": "176 + 120 + 20 passed (rotowire adapter +5/1 updated, coherence +2, stage4, availability, release_b, live_feed, refresh_split, game_*, lifecycle availability, identity conflicts)",
+   "ci": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 46046420877,
+    "sha": "594ec8b96bc93a4e1975331dc751f6f591435228",
+    "conclusion": "success"
+   }
+  },
+  "commit": "594ec8b96bc93a4e1975331dc751f6f591435228",
+  "lineage": [
+   "9f65e7f (deployed)",
+   "93e5cd278323e5e78fc43a58b8eb2bed68195c4a (Stage 04)",
+   "f15d85e",
+   "ff59cf8",
+   "abb466e (Stage 05 corrections)",
+   "594ec8b96bc93a4e1975331dc751f6f591435228 (docstring + evidence)"
+  ],
+  "release_candidate": {
+   "sha": "594ec8b96bc93a4e1975331dc751f6f591435228",
+   "supersedes": "93e5cd2 (by lineage)",
+   "staged": "/opt/sports-models/cbb-originator/releases/594ec8b96bc93a4e1975331dc751f6f591435228.tmp",
+   "files": 915,
+   "hashes": "identical",
+   "deployed": false,
+   "production_current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "procedure": "docs/audits/2026-11-27-stage5/DEPLOY_PROCEDURE.md",
+   "deploy_status": "NOT_DEPLOYED: preserved for the next approved window; no watcher running"
+  },
+  "assigned_to_stage07": [
+   "event ordering uses collection knowable_at, not provider source time (plus Stage 04 replay items)"
+  ],
+  "assigned_to_stage09": [
+   "no team-minutes constraint / redistribution of absent minutes",
+   "status-conditional p_play (GTD rotation 0.86 vs 0.63; ACTIVE 0.57 vs 1.0; small n)",
+   "no p_start, no expected/confirmed lineup; 'will start'/bench info discarded",
+   "returning player p_play unresponsive to ACTIVE"
+  ],
+  "assigned_to_stage11": [
+   "teammate usage/rate/stat means do not respond to an absence"
+  ],
+  "assigned_to_stage16": [
+   "gamma 0.3 conservative prior (not fitted), beta 0; confirmed-ACTIVE asymmetry in S"
+  ],
+  "operational_note": "UNSUPPORTED_ROTATION_SHOCK also fires for curated LTO/ineligible players with stale min_mu>=20 or TOP5 (same fail-closed rule as RotoWire OUT)",
+  "next_eligible_stage": "Stage 06 on owner instruction"
  }
 }
