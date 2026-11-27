@@ -1,0 +1,361 @@
+{
+ "equivalence": {
+  "records": 17,
+  "closure_builds": 13,
+  "incumbent_builds": 4,
+  "games": 56,
+  "player_rows_compared": 3544,
+  "all_equal": true,
+  "pit_violations": 0,
+  "target_outcome_rows": 0,
+  "post_as_of_rows": 0
+ },
+ "bench": [
+  {
+   "state_version": "S20261102T184529Z-90adc5bbc413",
+   "as_of": "2026-11-02 19:00:00.000000+00",
+   "closure": true,
+   "games": 1,
+   "cand_rows": 33,
+   "all_equal": true,
+   "wall_s": 31.0,
+   "cpu_user_s": 34.79,
+   "cpu_sys_s": 2.14,
+   "peak_rss_mb": 926.2,
+   "read_mb": 2.1,
+   "write_mb": 226.7,
+   "rchar_mb": 138.7,
+   "scratch_mb": 185.0,
+   "player_box_rows": 10713,
+   "substitution_rows": 0,
+   "closure_info": {
+    "version": "TARGET_TEAM_PLAYER_CLOSURE_V1",
+    "target_teams": 2,
+    "closure_players": 77,
+    "rows": {
+     "flagship.player_game_outcomes": [
+      1555369,
+      10713
+     ],
+     "flagship.rosters": [
+      213822,
+      826
+     ],
+     "core.transfers": [
+      6687,
+      161
+     ],
+     "core.recruits": [
+      11097,
+      65
+     ],
+     "flagship.substitutions": [
+      436,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "state_version": "S20261102T184529Z-90adc5bbc413",
+   "as_of": "2026-11-02 19:00:00.000000+00",
+   "closure": false,
+   "games": 1,
+   "cand_rows": 33,
+   "all_equal": true,
+   "wall_s": 214.05,
+   "cpu_user_s": 215.3,
+   "cpu_sys_s": 9.93,
+   "peak_rss_mb": 1123.6,
+   "read_mb": 22.0,
+   "write_mb": 3838.6,
+   "rchar_mb": 3610.8,
+   "scratch_mb": 502.3,
+   "player_box_rows": 1555369,
+   "substitution_rows": 436,
+   "closure_info": null
+  },
+  {
+   "state_version": "S20261115T171248Z-202dfaa66b64",
+   "as_of": "2026-11-15 17:30:00.000000+00",
+   "closure": true,
+   "games": 1,
+   "cand_rows": 39,
+   "all_equal": true,
+   "wall_s": 30.67,
+   "cpu_user_s": 33.97,
+   "cpu_sys_s": 1.93,
+   "peak_rss_mb": 933.4,
+   "read_mb": 5.1,
+   "write_mb": 230.9,
+   "rchar_mb": 146.0,
+   "scratch_mb": 186.5,
+   "player_box_rows": 9725,
+   "substitution_rows": 485,
+   "closure_info": {
+    "version": "TARGET_TEAM_PLAYER_CLOSURE_V1",
+    "target_teams": 2,
+    "closure_players": 69,
+    "rows": {
+     "flagship.player_game_outcomes": [
+      1574175,
+      9725
+     ],
+     "flagship.rosters": [
+      213864,
+      754
+     ],
+     "core.transfers": [
+      6687,
+      91
+     ],
+     "core.recruits": [
+      11097,
+      76
+     ],
+     "flagship.substitutions": [
+      64104,
+      485
+     ]
+    }
+   }
+  },
+  {
+   "state_version": "S20261123T124420Z-11e53b4731b0",
+   "as_of": "2026-11-23 15:00:00.000000+00",
+   "closure": true,
+   "games": 2,
+   "cand_rows": 85,
+   "all_equal": true,
+   "wall_s": 35.88,
+   "cpu_user_s": 38.65,
+   "cpu_sys_s": 2.54,
+   "peak_rss_mb": 931.7,
+   "read_mb": 6.4,
+   "write_mb": 238.3,
+   "rchar_mb": 147.5,
+   "scratch_mb": 189.3,
+   "player_box_rows": 19382,
+   "substitution_rows": 1282,
+   "closure_info": {
+    "version": "TARGET_TEAM_PLAYER_CLOSURE_V1",
+    "target_teams": 4,
+    "closure_players": 134,
+    "rows": {
+     "flagship.player_game_outcomes": [
+      1583218,
+      19382
+     ],
+     "flagship.rosters": [
+      213864,
+      1483
+     ],
+     "core.transfers": [
+      6687,
+      145
+     ],
+     "core.recruits": [
+      11097,
+      94
+     ],
+     "flagship.substitutions": [
+      92643,
+      1282
+     ]
+    }
+   }
+  },
+  {
+   "state_version": "S20261123T124420Z-11e53b4731b0",
+   "as_of": "2026-11-23 15:00:00.000000+00",
+   "closure": false,
+   "games": 2,
+   "cand_rows": 85,
+   "all_equal": true,
+   "wall_s": 246.4,
+   "cpu_user_s": 243.26,
+   "cpu_sys_s": 13.46,
+   "peak_rss_mb": 1051.4,
+   "read_mb": 57.6,
+   "write_mb": 5340.3,
+   "rchar_mb": 4660.9,
+   "scratch_mb": 511.0,
+   "player_box_rows": 1583218,
+   "substitution_rows": 92643,
+   "closure_info": null
+  },
+  {
+   "state_version": "S20261109T221253Z-40fc8c960ea8",
+   "as_of": "2026-11-10 23:00:00.000000+00",
+   "closure": true,
+   "games": 24,
+   "cand_rows": 960,
+   "all_equal": true,
+   "wall_s": 60.48,
+   "cpu_user_s": 65.27,
+   "cpu_sys_s": 3.14,
+   "peak_rss_mb": 943.2,
+   "read_mb": 7.0,
+   "write_mb": 306.8,
+   "rchar_mb": 230.5,
+   "scratch_mb": 239.3,
+   "player_box_rows": 229876,
+   "substitution_rows": 2974,
+   "closure_info": {
+    "version": "TARGET_TEAM_PLAYER_CLOSURE_V1",
+    "target_teams": 48,
+    "closure_players": 1596,
+    "rows": {
+     "flagship.player_game_outcomes": [
+      1560776,
+      229876
+     ],
+     "flagship.rosters": [
+      213822,
+      17894
+     ],
+     "core.transfers": [
+      6687,
+      1755
+     ],
+     "core.recruits": [
+      11097,
+      1693
+     ],
+     "flagship.substitutions": [
+      19958,
+      2974
+     ]
+    }
+   }
+  },
+  {
+   "state_version": "S20261109T221253Z-40fc8c960ea8",
+   "as_of": "2026-11-10 23:00:00.000000+00",
+   "closure": false,
+   "games": 24,
+   "cand_rows": 960,
+   "all_equal": true,
+   "wall_s": 240.36,
+   "cpu_user_s": 240.34,
+   "cpu_sys_s": 12.99,
+   "peak_rss_mb": 1090.6,
+   "read_mb": 32.0,
+   "write_mb": 5059.5,
+   "rchar_mb": 4515.8,
+   "scratch_mb": 505.5,
+   "player_box_rows": 1560776,
+   "substitution_rows": 19958,
+   "closure_info": null
+  },
+  {
+   "state_version": "S20261126T020455Z-9dd708fefdad",
+   "as_of": "2026-11-26 04:30:00.000000+00",
+   "closure": true,
+   "games": 1,
+   "cand_rows": 34,
+   "all_equal": true,
+   "wall_s": 33.94,
+   "cpu_user_s": 37.02,
+   "cpu_sys_s": 2.35,
+   "peak_rss_mb": 922.4,
+   "read_mb": 12.4,
+   "write_mb": 235.8,
+   "rchar_mb": 148.2,
+   "scratch_mb": 188.5,
+   "player_box_rows": 10734,
+   "substitution_rows": 745,
+   "closure_info": {
+    "version": "TARGET_TEAM_PLAYER_CLOSURE_V1",
+    "target_teams": 2,
+    "closure_players": 64,
+    "rows": {
+     "flagship.player_game_outcomes": [
+      1586802,
+      10734
+     ],
+     "flagship.rosters": [
+      213864,
+      751
+     ],
+     "core.transfers": [
+      6687,
+      92
+     ],
+     "core.recruits": [
+      11097,
+      105
+     ],
+     "flagship.substitutions": [
+      103886,
+      745
+     ]
+    }
+   }
+  }
+ ],
+ "validation_overhead": {
+  "import_s": 1.287,
+  "history_sha256_cold_s": 3.75,
+  "history_sha256_memo_s": 0.0,
+  "semantics_sha_s": 0.004,
+  "state_index_s": 0.29,
+  "read_metas_s": 0.467,
+  "validity_loop_s": 0.276,
+  "cached_valid_games_end_to_end_s": 0.386,
+  "entries": 1083,
+  "validated": 1083,
+  "reusable": 1083,
+  "history_db_mb": 667.0,
+  "state_versions": 299,
+  "peak_rss_mb": 175.1
+ },
+ "cache_census": {
+  "entries": 1083,
+  "dirs_without_meta": [],
+  "status": {
+   "LEGACY_VALID": 1083
+  },
+  "examples": [],
+  "latest_state": "S20261127T011338Z-04097640f858",
+  "semantics_sha256": "54ae302c9280d73fd49aa19cef3f902c37531111d1aaa3b6cf0c5cb10f6c9a5e",
+  "history_sha256": "3f1ba186be8f2bc4bc501c776fe498132fc3bae7617cefe5d6dfebce15d7af13",
+  "seconds": 3.7
+ },
+ "paired_ratios": [
+  {
+   "as_of": "2026-11-02 19:00",
+   "games": 1,
+   "wall_ratio": 6.9,
+   "cpu_ratio": 6.1,
+   "write_ratio": 16.9,
+   "rows_ratio": 145.2
+  },
+  {
+   "as_of": "2026-11-10 23:00",
+   "games": 24,
+   "wall_ratio": 3.97,
+   "cpu_ratio": 3.7,
+   "write_ratio": 16.5,
+   "rows_ratio": 6.8
+  },
+  {
+   "as_of": "2026-11-23 15:00",
+   "games": 2,
+   "wall_ratio": 6.87,
+   "cpu_ratio": 6.23,
+   "write_ratio": 22.4,
+   "rows_ratio": 81.7
+  }
+ ],
+ "closure_wall_s": {
+  "min": 28.43,
+  "median": 31.22,
+  "max": 62.85
+ },
+ "incumbent_wall_s": {
+  "min": 204.8,
+  "median": 240.36,
+  "max": 246.4
+ }
+}

@@ -1,0 +1,9 @@
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_droplet_deploy_package.py:205: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [2] tests/test_droplet_deploy_package.py:378: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_droplet_deploy_package.py:463: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_droplet_deploy_package.py:492: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_pit_audit_season_rule.py:38: guard closed on this commit
+SKIPPED [1] tests/test_v2_jm1_final_production.py:20: local-only gitignored store absent: data/qa/game_identity_questionable_only.csv
+1160 passed, 7 skipped, 222 warnings in 1817.36s (0:30:17)

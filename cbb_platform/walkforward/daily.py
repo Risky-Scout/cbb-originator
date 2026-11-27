@@ -507,8 +507,8 @@ def warm_features(day: date, root: Path = WC.STORE_ROOT, state_root: Path = PC.S
         out["status"] = "NOTHING_TO_BUILD"
         return out
     gc = TR.game_cutoffs(st["increment_db"], inc)
-    cache = SO.paths(root)["training"] / "features"
-    have = {d.name for d in cache.iterdir() if d.is_dir() and not d.name.startswith(".")} if cache.exists() else set()
+    # reusable = causal identity still holds (training_rows.cache_validity), not mere directory existence
+    have = TR.cached_valid_games(SO.paths(root)["training"], state_root, gc, history_db, cfg)
     todo = gc[~gc["canonical_game_id"].isin(have)]
     out["cached_before"] = int(gc["canonical_game_id"].isin(have).sum())
     cuts = sorted(todo["prediction_cutoff_utc"].unique())

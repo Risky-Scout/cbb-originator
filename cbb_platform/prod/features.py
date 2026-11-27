@@ -20,6 +20,7 @@ team that has already played this season the result is identical.
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import os
 from datetime import datetime, timezone
@@ -74,8 +75,11 @@ def _has(con, db: str, rel: str) -> bool:
 
 def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int,
                       history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None,
-                      blank_targets: bool = True) -> dict:
+                      blank_targets: bool = True, closure: bool = False) -> dict:
     """Write the as_of-masked canonical input DB. Returns counts + provenance.
+
+    closure=True (pregame warm-up builds only, walkforward/training_rows.feature_rows): after masking, keep only the
+    exact dependency closure of the target games (dependency_closure). The default (False) is the incumbent DB.
 
     blank_targets=False (walk-forward LABEL builds only, cbb_platform/walkforward/training_rows.py): the target games are
     COMPLETED games whose own outcomes are needed as training labels; they keep their result / box / substitution rows,
@@ -152,6 +156,11 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
           {not_tgt_r.replace("r.", "s.")}""")
     for rel in EMPTY_RELATIONS:                       # outcome-event streams: no frozen JM1_FINAL input reads them
         con.execute(f"CREATE TABLE {rel} AS SELECT * FROM hist.{rel} LIMIT 0")
+    if closure and not closure_audited():
+        closure_info = {"version": CLOSURE_VERSION, "status": "CLOSURE_NOT_AUDITED_FULL_BUILD",
+                        "stage3_source_sha256": stage3_source_sha256()}
+    else:
+        closure_info = dependency_closure(con, target_season) if closure else None
     counts = {r: con.execute(f"SELECT count(*) FROM {r}").fetchone()[0]
               for r in ("flagship.games", "flagship.team_game_outcomes", "flagship.player_game_outcomes", "flagship.substitutions")}
     leak = 0 if not blank_targets else con.execute("""SELECT
@@ -168,7 +177,76 @@ def compact_canonical(out_path: Path, target_game_ids, as_of, target_season: int
     if leak or late:
         raise FeatureBuildError(f"FUTURE_LEAKAGE: target-game outcome rows {leak}, post-as_of rows {late}")
     return {"targets": len(targets), "as_of": aso, "counts": counts, "target_outcome_rows": leak, "post_as_of_rows": late,
-            "sources": srcs, "blank_targets": blank_targets}
+            "sources": srcs, "blank_targets": blank_targets, **({"closure": closure_info} if closure else {})}
+
+
+# ============================================================================ exact dependency closure (warm-up builds)
+CLOSURE_VERSION = "TARGET_TEAM_PLAYER_CLOSURE_V1"
+# The closure is exact only for the Stage 3 SQL it was audited against (2026-11-27). Any change to cbb_platform/stage3
+# changes this digest: the closure then falls back to the full build (CLOSURE_NOT_AUDITED) until it is re-audited.
+CLOSURE_AUDITED_STAGE3_SHA256 = "257d8968bc692cc3e99de721ce75aad06ebef4e97929bbbc498b236b79d18908"
+
+
+def stage3_source_sha256() -> str:
+    h = hashlib.sha256()
+    for p in sorted((Path(__file__).resolve().parents[1] / "stage3").glob("*.py")):
+        h.update(p.name.encode() + b"\0" + p.read_bytes() + b"\0")
+    return h.hexdigest()
+
+
+def closure_audited() -> bool:
+    return stage3_source_sha256() == CLOSURE_AUDITED_STAGE3_SHA256
+
+
+def dependency_closure(con, target_season: int) -> dict:
+    """Delete, from the masked compact canonical DB (`con`, open on it, with TEMP tgt), every player-keyed row that
+    cannot reach a target feature row; team-keyed relations are kept whole. Exact by the frozen Stage 3 dependency
+    structure (audited 2026-11-27, stage3 SQL frozen since 2026-10-16):
+
+    * team_state reads only src.played_games / src.team_games (kept whole), so team features are unchanged;
+    * every player stream is partitioned by player (player_box_state, pseason, identity_conflicts, rec, trf, fin) or by
+      (player, team, season) (participation); a target row attaches only partitions of its own pool players on the
+      target team, and pool membership of player p for team-season (T, s) is derived only from p's own rows plus the
+      team-season existence set (from team_games, kept whole);
+    * U = every player with ANY possible membership evidence for a target team-season (T, s): a box row for T in
+      s-2..s (appearance / returner), a T roster row in s-1..s, a portal record to or from T in year s-1, a recruit
+      committed to T in class s-1. For U every row of every relation is kept (all teams, all seasons);
+    * team-level aggregates over players read only target-team rows (previous-season team minutes over ALL box rows,
+      NULL ids included; substitution-feed completeness over ALL stints of the team-game): every row whose team is a
+      target team is kept.
+    Rows of other players (other teams, never on a target team in the evidence window) only feed partitions that are
+    never attached. Equivalence is proven per build by the warm-up comparator tests and the production replay."""
+    s = int(target_season)
+    con.execute("""CREATE TEMP TABLE _ct AS SELECT DISTINCT home_team_id AS t FROM flagship.games
+                   WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt)
+                   UNION SELECT DISTINCT away_team_id FROM flagship.games
+                   WHERE canonical_game_id IN (SELECT canonical_game_id FROM tgt)""")
+    con.execute(f"""CREATE TEMP TABLE _cu AS SELECT DISTINCT p FROM (
+        SELECT canonical_player_id AS p FROM flagship.player_game_outcomes
+            WHERE canonical_team_id IN (SELECT t FROM _ct) AND season BETWEEN {s - 2} AND {s}
+        UNION ALL SELECT canonical_player_id FROM flagship.rosters
+            WHERE canonical_team_id IN (SELECT t FROM _ct) AND season BETWEEN {s - 1} AND {s}
+        UNION ALL SELECT coalesce(canonical_player_id, candidate_canonical_player_id) FROM core.transfers
+            WHERE (destination_team_id IN (SELECT t FROM _ct) OR origin_team_id IN (SELECT t FROM _ct))
+              AND transfer_year = {s - 1}
+        UNION ALL SELECT canonical_player_id FROM core.recruits
+            WHERE committed_team_id IN (SELECT t FROM _ct) AND recruit_year = {s - 1}) x WHERE p IS NOT NULL""")
+    U, T = "(SELECT p FROM _cu)", "(SELECT t FROM _ct)"
+    keep = {"flagship.player_game_outcomes": f"canonical_player_id IN {U} OR canonical_team_id IN {T}",
+            "flagship.rosters": f"canonical_player_id IN {U} OR canonical_team_id IN {T}",
+            "core.transfers": (f"canonical_player_id IN {U} OR candidate_canonical_player_id IN {U} "
+                               f"OR destination_team_id IN {T} OR origin_team_id IN {T}"),
+            "core.recruits": f"canonical_player_id IN {U} OR committed_team_id IN {T}",
+            "flagship.substitutions": f"canonical_player_id IN {U} OR canonical_team_id IN {T}"}
+    out = {"version": CLOSURE_VERSION, "target_teams": con.execute("SELECT count(*) FROM _ct").fetchone()[0],
+           "closure_players": con.execute("SELECT count(*) FROM _cu").fetchone()[0], "rows": {}}
+    for rel, cond in keep.items():
+        before = con.execute(f"SELECT count(*) FROM {rel}").fetchone()[0]
+        con.execute(f"DELETE FROM {rel} WHERE NOT coalesce({cond}, FALSE)")
+        out["rows"][rel] = [before, con.execute(f"SELECT count(*) FROM {rel}").fetchone()[0]]
+    con.execute("DROP TABLE _cu")
+    con.execute("DROP TABLE _ct")
+    return out
 
 
 def as_of_mask_instants(history_db: Path, increment_db: Path | None, target_season: int, lo, hi) -> list[str]:
@@ -312,13 +390,17 @@ def model_frame(features_db: Path, cfg: dict, target_game_ids, season: int) -> d
 
 
 def build(run_dir: Path, target_game_ids, target_season: int, as_of, cfg: dict,
-          history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None, blank_targets: bool = True) -> dict:
+          history_db: Path = PC.HISTORY_CANONICAL, increment_db: Path | None = None, blank_targets: bool = True,
+          closure: bool = False) -> dict:
     """compact canonical -> Stage 3 features -> model frames, inside run_dir (scratch, gitignored)."""
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     t0 = datetime.now(timezone.utc)
     cdb, fdb = run_dir / "canonical_asof.duckdb", run_dir / "features_asof.duckdb"
-    canon = compact_canonical(cdb, target_game_ids, as_of, target_season, history_db, increment_db, blank_targets)
+    if closure and not blank_targets:
+        raise FeatureBuildError("the dependency closure is proven for pregame (blank_targets) builds only")
+    canon = compact_canonical(cdb, target_game_ids, as_of, target_season, history_db, increment_db, blank_targets,
+                              closure=closure)
     feats = build_features(cdb, fdb, target_game_ids, target_season)
     frames = model_frame(fdb, cfg, target_game_ids, target_season)
     return {**frames, "provenance": {"canonical": canon, "features": feats, "seconds": (datetime.now(timezone.utc) - t0).total_seconds(),

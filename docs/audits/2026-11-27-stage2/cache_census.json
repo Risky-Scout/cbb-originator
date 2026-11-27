@@ -1,0 +1,12 @@
+{
+ "entries": 1083,
+ "dirs_without_meta": [],
+ "status": {
+  "LEGACY_VALID": 1083
+ },
+ "examples": [],
+ "latest_state": "S20261127T011338Z-04097640f858",
+ "semantics_sha256": "54ae302c9280d73fd49aa19cef3f902c37531111d1aaa3b6cf0c5cb10f6c9a5e",
+ "history_sha256": "3f1ba186be8f2bc4bc501c776fe498132fc3bae7617cefe5d6dfebce15d7af13",
+ "seconds": 3.7
+}

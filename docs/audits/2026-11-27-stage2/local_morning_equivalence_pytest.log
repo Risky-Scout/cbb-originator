@@ -1,0 +1,8 @@
+.                                                                        [100%]
+=============================== warnings summary ===============================
+tests/test_feature_closure_equivalence.py: 28 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/.venv/lib/python3.12/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: divide by zero encountered in log
+    result = getattr(ufunc, method)(*inputs, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 28 warnings in 316.64s (0:05:16)

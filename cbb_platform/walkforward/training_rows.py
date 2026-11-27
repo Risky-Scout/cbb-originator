@@ -144,22 +144,134 @@ def information_state_groups(groups: dict, history_db: Path, season: int = WC.PR
     return res
 
 
+# ============================================================================ causal identity of a cached pregame row
+CAUSAL_KEY_VERSION = "PREGAME_CAUSAL_KEY_V1"
+_FILE_SHA: dict = {}
+
+
+def file_sha256(p: Path) -> str:
+    """Content sha256 of an immutable input file, memoized per (path, size, mtime_ns)."""
+    p = Path(p)
+    st = p.stat()
+    k = (str(p.resolve()), st.st_size, st.st_mtime_ns)
+    if k not in _FILE_SHA:
+        h = hashlib.sha256()
+        with open(p, "rb") as f:
+            for b in iter(lambda: f.read(1 << 22), b""):
+                h.update(b)
+        _FILE_SHA[k] = h.hexdigest()
+    return _FILE_SHA[k]
+
+
+def feature_semantics_sha(cfg: dict) -> str:
+    """Identity of everything that defines a pregame feature row's VALUES: the frozen Stage 3 SQL modules, the
+    production mask / universe adaptation and frame SELECTs of prod.features, and the frozen marginal config. The
+    dependency closure is deliberately excluded: it is an exact optimization (proven equivalent), not a semantic input."""
+    import inspect
+    from cbb_platform.stage3 import participation, pitlib, player_state, sources as S3S, spec as S3P, team_state, universe
+    parts = [inspect.getsource(m) for m in (participation, pitlib, player_state, S3S, S3P, team_state, universe)]
+    parts += [PF.KNOWABLE, repr(PF.RESULT_COLS), repr(PF.EMPTY_RELATIONS), repr(PF.UNION_RELATIONS), PF.TS_ORIGINAL,
+              PF.TS_PRODUCTION, inspect.getsource(PF._universe), inspect.getsource(PF._frame_sql),
+              inspect.getsource(PF.model_frame), json.dumps(cfg, sort_keys=True, default=str)]
+    return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()
+
+
+def causal_key(*, semantics_sha: str, history_sha: str, state_version: str, increment_sha: str, cutoff, as_of,
+               season: int, group_targets) -> dict:
+    """Typed causal identity of one cached pregame row. Every component that can change the row's values is a content
+    hash or an exact instant; game ids alone are never the key."""
+    k = {"version": CAUSAL_KEY_VERSION, "feature_semantics_sha256": semantics_sha, "history_db_sha256": history_sha,
+         "state_version": state_version, "increment_db_sha256": increment_sha,
+         "prediction_cutoff_utc": _utc(cutoff).isoformat(), "build_as_of_utc": _utc(as_of).isoformat(),
+         "season": int(season),
+         "group_targets_sha256": hashlib.sha256("|".join(sorted(group_targets)).encode()).hexdigest()}
+    k["key_sha256"] = hashlib.sha256(json.dumps(k, sort_keys=True).encode()).hexdigest()
+    return k
+
+
+class StateIndex:
+    """state_versions(state_root) read ONCE; asof(t) == eligibility.state_asof(state_root, t) without re-reading the
+    ~300 manifests per call."""
+    def __init__(self, state_root: Path):
+        self.v = EL.state_versions(state_root)
+        self.names = {x["state_version"] for x in self.v}
+
+    def asof(self, t):
+        t = _utc(t)
+        ok = [x for x in self.v if x["created_at"] <= t and x["source_cutoff"] <= t]
+        return ok[-1] if ok else None
+
+
+def cache_validity(meta: dict, cutoff, states, semantics_sha: str | None, history_sha: str | None) -> str:
+    """VALID | LEGACY_VALID | STALE_<reason>. A cached row is reusable only while its causal identity still holds:
+    the game's CURRENT cutoff equals the cached one (a rescheduled tip invalidates), the state version as-of that
+    cutoff is still the one it was built on (a re-created / replaced state invalidates), and -- when the row carries a
+    causal key -- the feature semantics and the history DB content are unchanged. Corrections that arrive AFTER the
+    cutoff never invalidate: a training row holds only what was knowable at its cutoff (no backdating). Legacy rows
+    (pre-key) are checked on cutoff + state version; their semantics are those of stage3 SQL frozen 2026-10-16."""
+    if meta.get("status") not in ("BUILT", "NO_PREGAME_EXAMPLES"):
+        return "STALE_STATUS"
+    if _utc(meta["prediction_cutoff_utc"]) != _utc(cutoff):
+        return "STALE_CUTOFF"
+    idx = states if isinstance(states, StateIndex) else StateIndex(states)
+    if meta.get("state_version") not in idx.names:
+        return "LEGACY_VALID" if meta.get("causal_key") is None else "VALID_STATE_RETIRED"   # cannot rebuild better
+    st = idx.asof(cutoff)
+    if st is None or st["state_version"] != meta.get("state_version"):
+        return "STALE_STATE_VERSION"
+    k = meta.get("causal_key")
+    if k is None:
+        return "LEGACY_VALID"
+    if semantics_sha is not None and k.get("feature_semantics_sha256") != semantics_sha:
+        return "STALE_FEATURE_SEMANTICS"
+    if history_sha is not None and k.get("history_db_sha256") != history_sha:
+        return "STALE_HISTORY_DB"
+    return "VALID"
+
+
+REUSABLE = ("VALID", "LEGACY_VALID", "VALID_STATE_RETIRED")
+
+
+def supersede(root: Path, gid: str, reason: str) -> Path:
+    """Move an invalidated cache entry aside (kept as evidence, never deleted); atomic within the cache root."""
+    dst = Path(root) / ".superseded" / f"{gid}.{pd.Timestamp.now(tz='UTC').strftime('%Y%m%dT%H%M%SZ')}.{reason}"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    os.replace(Path(root) / gid, dst)
+    return dst
+
+
 def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, history_db: Path, cfg: dict,
-                 season: int = WC.PRODUCTION_SEASON, log=print) -> dict:
+                 season: int = WC.PRODUCTION_SEASON, log=print, closure: bool | None = None) -> dict:
     """games: canonical_game_id + prediction_cutoff_utc. Returns {"cand", "team", "meta"} for every game (cached rows
-    are reused byte-for-byte; a game whose cutoff has no state version is reported, never built from later data)."""
+    are reused byte-for-byte while their causal identity holds -- cache_validity; a stale entry is superseded and
+    rebuilt; a game whose cutoff has no state version is reported, never built from later data).
+
+    closure: build with the exact dependency closure (prod.features.dependency_closure). None = env
+    CBB_FEATURE_CLOSURE (default ON); OFF restores the incumbent full build (the comparator)."""
+    if closure is None:
+        closure = os.environ.get("CBB_FEATURE_CLOSURE", "ON").upper() != "OFF"
     root = Path(cache_root) / "features"
     root.mkdir(parents=True, exist_ok=True)
+    sem, hsha = feature_semantics_sha(cfg), file_sha256(history_db)
+    sidx = StateIndex(state_root)
     todo, metas = [], {}
     for r in games.itertuples(index=False):
         mp = root / r.canonical_game_id / "meta.json"
         if mp.exists():
-            metas[r.canonical_game_id] = json.loads(mp.read_text())
-        else:
-            todo.append(r)
+            m = json.loads(mp.read_text())
+            v = cache_validity(m, r.prediction_cutoff_utc, sidx, sem, hsha)
+            if v in REUSABLE:
+                metas[r.canonical_game_id] = m
+                continue
+            log(f"pregame features {r.canonical_game_id}: cached row {v} -> superseded, rebuilt")
+            supersede(root, r.canonical_game_id, v)
+        elif (root / r.canonical_game_id).exists():              # a directory without meta.json: never complete
+            log(f"pregame features {r.canonical_game_id}: incomplete cache entry -> superseded, rebuilt")
+            supersede(root, r.canonical_game_id, "STALE_INCOMPLETE")
+        todo.append(r)
     groups: dict = {}
     for r in todo:
-        st = EL.state_asof(state_root, r.prediction_cutoff_utc)
+        st = sidx.asof(r.prediction_cutoff_utc)
         if st is None:
             metas[r.canonical_game_id] = {"game_id": r.canonical_game_id, "status": "NO_STATE_AT_CUTOFF",
                                           "prediction_cutoff_utc": _utc(r.prediction_cutoff_utc).isoformat()}
@@ -168,7 +280,8 @@ def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, histor
     for (cut, sv), (st, gids, gcut, info) in information_state_groups(groups, history_db, season):
         work = root / f".work-{uuid.uuid4().hex}"
         try:
-            fr = PF.build(work, gids, season, cut, cfg, history_db, st["increment_db"])
+            fr = PF.build(work, gids, season, cut, cfg, history_db, st["increment_db"], closure=closure)
+            isha = file_sha256(st["increment_db"])
             prov = fr["provenance"]["canonical"]
             if prov["target_outcome_rows"] or prov["post_as_of_rows"]:
                 raise TrainingRowsError(f"FUTURE_LEAKAGE in pregame build at {cut}: {prov}")
@@ -188,11 +301,17 @@ def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, histor
                         "team_rows": int(len(t)), "cand_sha256": _sha_df(c), "team_sha256": _sha_df(t),
                         "build": {"target_outcome_rows": prov["target_outcome_rows"], "post_as_of_rows": prov["post_as_of_rows"],
                                   "as_of": prov["as_of"], "group_games": len(gids),
-                                  **({"information_state": info} if info else {})}, "pit_audit": pit}
+                                  **({"information_state": info} if info else {}),
+                                  **({"closure": prov["closure"]} if "closure" in prov else {})}, "pit_audit": pit,
+                        "causal_key": causal_key(semantics_sha=sem, history_sha=hsha, state_version=sv,
+                                                 increment_sha=isha, cutoff=gcut[gid], as_of=cut, season=season,
+                                                 group_targets=gids)}
                 (tmp / "meta.json").write_text(json.dumps(meta, indent=1, default=str))
-                if gdir.exists():                                   # concurrent builder won: keep the first (immutable)
+                if (gdir / "meta.json").exists():                   # concurrent builder won: keep the first (immutable)
                     shutil.rmtree(tmp)
                 else:
+                    if gdir.exists():                               # incomplete leftover (no meta.json): keep as evidence
+                        supersede(root, gid, "STALE_INCOMPLETE")
                     os.replace(tmp, gdir)
                 metas[gid] = json.loads((gdir / "meta.json").read_text())
             log(f"pregame features {cut.isoformat()} ({len(gids)} games, state {sv}"
@@ -203,6 +322,20 @@ def feature_rows(cache_root: Path, state_root: Path, games: pd.DataFrame, histor
     cand = pd.concat([pd.read_parquet(root / g / "cand.parquet") for g in sorted(built)], ignore_index=True) if built else pd.DataFrame()
     team = pd.concat([pd.read_parquet(root / g / "team.parquet") for g in sorted(built)], ignore_index=True) if built else pd.DataFrame()
     return {"cand": cand, "team": team, "meta": metas}
+
+
+def cached_valid_games(cache_root: Path, state_root: Path, games: pd.DataFrame, history_db: Path, cfg: dict) -> set:
+    """Game ids whose cached pregame row is reusable now (cache_validity), for the warm-up's to-do list. Read-only."""
+    root = Path(cache_root) / "features"
+    if not root.exists():
+        return set()
+    sem, hsha, sidx = feature_semantics_sha(cfg), file_sha256(history_db), StateIndex(state_root)
+    out = set()
+    for r in games.itertuples(index=False):
+        mp = root / r.canonical_game_id / "meta.json"
+        if mp.exists() and cache_validity(json.loads(mp.read_text()), r.prediction_cutoff_utc, sidx, sem, hsha) in REUSABLE:
+            out.add(r.canonical_game_id)
+    return out
 
 
 # ============================================================================ labels + finals (per refit)

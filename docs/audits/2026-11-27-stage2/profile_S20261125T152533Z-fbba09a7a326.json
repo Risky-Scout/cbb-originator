@@ -1,0 +1,510 @@
+{
+ "state_version": "S20261125T152533Z-fbba09a7a326",
+ "replay_as_of": "2026-11-25 18:00:00.000000+00",
+ "games": [
+  "G-14e15dd04622764f",
+  "G-4560db410b9e7748",
+  "G-64909aab9302ec16",
+  "G-d780b7303b01d0e4",
+  "G-f9b6d861926e89e3"
+ ],
+ "group_sizes": {
+  "2026-11-25 18:30:00.000000+00": 1,
+  "2026-11-25 20:00:00.000000+00": 4,
+  "2026-11-25 16:00:00.000000+00": 1,
+  "2026-11-25 22:00:00.000000+00": 5,
+  "2026-11-25 19:00:00.000000+00": 3,
+  "2026-11-25 21:00:00.000000+00": 4,
+  "2026-11-25 16:31:00.000000+00": 1,
+  "2026-11-25 18:00:00.000000+00": 5,
+  "2026-11-25 19:30:00.000000+00": 1,
+  "2026-11-25 16:30:00.000000+00": 1,
+  "2026-11-25 17:00:00.000000+00": 3,
+  "2026-11-25 21:30:00.000000+00": 1,
+  "2026-11-25 17:30:00.000000+00": 1,
+  "2026-11-25 21:17:00.000000+00": 1,
+  "2026-11-25 20:13:00.000000+00": 1
+ },
+ "seconds": {
+  "as_of_mask_instants_12h": 0.08,
+  "compact_canonical": 12.05,
+  "stage3": 221.21,
+  "model_frame": 7.26,
+  "total": 240.82
+ },
+ "instants_in_12h_window": 6,
+ "io": {
+  "compact": {
+   "rchar": 143510179,
+   "read_bytes": 0,
+   "write_bytes": 159752192
+  },
+  "stage3": {
+   "rchar": 4849643808,
+   "read_bytes": 338898944,
+   "write_bytes": 5234216960
+  }
+ },
+ "peak_rss_mb": 1178.9,
+ "scratch_bytes": {
+  "features_asof.duckdb": 395849728,
+  "canonical_asof.duckdb": 142356480
+ },
+ "canonical_rows": {
+  "flagship.games": 78244,
+  "flagship.player_game_outcomes": 1586107,
+  "flagship.team_game_outcomes": 156303,
+  "flagship.substitutions": 101668,
+  "flagship.rosters": 213864,
+  "core.players": 95916
+ },
+ "player_rows_by_season": [
+  [
+   2014,
+   121386
+  ],
+  [
+   2015,
+   120875
+  ],
+  [
+   2016,
+   121687
+  ],
+  [
+   2017,
+   121351
+  ],
+  [
+   2018,
+   120257
+  ],
+  [
+   2019,
+   121276
+  ],
+  [
+   2020,
+   115040
+  ],
+  [
+   2021,
+   87005
+  ],
+  [
+   2022,
+   120258
+  ],
+  [
+   2023,
+   125353
+  ],
+  [
+   2024,
+   125961
+  ],
+  [
+   2025,
+   127321
+  ],
+  [
+   2026,
+   127500
+  ],
+  [
+   2027,
+   30837
+  ]
+ ],
+ "feature_rows": {
+  "feat.player_box_state": 1507358,
+  "feat.player_participation_state": 3489650,
+  "feat.player_features": 239,
+  "feat.team_features": 10,
+  "ex.player_game_examples": 239
+ },
+ "incumbent_reproduces_cache": {
+  "G-4560db410b9e7748": {
+   "cand": true,
+   "team": true
+  },
+  "G-14e15dd04622764f": {
+   "cand": true,
+   "team": true
+  },
+  "G-d780b7303b01d0e4": {
+   "cand": true,
+   "team": true
+  },
+  "G-f9b6d861926e89e3": {
+   "cand": true,
+   "team": true
+  },
+  "G-64909aab9302ec16": {
+   "cand": true,
+   "team": true
+  }
+ },
+ "top_statements": [
+  [
+   "f_pbox",
+   60.747
+  ],
+  [
+   "part_cand",
+   48.852
+  ],
+  [
+   "pg_k",
+   40.897
+  ],
+  [
+   "f_part",
+   23.248
+  ],
+  [
+   "pseason",
+   19.117
+  ],
+  [
+   "f_box",
+   6.473
+  ],
+  [
+   "tg_k",
+   4.653
+  ],
+  [
+   "pg",
+   4.613
+  ],
+  [
+   "ex.team_membership_evidence",
+   2.934
+  ],
+  [
+   "SELECT count(*) FROM (SELECT canonical_player_id, canonical_",
+   1.827
+  ],
+  [
+   "rs",
+   1.237
+  ],
+  [
+   "f_res",
+   1.195
+  ],
+  [
+   "prior",
+   0.93
+  ],
+  [
+   "opp_pre",
+   0.755
+  ],
+  [
+   "sos_src",
+   0.606
+  ],
+  [
+   "ex.game_examples",
+   0.548
+  ],
+  [
+   "SELECT count(*) FROM (SELECT canonical_player_id, season, av",
+   0.492
+  ],
+  [
+   "ex.identity_conflicts",
+   0.466
+  ],
+  [
+   "tg",
+   0.403
+  ],
+  [
+   "f_sos",
+   0.156
+  ],
+  [
+   "SELECT count(*) FROM (SELECT canonical_team_id, season, avai",
+   0.092
+  ],
+  [
+   "pf1",
+   0.089
+  ],
+  [
+   "src",
+   0.065
+  ],
+  [
+   "tg_targets",
+   0.061
+  ],
+  [
+   "feat.player_features",
+   0.049
+  ]
+ ],
+ "statements": [
+  {
+   "phase": "stage3",
+   "s": 0.002,
+   "rel": "tgt",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.017,
+   "rel": "ATTACH '/var/lib/sports-models/cbb-originator/audit/stage2-2",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.065,
+   "rel": "src",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.003,
+   "rel": "ex",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.466,
+   "rel": "ex.identity_conflicts",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.548,
+   "rel": "ex.game_examples",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.019,
+   "rel": "DELETE FROM ex.game_examples WHERE canonical_game_id NOT IN ",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.007,
+   "rel": "ex.team_game_examples",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 2.934,
+   "rel": "ex.team_membership_evidence",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.019,
+   "rel": "ex.player_game_examples",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.004,
+   "rel": "feat",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.403,
+   "rel": "tg",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 4.653,
+   "rel": "tg_k",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.061,
+   "rel": "tg_targets",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.019,
+   "rel": "SELECT count(*) FROM (SELECT canonical_team_id, season, avai",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.755,
+   "rel": "opp_pre",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.606,
+   "rel": "sos_src",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 1.237,
+   "rel": "rs",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.021,
+   "rel": "SELECT count(*) FROM (SELECT canonical_team_id, season, avai",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 1.195,
+   "rel": "f_res",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.022,
+   "rel": "SELECT count(*) FROM (SELECT canonical_team_id, season, avai",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 6.473,
+   "rel": "f_box",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.03,
+   "rel": "SELECT count(*) FROM (SELECT canonical_team_id, season, avai",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.156,
+   "rel": "f_sos",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.93,
+   "rel": "prior",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.045,
+   "rel": "feat.team_features",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 0.001,
+   "rel": "feat",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 4.613,
+   "rel": "pg",
+   "rss_mb": 933.1
+  },
+  {
+   "phase": "stage3",
+   "s": 40.897,
+   "rel": "pg_k",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 48.852,
+   "rel": "part_cand",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.492,
+   "rel": "SELECT count(*) FROM (SELECT canonical_player_id, season, av",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 60.747,
+   "rel": "f_pbox",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 1.827,
+   "rel": "SELECT count(*) FROM (SELECT canonical_player_id, canonical_",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 23.248,
+   "rel": "f_part",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 19.117,
+   "rel": "pseason",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.089,
+   "rel": "pf1",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.049,
+   "rel": "feat.player_features",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.003,
+   "rel": "DROP SCHEMA IF EXISTS src CASCADE",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.002,
+   "rel": "DETACH cdb",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.002,
+   "rel": "SELECT count(*) FROM ex.game_examples",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.001,
+   "rel": "SELECT count(*) FROM ex.player_game_examples",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.001,
+   "rel": "SELECT count(*) FROM feat.player_features",
+   "rss_mb": 1178.9
+  },
+  {
+   "phase": "stage3",
+   "s": 0.001,
+   "rel": "SELECT count(*) FROM feat.team_features",
+   "rss_mb": 1178.9
+  }
+ ]
+}

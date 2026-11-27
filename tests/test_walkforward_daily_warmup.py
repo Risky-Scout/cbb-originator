@@ -32,6 +32,9 @@ def fake(monkeypatch, tmp_path):
         calls.append(sorted(games["canonical_game_id"]))
         return {"meta": {g: {"status": "BUILT"} for g in games["canonical_game_id"]}}
     monkeypatch.setattr(WD.TR, "feature_rows", fr)
+    # scheduling only: a cache directory stands for a reusable entry (causal validity: tests/test_feature_cache_causal.py)
+    monkeypatch.setattr(WD.TR, "cached_valid_games", lambda cr, sr, games, h, cfg: {
+        g for g in games["canonical_game_id"] if (cache / g).is_dir()})
     # as_of-mask instants (prod.features.as_of_mask_instants): by default one between every pair of cutoffs, so each
     # cutoff is its own information state (the incumbent one-build-per-cutoff behaviour)
     inst = {"t": pd.to_datetime(["2026-11-02T23:30Z", "2026-11-03T00:30Z"])}
