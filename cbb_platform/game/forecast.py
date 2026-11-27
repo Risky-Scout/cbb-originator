@@ -10,7 +10,7 @@ first refresh), so since the 2026-11-26 S fix the two agree on availability; the
 attributed every non-availability change of the model inputs between INITIAL and a later snapshot (candidate set,
 inputs) to availability, and gave delta 0 to a game with no earlier snapshot that day (morning recovery / late slate).
 Replay 11-20/23/26/27: 1 game changed, |dP(home)| 0.0015. CBB_GAME_AVAILABILITY_BASELINE=INITIAL restores the old
-baseline (in-place fallback).
+baseline (in-place fallback; only together with CBB_INITIAL_AVAILABILITY=OFF, see availability_baseline).
 
 Ratings: params/ratings_prior_<season>.parquet (season-final chain 2014..season-1, sealed in game_model.json) + every
 promoted-state DI_VS_DI final knowable strictly before refit_cutoff(D) (all of D-1), fit in milliseconds per snapshot
@@ -103,8 +103,12 @@ BASELINE_ENV = "CBB_GAME_AVAILABILITY_BASELINE"      # NEWS_FREE (default) | INI
 
 
 def availability_baseline() -> str:
+    """INITIAL is valid only with a news-free INITIAL snapshot (CBB_INITIAL_AVAILABILITY=OFF, prod.lifecycle): once INITIAL
+    consumes availability (Stage 05 closure default) its S already excludes the morning's known absences, and the INITIAL
+    baseline would silently drop them from the game mean. Requested without it -> NEWS_FREE."""
     v = (os.environ.get(BASELINE_ENV) or "NEWS_FREE").upper()
-    return "INITIAL" if v == "INITIAL" else "NEWS_FREE"
+    initial_news_free = (os.environ.get("CBB_INITIAL_AVAILABILITY") or "ON").upper() == "OFF"
+    return "INITIAL" if v == "INITIAL" and initial_news_free else "NEWS_FREE"
 
 
 def team_strength(model_inputs: pd.DataFrame | None, news_free: bool = False) -> dict:

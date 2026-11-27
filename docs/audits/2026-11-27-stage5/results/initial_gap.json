@@ -1,0 +1,162 @@
+[
+ {
+  "snapshot_id": "F20261108T122821Z-8031c1",
+  "window": "INITIAL_0700",
+  "games": 29,
+  "simulated_rows": 1009,
+  "knowable_unavailable_simulated_rotowire": 0,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 0,
+  "identity_blocked_games_ignored": 0
+ },
+ {
+  "snapshot_id": "F20261110T122254Z-c22e14",
+  "window": "INITIAL_0700",
+  "games": 56,
+  "simulated_rows": 2288,
+  "knowable_unavailable_simulated_rotowire": 22,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 21,
+  "identity_blocked_games_ignored": 6
+ },
+ {
+  "snapshot_id": "F20261112T120646Z-62a5f9",
+  "window": "INITIAL_0700",
+  "games": 24,
+  "simulated_rows": 1149,
+  "knowable_unavailable_simulated_rotowire": 6,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 8,
+  "identity_blocked_games_ignored": 5
+ },
+ {
+  "snapshot_id": "F20261115T124109Z-47c4d7",
+  "window": "INITIAL_0700",
+  "games": 37,
+  "simulated_rows": 1731,
+  "knowable_unavailable_simulated_rotowire": 25,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 14,
+  "identity_blocked_games_ignored": 5
+ },
+ {
+  "snapshot_id": "F20261116T122237Z-cf3f49",
+  "window": "INITIAL_0700",
+  "games": 22,
+  "simulated_rows": 1068,
+  "knowable_unavailable_simulated_rotowire": 7,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 11,
+  "identity_blocked_games_ignored": 5
+ },
+ {
+  "snapshot_id": "F20261117T123206Z-9b7b20",
+  "window": "INITIAL_0700",
+  "games": 55,
+  "simulated_rows": 2530,
+  "knowable_unavailable_simulated_rotowire": 16,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 30,
+  "identity_blocked_games_ignored": 6
+ },
+ {
+  "snapshot_id": "F20261118T123332Z-0da8dc",
+  "window": "INITIAL_0700",
+  "games": 57,
+  "simulated_rows": 2709,
+  "knowable_unavailable_simulated_rotowire": 21,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 23,
+  "identity_blocked_games_ignored": 7
+ },
+ {
+  "snapshot_id": "F20261119T122637Z-91828e",
+  "window": "INITIAL_0700",
+  "games": 29,
+  "simulated_rows": 1321,
+  "knowable_unavailable_simulated_rotowire": 14,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 12,
+  "identity_blocked_games_ignored": 5
+ },
+ {
+  "snapshot_id": "F20261120T122529Z-39c39e",
+  "window": "INITIAL_0700",
+  "games": 51,
+  "simulated_rows": 2389,
+  "knowable_unavailable_simulated_rotowire": 27,
+  "knowable_unavailable_simulated_curated": 2,
+  "knowable_gated_simulated": 29,
+  "identity_blocked_games_ignored": 7
+ },
+ {
+  "snapshot_id": "F20261121T125340Z-746987",
+  "window": "INITIAL_0700",
+  "games": 45,
+  "simulated_rows": 2173,
+  "knowable_unavailable_simulated_rotowire": 5,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 14,
+  "identity_blocked_games_ignored": 3
+ },
+ {
+  "snapshot_id": "F20261122T125747Z-cd4761",
+  "window": "INITIAL_0700",
+  "games": 35,
+  "simulated_rows": 1654,
+  "knowable_unavailable_simulated_rotowire": 10,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 17,
+  "identity_blocked_games_ignored": 3
+ },
+ {
+  "snapshot_id": "F20261123T124617Z-baa544",
+  "window": "INITIAL_0700",
+  "games": 32,
+  "simulated_rows": 1481,
+  "knowable_unavailable_simulated_rotowire": 9,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 21,
+  "identity_blocked_games_ignored": 4
+ },
+ {
+  "snapshot_id": "F20261124T131111Z-3e77bb",
+  "window": "INITIAL_0700",
+  "games": 74,
+  "simulated_rows": 3511,
+  "knowable_unavailable_simulated_rotowire": 28,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 43,
+  "identity_blocked_games_ignored": 74
+ },
+ {
+  "snapshot_id": "F20261125T135609Z-2bacac",
+  "window": "INITIAL_0700",
+  "games": 46,
+  "simulated_rows": 2136,
+  "knowable_unavailable_simulated_rotowire": 11,
+  "knowable_unavailable_simulated_curated": 0,
+  "knowable_gated_simulated": 31,
+  "identity_blocked_games_ignored": 46
+ },
+ {
+  "snapshot_id": "F20261126T140651Z-2bdce5",
+  "window": "INITIAL_0700",
+  "games": 20,
+  "simulated_rows": 857,
+  "knowable_unavailable_simulated_rotowire": 20,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 37,
+  "identity_blocked_games_ignored": 20
+ },
+ {
+  "snapshot_id": "F20261127T122751Z-11ebe6",
+  "window": "INITIAL_0700",
+  "games": 46,
+  "simulated_rows": 2060,
+  "knowable_unavailable_simulated_rotowire": 37,
+  "knowable_unavailable_simulated_curated": 1,
+  "knowable_gated_simulated": 42,
+  "identity_blocked_games_ignored": 2
+ }
+]

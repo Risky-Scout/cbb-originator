@@ -1,6 +1,6 @@
 # Stage 05: injury, availability and confirmed-lineup mathematics (2026-11-27)
 
-The successor is built on 93e5cd2 (Stage 04, CI 46037886213). Commits: abb466e (corrections), then a follow-up (docstring + evidence).
+The successor is built on 93e5cd2 (Stage 04, CI 46037886213). Commits: abb466e (C1, C2), 594ec8b (docstring + evidence), then the closure commit (C3, §7).
 All Droplet measurements were read-only. They ran in transient `systemd-run` units as `cbb-originator` (`ReadOnlyPaths=/var/lib/sports-models`,
 `MemoryMax=1500M`, threads = 1, nice 10, `python -B`). Scripts are in `scripts/`, outputs in `results/`, and the Droplet copy is at
 `/var/lib/sports-models/cbb-originator/audit/stage5-20261127`. No provider request was made. Nothing was written to production state.
@@ -22,6 +22,7 @@ All Droplet measurements were read-only. They ran in transient `systemd-run` uni
 | team strength → game | `game.forecast.team_strength` S = Σ p_play·PTS_mu over the scored set; mean += γ·ΔS (γ = 0.3 not fitted, β = 0); ratings carry everything else | a GTD/uncertain player moves nothing; confirmed ACTIVE does not raise p_play |
 | market eligibility | OUT → `CONFIRMED_UNAVAILABLE` (not priced); gate → priced but never actionable; rotation OUT ≥ 20 min or TOP5 → `UNSUPPORTED_ROTATION_SHOCK` (game never wager-eligible); roster suppression applied **after** simulation (Stage 04) | |
 | board / publication | p_play published beside conditional distributions | |
+| which snapshots consume availability | official T-1h tick (`shadow_tick.availability_inputs`, since 11-26) and the 10/13/16/18 ET refreshes; **INITIAL 07:00 ET and REFIT_RETRY did not (corrected, C3, §7)** | |
 
 ## 2. Counterfactuals (actual production functions, one real game, fixed seed)
 
@@ -128,3 +129,45 @@ The full local tree was not run. GitHub CI is recorded in the ledger key `stage5
 * **Stage 16** (player-to-team translation): γ = 0.3 is a conservative prior, not fitted, with β = 0. The translation of ΔS to points and the confirmed-ACTIVE asymmetry in S remain open.
 * **Stage 07** (historical information availability): unchanged from Stage 04. Additionally, event ordering uses collection `knowable_at`, not provider source time.
 * Operational: `UNSUPPORTED_ROTATION_SHOCK` now also fires for a curated LONG_TERM_OUT / ineligible player whose stale min_mu is ≥ 20 or who is TOP5. This is the same rule as for a RotoWire OUT and is fail-closed.
+
+## 7. Stage 05 closure: the news-free reference vs production forecasts
+
+**Conclusion.** The news-free quantity is an **internal mathematical reference only**: `team_strength(model_inputs, news_free=True)` is computed inside
+each snapshot to form ΔS (C2) and is never published, priced or exported. It does not need any production snapshot to be news-free.
+
+**Defect D5.3 (corrected, C3): the INITIAL 07:00 ET and REFIT_RETRY snapshots were actual production forecasts that suppressed valid information.**
+They persist PMFs and drive the morning Distributions and Boards exports, but `lifecycle.forecast` gave them `rotowire_root=None`. So every
+availability state already knowable in the event store (prior-day refreshes, earlier news) was ignored until the 10:00 ET refresh, or for the whole day when no
+later lifecycle snapshot covered the game. The suppression was a side effect of the old INITIAL game-layer baseline, which needed INITIAL to be news-free; C2 removed that need. Measured
+over every real INITIAL snapshot, 11-08..27 (`results/initial_gap.*`; point in time at each snapshot's `executed_at`, knowable < T):
+
+* 268 player-game rows were simulated although a confirmed OUT or LONG_TERM_OUT was already knowable: 258 RotoWire, 10 curated (C1).
+  * 34 of them were simulated at p_play ≥ 0.5 (max 0.958).
+  * 37 rows were on 11-27.
+* 20 rows were never corrected by a later lifecycle snapshot:
+  * 11-24: 19 rows in 13 games, when the 10/13/16 ET refreshes did not publish;
+  * 11-26: one early game that tipped before 10 ET.
+* Gated (GTD/DOUBTFUL/conflict) players simulated without their gate: 0–43 per snapshot.
+
+**Every other production forecast consumes the latest authorized, applicable information.**
+* The official T-1h tick reads the canonical event store at the same point in time (since the 2026-11-26 repair), and a stale state fails the game closed rather than suppressing the forecast.
+* The refresh windows consume it and re-forecast.
+* Acquisition itself is unchanged: authorized existing WEB sessions only, with the same enablement rule (`rotowire_state`: source WEB, protected session, PASS acceptance marker). All units share the env file and wrapper preflight.
+
+**Correction C3.**
+* INITIAL and REFIT_RETRY now consume the knowable availability under that same rule. They never acquire, and they record `availability_source` in the snapshot and index (`rotowire_refresh` stays refresh-only).
+* `CBB_INITIAL_AVAILABILITY=OFF` restores the news-free INITIAL (in-place fallback).
+* The C2 game-layer fallback `CBB_GAME_AVAILABILITY_BASELINE=INITIAL` is honoured **only** together with `CBB_INITIAL_AVAILABILITY=OFF`. Otherwise it would drop the morning's known absences, so it reverts to NEWS_FREE.
+* Actionability is unchanged and stays fail-closed. INITIAL boards were AVAILABILITY_SOURCE_NOT_CONFIGURED before. They are now subject to the freshness bound and the identity gate.
+* Historical snapshots are immutable and not rewritten.
+* Tests: `test_availability_refresh_split.py::test_full_snapshots_consume_availability_already_knowable[INITIAL|REFIT_RETRY]` covers three things:
+  * an OUT knowable before the snapshot is `CONFIRMED_UNAVAILABLE` in the forecast;
+  * the next refresh does not report it as a change;
+  * OFF restores the old output.
+  * `test_player_game_coherence.py` covers the fallback pairing. Focused regression: 260 passed.
+
+**Recorded for Stage 19 (not changed here).** `availability_changes` compares the stored `NO_REPORT` with "no row" as different. So every
+refresh re-forecasts every remaining pre-cutoff game: on 11-27 at 10:00 ET that was 45/45 games and 2,006 "changed" players. This is wasted writer-lock time, not lost information: the
+forecasts are recomputed with the newer state.
+
+**Stage 07 note.** The INITIAL gap rows use collection `knowable_at`. Bitemporal source/collection handling stays assigned to Stage 07.

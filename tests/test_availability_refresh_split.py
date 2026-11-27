@@ -688,7 +688,7 @@ def two_worlds(tmp_path_factory):
             shutil.copytree(w / sub, d / sub)
         shutil.copy(hist, d / "history.duckdb")
         out[name] = d
-    return {"worlds": out, "init": init, "players": fp}
+    return {"worlds": out, "init": init, "players": fp, "base": w}
 
 
 def _fake_acquisition(player: dict, now: pd.Timestamp):
@@ -778,3 +778,40 @@ def test_prediction_equivalence_old_refresh_vs_split(two_worlds, monkeypatch):
                                       "players_forecast", "stat_predictions", "pmfs_persisted")},
           "pmf_rows", len(a["pmfs"]), "player_rows", len(a["players"]),
           "export_rows", {k: (v or {}).get("rows") for k, v in a["exports"].items() if isinstance(v, dict)})
+
+
+@pytest.mark.parametrize("window", ["INITIAL", "REFIT_RETRY"])
+def test_full_snapshots_consume_availability_already_knowable(two_worlds, monkeypatch, tmp_path, window):
+    """Stage 05 closure: INITIAL / REFIT_RETRY are production forecasts (PMFs, Distributions, Boards). Availability
+    knowable before them (light poll, prior-day news) is consumed, under the refresh windows' enablement rule and
+    without any acquisition; the next refresh then re-forecasts only genuine changes. CBB_INITIAL_AVAILABILITY=OFF
+    restores the news-free snapshot."""
+    for name in ("socket", "create_connection", "getaddrinfo"):
+        monkeypatch.setattr(socket, name, lambda *a, **k: (_ for _ in ()).throw(AssertionError("network refused")))
+    fp = two_worlds["players"]
+    player = fp.iloc[0][["game_id", "team_id", "player_id"]].to_dict()
+    now = pd.Timestamp("2026-11-10T13:00:00Z")
+    res = {}
+    for mode in ("ON", "OFF"):
+        d = tmp_path / mode
+        for sub in ("ops", "prod"):
+            shutil.copytree(two_worlds["base"] / sub, d / sub)
+        shutil.copy(two_worlds["base"] / "history.duckdb", d / "history.duckdb")
+        life = _point_world(monkeypatch, d, now)
+        _fake_acquisition(player, now)(life)                   # news knowable 20 min before the snapshot
+        monkeypatch.setenv(L.INITIAL_AVAILABILITY_ENV, mode)
+        rec = L.forecast(life, getattr(L, window))
+        assert rec["status"] == "FORECAST" and "rotowire_refresh" not in rec
+        out = pd.read_parquet(life.forecasts(rec["slate_date"], rec["snapshot_id"], "forecast_players.parquet"))
+        hit = out.loc[(out["game_id"] == player["game_id"]) & (out["player_id"] == player["player_id"])]
+        res[mode] = (rec, hit, life)
+    rec, hit, life = res["ON"]
+    assert rec["availability_source"] == "ENABLED" and player["game_id"] in rec["games"]
+    assert len(hit) and (hit["availability_status"] == "OUT").all()
+    assert (hit["player_suppression"] == "CONFIRMED_UNAVAILABLE").all()
+    games = L.slate(L.ST.current(life.state_root), now.date(), now)
+    _, changed = L.availability_changes(life, games[games["canonical_game_id"] == player["game_id"]], now)
+    assert player["player_id"] not in changed.get(player["game_id"], [])   # the OUT consumed at INITIAL is not a change
+    rec, hit, _ = res["OFF"]
+    assert rec["availability_source"] == "DISABLED_BY_" + L.INITIAL_AVAILABILITY_ENV
+    assert not (hit["availability_status"] == "OUT").any()     # the news-free fallback

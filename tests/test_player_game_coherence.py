@@ -75,7 +75,10 @@ def test_forecast_uses_the_news_free_baseline_by_default_and_initial_on_fallback
     assert "team_strength(model_inputs, news_free=True)" in src and "initial_strength(day_dir, gid)" in src
     monkeypatch.delenv(GF.BASELINE_ENV, raising=False)
     assert GF.availability_baseline() == "NEWS_FREE"
+    monkeypatch.delenv("CBB_INITIAL_AVAILABILITY", raising=False)
     monkeypatch.setenv(GF.BASELINE_ENV, "initial")
-    assert GF.availability_baseline() == "INITIAL"
+    assert GF.availability_baseline() == "NEWS_FREE"      # INITIAL now carries news: the old baseline would drop it
+    monkeypatch.setenv("CBB_INITIAL_AVAILABILITY", "off")
+    assert GF.availability_baseline() == "INITIAL"        # the paired fallback
     monkeypatch.setenv(GF.BASELINE_ENV, "garbage")
     assert GF.availability_baseline() == "NEWS_FREE"

@@ -202,6 +202,9 @@ def _model(life: Life, now: pd.Timestamp):
 
 
 # ============================================================================ RotoWire availability refresh
+INITIAL_AVAILABILITY_ENV = "CBB_INITIAL_AVAILABILITY"     # ON (default) | OFF: INITIAL / REFIT_RETRY consume availability
+
+
 def rotowire_state(life: Life) -> str:
     """ROTOWIRE_SOURCE (prod/config.rotowire_source) selects the acquisition source; unset keeps the legacy rule.
     WEB is ENABLED only with a configured subscriber session AND a PASS live-acceptance marker."""
@@ -272,9 +275,15 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
     games = slate(st, day, now)
     if game_ids is not None:
         games = games[games["canonical_game_id"].isin(set(game_ids))]
-    if window not in (INITIAL, REFIT_RETRY):                   # a REFIT_RETRY re-forecasts every pre-cutoff game
+    if window in (INITIAL, REFIT_RETRY):                       # a REFIT_RETRY re-forecasts every pre-cutoff game
+        # Stage 05 closure: INITIAL / REFIT_RETRY are production forecasts (PMFs, Distributions, Boards), so they consume the
+        # point-in-time availability already knowable (light polls, prior-day news) under the same enablement rule as the
+        # refresh windows; they never acquire. CBB_INITIAL_AVAILABILITY=OFF restores the news-free INITIAL (fallback).
+        rec["availability_source"] = (rotowire_state(life) if (os.environ.get(INITIAL_AVAILABILITY_ENV) or "ON").upper() != "OFF"
+                                      else "DISABLED_BY_" + INITIAL_AVAILABILITY_ENV)
+    else:
         rw = rotowire_state(life)
-        rec["rotowire_refresh"] = rw
+        rec["rotowire_refresh"] = rec["availability_source"] = rw
         if rw != "ENABLED":
             games = games.iloc[0:0]
             rec["note"] = "no availability source refreshed: no forecast changed (prior snapshots stand)"
@@ -302,7 +311,7 @@ def forecast(life: Life, window: str = INITIAL, now=None, game_ids=None) -> dict
                  odds_ledger=Path(life.prod_root) / "cache" / "odds_production_requests.jsonl",
                  odds_record=Path(life.prod_root) / "odds" / "integration_validation.json",
                  side_monitor_path=sdir / "side_monitor.jsonl", model=model,
-                 rotowire_root=PC.ROTOWIRE_ROOT if rec.get("rotowire_refresh") == "ENABLED" else None)
+                 rotowire_root=PC.ROTOWIRE_ROOT if rec.get("availability_source") == "ENABLED" else None)
     run_dir = Path(s.get("run_dir") or life.runs / s["run_id"])
     eng = (s.get("model_identity") or {}).get("engine_id") or ENG.engine_id()   # the engine that scored this run
     pe = PE.from_run(run_dir, s["run_id"], now, ident["model_version"], rec["games"], engine_id=eng)
@@ -356,7 +365,7 @@ def game_forecast(sdir: Path, rec: dict, games: pd.DataFrame, st: dict, day: dat
 
 def _index(rec: dict) -> dict:
     return {k: rec.get(k) for k in ("snapshot_id", "slate_date", "window", "executed_at", "prediction_as_of", "status",
-                                    "games", "cutoffs", "model_version", "pmfs_persisted", "rotowire_refresh")}
+                                    "games", "cutoffs", "model_version", "pmfs_persisted", "rotowire_refresh", "availability_source")}
 
 
 # ============================================================================ the scheduled jobs
