@@ -484,26 +484,37 @@
     "workflow": "cbb-production-ci.yml",
     "run_id": 45947348593,
     "conclusion": "success"
-   }
+   },
+   "ci_successor": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 46037886213,
+    "sha": "93e5cd278323e5e78fc43a58b8eb2bed68195c4a",
+    "conclusion": "success"
+   },
+   "focused_pinning": "tests/test_droplet_deploy_package.py + test_quote_wake_refresh_yield.py: 42 passed / 5 skipped (flock absent on macOS; run in CI)"
   },
-  "commit": "af1998f88208465bd1ea033ce7601dc290ca5e7e",
+  "commit": "93e5cd278323e5e78fc43a58b8eb2bed68195c4a",
   "lineage": [
    "9f65e7f9196c21a15811560d14c9974cb0bb2d7f (deployed)",
    "56f3dae71ae50680afdc4df4d799e901a4790b05",
    "25b83ed8c945573bd1b707a68d1b6518947daa42",
    "a3ffa1b",
-   "af1998f88208465bd1ea033ce7601dc290ca5e7e"
+   "af1998f88208465bd1ea033ce7601dc290ca5e7e",
+   "d4a28db (Stage 4 evidence)",
+   "93e5cd278323e5e78fc43a58b8eb2bed68195c4a (release pinning + closure evidence)"
   ],
   "release_candidate": {
-   "sha": "af1998f88208465bd1ea033ce7601dc290ca5e7e",
-   "supersedes": "25b83ed (by lineage; Stage 02/03 evidence kept)",
-   "staged": "/opt/sports-models/cbb-originator/releases/af1998f88208465bd1ea033ce7601dc290ca5e7e.tmp",
-   "files": 867,
+   "sha": "93e5cd278323e5e78fc43a58b8eb2bed68195c4a",
+   "supersedes": "af1998f (never deployed; staging removed 17:18Z) -> 25b83ed -> 56f3dae (by lineage; evidence kept)",
+   "staged": "/opt/sports-models/cbb-originator/releases/93e5cd278323e5e78fc43a58b8eb2bed68195c4a.tmp",
+   "files": 884,
    "hashes": "local git archive == Droplet staged tree (identical)",
    "deployed": false,
-   "current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "production_current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
    "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
-   "procedure": "docs/audits/2026-11-27-stage4/DEPLOY_PROCEDURE.md"
+   "CBB_EXPECTED_COMMIT": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "procedure": "docs/audits/2026-11-27-stage4/DEPLOY_PROCEDURE.md",
+   "deploy_status": "NOT_DEPLOYED: no safe window 16:31-17:18Z (sync 16:34/17:03, score ticks 16:40/17:10/~17:40, 18:00Z refresh exclusion from 17:30Z); bounded watcher retired before any release transaction; preserved for the next approved window"
   },
   "stage19_requirement": {
    "id": "S19-D3.2",
@@ -522,6 +533,45 @@
    "post-deploy Stage 04 checks (DEPLOY_PROCEDURE.md)",
    "post-deploy Stage 02 warm-up and Stage 03 exports_deferred checks"
   ],
-  "next_eligible_stage": "Stage 05 only on owner instruction"
+  "next_eligible_stage": "Stage 05 on owner instruction",
+  "closure_recorded_at": "2026-11-27T17:20Z",
+  "engineering_status": "ACCEPTED",
+  "closure_findings": {
+   "Q1_predictive_vs_market": "all 18 APPLIED players were already in the frozen pool, model_inputs and simulation (41 player-game rows since 11-20); universe suppression is applied after simulation (run.py NOT_PRICED) -> pricing-only change; 0 players absent from predictive rotation; the 4 competing-candidate players were already SCOREABLE (ON_CURRENT_ROSTER_PROVIDER_ID_CHANGED); evidence results/predictive_presence.*",
+   "Q2_point_in_time": "box rows carry only HR-1 rule time (no per-row receipt/revision time); production effective knowability = max(rule, actual ingestion) since runs read state current at run time; 0/1438 games in any state before rule time; ingestion after rule median 2.7 h, p99 8.2 h, max 28.9 h (since 11-18); evidence results/box_ingest_lag.*",
+   "release_pinning_defect": "FIXED in 93e5cd2: wrapper cd/PYTHONPATH used the current symlink after verifying readlink -f; now pinned to releases/<sha>; residual fail-closed race (unit starting between env edit and symlink swap is refused, retried next wake)"
+  },
+  "assigned_to_stage07": [
+   "historical replay information availability: rule-only as_of on a later state can see box lines before actual ingestion (p99 8.2 h); provider revisions adding lines inherit tip+4h; no per-row receipt/revision timestamps"
+  ],
+  "assigned_to_stage09": [
+   "no jointly constrained player minutes in the draw bank (conditional-on-playing draws, no team-minutes constraint)",
+   "participation inconsistency: non-playing players remain simulated with p_play>0 when identity unresolved (RJ Luis LSU p_play 0.77/0.17/0.12)",
+   "teammate rotation effects of absences/additions not propagated"
+  ],
+  "assigned_to_stage19": {
+   "id": "S19-D3.2",
+   "requirement": "idle quote wakes must not rebuild unchanged exports / recompute D-1 grades each wake: content-fingerprint skip or equivalent; reduce writer-lock occupancy from 47% (141 wakes/24 h, 11.39 h)",
+   "status": "RECORDED_FOR_STAGE_19_NOT_STARTED"
+  },
+  "open_items_preserved": [
+   "Carter (Oregon) and Maclin (DePaul) eligibility conflicts: blocking, SOURCE_CONFLICT",
+   "10 players without authoritative CBBD roster rows/provider ids (curated, review_by 12-10..01-04)",
+   "4 likely duplicate canonical identities (Mayhugh, Cate, Ware, I. Brown)",
+   "actual deadline-headroom measurement",
+   "Stage 19: export redundancy, writer-lock 47%, refresh latency (15:00Z refresh 1345 s), selection_audit PYTHONPATH=current",
+   "RotoWire commercial data authorization (owner decision)",
+   "WizardOfOdds deploy key (Massey, unrelated)"
+  ],
+  "natural_20261127": {
+   "morning_warmup": "PASS 11:12:30-11:53:26Z (40.9 min), 28 games built, frozen state matches fit, 7 catch-up cutoffs",
+   "walkforward": "PASS 12:20Z, model cbb-jm1-2026-27-20261127",
+   "initial_forecast": "12:27:51Z 46 games / 1378 players / 16536 PMFs, games_not_scored {}",
+   "poll_0830": "13:30Z WEB auth PASS, news 25 rows (1 new item), snapshot 151 rows (4 events), writer lock not held",
+   "scoring_1410": "K20261127T141002Z OK, 48 priced players, 420 PMFs, frozen hash PASS, SHADOW_ONLY",
+   "receipt": "all health-contract fields true/PASS, ACTIVE_BLOCKER null, D-1 ACCEPTED_DATA_GAPS",
+   "preserved": "/var/lib/sports-models/cbb-originator/audit/stage4-20261127/natural_20261127"
+  },
+  "background_processes": "none: Droplet unit s4-deploy-af1998f stopped (inactive, never ELIGIBLE); all local waiters finished or stopped"
  }
 }

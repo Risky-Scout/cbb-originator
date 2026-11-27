@@ -145,3 +145,52 @@ roster and identity correctness above.
 D3.2: idle quote wakes rebuild unchanged exports and recompute D-1 grades/performance. 141 wakes per 24 h hold the writer lock for 11.39 h (**47 %**).
 Stage 19 must add a content-fingerprint skip, or an equivalent, for the export rebuild and bring writer-lock occupancy down. Stage 04 does
 not touch it.
+
+## 10. Closure answers (2026-11-27 ~17:00Z)
+
+### Q1: predictive roster vs market eligibility
+`results/predictive_presence.{csv,json}` (`scripts/s4_predictive.py`, all production runs since 11-20): **all 18 APPLIED
+players appear in 41 player-game rows. Every row is in the frozen pool (39 PRIOR_APPEARANCE_CONFIRMED, 2 PRIOR_SEASON_ROSTER_RETURNER),
+and every row is in `model_inputs.parquet` (participation p_play, min_mu/min_sigma, stat families), so all of them were simulated.** Every row was
+`NOT_ON_CURRENT_ROSTER → SUPPRESSED`. Examples: Smrekar p_play 0.98 / 33.4 min, Avila 0.96 / 34.9, Ewin 0.97 / 26.3.
+
+Code path: `prod/run.py` builds candidates (`cand`) from the frozen pool features, independent of the universe. `IN.marginal_rows` (participation and
+minutes), RA2/TT/DV/CX/PI2 and `SM.simulate_game` all run on them. `roster_sup` (the universe suppression map) is read
+only after simulation, where it sets `method = NOT_PRICED` on that player's market distributions (run.py:268). Game forecasts come
+from the team-ratings game model, not from player rows. **So suppression was a pricing-only exclusion. The predictive rotation
+was already correct for these players, and Stage 04 changes only their pricing.** No player was found who is genuinely absent from a
+rotation because of the roster gap (`players_never_in_pool = []`).
+
+Corrections to §5:
+* The 4 `REJECTED_COMPETING_CANONICAL_CANDIDATE` players were **already SCOREABLE**
+  (`ON_CURRENT_ROSTER_PROVIDER_ID_CHANGED`: the team's roster lists the same name under another provider id). Rejecting a duplicate participation
+  row leaves them priced exactly as before. The underlying duplicate canonical identities remain an open item.
+* RJ Luis is simulated for LSU (p_play 0.77 on 11-21, then 0.17, then 0.12) and never priced. Because the draw bank is conditional on playing and has no
+  team-minutes constraint, his unpriced rows do not move teammates' distributions or the game forecast. His p_play is not zeroed because his
+  RotoWire identity stays unresolved: CBBD has no LSU row, and the box participation is withheld. This is a **Stage 09 joint-minutes item**, not a
+  Stage 04 change.
+
+### Q2: actual point-in-time availability
+* Per-row box lines carry only the HR-1 rule time (`historical_knowable_at` = tip + 4 h, or the next day 06:00 ET when the tip is inexact). There is
+  **no per-row provider receipt or revision timestamp** in `flagship.player_game_outcomes`. Payload `received_at` lives in the sync
+  provenance and state manifests.
+* In production the rule is supplemented by actual ingestion. Sync withholds results until the rule time has passed (`results_deferred_not_yet_knowable`), and a line
+  exists only in state versions built after its payload was received. Every run (universe, identity roster, participation) reads the state
+  current at run time. Effective knowability is therefore max(rule, actual ingestion).
+* Measured over all 307 retained state versions (`results/box_ingest_lag.{csv,json}`, `scripts/s4_ingest_lag.py`), for 1,438 games:
+  * **0 games appeared in any state before their rule time.**
+  * Actual first ingestion came after the rule time: median 2.7 h, p90 5.4 h, p99 8.2 h, max 28.9 h for games knowable since 11-18, where versions are dense. Earlier games
+    have sparse retained versions, which overstate the lag.
+* Prospectively, delayed or corrected observations cannot establish membership before they were actually ingested. Original
+  forecasts are immutable run directories and are not altered.
+* **Replay exposure (not a production defect):** a replay that applies `as_of` to a *later* state uses the rule only and can see a line
+  hours before it was actually ingested. A provider revision that adds a line also carries the rule time. Both are **Stage 07**
+  (historical provenance) items. My own 11-20T00:00Z Avila check is rule-based and is consistent with this: his first TCU game was 11-19.
+
+### Release consistency (deployment safety)
+Defect found and repaired (commit 93e5cd2): `cbb-originator-run` verified `readlink -f current` against `CBB_EXPECTED_COMMIT`
+but then `cd`'ed into, and set `PYTHONPATH` to, the **symlink path**. A swap during a running job could therefore mix lazily imported modules
+of two releases. After verification the job now runs from `releases/<sha>`. A test covers it, and the focused deploy-package
+and quote-yield tests give 42 passed and 5 skipped (flock, on macOS). Remaining fail-closed race: a unit that starts between the env edit and the symlink swap in
+`cbb-deploy-release` is refused by the identity check (exit 3) and runs at its next scheduled wake. Units do not change in this candidate.
+The read-only selection audit sets `PYTHONPATH=/opt/.../current` inside its own transient unit. That is minor, and it is listed for Stage 19.
