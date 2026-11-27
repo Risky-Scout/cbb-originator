@@ -150,7 +150,7 @@ Focused local runs (threads = 1, nice 10), with the full suite left to GitHub CI
 * game / coherence / context / PI2 / PS2 / engine / release B: 78 + 16 passed;
 * every test file importing the changed modules (30 files): **398 passed, 5 skipped**.
 
-CI is recorded in the ledger key `stage6_math_provenance_20261127`.
+GitHub CI run 46062370887 on 2ac9117: **success**, full regression 1,172 passed, 36 skipped. Ledger key `stage6_math_provenance_20261127`.
 
 ## 6. Assignments recorded for later stages (not started here)
 

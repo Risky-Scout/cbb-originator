@@ -1,6 +1,8 @@
 # Stage 06 successor candidate: deployment and rollback procedure
 
-> **Authoritative candidate:** the Stage 06 successor commit recorded in the ledger key `stage6_math_provenance_20261127`.
+> **Authoritative candidate: 2ac9117e25a92fcc090f2a5da4584a5248213e90** (CI 46062370887 green: 1,172 passed, 36 skipped). Ledger key `stage6_math_provenance_20261127`.
+> * Staged inert at `releases/2ac9117e25a92fcc090f2a5da4584a5248213e90.tmp` (932 files, root:cbb-originator, read-only, 0 pyc).
+> * Hashes: `candidate_2ac9117e25a92fcc090f2a5da4584a5248213e90.sha256sums`; the local `git archive` and the Droplet tree are identical. The Droplet copy is in `/var/lib/sports-models/cbb-originator/audit/stage6-20261127/`.
 > * It is built on d392832 (Stage 05 incl. closure) and supersedes d392832 by lineage. **Only one candidate is deployed.**
 > * At deploy, also remove `releases/d392832e579727088f690930f1ac87f29c7867e5.tmp`, together with the 93e5cd2 / 56f3dae / 25b83ed `.tmp` trees if they are still present.
 > * The Stage 02–05 preconditions and post-deploy checks still apply (`../2026-11-27-stage5/DEPLOY_PROCEDURE.md`, `../2026-11-27-stage4/DEPLOY_PROCEDURE.md`).
@@ -37,7 +39,7 @@ The Stage 05 preconditions 1–4 apply, with the Stage 06 tree and hash file sub
 ## Deploy (root on the Droplet)
 
 ```
-S=<stage 6 successor sha>; R=/opt/sports-models/cbb-originator
+S=2ac9117e25a92fcc090f2a5da4584a5248213e90; R=/opt/sports-models/cbb-originator
 bash $R/releases/$S.tmp/deploy/droplet/ops/cbb-deploy-release $S
 bash $R/current/deploy/droplet/ops/cbb-install-units                 # expect no unit diffs
 $R/current/deploy/droplet/bin/cbb-originator-run preflight           # expect PREFLIGHT OK ($S)

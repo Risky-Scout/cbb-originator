@@ -479,7 +479,7 @@
   "tests": {
    "new": "tests/test_stage4_roster_identity.py (15)",
    "focused_local": "163 passed (stage4+web_adapter+availability) ; 99 passed (live_feed, identity_conflicts, availability_refresh_split, daily_lifecycle)",
-   "full_local_tree": "NOT_RERUN (directive §7)",
+   "full_local_tree": "NOT_RERUN (directive \u00a77)",
    "ci": {
     "workflow": "cbb-production-ci.yml",
     "run_id": 45947348593,
@@ -687,5 +687,93 @@
    ],
    "ops_lesson": "timeout around ssh/systemd-run does not stop the transient unit; stop the unit explicitly"
   }
+ },
+ "stage6_math_provenance_20261127": {
+  "recorded_at": "2026-11-27T20:45Z",
+  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE",
+  "scope": "independent verification of probability / PMF / fair price / EV / best offer / settlement / grading / export integrity; parameter-provenance inventory (player + game); demonstrated corrections only; no refit, no model rebuild",
+  "governance": "docs/governance/CBB_STAGE_PROGRAM_DIRECTIVES.md (Stage 06 addendum verbatim; standing rules; stage register; parameter directive requirements as cited - full text not delivered)",
+  "evidence": "docs/audits/2026-11-27-stage6 (README.md, PARAMETER_PROVENANCE.md, DEPLOY_PROCEDURE.md, results/, scripts/, candidate sha256sums); Droplet /var/lib/sports-models/cbb-originator/audit/stage6-20261127",
+  "resource_safety": "no remote computation; read-only ssh/scp of small artifacts after checking no leftover audit units; local single process, threads 1, nice 10; no provider request; the C4 validation process survived a MacBook sleep, resumed and completed (exit 0), no duplicate launched",
+  "reused_evidence": {
+   "game_market_math": "2026-11-21 GAME_REPORT 279/279 reconstruction (markets.py/joint.py unchanged since)",
+   "player_best_offer_replay": "2026-11-22 886/886"
+  },
+  "independent_verification_2026_11_26": {
+   "tool": "scripts/s6_verify_exports.py (imports no cbb_platform)",
+   "counts": "758 frozen evaluations, 1440 priced offers, 7488 PMFs, 624 players x 12 stats",
+   "result": "all checks PASS (pricing/push 1e-12, de-vig, EV, best offer, tiers, PIT, roles, Distributions sha/mass/summary, settlement incl. combos, Grades reconciliation by content hash, By Stat/Role/StatxRole aggregates, Board uniqueness, Full Board / 60 / 65 subsets, receipts) EXCEPT C9 Grades 2nd worksheet (production: Game Markets)",
+   "board_vs_frozen": "133/133 identical at same PMF + quote instant; 10 differ by contract (latest vs decision observation)",
+   "combo_vs_base_means": "unbiased MC noise (mean ~0, sd 0.007-0.03)",
+   "populations": {
+    "forecast_rows": 7488,
+    "market_matched_graded": 758,
+    "positive_ev": 408,
+    "no_positive_ev": 350,
+    "screen_pass": 23,
+    "official_eligible_selections": 0
+   }
+  },
+  "parameter_provenance": "PARAMETER_PROVENANCE.md: player 38 groups, game 17; UNK = game rating hyper-parameters, game variance (fit on 1.0.0 means), beta; HEUR = DEV1/PI2 K 31, PI2 clip, env shrink, gamma 0.3, endgame design constants; fitted-not-read = v0 phi, pmf_support_max, PTS conditional phi; no predictive gate on the daily refit; silent fallbacks F1-F9 (F1 frozen-model fallback in model_source)",
+  "corrections": {
+   "C1_grades_second_worksheet": "Success by Stat and Role (populations + success by stat / role for market-matched and official selections); validated on real 11-26 (blocks identical to production By Stat / By Role; verifier failed_checks [])",
+   "C3_ctx1_ledger_incumbent": "pre_context_tag includes PS2 (a4b0cb644c60 -> af49d60f2175); ledger seeded 11-26 13:45Z without PS2 (1073 games) + 27 PS2 games appended 11-27 under the same tag; one rebuild at the next morning WF (~+26 CPU-min)",
+   "C4_game_ot_mean_basis": "targets are 40-minute expectations; final OT-inclusive PMF was moment-matched to them. Now regulation-matched, OT adds P(tie)E[OT] (joint 1.1.0); fallback CBB_GAME_MEAN_BASIS=FINAL. Replay 6229 walk-forward games: total bias +1.023 -> +0.267 (2024 +1.148->+0.386, 2025 +0.802->+0.024, 2027 +1.583->+0.997); log score +0.0004+-0.0006, CRPS -0.0067+-0.0058, not worse in any season; DEFAULT REGULATION",
+   "C5_ratings_reuse_key": "prior id + fit params",
+   "C6_beta_guard": "nonzero beta fails closed",
+   "C7_carry_lineage": "meta records sealed carry",
+   "C8_endgame_manifest_sha": "per game PMF row"
+  },
+  "tests": {
+   "focused": "35 + 78 + 16; dependent files (30): 398 passed, 5 skipped",
+   "ci": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 46062370887,
+    "sha": "2ac9117e25a92fcc090f2a5da4584a5248213e90",
+    "conclusion": "success",
+    "summary": "full regression 1172 passed, 36 skipped"
+   }
+  },
+  "commit": "2ac9117e25a92fcc090f2a5da4584a5248213e90",
+  "lineage": [
+   "9f65e7f (deployed)",
+   "93e5cd278323e5e78fc43a58b8eb2bed68195c4a (Stage 04)",
+   "d392832e579727088f690930f1ac87f29c7867e5 (Stage 05 incl. closure)",
+   "da71e34 (Stage 05 checkpoint)",
+   "2ac9117e25a92fcc090f2a5da4584a5248213e90 (Stage 06)"
+  ],
+  "release_candidate": {
+   "sha": "2ac9117e25a92fcc090f2a5da4584a5248213e90",
+   "supersedes": "d392832 by lineage (tree kept until deploy)",
+   "staged": "/opt/sports-models/cbb-originator/releases/2ac9117e25a92fcc090f2a5da4584a5248213e90.tmp",
+   "files": 932,
+   "hashes": "local git archive == Droplet staged tree (identical); 0 pyc",
+   "deployed": false,
+   "production_current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "procedure": "docs/audits/2026-11-27-stage6/DEPLOY_PROCEDURE.md",
+   "deploy_status": "NOT_DEPLOYED: engineering complete != activation; no watcher running"
+  },
+  "assigned_to_stage07": [
+   "F1 frozen-model fallback not receipted",
+   "pending_finals without schedule table",
+   "TP1P intermediate local-only; GC3 seal scripts not re-runnable"
+  ],
+  "assigned_to_stage08": [
+   "label HISTORICAL_PRODUCTION (immutable; incl. Stage 05 268 INITIAL defect rows, pre-C3/C4 rows) vs CORRECTED_CANDIDATE_REPLAY; key code_commit + engine_id + game joint_version/mean_basis"
+  ],
+  "assigned_to_stage09": [
+   "PS2 tail rule / sigma standardization",
+   "minutes clip + Jensen inflation",
+   "role rank never null"
+  ],
+  "assigned_to_stage11": [
+   "re-validate CTX1 kappa vs PS2 incumbent",
+   "daily GLM on uncorrected opening OOS rows"
+  ],
+  "assigned_to_stage16": [
+   "gamma unfitted, one-sided; beta unimplemented; no opponent term"
+  ],
+  "unnumbered_domains": "rates/priors, shape/tails, dependence, calibration, game ratings (provisional 10/12/13/14/15; confirm program list)"
  }
 }
