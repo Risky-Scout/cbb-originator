@@ -266,5 +266,58 @@
    "game_markets": "100/100 recomputed from float32 joint PMF: ML/team totals <=2.2e-16; spread/total MODEL% = P(win)/(1-P(push)) by design (markets.model_prob), EV <=6.7e-16",
    "grades": "407 graded, 0 pending, by-engine attribution present"
   }
+ },
+ "stage2_feature_warmup_20261127": {
+  "recorded_at": "2026-11-27T03:15Z",
+  "scope": "morning pregame feature warm-up (walkforward.training_rows.feature_rows / daily.warm_features) and prod.features.build; scoring, labels, game model, exports unchanged",
+  "evidence": "docs/audits/2026-11-27-stage2 (README.md, DEPLOY_PROCEDURE.md, summary.json, bench_table.md, SHA256SUMS); Droplet copy /var/lib/sports-models/cbb-originator/audit/stage2-20261127 (0444)",
+  "defects_repaired": {
+   "D2.1_redundant_history_rebuild": "every warm-up build recomputed all player streams over 1.55-1.58M history box rows for 1-24 targets (205-246 s/build; heavy lock 88-135 min/morning) -> exact dependency closure TARGET_TEAM_PLAYER_CLOSURE_V1 (all rows of target teams + all rows of every player with membership evidence for them; team relations whole); CBB_FEATURE_CLOSURE=OFF = incumbent comparator",
+   "D2.2_cache_identity": "reuse on directory existence (stale after rescheduled tip / replaced state / changed history DB / changed semantics) -> typed causal key PREGAME_CAUSAL_KEY_V1, re-validated at every reuse and in the warm-up to-do list; stale entries superseded (kept) and rebuilt; post-cutoff corrections never invalidate",
+   "D2.3_incomplete_cache_entry": "directory without meta.json crashed the build -> superseded STALE_INCOMPLETE and rebuilt",
+   "D2.4_guard": "closure pinned to audited Stage 3 SQL sha 257d8968...; any Stage 3 change -> full build fallback + failing test"
+  },
+  "equivalence": {
+   "production_replay": "17/17 builds byte-equal to cached incumbent rows (13 closure over 11-02..11-26 incl. the 24-game group, 4 incumbent re-runs); 56 games, 3544 player rows + team rows; PIT violations 0, target-outcome rows 0, post-as-of rows 0",
+   "benchmark_reruns": "8/8 byte-equal (5 closure, 3 incumbent)",
+   "fixture_rows": "every pregame row at every cutoff (+30 min same-results/different-elapsed) x every state version (corrected box, half-boxed final, late result): identical values/rows/columns/dtypes",
+   "fixture_morning_predict": "closure ON vs OFF: fitted marginal/jm1_structural/residual_dependence byte-equal; training frame/finals/OOS sha equal; labels/eligibility/gates byte-equal; 852 player PMF rows equal except run_id; 860 provenance rows (probabilities, push, projections, minutes) equal except prediction_id=H(run_id,key), run_id, production_manifest hash (wall-clock CREATED_AT)",
+   "game_model": "unaffected by construction: game/forecast reads team ratings, never the warm-up cache; only player-engine input is the byte-identical fit artifact",
+   "dependency_audit": "opponent adjustment/SOS (team_games whole), team aggregates over players joined only on T (all T rows kept, NULL ids incl.), transferred-player history (U keeps all rows on all teams; canonical + candidate ids), identity conflicts / recruits / per-player streams partitioned by player, membership evidence classes all in U, event/lineup streams empty",
+   "cache_census": "production cache 1083/1083 LEGACY_VALID (first deploy forces 0 rebuilds)"
+  },
+  "performance_measured": {
+   "per_build_incumbent": "wall 204.8-246.4 s, CPU 225-257 s, RSS 1051-1124 MB, writes 3.8-5.3 GB, rchar 3.6-4.7 GB, scratch ~505 MB",
+   "per_build_closure": "wall 28.4-62.9 s (median 31.2), CPU 36-68 s, RSS 922-943 MB, writes 227-307 MB, rchar 139-231 MB, scratch 185-239 MB",
+   "paired_wall_ratio": "6.9x (1 game), 6.9x (2 games), 4.0x (24 games)",
+   "validation_overhead": "history-DB sha 3.75 s once/process (memoized); state index 0.29 s; validity over 1083 entries 0.28 s; cached_valid_games 0.39 s",
+   "lock_before": "warm-up heavy-lock occupancy 11-24 88.4 min, 11-25 134.9 min, 11-26 118.3 min (budget 150 min)",
+   "scaling": "incumbent grows with season and history (205 s 11-02 -> 246 s 11-23); closure depends on target teams (1-game 31.0 s 11-02 -> 33.9 s 11-26); floor ~30 s = compact copy + fixed Stage 3"
+  },
+  "projected_not_measured": "11-26-sized morning (34 cutoffs): <= 34 x 31-63 s = 18-36 min warm-up vs 118 min measured; 60 builds x 63 s = 63 min, within the 150 min budget",
+  "resource_safety": "all Droplet jobs transient read-only units (MemoryMax 3200M, nice 10, IOWeight 50, 1 thread), sequential; MemAvailable 5.8-6.9 GB of 8 GB, free disk 40-41 GB (floor 38.5); peak job RSS <= 1.13 GB; scratch removed (audit dir 172 KB); no production unit started/stopped/delayed. Deviation: one drop_caches (clean page cache) before the overhead measurement",
+  "tests": "new tests/test_feature_cache_causal.py (10; old code 7/9 fail), tests/test_feature_closure_equivalence.py (2, local stores); local full regression 1160 passed / 7 skipped; CI cbb-production-ci run 45930954740 (workflow_dispatch on research/root-cause-20261126 @ 56f3dae) success, full regression 1131 passed / 36 skipped",
+  "commit": "56f3dae71ae50680afdc4df4d799e901a4790b05",
+  "release_candidate": {
+   "sha": "56f3dae71ae50680afdc4df4d799e901a4790b05",
+   "staged": "/opt/sports-models/cbb-originator/releases/56f3dae71ae50680afdc4df4d799e901a4790b05.tmp (read-only, 850 files == git tree; candidate_56f3dae71ae50680afdc4df4d799e901a4790b05.sha256sums)",
+   "deployment_status": "NOT DEPLOYED (current 9f65e7f, rollback cae2a02 unchanged)",
+   "procedure": "docs/audits/2026-11-27-stage2/DEPLOY_PROCEDURE.md (deploy, rollback, CBB_FEATURE_CLOSURE=OFF fallback)"
+  },
+  "remaining_natural_verification": [
+   "2026-11-27 11:10Z morning: receipt for deployed 46e07f3 (builds vs cutoffs, warm-up wall, heavy-lock time) - Stage 1 D1",
+   "2026-11-27 13:30Z poll and 14:10Z scoring receipts - Stage 1 D2",
+   "after deploying 56f3dae: first natural morning warm-up wall / lock time / supersession count / promotion gates (DEADLINE_HEADROOM measured, not projected)"
+  ],
+  "gates": {
+   "REBUILD_REDUNDANCY_ELIMINATED": "PASS",
+   "CAUSAL_CACHE_KEYS_VALID": "PASS",
+   "INVALIDATION_TESTS_PASS": "PASS",
+   "FEATURES_AND_FIT_EQUIVALENT": "PASS",
+   "PMFS_EQUIVALENT": "PASS",
+   "SCALING_MEASURED": "PASS",
+   "DEADLINE_HEADROOM_VERIFIED": "UNVERIFIED (per-build measured; full-morning headroom projected until a natural morning runs the candidate)"
+  },
+  "next_eligible_stage": "Stage 03 (not started). Stage 02 deployment eligible after the 2026-11-27 natural receipts for 46e07f3 are recorded."
  }
 }
