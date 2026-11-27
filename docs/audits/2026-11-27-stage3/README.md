@@ -117,7 +117,7 @@ existing receipts and isolated fixtures. The authorization decision belongs to t
 
 ## 9. Candidate integration
 
-The successor candidate is committed on top of the Stage 02 lineage (56f3dae → 945353b → Stage 03 commit). It is one candidate, not a competing one.
+The successor candidate is committed on top of the Stage 02 lineage (56f3dae → 945353b → 25b83ed8c945573bd1b707a68d1b6518947daa42). It is one candidate, not a competing one.
 Diff vs 56f3dae: `cbb_platform/prod/lifecycle.py` (quotes deferral + marker reader), `tests/test_quote_wake_refresh_yield.py`,
 and docs. The Stage 3 SQL and features are untouched, so `CLOSURE_AUDITED_STAGE3_SHA256` still matches. There is no unit, env, wrapper, schema,
 model or parameter change. The Stage 02 regression contract was re-run in full (see `regression.md`). Not deployed.

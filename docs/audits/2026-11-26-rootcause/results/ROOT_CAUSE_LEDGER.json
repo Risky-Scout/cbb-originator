@@ -319,5 +319,97 @@
    "DEADLINE_HEADROOM_VERIFIED": "UNVERIFIED (per-build measured; full-morning headroom projected until a natural morning runs the candidate)"
   },
   "next_eligible_stage": "Stage 03 (not started). Stage 02 deployment eligible after the 2026-11-27 natural receipts for 46e07f3 are recorded."
+ },
+ "stage3_availability_sync_20261127": {
+  "recorded_at": "2026-11-27T05:15Z",
+  "scope": "availability refresh Phase A/B vs the 10-minute quote wake on the CBB global writer lock; no model, PMF, simulation, feature, unit, env, wrapper or schema change",
+  "evidence": "docs/audits/2026-11-27-stage3 (README.md, DEPLOY_PROCEDURE.md, regression.md, refresh_lock_journal_20261120_27.txt, quote_wake_journal_24h.txt, wake_profile_idle_20261127T0344Z.json, scripts/, candidate sha256sums); Droplet copy /var/lib/sports-models/cbb-originator/audit/stage3-20261127",
+  "existing_repairs_verified": [
+   "Phase A outside writer lock (10d1538): 11-26 23:00Z Phase A 12 s",
+   "bounded Phase B wait + contiguous retries: 0 deferrals since 11-24 (13 refreshes)",
+   "priority marker tick yield",
+   "close-window capture under game-quotes lock (11-26 23:10Z)",
+   "Phase B watchdog / index-last atomic publication"
+  ],
+  "defects_found": {
+   "D3.1_redundant_export_rebuild_blocks_refresh": "refresh units fire the same second as a quote wake; the wake (already holding the writer lock) rebuilt unchanged exports that Phase B rebuilds again. Phase B lock wait 11-20..26 n=25 published: median 146 s, range 3-270 s (24 of 25 >= 110 s); idle wake profile 142.8 s of which exports.daily 137.1 s, all workbooks rewritten=false",
+   "D3.2_idle_wake_export_recompute": "RECORDED_NOT_CORRECTED: 141 wakes/24 h hold the writer lock 11.39 h (47%); 96 idle wakes median 181.5 s; D-1 grades/performance recomputed each wake; no deadline impact; content-fingerprint skip deferred (now/cutoff/freeze dependent)"
+  },
+  "defects_corrected": {
+   "D3.1": "prod/lifecycle.quotes skips only exports_for when writer_priority_waiter() finds a fresh (<=50 min) marker with a live pid; records exports_deferred=DEFERRED_TO_AVAILABILITY_REFRESH + quote_refresh_totals.exports_deferred; quote requests/repricing/game-line capture/health merge unchanged; missing/stale/malformed/dead marker -> rebuild as before; wake never writes the marker"
+  },
+  "measured": {
+   "before_refresh_lock_wait_s": {
+    "median": 146.0,
+    "min": 3.0,
+    "max": 270.1,
+    "n": 25,
+    "source": "production journal 11-20..26"
+   },
+   "idle_wake_s_before": 142.8,
+   "idle_wake_s_deferred_components_measured": 2.6,
+   "note_wake": "deferred wake = QR.run 1.74 s + game-quotes plan 0.83 s (same profile run); paid capture time excluded (not exercised)",
+   "controlled_contention": "real processes + flock(2): fix on -> Phase B wait < 6 s export time; fix off -> >= 5.5 s; writer_count_max == 1 both",
+   "after_production": "NOT_MEASURED: needs a natural refresh on the deployed successor"
+  },
+  "lock_ownership_kept": [
+   "official tick",
+   "Phase B forecast+exports (re-reads state under lock; index last)",
+   "quote-wake export rebuild when no refresh waits",
+   "morning chain"
+  ],
+  "deadline_safety": {
+   "scored_games": 920,
+   "ticks": 290,
+   "after_cutoff": 0,
+   "after_tip": 0,
+   "margin_min_min": 11.7,
+   "margin_median_min": 46.5,
+   "since_1120": {
+    "n": 340,
+    "min": 20.6,
+    "p05": 40.3
+   }
+  },
+  "commercial_authorization": "UNCHANGED_NOT_AUTHORIZED: subscription/cookie is not commercial authorization; no new provider requests in Stage 03; fixtures and existing receipts only; owner decision",
+  "stage2_protections": "unchanged: features/training_rows/daily untouched; CLOSURE_AUDITED_STAGE3_SHA256 still matches; causal-cache and closure-equivalence tests pass",
+  "tests": {
+   "new": "tests/test_quote_wake_refresh_yield.py (8)",
+   "old_path_demo": "scripts/s3_oldpath.py OLD_PATH_DEFECT -> NEW_PATH_OK",
+   "local_contract": "1168 passed / 7 skipped / 0 failed (1175)",
+   "local_full_tree": "1764 passed / 9 skipped / 1 failed (test_stage2 parent-folder snapshot: user document SSH root.docx changed; environmental, outside contract)",
+   "ci": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 45942344098,
+    "conclusion": "success",
+    "full_regression": "1139 passed / 36 skipped"
+   }
+  },
+  "commit": "25b83ed8c945573bd1b707a68d1b6518947daa42",
+  "lineage": [
+   "56f3dae71ae50680afdc4df4d799e901a4790b05",
+   "945353b",
+   "25b83ed8c945573bd1b707a68d1b6518947daa42"
+  ],
+  "release_candidate": {
+   "sha": "25b83ed8c945573bd1b707a68d1b6518947daa42",
+   "supersedes": "56f3dae (by lineage; its evidence kept)",
+   "staged": "/opt/sports-models/cbb-originator/releases/25b83ed8c945573bd1b707a68d1b6518947daa42.tmp",
+   "files": 865,
+   "hashes": "local git archive == Droplet staged tree (identical)",
+   "deployed": false,
+   "current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "procedure": "docs/audits/2026-11-27-stage3/DEPLOY_PROCEDURE.md"
+  },
+  "remaining_natural_verification": [
+   "11-27 11:10Z morning / 13:30Z poll / 14:10Z scoring receipts for 46e07f3 (deploy precondition)",
+   "post-deploy: warm-up receipt (Stage 02 projection)",
+   "post-deploy: first colliding refresh shows exports_deferred and PHASE_B_LOCK_WAIT_SEC << 146 s"
+  ],
+  "deviations": [
+   "local full-tree run included 29 legacy DuckDB files beyond contract (peak RSS 8.2 GB, DuckDB threads ~190% CPU); no second suite launched"
+  ],
+  "next_eligible_stage": "Stage 04 NOT STARTED (awaits user directive)"
  }
 }
