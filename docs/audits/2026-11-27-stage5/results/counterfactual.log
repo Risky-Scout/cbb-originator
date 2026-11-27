@@ -1,0 +1,471 @@
+{
+ "subjects": {
+  "game_id": "G-0648df8eb36bddd3",
+  "home": "T-33d239d5d1431413",
+  "away": "T-f09cc01a54dcf70a",
+  "starter": [
+   "P-f43640a702b08161",
+   35.09525482999371,
+   0.9847287048437725,
+   "TOP5_MINUTES"
+  ],
+  "reserve": [
+   "P-93de81d89c51786e",
+   24.841897909108624,
+   0.9506877075530348,
+   "ROTATION_6_8"
+  ],
+  "low_p_play": [
+   "P-ea481be08b1253d7",
+   0.0037327909546686798,
+   10.040448766947886
+  ],
+  "sims": 4000,
+  "run": "R20261127T150445Z-bc1a1357",
+  "snapshot": "F20261127T150445Z-8d10cf",
+  "gamma": 0.3,
+  "beta": 0.0
+ },
+ "game_summary_keys": [
+  "MODEL_HOME_SCORE",
+  "MODEL_AWAY_SCORE",
+  "MODEL_MARGIN",
+  "MODEL_TOTAL",
+  "P_HOME_WIN",
+  "P_AWAY_WIN",
+  "SD_MARGIN",
+  "SD_TOTAL",
+  "RHO_MT"
+ ],
+ "baseline_game": {
+  "MODEL_HOME_SCORE": 68.86722578555998,
+  "MODEL_AWAY_SCORE": 65.42804344766425,
+  "MODEL_MARGIN": 3.43918233789573,
+  "MODEL_TOTAL": 134.29526923322425,
+  "P_HOME_WIN": 0.617271466733863,
+  "P_AWAY_WIN": 0.3827285332661369,
+  "SD_MARGIN": 11.618474031849573,
+  "SD_TOTAL": 16.328712635783432,
+  "RHO_MT": 0.05598001975581752
+ },
+ "deltas": {
+  "A_out_starter": {
+   "flags": [
+    "UNSUPPORTED_ROTATION_SHOCK"
+   ],
+   "suppressed": [
+    "P-f43640a702b08161"
+   ],
+   "priced": 61,
+   "dS_home": -14.733,
+   "d_exp_home": -4.42,
+   "game_delta": {
+    "MODEL_HOME_SCORE": -4.42,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": -4.42,
+    "MODEL_TOTAL": -4.42,
+    "P_HOME_WIN": -0.1512,
+    "P_AWAY_WIN": 0.1512,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": -0.2708,
+    "RHO_MT": 0.0
+   },
+   "starter": "NOT_IN_BANK",
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": -0.102,
+    "P_PTS_ge20": 0.0025
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "B_out_reserve": {
+   "flags": [
+    "UNSUPPORTED_ROTATION_SHOCK"
+   ],
+   "suppressed": [
+    "P-93de81d89c51786e"
+   ],
+   "priced": 61,
+   "dS_home": -6.075,
+   "d_exp_home": -1.823,
+   "game_delta": {
+    "MODEL_HOME_SCORE": -1.8225,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": -1.8225,
+    "MODEL_TOTAL": -1.8225,
+    "P_HOME_WIN": -0.0614,
+    "P_AWAY_WIN": 0.0614,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": -0.1111,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.1705,
+    "P_PTS_ge20": 0.0038
+   },
+   "reserve": "NOT_IN_BANK",
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "C_gtd_starter": {
+   "flags": [
+    "AVAILABILITY_UNCERTAIN_ROTATION"
+   ],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "D_doubtful_starter": {
+   "flags": [
+    "AVAILABILITY_UNCERTAIN_ROTATION"
+   ],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "E_active_starter": {
+   "flags": [],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "F_reserve_confirmed_starter": {
+   "flags": [],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "G_starter_to_bench": {
+   "flags": [],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "H_return_from_absence": {
+   "flags": [],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "I_ineligible_curated": {
+   "flags": [
+    "UNSUPPORTED_ROTATION_SHOCK"
+   ],
+   "suppressed": [
+    "P-f43640a702b08161"
+   ],
+   "priced": 61,
+   "dS_home": -14.733,
+   "d_exp_home": -4.42,
+   "game_delta": {
+    "MODEL_HOME_SCORE": -4.42,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": -4.42,
+    "MODEL_TOTAL": -4.42,
+    "P_HOME_WIN": -0.1512,
+    "P_AWAY_WIN": 0.1512,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": -0.2708,
+    "RHO_MT": 0.0
+   },
+   "starter": "NOT_IN_BANK",
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": -0.102,
+    "P_PTS_ge20": 0.0025
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "K_conflict_starter": {
+   "flags": [
+    "AVAILABILITY_UNCERTAIN_ROTATION"
+   ],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "L_stale_out_then_newer_active": {
+   "flags": [],
+   "suppressed": [],
+   "priced": 62,
+   "dS_home": 0.0,
+   "d_exp_home": 0.0,
+   "game_delta": {
+    "MODEL_HOME_SCORE": 0.0,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": 0.0,
+    "MODEL_TOTAL": 0.0,
+    "P_HOME_WIN": 0.0,
+    "P_AWAY_WIN": 0.0,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": 0.0,
+    "RHO_MT": 0.0
+   },
+   "starter": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": 0.0,
+    "P_PTS_ge20": 0.0
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  },
+  "L_newer_out_after_stale_active": {
+   "flags": [
+    "UNSUPPORTED_ROTATION_SHOCK"
+   ],
+   "suppressed": [
+    "P-f43640a702b08161"
+   ],
+   "priced": 61,
+   "dS_home": -14.733,
+   "d_exp_home": -4.42,
+   "game_delta": {
+    "MODEL_HOME_SCORE": -4.42,
+    "MODEL_AWAY_SCORE": 0.0,
+    "MODEL_MARGIN": -4.42,
+    "MODEL_TOTAL": -4.42,
+    "P_HOME_WIN": -0.1512,
+    "P_AWAY_WIN": 0.1512,
+    "SD_MARGIN": 0.0,
+    "SD_TOTAL": -0.2708,
+    "RHO_MT": 0.0
+   },
+   "starter": "NOT_IN_BANK",
+   "reserve": {
+    "p_play": 0.0,
+    "min_sim_mean": 0.0,
+    "PTS_mean": 0.0,
+    "PRA_mean": -0.102,
+    "P_PTS_ge20": 0.0025
+   },
+   "teammates_max_abs_d_min_input": 0.0,
+   "teammates_max_abs_d_PTS_mean": 0.0,
+   "teammates_max_abs_d_min_sim": 0.0
+  }
+ }
+}

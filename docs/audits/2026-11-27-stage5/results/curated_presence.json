@@ -1,0 +1,81 @@
+{
+ "runs": 180,
+ "curated_with_canonical_id": 16,
+ "curated_player_games_simulated": 19,
+ "curated_players_simulated": [
+  "CJ Hines",
+  "DJ Stickman",
+  "Drew Carter",
+  "Jaxon Edwards",
+  "Melvin Council Jr.",
+  "NJ Benson",
+  "RJ Luis",
+  "Reggie Ward"
+ ],
+ "by_class_scoreability": [
+  {
+   "class": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "scoreability": "SUPPRESSED",
+   "availability_status": "NO_REPORT",
+   "0": 2
+  },
+  {
+   "class": "PROFESSIONAL_NONCURRENT",
+   "scoreability": "SUPPRESSED",
+   "availability_status": "NO_REPORT",
+   "0": 1
+  },
+  {
+   "class": "ROSTERED_LONG_TERM_OUT",
+   "scoreability": "SCOREABLE",
+   "availability_status": "NO_REPORT",
+   "0": 2
+  },
+  {
+   "class": "ROSTERED_LONG_TERM_OUT",
+   "scoreability": "SCOREABLE",
+   "availability_status": "OUT",
+   "0": 1
+  },
+  {
+   "class": "ROSTERED_LONG_TERM_OUT",
+   "scoreability": "SUPPRESSED",
+   "availability_status": "NO_REPORT",
+   "0": 4
+  },
+  {
+   "class": "SOURCE_CONFLICT",
+   "scoreability": "SUPPRESSED",
+   "availability_status": "NO_REPORT",
+   "0": 4
+  },
+  {
+   "class": "STALE_NONCURRENT",
+   "scoreability": "SUPPRESSED",
+   "availability_status": "NO_REPORT",
+   "0": 5
+  }
+ ],
+ "p_play_mean_by_player": {
+  "CJ Hines": 0.007,
+  "DJ Stickman": 0.009,
+  "Drew Carter": 0.01,
+  "Jaxon Edwards": 0.019,
+  "Melvin Council Jr.": 0.263,
+  "NJ Benson": 0.032,
+  "RJ Luis": 0.355,
+  "Reggie Ward": 0.007
+ },
+ "S_contribution_by_player": {
+  "CJ Hines": 0.04,
+  "DJ Stickman": 0.03,
+  "Drew Carter": 0.03,
+  "Jaxon Edwards": 0.12,
+  "Melvin Council Jr.": 2.04,
+  "NJ Benson": 0.21,
+  "RJ Luis": 3.11,
+  "Reggie Ward": 0.03
+ },
+ "confirmed_out_player_games": 133,
+ "confirmed_out_rotation": 12
+}

@@ -57,3 +57,25 @@ def test_starter_out_moves_player_and_game_layers_coherently():
     assert b["MODEL_HOME_SCORE"] < a["MODEL_HOME_SCORE"]     # home team total
     assert abs(b["MODEL_AWAY_SCORE"] - a["MODEL_AWAY_SCORE"]) < 0.05      # away team total unchanged (no away news)
     assert b["MODEL_TOTAL"] < a["MODEL_TOTAL"]               # game total
+
+
+# ---------------------------------------------------------------- Stage 05: same-snapshot news-free baseline
+def test_news_free_baseline_counts_news_known_at_the_first_snapshot_exactly_once():
+    out, q = _production_rows("OUT"), _production_rows("QUESTIONABLE")
+    s, s0 = GF.team_strength(out), GF.team_strength(out, news_free=True)
+    assert abs((s0[("G1", "H")] - s[("G1", "H")]) - 18.0) < 1e-12 and s0[("G1", "A")] == s[("G1", "A")]
+    assert GF.team_strength(q, news_free=True) == GF.team_strength(q)     # uncertainty: no mean shift
+    base = _production_rows(None)
+    assert GF.team_strength(base, news_free=True) == GF.team_strength(base)   # no news: delta 0
+
+
+def test_forecast_uses_the_news_free_baseline_by_default_and_initial_on_fallback(tmp_path, monkeypatch):
+    import inspect
+    src = inspect.getsource(GF.forecast)
+    assert "team_strength(model_inputs, news_free=True)" in src and "initial_strength(day_dir, gid)" in src
+    monkeypatch.delenv(GF.BASELINE_ENV, raising=False)
+    assert GF.availability_baseline() == "NEWS_FREE"
+    monkeypatch.setenv(GF.BASELINE_ENV, "initial")
+    assert GF.availability_baseline() == "INITIAL"
+    monkeypatch.setenv(GF.BASELINE_ENV, "garbage")
+    assert GF.availability_baseline() == "NEWS_FREE"

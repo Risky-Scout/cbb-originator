@@ -350,7 +350,7 @@ def game_forecast(sdir: Path, rec: dict, games: pd.DataFrame, st: dict, day: dat
                         PC.PRODUCTION_SEASON)
     except Exception as e:                                 # noqa: BLE001 - isolated from the player outputs
         return {"status": "FAILED", "mode": "SHADOW", "reason": f"{type(e).__name__}: {str(e)[:300]}"}
-    return {k: g.get(k) for k in ("status", "mode", "games_due", "game_pmfs", "ratings", "ratings_fresh",
+    return {k: g.get(k) for k in ("status", "mode", "games_due", "game_pmfs", "ratings", "ratings_fresh", "availability_baseline",
                                   "params_sha256", "elapsed_s", "file_sha256")} | {"failed": len(g.get("failed") or [])}
 
 

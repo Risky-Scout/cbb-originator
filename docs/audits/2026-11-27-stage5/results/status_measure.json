@@ -1,0 +1,112 @@
+{
+ "game_layer_out_reflection": {
+  "team_games_with_confirmed_out_mass": 100,
+  "out_mass_total": 98.32,
+  "delta_total_applied_S_units": -38.79,
+  "share_of_out_mass_reflected": 0.395,
+  "team_games_out_mass_ge5_with_zero_delta": 5,
+  "team_games_out_mass_ge5": 7
+ },
+ "state_version": "S20261127T171335Z-24b7c0812882",
+ "finished_games": 1443,
+ "participation_calibration_by_status_all": [
+  {
+   "availability_status": "ACTIVE",
+   "n": 6,
+   "mean_p_play": 0.571,
+   "realized": 1.0
+  },
+  {
+   "availability_status": "GTD",
+   "n": 64,
+   "mean_p_play": 0.269,
+   "realized": 0.203
+  },
+  {
+   "availability_status": "LONG_TERM_OUT",
+   "n": 33,
+   "mean_p_play": 0.102,
+   "realized": 0.0
+  },
+  {
+   "availability_status": "NO_REPORT",
+   "n": 13887,
+   "mean_p_play": 0.464,
+   "realized": 0.447
+  },
+  {
+   "availability_status": "OUT",
+   "n": 60,
+   "mean_p_play": 0.13,
+   "realized": 0.017
+  },
+  {
+   "availability_status": "QUESTIONABLE",
+   "n": 7,
+   "mean_p_play": 0.69,
+   "realized": 0.714
+  },
+  {
+   "availability_status": "RETURN_DESIGNATION",
+   "n": 3,
+   "mean_p_play": 0.523,
+   "realized": 0.667
+  },
+  {
+   "availability_status": "UNKNOWN",
+   "n": 86,
+   "mean_p_play": 0.71,
+   "realized": 0.674
+  }
+ ],
+ "participation_calibration_by_status_rotation": [
+  {
+   "availability_status": "ACTIVE",
+   "n": 1,
+   "mean_p_play": 0.885,
+   "realized": 1.0
+  },
+  {
+   "availability_status": "GTD",
+   "n": 8,
+   "mean_p_play": 0.862,
+   "realized": 0.625
+  },
+  {
+   "availability_status": "LONG_TERM_OUT",
+   "n": 3,
+   "mean_p_play": 0.155,
+   "realized": 0.0
+  },
+  {
+   "availability_status": "NO_REPORT",
+   "n": 3583,
+   "mean_p_play": 0.865,
+   "realized": 0.869
+  },
+  {
+   "availability_status": "OUT",
+   "n": 5,
+   "mean_p_play": 0.67,
+   "realized": 0.0
+  },
+  {
+   "availability_status": "QUESTIONABLE",
+   "n": 4,
+   "mean_p_play": 0.858,
+   "realized": 0.75
+  },
+  {
+   "availability_status": "RETURN_DESIGNATION",
+   "n": 1,
+   "mean_p_play": 0.874,
+   "realized": 1.0
+  },
+  {
+   "availability_status": "UNKNOWN",
+   "n": 42,
+   "mean_p_play": 0.835,
+   "realized": 0.786
+  }
+ ]
+}

@@ -19,8 +19,14 @@ non-active case. Known inactive or stale identity != unresolved identity:
                                       blocks only while the live evidence keeps proving it; UNKNOWN / POSSIBLY_ACTIVE block
     IDENTITY_UNRESOLVED               derived, not curated: everything else -> fails closed
 
-The NON_BLOCKING classes do not block the whole game; the player is never put into the availability frame (he is
-not in the active universe, so no projection is conditioned on him). A row applies only:
+The NON_BLOCKING classes do not block the whole game. Stage 05 (2026-11-27): the premise "he is not in the active
+universe, so no projection is conditioned on him" was false -- the frozen pool simulates such a player from his prior
+appearances (RJ Luis LSU p_play 0.77 / 0.17 / 0.12). A NON_BLOCKING row in force that names a deterministic
+canonical_player_id therefore enters the availability frame as CONFIRMED non-participation (verified_unavailable ->
+rotowire_feed.availability_frame status UNAVAILABLE / LONG_TERM_OUT, source CURATED_VERIFIED_STATE): the player is not
+simulated, not priced and leaves the game layer's expected points. A live RESOLVED RotoWire status for the same player
+always governs instead; a row without a canonical id, and SOURCE_CONFLICT (genuine uncertainty), never do this.
+It never adds a player, an identity or a roster row. A row applies only:
   * to the exact RotoWire provider ID, while RotoWire places him at the row's canonical team (team re-resolved per event);
   * from verified_on (point in time: earlier game states are untouched) up to -- not including -- review_by;
   * for DELAYED_ELIGIBILITY, also only before eligible_from (after it: unresolved again until CBBD rosters him).
@@ -114,6 +120,24 @@ def classify(states: pd.DataFrame, rotowire_player_id, canonical_team_id, as_of)
 
 def non_blocking(states: pd.DataFrame, rotowire_player_id, canonical_team_id, as_of) -> bool:
     return classify(states, rotowire_player_id, canonical_team_id, as_of) in NON_BLOCKING
+
+
+def verified_unavailable(states: pd.DataFrame, teams, as_of) -> pd.DataFrame:
+    """NON_BLOCKING rows in force at as_of for these canonical teams that name a deterministic canonical_player_id:
+    verified current-game non-participation (Stage 05). Pure; the caller applies RotoWire precedence."""
+    f = in_force(states, as_of)
+    return f[f["operational_class"].isin(NON_BLOCKING) & f["affiliated_team_id"].isin(set(teams))
+             & (f["canonical_player_id"].astype(str).str.strip() != "")]
+
+
+def verified_status(operational_class: str) -> str:
+    """The inputs.apply_availability status of a verified non-participation class (both are inputs.UNAVAILABLE)."""
+    return "LONG_TERM_OUT" if operational_class == ROSTERED_LONG_TERM_OUT else "UNAVAILABLE"
+
+
+def verified_knowable_at(row) -> pd.Timestamp:
+    """The instant the verification became usable: the start (ET) of verified_on, in UTC (in_force is by ET date)."""
+    return pd.Timestamp(row["verified_on"]).tz_localize("America/New_York").tz_convert("UTC")
 
 
 def conflicts(states: pd.DataFrame, teams, as_of) -> pd.DataFrame:

@@ -2,8 +2,13 @@
 
 Called by prod.lifecycle.forecast after the player PMFs are written, for exactly the snapshot's games, with the SAME
 `now`, state version and training cutoff. Never refits the player model; never sums player PMFs; the player layer
-enters only through the availability term (model.AdjustParams.gamma x the change in the model's own expected points
-since the INITIAL snapshot -- zero at INITIAL; beta = 0 by walk-forward selection).
+enters only through the availability term (model.AdjustParams.gamma x availability_delta; beta = 0 by walk-forward
+selection). availability_delta (Stage 05, 2026-11-27) = S over the player layer's SCORED set minus S over EVERY candidate
+at the model's own p_play in the SAME snapshot (the news-free expectation): every confirmed non-participation known at
+the snapshot moves the game mean once, whenever it became known. Before, the baseline was the day's INITIAL snapshot,
+so news already known at INITIAL never reached the game layer (11-20..27: 39.5% of confirmed-OUT expected points
+reflected; 5 of 7 team-games with >= 5 points of OUT mass had delta 0). CBB_GAME_AVAILABILITY_BASELINE=INITIAL restores
+the old baseline (in-place fallback).
 
 Ratings: params/ratings_prior_<season>.parquet (season-final chain 2014..season-1, sealed in game_model.json) + every
 promoted-state DI_VS_DI final knowable strictly before refit_cutoff(D) (all of D-1), fit in milliseconds per snapshot
@@ -92,15 +97,24 @@ def games_played(games: pd.DataFrame, cutoff: pd.Timestamp) -> dict:
 
 
 # ============================================================================ the player-layer availability term
-def team_strength(model_inputs: pd.DataFrame | None) -> dict:
+BASELINE_ENV = "CBB_GAME_AVAILABILITY_BASELINE"      # NEWS_FREE (default) | INITIAL (pre-Stage-05 fallback)
+
+
+def availability_baseline() -> str:
+    v = (os.environ.get(BASELINE_ENV) or "NEWS_FREE").upper()
+    return "INITIAL" if v == "INITIAL" else "NEWS_FREE"
+
+
+def team_strength(model_inputs: pd.DataFrame | None, news_free: bool = False) -> dict:
     """{(game_id, team_id): sum_k p_play_k * PTS_mu_k} over the player layer's SCORED set -- the model's own expected
     points (a signal, not a team score). prod.inputs.apply_availability keeps a confirmed-unavailable player as a row
     flagged player_suppression (it is never simulated); 2026-11-26 fix: such a row no longer counts toward S (before,
-    a confirmed OUT never moved the game layer in production)."""
+    a confirmed OUT never moved the game layer in production). news_free=True keeps every candidate (the same
+    snapshot's expectation without any availability news): the Stage 05 availability baseline."""
     if model_inputs is None or not len(model_inputs) or not {"p_play", "PTS_mu"} <= set(model_inputs.columns):
         return {}
     m = model_inputs.drop_duplicates(["game_id", "player_id"])
-    if "player_suppression" in m:
+    if "player_suppression" in m and not news_free:     # news_free: every candidate at the model's own p_play
         m = m[m["player_suppression"].fillna("").astype(str) == ""]
     s = (m["p_play"].astype(float).fillna(0) * m["PTS_mu"].astype(float).fillna(0)).groupby(
         [m["game_id"], m["team_id"]]).sum()
@@ -172,6 +186,8 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
     r, rstat = daily_ratings(sdir.parent, hist, training_cutoff, pri, rp, pending_finals(increment_db, d1))
     gp = games_played(hist[hist["game_id"].isin(set(rstat["game_ids"]))], training_cutoff)
     S = team_strength(model_inputs)
+    baseline = availability_baseline()
+    S0 = team_strength(model_inputs, news_free=True) if baseline == "NEWS_FREE" else None
     day_dir = sdir.parent
     if "neutral_site" not in games:
         games = games.assign(neutral_site=games["canonical_game_id"].map(neutral_of(increment_db, games["canonical_game_id"])))
@@ -181,7 +197,10 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
     for i, gr in enumerate(games.to_dict(orient="records")):
         gid, h, a = gr["canonical_game_id"], gr["home_team_id"], gr["away_team_id"]
         s_h, s_a = S.get((gid, h)), S.get((gid, a))
-        base, base_sid = initial_strength(day_dir, gid)
+        if S0 is not None:                                # same-snapshot news-free expectation
+            base, base_sid = {h: S0.get((gid, h)), a: S0.get((gid, a))}, f"NEWS_FREE:{snapshot['snapshot_id']}"
+        else:
+            base, base_sid = initial_strength(day_dir, gid)
         dh = 0.0 if s_h is None or h not in base or base[h] is None else s_h - float(base[h])
         da = 0.0 if s_a is None or a not in base or base[a] is None else s_a - float(base[a])
         n = min(gp.get(h, 0), gp.get(a, 0))
@@ -235,6 +254,7 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
            "status": "COMPLETE" if len(out) == len(games) else ("PARTIAL" if len(out) else "FAILED"),
            "ratings": {k: r.meta[k] for k in ("state_id", "games", "max_game_date", "max_knowable_at", "cutoff_utc")},
            "ratings_fresh": rstat["fresh"], "ratings_source": rstat["source"], "params_sha256": gm["params_sha256"],
+           "availability_baseline": baseline,
            "elapsed_s": round(time.monotonic() - t0, 2),
            "file_sha256": hashlib.sha256((sdir / FILE).read_bytes()).hexdigest() if len(out) else None}
     (sdir / RECEIPT).write_text(json.dumps(rec, indent=1, default=str))

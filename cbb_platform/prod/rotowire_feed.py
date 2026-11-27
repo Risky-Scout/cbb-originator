@@ -62,6 +62,7 @@ NEWS_KINDS = ("NEWS_UPDATE", "UPDATES_STREAM")
 KIND_OF = {"news_injuries": "NEWS_UPDATE", "news_updates": "UPDATES_STREAM", "snapshot": "SNAPSHOT_OBSERVATION"}
 GATE_UNCERTAIN = "AVAILABILITY_UNCERTAIN"
 GATE_CONFLICT = "AVAILABILITY_SOURCE_CONFLICT"
+CURATED_SOURCE = "CURATED_VERIFIED_STATE"          # Stage 05: verified curated non-participation (prod/rotowire_player_states)
 GATE_UNRECOGNIZED = "AVAILABILITY_STATUS_UNRECOGNIZED"
 
 
@@ -545,6 +546,24 @@ def availability_frame(events: pd.DataFrame, games: pd.DataFrame, as_of, states:
                          "availability_gate": r.gate, "rotowire_player_id": r.rotowire_player_id,
                          "rotowire_update_id": r.rotowire_update_id, "news_status": r.news_status,
                          "snapshot_status": r.snapshot_status})
+        # Stage 05: verified curated non-participation of a deterministically identified pool player (the frozen pool
+        # simulates him from prior appearances). RotoWire's live RESOLVED status for him governs; a row whose provider
+        # ID RotoWire now places at another team does not apply (same rule as the identity exemption).
+        if len(states):
+            live = set(ok["canonical_player_id"].dropna().astype(str))
+            for c in PS.verified_unavailable(states, teams, T).to_dict("records"):
+                cp = str(c["canonical_player_id"]).strip()
+                if cp in live:
+                    continue
+                hit = stt[stt["rotowire_player_id"].astype(str) == str(c["rotowire_player_id"])]
+                if len(hit) and hit.iloc[0]["canonical_team_id"] != c["affiliated_team_id"]:
+                    continue
+                rows.append({"game_id": g.canonical_game_id, "player_id": cp, "team_id": c["affiliated_team_id"],
+                             "status": PS.verified_status(c["operational_class"]),
+                             "received_at": min(PS.verified_knowable_at(c), T), "availability_source": CURATED_SOURCE,
+                             "availability_raw_status": c["operational_class"], "availability_gate": "",
+                             "rotowire_player_id": str(c["rotowire_player_id"]), "rotowire_update_id": None,
+                             "news_status": None, "snapshot_status": None})
     fr = pd.DataFrame(rows, columns=["game_id", "player_id", "team_id", "status", "received_at", "availability_source",
                                      "availability_raw_status", "availability_gate", "rotowire_player_id",
                                      "rotowire_update_id", "news_status", "snapshot_status"])

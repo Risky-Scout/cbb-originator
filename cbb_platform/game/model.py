@@ -4,8 +4,10 @@
     + availability      mu_team += beta * (S_today - S_base) + gamma * availability_delta
                         beta = 0 (walk-forward selection on 2024-25: the fitted coefficient was -0.08 and every
                         beta > 0 raised margin RMSE -- the PIT ratings already carry the team-strength signal).
-                        gamma (conservative, NOT fitted) moves the mean only by the change in the model's own
-                        expected player points caused by a post-INITIAL availability update (no refit).
+                        gamma (conservative, NOT fitted) moves the mean only by availability_delta: the model's own
+                        expected player points of the scored set minus those of every candidate at the model's own
+                        p_play in the same snapshot (Stage 05 news-free baseline; before: vs the day's INITIAL
+                        snapshot, which ignored news known at INITIAL). No refit, no new coefficient.
     sd_margin           a_m * (1 + c_m * exp(-n / tau_m)) * (E[T] / 142) ** k_m      n = min games played (season)
     sd_total            a_t * (1 + c_t * exp(-n / tau_t)) * (E[T] / 142) ** k_t
     rho_mt              constant

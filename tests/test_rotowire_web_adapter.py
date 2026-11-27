@@ -902,13 +902,70 @@ def test_delayed_eligibility_is_suppressed_identity_known_and_fails_closed_after
     env["run"](Site(news=GHOST, rows=GHOST_ROWS))
     st = states({"operational_class": PS.DELAYED_ELIGIBILITY, "canonical_player_id": "P-known", "eligible_from": "2026-12-18"})
     fr, reasons = _frame(env, st)
-    assert reasons["G1"] == [] and "999" not in set(fr["rotowire_player_id"])
+    assert reasons["G1"] == []
+    cur = fr[fr["rotowire_player_id"] == "999"]                            # Stage 05: verified non-participation of a
+    assert cur[["player_id", "status", "availability_source"]].values.tolist() == [   # deterministic pool identity
+        ["P-known", "UNAVAILABLE", RW.CURATED_SOURCE]]
     assert PS.classify(st, "999", "T1", env["clock"].t) == PS.DELAYED_ELIGIBILITY
     assert PS.in_force(st, env["clock"].t)["canonical_player_id"].tolist() == ["P-known"]   # identity stays known
     later = pd.Timestamp("2026-12-18T15:00:00Z")                           # eligible from today: no longer exempt
     assert PS.classify(st, "999", "T1", later) is None
     assert RW.availability_frame(env["store"].frame(), GAMES.assign(feature_cutoff=[later + pd.Timedelta(hours=2)]),
                                  later, states=st)[1]["G1"] == ["AVAILABILITY_IDENTITY_UNRESOLVED"]
+
+
+# ============================================================================ Stage 05: verified non-participation
+def _cur_rows(fr):
+    return fr[fr["availability_source"] == RW.CURATED_SOURCE]
+
+
+@pytest.mark.parametrize("cls,status", [(PS.STALE_NONCURRENT, "UNAVAILABLE"), (PS.AFFILIATED_INACTIVE_ELIGIBILITY, "UNAVAILABLE"),
+                                        (PS.AFFILIATED_ROSTER_LIMIT, "UNAVAILABLE"), (PS.PROFESSIONAL_NONCURRENT, "UNAVAILABLE"),
+                                        (PS.ROSTERED_LONG_TERM_OUT, "LONG_TERM_OUT")])
+def test_verified_non_participation_with_canonical_id_enters_the_frame_as_confirmed_unavailable(env, cls, status):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    at = env["clock"].t + timedelta(minutes=1)
+    fr, reasons = _frame(env, states({"operational_class": cls, "canonical_player_id": "P-ghost"}))
+    assert reasons["G1"] == []
+    c = _cur_rows(fr)
+    assert c[["game_id", "player_id", "team_id", "status", "availability_raw_status", "availability_gate"]].values.tolist() == [
+        ["G1", "P-ghost", "T1", status, cls, ""]]
+    assert (pd.to_datetime(c["received_at"], utc=True) <= pd.Timestamp(at)).all()       # usable at the instant
+    from cbb_platform.prod import inputs as IN
+    assert status in IN.UNAVAILABLE
+
+
+def test_verified_non_participation_is_point_in_time_and_lapses(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    row = {"operational_class": PS.STALE_NONCURRENT, "canonical_player_id": "P-ghost"}
+    later = states({**row, "verified_on": "2026-12-01", "review_by": "2026-12-20"})      # not yet verified at the instant
+    assert _cur_rows(_frame(env, later)[0]).empty
+    lapsed = states({**row, "verified_on": "2026-10-01", "review_by": "2026-10-20"})     # review_by passed
+    assert _cur_rows(_frame(env, lapsed)[0]).empty
+
+
+def test_no_canonical_id_or_source_conflict_never_becomes_confirmed_unavailable(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    assert _cur_rows(_frame(env, states({"operational_class": PS.STALE_NONCURRENT}))[0]).empty      # identity not deterministic
+    sc = states({"operational_class": PS.SOURCE_CONFLICT, "canonical_player_id": "P-ghost", "current_game_available": "UNKNOWN",
+                 "evidence_checked_at": "2026-11-08T12:00:00Z"})
+    assert _cur_rows(_frame(env, sc)[0]).empty                              # genuine uncertainty stays probabilistic
+
+
+def test_live_resolved_rotowire_status_governs_over_a_curated_row(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    fr0, _ = _frame(env, states())
+    live = fr0[fr0["availability_source"] == RW.PROVIDER].iloc[0]          # a RESOLVED RotoWire player of this game
+    st = states({"operational_class": PS.STALE_NONCURRENT, "canonical_player_id": live["player_id"]})
+    fr, _ = _frame(env, st)
+    assert _cur_rows(fr).empty
+    assert fr[fr["player_id"] == live["player_id"]]["availability_source"].tolist() == [RW.PROVIDER]
+
+
+def test_row_does_not_apply_when_rotowire_places_the_provider_id_at_another_team(env):
+    env["run"](Site(news=GHOST, rows=GHOST_ROWS))
+    st = states({"operational_class": PS.STALE_NONCURRENT, "canonical_player_id": "P-ghost", "affiliated_team_id": "T2"})
+    assert _cur_rows(_frame(env, st)[0]).empty                              # RotoWire lists 999 at Home U (T1)
 
 
 def test_source_conflict_and_true_unresolved_still_block(env):
