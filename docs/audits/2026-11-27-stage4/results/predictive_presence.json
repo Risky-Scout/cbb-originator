@@ -1,0 +1,75 @@
+{
+ "runs_scanned": 179,
+ "model_input_columns_sample": [
+  "game_id",
+  "team_id",
+  "player_id",
+  "player_game_example_id",
+  "prediction_cutoff_utc",
+  "is_home",
+  "position_group",
+  "cold_start_class",
+  "pool_evidence",
+  "role_l5_minutes_rank",
+  "role_diagnostic",
+  "p_play",
+  "min_mu",
+  "min_sigma",
+  "PTS_family",
+  "PTS_mu",
+  "PTS_phi",
+  "REB_family",
+  "REB_mu",
+  "REB_phi",
+  "AST_family",
+  "AST_mu",
+  "AST_phi",
+  "FG3M_family",
+  "FG3M_mu",
+  "FG3M_phi",
+  "STL_family",
+  "STL_mu",
+  "STL_phi",
+  "BLK_family",
+  "BLK_mu",
+  "BLK_phi",
+  "TOV_family",
+  "TOV_mu",
+  "TOV_phi",
+  "pmf_support_max",
+  "availability_status",
+  "availability_received_at",
+  "player_suppression"
+ ],
+ "player_game_rows": 51,
+ "players_seen": 23,
+ "by_decision_pool_inputs": [
+  {
+   "decision": "APPLIED",
+   "in_pool": true,
+   "in_model_inputs": true,
+   "scoreability": "SUPPRESSED",
+   "0": 41
+  },
+  {
+   "decision": "REJECTED_COMPETING_CANONICAL_CANDIDATE",
+   "in_pool": true,
+   "in_model_inputs": true,
+   "scoreability": "SCOREABLE",
+   "0": 7
+  },
+  {
+   "decision": "WITHHELD_CURATED_NONCURRENT",
+   "in_pool": true,
+   "in_model_inputs": true,
+   "scoreability": "SUPPRESSED",
+   "0": 3
+  }
+ ],
+ "pool_evidence": {
+  "PRIOR_APPEARANCE_CONFIRMED": 49,
+  "PRIOR_SEASON_ROSTER_RETURNER": 2
+ },
+ "players_never_in_pool": [],
+ "applied_players_not_seen_in_any_run": []
+}

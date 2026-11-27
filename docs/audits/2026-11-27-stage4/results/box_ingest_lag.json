@@ -1,0 +1,43 @@
+{
+ "versions": 307,
+ "manifest_keys": [
+  "coverage",
+  "created_at",
+  "division_one_2026_27",
+  "feed_provenance",
+  "feed_version",
+  "historical_rebuild",
+  "history_canonical",
+  "increment_sha256",
+  "input_hashes",
+  "last_completed_game",
+  "last_completed_game_included",
+  "last_successful_sync",
+  "model_refit",
+  "parent_state_version",
+  "preseason_evidence",
+  "production_season",
+  "provider",
+  "replaced_relations",
+  "roster_as_of",
+  "schedule_as_of",
+  "source_cutoff",
+  "state_version",
+  "sync_id",
+  "training_through"
+ ],
+ "games": 1443,
+ "games_first_seen_after_first_retained": 1438,
+ "ingested_before_knowable": 0,
+ "lag_h_quantiles": {
+  "0.0": 0.04,
+  "0.05": 0.21,
+  "0.25": 1.89,
+  "0.5": 4.9,
+  "0.75": 65.62,
+  "0.95": 187.57,
+  "1.0": 232.72
+ },
+ "lag_gt_6h": 655,
+ "lag_gt_24h": 463
+}

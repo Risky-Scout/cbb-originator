@@ -529,3 +529,16 @@ def test_selection_audit_unit_is_read_only_lock_free_and_small():
     gate = r[i:r.index("\nfi\n", i)]
     assert 'exec "${RUN[@]}"' in gate and "flock" not in gate and "WRITER_LOCK" not in gate
     assert i < r.index('mkdir -p "$LOCK_DIR"')          # exec'd before any lock is taken
+
+
+def test_running_job_is_pinned_to_the_verified_release_not_the_current_symlink(app):
+    """Stage 04: after identity verification the job cds into / imports from releases/<sha> itself, so a later swap of
+    `current` cannot mix modules of two releases into one running job (Python imports lazily)."""
+    t = _run(app, "tick", CBB_SCHEDULER_ROLE="PRIMARY_WRITER", CBB_DRY_RUN="1")
+    assert t.returncode == 0, t.stderr
+    pinned = [ln for ln in t.stderr.splitlines() if "pinned app root:" in ln]
+    assert pinned and pinned[0].rstrip().endswith(str(app["rel"].resolve()))
+    assert str(app["current"]) not in pinned[0]
+    src = RUN.read_text()
+    i_pin, i_cd = src.index('[ -n "$REL" ] && APP="$REL"'), src.index('cd "$APP"')
+    assert i_pin < i_cd < src.index('export PYTHONPATH="$APP"')

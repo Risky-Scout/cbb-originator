@@ -136,6 +136,10 @@ else
 fi
 export CBB_CODE_COMMIT="$HEAD_SHA"
 case "$CBB_PROD_ROOT/" in "$APP"/*|"${REL:-$APP}"/*) refuse "CBB_PROD_ROOT is inside the application tree" ;; esac
+# Release pinning (Stage 04): from here on the job runs from the VERIFIED release directory, never through the
+# `current` symlink, so a release swap during a running job cannot mix modules of two releases (Python imports lazily).
+[ -n "$REL" ] && APP="$REL"
+[ "$DRY" = "1" ] && log "pinned app root: $APP"
 
 # ------------------------------------------------------------------ 3. single-writer role (scheduler cutover)
 if [ "$CMD" != "preflight" ] && [ "${CBB_SCHEDULER_ROLE:-DISABLED}" != "PRIMARY_WRITER" ]; then
