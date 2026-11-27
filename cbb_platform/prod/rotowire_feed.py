@@ -283,6 +283,7 @@ def load_identity_context(state_root: Path = PC.STATE_ROOT, history_db: Path = P
     roster = con.execute("""SELECT canonical_player_id, canonical_team_id, first_name, last_name, player_name, position
                             FROM flagship.rosters WHERE season = ?""", [PC.PRODUCTION_SEASON]).df()
     inc_teams = con.execute("SELECT canonical_team_id, school, display_name, NULL AS mascot FROM core.teams").df()
+    box = box_lines(con)
     con.close()
     con = duckdb.connect(str(history_db), read_only=True)
     teams = con.execute("""SELECT canonical_team_id, any_value(school) AS school, any_value(display_name) AS display_name,
@@ -293,6 +294,7 @@ def load_identity_context(state_root: Path = PC.STATE_ROOT, history_db: Path = P
     rd = lambda n: pd.read_csv(Path(map_root) / n, dtype=str) if (Path(map_root) / n).exists() else None
     pmap = rd("rotowire_player_map.csv")
     om = RO.load()
+    known = None
     if len(om):                                      # an omission row may only name an EXISTING canonical identity
         known = set()
         for db in (history_db, st["increment_db"]):
@@ -303,17 +305,38 @@ def load_identity_context(state_root: Path = PC.STATE_ROOT, history_db: Path = P
                 pass
             finally:
                 con.close()
-        roster = with_omissions(roster, om, datetime.now(timezone.utc), pmap, known)
+    from cbb_platform.prod import identity_conflicts as IC, rotowire_player_states as PS
+    roster = with_omissions(roster, om, datetime.now(timezone.utc), pmap, known, box=box, states=PS.load(),
+                            suppressed_ids={e["suppressed_canonical_player_id"] for e in IC.load()})
     return IdentityContext(teams, roster, rd("rotowire_team_map.csv"), pmap)
 
 
-def with_omissions(roster: pd.DataFrame, omissions: pd.DataFrame, as_of, player_map=None, known_ids=None) -> pd.DataFrame:
+def box_lines(con) -> pd.DataFrame | None:
+    """The 2026-27 player box lines (roster_omissions.BOX_COLS) of an open production-state connection; None if the
+    state has no player box table."""
+    import duckdb
+    try:
+        return con.execute(f"SELECT {', '.join(RO.BOX_COLS)} FROM flagship.player_game_outcomes WHERE season = ?",
+                           [PC.PRODUCTION_SEASON]).df()
+    except duckdb.CatalogException:
+        return None
+
+
+def with_omissions(roster: pd.DataFrame, omissions: pd.DataFrame, as_of, player_map=None, known_ids=None,
+                   box: pd.DataFrame | None = None, states: pd.DataFrame | None = None,
+                   suppressed_ids: set | None = None) -> pd.DataFrame:
     """The CBBD 2026-27 identity roster plus the APPLIED verified CBBD roster omissions (prod/roster_omissions:
-    rank-1/2 evidence, override-safety checked). roster_source says which; nothing is written anywhere."""
+    rank-1/2 evidence, override-safety checked) plus -- when box lines are given -- the BOX_PARTICIPATION rows
+    (rank 2 derived from the state's own knowable 2026-27 box scores). roster_source says which; nothing is written."""
     base = roster.assign(roster_source="CBBD")
     applied, _ = RO.effective(omissions, roster, as_of, player_map, known_ids)
-    extra = RO.roster_rows(applied).assign(roster_source=RO.CBBD_ROSTER_OMISSION)
-    return pd.concat([base, extra], ignore_index=True) if len(extra) else base
+    extra = [RO.roster_rows(applied).assign(roster_source=RO.CBBD_ROSTER_OMISSION)]
+    if box is not None:
+        part, _ = RO.participation_rows(box, pd.concat([roster, extra[0]], ignore_index=True), as_of, states,
+                                        suppressed_ids)
+        extra.append(part[RO.ROSTER_COLS + ["roster_source"]])
+    extra = [x for x in extra if len(x)]
+    return pd.concat([base] + extra, ignore_index=True) if extra else base
 
 
 # ============================================================================ append-only event store
@@ -681,15 +704,24 @@ def ingest_parsed(parsed: list[dict], n_records: int, malformed: int, fetch: dic
             e["semantic_key"] = semantic_key({**e, "source_datetime": collected})   # a snapshot change is a new observation
             e["event_id"] = "RW-" + e["semantic_key"][:20]
             events.append(e)
+        restore = getattr(ctx, "resolve_stored", None)
         for pid, prev in last_snap.items():
-            if pid not in seen and prev["normalized_status"] != NOT_LISTED:
+            if pid in seen:
+                continue
+            ident = {k: prev.get(k) for k in ("canonical_player_id", "canonical_team_id", "identity_resolution_status",
+                                              "identity_method", "team_resolution")}
+            # 2026-11-27 (Stage 04): a player off the current list is never re-observed, so an identity that became
+            # resolvable later (a map / roster row added after he left) never reached his state. Re-resolve the stored
+            # record against the current maps; a change is a new observation knowable from THIS collection on.
+            new = restore(prev) if restore is not None and prev.get("identity_resolution_status") != "RESOLVED" else None
+            changed = new is not None and not _same_identity(prev, new)
+            if prev["normalized_status"] != NOT_LISTED or changed:
                 f = {k: prev.get(k) for k in ("sportdataio_player_id", "rotowire_team_id", "first_name", "last_name",
                                                "position")}
                 f.update(rotowire_player_id=pid, raw_status=None, normalized_status=NOT_LISTED, record_sha256=None)
-                ident = {k: prev.get(k) for k in ("canonical_player_id", "canonical_team_id", "identity_resolution_status",
-                                                  "identity_method", "team_resolution")}
-                e = _event(f, ident, kind, endpoint, collected, fetch["raw_payload_sha256"], reconciliation="LEFT_CURRENT_LIST",
-                           **extra)
+                rec = "LEFT_CURRENT_LIST" if prev["normalized_status"] != NOT_LISTED else "IDENTITY_RERESOLVED_OFF_LIST"
+                e = _event(f, new if changed else ident, kind, endpoint, collected, fetch["raw_payload_sha256"],
+                           reconciliation=rec, **extra)
                 e["semantic_key"] = semantic_key({**e, "source_datetime": collected})
                 e["event_id"] = "RW-" + e["semantic_key"][:20]
                 events.append(e)

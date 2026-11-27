@@ -27,6 +27,11 @@ omissions are passed) are read as current-roster rows of their team -- exactly w
 more: a pool player NOT_ON_CURRENT_ROSTER becomes ON_CURRENT_ROSTER_CBBD_OMISSION (scoreable as the frozen model
 defines); a verified player outside the frozen pool is listed NO_FROZEN_MEMBERSHIP_EVIDENCE (never predicted). The
 frozen pool, its membership evidence and every feature are unchanged; omissions=None -> the output is byte-identical.
+
+BOX_PARTICIPATION rows (prod/roster_omissions.participation_rows: the player's own knowable 2026-27 box lines for this
+team, override-safety checked, read from the run's AS-OF canonical input -- never a later line) are applied with the
+omissions: a pool player NOT_ON_CURRENT_ROSTER becomes ON_CURRENT_ROSTER_BOX_PARTICIPATION (scoreable as the frozen
+model defines). Only the roster check changes; the simulation already contained him.
 """
 from __future__ import annotations
 
@@ -121,6 +126,7 @@ def _has(con, db: str, rel: str) -> bool:
 
 
 OMITTED = "ON_CURRENT_ROSTER_CBBD_OMISSION"
+PARTICIPATED = "ON_CURRENT_ROSTER_BOX_PARTICIPATION"
 
 
 def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str = "CBBD_API_PRODUCTION",
@@ -145,7 +151,7 @@ def build(features_db: Path, canonical_db: Path, roster_as_of=None, source: str 
             if not _has(con, "cx", rel):
                 raise RuntimeError(f"universe: {rel} missing from the canonical input")
         df = con.execute(SQL.format(season=PC.PRODUCTION_SEASON, cls=PC.PRESEASON_CLASS_YEAR)).df()
-        if omissions is not None and len(omissions):
+        if omissions is not None:
             df = _apply_omissions(con, df, omissions, as_of)
     con.close()
     df["suppression_reason"] = df["suppression_reason"].astype(object)
@@ -168,6 +174,7 @@ def _apply_omissions(con, df: pd.DataFrame, omissions: pd.DataFrame, as_of) -> p
                           FROM cx.flagship.rosters WHERE season = {PC.PRODUCTION_SEASON}""").df()
     applied, _ = RO.effective(omissions, ros, as_of)
     rr = RO.roster_rows(applied)
+    df = _apply_participation(con, df, pd.concat([ros, rr], ignore_index=True), as_of)
     if not len(rr):
         return df
     key = set(zip(rr["canonical_player_id"], rr["canonical_team_id"]))
@@ -188,6 +195,26 @@ def _apply_omissions(con, df: pd.DataFrame, omissions: pd.DataFrame, as_of) -> p
                               "cold_start_class": None, "cold_start": None,
                               "suppression_reason": "NO_FROZEN_MEMBERSHIP_EVIDENCE"})
     return pd.concat([df, pd.DataFrame(extra)], ignore_index=True) if extra else df
+
+
+def _apply_participation(con, df: pd.DataFrame, roster: pd.DataFrame, as_of) -> pd.DataFrame:
+    """Pool players NOT_ON_CURRENT_ROSTER with an APPLIED BOX_PARTICIPATION row for this team -> PARTICIPATED."""
+    from cbb_platform.prod import roster_omissions as RO
+    if not _has(con, "cx", "flagship.player_game_outcomes"):
+        return df
+    box = con.execute(f"""SELECT {', '.join(RO.BOX_COLS)} FROM cx.flagship.player_game_outcomes
+                          WHERE season = {PC.PRODUCTION_SEASON}""").df()
+    part = RO.participation_rows_committed(box, roster, as_of)
+    if not len(part):
+        return df
+    key = set(zip(part["canonical_player_id"], part["canonical_team_id"]))
+    hit = df["in_frozen_pool"].astype(bool) & (df["roster_status"] == "NOT_ON_CURRENT_ROSTER") & pd.Series(
+        [(p, t) in key for p, t in zip(df["canonical_player_id"], df["team_id"])], index=df.index)
+    if not hit.any():
+        return df
+    df = df.copy()
+    df.loc[hit, "roster_status"] = PARTICIPATED
+    return df
 
 
 def suppression_map(universe: pd.DataFrame) -> dict:

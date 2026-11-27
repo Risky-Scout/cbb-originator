@@ -754,6 +754,10 @@ def receipt(h: dict) -> dict:
         errors.append(f"ROTOWIRE_AUTH_{last.get('auth')}")
     if last.get("news_status") == "COVERAGE_GAP":
         warn("ROTOWIRE_WEB_NEWS_COVERAGE_GAP", INFORMATIONAL)
+    ir = last.get("identity_reconciliation") if isinstance(last.get("identity_reconciliation"), dict) else {}
+    if ir.get("action_required"):                 # curated identity maintenance due (never a blocker by itself)
+        flags = sorted({f for x in ir.get("actions") or [] for f in x.get("flags") or []})
+        warn(f"CURATED_IDENTITY_ACTION_REQUIRED: {ir['action_required']} ({', '.join(flags)})", INFORMATIONAL)
     blockers = errors + [c["warning"] for c in classes if c["class"] == ACTIVE_BLOCKER]
     model_version = lf.get("model_version") or wf.get("ACTIVE_MODEL_VERSION")
     no_games = fo["STATE"] == "NOT_REQUIRED"
@@ -924,13 +928,49 @@ def web_acquire(life: Life, lock_wait_s: float = WEB_ACQUIRE_LOCK_WAIT_SEC) -> d
         # the same event store / request ledger forecast() and prod.run.daily read (PC paths follow CBB_PROD_ROOT)
         rep = RWW.acquire(client, ctx, store=RW.EventStore(PC.ROTOWIRE_ROOT), root=PC.ROTOWIRE_WEB_ROOT,
                           ledger_path=PC.ROTOWIRE_REQUEST_LEDGER, map_root=PC.ROTOWIRE_MAP_ROOT)
+        recon = identity_reconciliation(life, ctx)        # read-only monitoring; written under this same lock
     finally:
         os.close(fd)
     out = {k: rep.get(k) for k in ("acquisition_id", "auth", "news_status", "snapshot_status", "news_rows",
                                    "snapshot_rows", "news_new_items", "news_events_new", "snapshot_events_new",
-                                   "news_continuity", "news_window_overlap", "reasons", "warnings")}
+                                   "news_continuity", "news_window_overlap", "reasons", "warnings",
+                                   "stale_identity_maps")}
+    out["identity_reconciliation"] = recon
     out["at"] = life.now().isoformat()
     return out
+
+
+def identity_reconciliation_dir(ops_root: Path) -> Path:
+    return Path(ops_root) / "identity" / "curated_reconciliation"
+
+
+def identity_reconciliation(life: Life, ctx) -> dict:
+    """Curated player-state / roster-omission maintenance report after an acquisition (rotowire_player_states.reconcile):
+    expiring / expired rows, team changes, rows contradicted by newer participation, unresolved records that became
+    resolvable. READ-ONLY with respect to every curated table and the model: it never extends, edits or applies a row.
+    Full report -> ops/identity/curated_reconciliation/latest.json (+ history.jsonl summary); returns the summary.
+    Never raises (monitoring must not block an acquisition)."""
+    import duckdb
+    from cbb_platform.prod import roster_omissions as RO, rotowire_feed as RW, rotowire_player_states as PS
+    try:
+        T = life.now()
+        ev = RW.EventStore(PC.ROTOWIRE_ROOT).frame()
+        st = ST.current(life.state_root)
+        con = duckdb.connect(str(st["increment_db"]), read_only=True)
+        try:
+            box = RW.box_lines(con)
+        finally:
+            con.close()
+        rep = PS.reconcile(PS.load(), RO.load(), RW.player_state(ev, T), ctx.roster, box, T, names=PS.event_names(ev))
+        d = identity_reconciliation_dir(life.ops_root)
+        d.mkdir(parents=True, exist_ok=True)
+        OS.write_json(d / "latest.json", rep)
+        summ = {k: rep[k] for k in ("as_of", "curated_states", "unresolved_nonactive", "action_required", "counts")}
+        summ["actions"] = rep["actions"][:40]
+        OS.append_jsonl(d / "history.jsonl", [{k: v for k, v in summ.items() if k != "actions"}])
+        return {"status": "OK", **summ}
+    except Exception as e:                                # noqa: BLE001 -- monitoring never blocks an acquisition
+        return {"status": "UNAVAILABLE", "reason": f"{type(e).__name__}: {str(e)[:160]}"}
 
 
 POLL_HEALTH_WRITER_WAIT_SEC = 60.0      # the poll waits this long for the writer lock for its health merge ONLY

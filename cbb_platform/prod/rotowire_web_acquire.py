@@ -578,6 +578,52 @@ class WebIdentity:
         return {**out, "canonical_player_id": pid, "identity_resolution_status": "RESOLVED",
                 "identity_method": "EXPLICIT_WEB_PLAYER_MAP"}
 
+    def resolve_stored(self, prev: dict) -> dict | None:
+        """Re-resolve a STORED event's identity (a player no longer on RotoWire's current list is never re-observed) at
+        the canonical team its team name resolved to when observed. None -> not re-resolvable (no stored team)."""
+        tid = prev.get("canonical_team_id")
+        if not isinstance(tid, str) or not tid:
+            return None
+        out = {"canonical_team_id": tid, "team_resolution": prev.get("team_resolution") or "EXPLICIT_WEB_TEAM_MAP",
+               "canonical_player_id": None}
+        ids = self.player.get(str(prev.get("rotowire_player_id")), set())
+        if len(ids) > 1:
+            return {**out, "identity_resolution_status": "AMBIGUOUS", "identity_method": "EXPLICIT_MAP_CONFLICT"}
+        if not ids:
+            return {**out, "identity_resolution_status": "UNMATCHED", "identity_method": "PROVIDER_ID_UNMAPPED"}
+        pid = next(iter(ids))
+        if (pid, tid) not in self.on_roster:
+            return {**out, "identity_resolution_status": "UNMATCHED", "identity_method": "EXPLICIT_MAP_NOT_ON_ROSTER"}
+        return {**out, "canonical_player_id": pid, "identity_resolution_status": "RESOLVED",
+                "identity_method": "EXPLICIT_WEB_PLAYER_MAP"}
+
+    def team_name_for(self, tid) -> str | None:
+        """The one persisted RotoWire team spelling that maps (uniquely) to this canonical team, else None."""
+        names = sorted(n for n, t in self.team.items() if t == {tid})
+        return names[0] if len(names) == 1 else None
+
+
+def stale_unresolved_fields(store: RW.EventStore, ident: WebIdentity, current_ids: set) -> list[dict]:
+    """Map-extension fields for provider IDs whose LATEST stored identity is unresolved and that are not on the current
+    snapshot: rebuilt from the stored event (name, position) at the RotoWire team name of its stored canonical team.
+    Used only to let extend_maps add a deterministic map row (same exact-name rule); never ingested as observations."""
+    ev = store.frame()
+    if ev.empty:
+        return []
+    last = RW._order(ev).groupby("rotowire_player_id").tail(1)
+    out = []
+    for e in last.to_dict("records"):
+        pid = str(e["rotowire_player_id"])
+        if pid in current_ids or e.get("identity_resolution_status") == "RESOLVED":
+            continue
+        tn = ident.team_name_for(e.get("canonical_team_id"))
+        if tn is None:
+            continue
+        out.append({"rotowire_player_id": pid, "first_name": e.get("first_name"), "last_name": e.get("last_name"),
+                    "position": e.get("position"), "team_name": tn, "rotowire_team_id": None,
+                    "sportdataio_player_id": None})
+    return out
+
 
 ALIAS_COLS = ["rotowire_team_name", "canonical_team_id", "canonical_display_name", "verified_on", "evidence"]
 REVIEW_FILE = "rotowire_web_map_review.jsonl"
@@ -588,6 +634,7 @@ M_PLAYER_EXACT = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER"
 M_PLAYER_POS = "EXACT_NAME_ON_MAPPED_TEAM_ROSTER_POSITION_DISCREPANCY"
 M_PLAYER_ALIAS = "CURATED_PLAYER_ALIAS"
 M_PLAYER_OMISSION = "EXACT_NAME_ON_VERIFIED_CBBD_ROSTER_OMISSION"   # rank-1/2 evidence row (prod/roster_omissions)
+M_PLAYER_BOX = "EXACT_NAME_ON_BOX_PARTICIPATION_ROSTER"            # rank-2 derived row (roster_omissions.participation_rows)
 PLAYER_ALIAS_COLS = ["rotowire_player_id", "rotowire_player_name", "rotowire_team_name", "canonical_player_id",
                      "canonical_player_name", "canonical_team_id", "alias_type", "verified_on", "evidence"]
 PLAYER_ALIAS_TYPES = ("SHORT_FORM_FIRST_NAME", "PUNCTUATION_OR_SUFFIX", "DOCUMENTED_NICKNAME", "DOCUMENTED_FULL_NAME_FORM")
@@ -672,8 +719,10 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
     have_t, have_p = set(tm["rotowire_team_name"]), set(pm["rotowire_player_id"].astype(str))
     roster_teams = set(ctx._roster["canonical_team_id"])
     src = ctx._roster["roster_source"] if "roster_source" in ctx._roster else pd.Series("CBBD", index=ctx._roster.index)
-    om = ctx._roster[src != "CBBD"]
+    om = ctx._roster[src == "CBBD_ROSTER_OMISSION"]
     omitted = set(zip(om["canonical_player_id"], om["canonical_team_id"]))
+    bx = ctx._roster[src == "BOX_PARTICIPATION"]
+    boxed = set(zip(bx["canonical_player_id"], bx["canonical_team_id"]))
     new_t, review = [], []
     names = {f["team_name"] for f in fields if f.get("team_name")}
     for name in sorted(names & have_t):                    # a persisted row is never overwritten: disagreement -> review
@@ -730,7 +779,8 @@ def extend_maps(ctx: RW.IdentityContext, fields: list[dict], map_root: Path = PC
         if r["team_resolution"] != "EXPLICIT_MAP":
             review.append(_review_player(ctx, f, {**r, "identity_method": "TEAM_UNMATCHED"}))
         elif r["identity_resolution_status"] == "RESOLVED":
-            how = M_PLAYER_OMISSION if (r["canonical_player_id"], r["canonical_team_id"]) in omitted else M_PLAYER_EXACT
+            k = (r["canonical_player_id"], r["canonical_team_id"])
+            how = M_PLAYER_OMISSION if k in omitted else M_PLAYER_BOX if k in boxed else M_PLAYER_EXACT
             cand.append(({**row, "canonical_player_id": r["canonical_player_id"], "method": how}, None, f))
         elif r["identity_method"] == "EXACT_NAME_POSITION_CONFLICT":
             team = exact._by_team[r["canonical_team_id"]]
@@ -1082,6 +1132,16 @@ def acquire(client: WebClient, ctx: RW.IdentityContext | None, *, store: RW.Even
         if ingest:
             if automap and ctx is not None:
                 rep["snapshot_maps"] = _map_counts(extend_maps(ctx, fields, map_root, client.clock()))
+                # 2026-11-27 (Stage 04): a player who left the current list keeps his last (unresolved) identity forever
+                # -- he is never re-observed. Offer his stored fields to the SAME map rule; only rows it would add are
+                # written (no review noise); ingest_parsed then re-resolves him (IDENTITY_RERESOLVED, knowable now).
+                stale = stale_unresolved_fields(store, ident, {str(x["rotowire_player_id"]) for x in fields})
+                if stale:
+                    add = {r["rotowire_player_id"] for r in extend_maps(ctx, stale, map_root, client.clock(),
+                                                                        write=False)["player_rows"]}
+                    if add:
+                        rep["stale_identity_maps"] = _map_counts(extend_maps(
+                            ctx, [x for x in stale if x["rotowire_player_id"] in add], map_root, client.clock()))
                 ident.reload()
             out = RW.ingest_parsed(fields, len(rows), len(rows) - len(fields),
                                    {"collected_at": meta["collected_at"], "raw_payload_sha256": meta["sha256"]},

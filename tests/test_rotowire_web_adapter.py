@@ -1060,22 +1060,23 @@ def test_shipped_player_states_table_is_valid_and_exempts_only_documented_player
     from cbb_platform.prod import roster_omissions as RO
     s = PS.load()                                                          # the production table validates
     assert set(s["operational_class"]) <= set(PS.CURATED) and (s["evidence"].str.len() > 40).all()
-    at = pd.Timestamp("2026-11-27T15:00Z")                                # re-verification of 2026-11-26
+    at = pd.Timestamp("2026-11-27T15:00Z")                                # Stage 04 re-verification of 2026-11-27
     exempt = {p for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]) if PS.non_blocking(s, p, t, at)}
     assert exempt == {"20532", "20395", "20354", "20474", "20936", "21195", "26727", "20593", "21070", "27904", "26154",
-                      "21227", "27852", "20406", "21537", "21956", "22239", "22939", "23053"}
+                      "21227", "27852", "20406", "21537", "21956", "22239", "22939", "23053", "20703"}
     assert PS.classify(s, "23921", "T-7dd7b1683d08fb35", at) == PS.SOURCE_CONFLICT          # Maclin keeps blocking
+    assert PS.classify(s, "20923", "T-262cae9a09cabf1a", at) == PS.SOURCE_CONFLICT          # Carter: recorded conflict
     assert PS.classify(s, "22939", "T-1515439d0974808f", at) == PS.ROSTERED_LONG_TERM_OUT  # Council (pre-map event)
-    assert PS.classify(s, "26154", "T-aacc10aee85ee832", at) is None                       # Nwuli: Seton Hall row only
-    for pid in ("20703", "21059", "20923", "20575", "25207", "22964"):  # played (Luis, Avila@TCU) or not re-verified
-        assert not any(PS.non_blocking(s, pid, t, at) for t in s["affiliated_team_id"])    # -> lapsed, fails closed
+    assert PS.classify(s, "26154", "T-aacc10aee85ee832", at) == PS.STALE_NONCURRENT        # Nwuli: Rutgers record
+    for pid in ("25207", "22964"):                                         # not re-verified -> lapsed, fails closed
+        assert not any(PS.non_blocking(s, pid, t, at) for t in s["affiliated_team_id"])
+    assert not {"21059", "20575"} & set(s["rotowire_player_id"])           # Avila@TCU, Lindsay-Martin: playing
     assert not PS.non_blocking(s, "20593", "T-0d7c299d41bf5c14", pd.Timestamp("2026-12-18T15:00Z"))  # Odum: eligible
     assert not PS.non_blocking(s, "20395", "T-5b19c5328a174ffa", pd.Timestamp("2026-12-10T15:00Z"))  # re-verify
     assert not any(PS.non_blocking(s, p, t, pd.Timestamp("2027-01-04T15:00Z"))                     # every row lapses
                    for p, t in zip(s["rotowire_player_id"], s["affiliated_team_id"]))
-    om = RO.load()                                                         # verified CBBD roster omissions
-    assert dict(zip(om["rotowire_player_id"], om["canonical_player_id"])) == {
-        "27385": "P-e94354c3d235b354", "23073": "P-b8eadb49953f9937", "28337": ""}         # Mattingly: no id minted
+    om = RO.load()                         # Harris/Griman now CBBD-listed, Mattingly via BOX_PARTICIPATION: moot rows removed
+    assert om.empty
     assert set(om["rotowire_player_id"]).isdisjoint(s["rotowire_player_id"])               # one disposition per player
 
 # ============================================================================ source precedence: CBBD roster omissions (2026-11-09)

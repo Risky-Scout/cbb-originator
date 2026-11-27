@@ -147,3 +147,146 @@ def conflict_blocks(row: dict, state: dict | None, last_news_at, participated: b
     if participated:
         return True, "CONFLICT_CURRENT_SEASON_PARTICIPATION"
     return False, "CONFLICT_DETERMINISTICALLY_UNAVAILABLE"
+
+
+# ============================================================================ curated-state maintenance (Stage 04)
+# Curated rows lapse by design (fail closed again until a human re-verifies) -- and on 2026-11-13..26 they lapsed
+# silently, so known inactive players blocked their teams' games, and rows that newer authorized observations had
+# already contradicted (a player who has since played; RotoWire moved the player to another team) were never noticed.
+# reconcile() is READ-ONLY monitoring: it never extends, edits or applies a row, and nothing fails open because of it.
+EXPIRY_WARN_DAYS = 7
+INACTIVE_CLASSES = (AFFILIATED_INACTIVE_ELIGIBILITY, AFFILIATED_ROSTER_LIMIT, DELAYED_ELIGIBILITY, STALE_NONCURRENT,
+                    PROFESSIONAL_NONCURRENT, ROSTERED_LONG_TERM_OUT)
+ACTION = ("EXPIRED_BLOCKING", "TEAM_CHANGED_BLOCKING", "CONTRADICTED_BY_PARTICIPATION", "EXPIRING_SOON_BLOCKING_IF_LAPSED",
+          "UNRESOLVED_NOW_RESOLVABLE", "UNRESOLVED_UNCURATED_BLOCKING", "OMISSION_EXPIRED_NOT_MOOT")
+
+
+def _lapse(row: dict, day: pd.Timestamp, warn_days: int) -> str:
+    v, r = pd.Timestamp(row["verified_on"]), pd.Timestamp(row["review_by"])
+    if day < v:
+        return "NOT_YET_IN_FORCE"
+    if day >= r:
+        return "EXPIRED"
+    if row.get("eligible_from") and day >= pd.Timestamp(row["eligible_from"]):
+        return "ELIGIBLE_FROM_REACHED"
+    return "EXPIRING_SOON" if (r - day).days <= warn_days else "IN_FORCE"
+
+
+def reconcile(states: pd.DataFrame, omissions: pd.DataFrame, pstate: pd.DataFrame, roster: pd.DataFrame,
+              box: pd.DataFrame | None, as_of, warn_days: int = EXPIRY_WARN_DAYS, names: dict | None = None) -> dict:
+    """Every curated row and every unresolved non-active RotoWire record at as_of, classified (read-only).
+    pstate: rotowire_feed.player_state at as_of; roster: the identity roster (CBBD + applied omissions + box
+    participation; roster_source column optional); box: 2026-27 box lines (roster_omissions.BOX_COLS) or None;
+    names: {rotowire_player_id: observed RotoWire name} (event_names) for the uncurated unresolved records."""
+    from cbb_platform.prod import matching as MT, roster_omissions as RO, rotowire_feed as RW
+    T = pd.Timestamp(as_of)
+    T = T.tz_localize("UTC") if T.tzinfo is None else T.tz_convert("UTC")
+    day = pd.Timestamp(_day(T))
+    ps = {str(r["rotowire_player_id"]): r for r in (pstate.to_dict("records") if pstate is not None else [])}
+    bx = pd.DataFrame(columns=RO.BOX_COLS) if box is None else box
+    bx = bx[pd.to_datetime(bx["historical_knowable_at"], utc=True) <= T] if len(bx) else bx
+    played = {}
+    for p, t, k in zip(bx.get("canonical_player_id", []), bx.get("canonical_team_id", []),
+                       pd.to_datetime(bx["historical_knowable_at"], utc=True) if len(bx) else []):
+        if isinstance(p, str):
+            played.setdefault(p, []).append((t, k))
+    r = roster.copy()
+    full = (r.get("first_name", pd.Series("", index=r.index)).fillna("") + " "
+            + r.get("last_name", pd.Series("", index=r.index)).fillna("")).str.strip()
+    r["_n"] = [MT.norm(a) or MT.norm(b) for a, b in zip(full, r["player_name"])]
+    by_name = r.groupby(["canonical_team_id", "_n"])["canonical_player_id"].agg(set).to_dict() if len(r) else {}
+    unresolved = lambda s: s is not None and s.get("identity_resolution_status") != "RESOLVED" \
+        and s.get("effective_status") not in ("ACTIVE", RW.NOT_LISTED)
+    rows = []
+    for row in (states.to_dict("records") if states is not None else []):
+        pid, tid = row["rotowire_player_id"], row["affiliated_team_id"]
+        s = ps.get(pid)
+        lapse = _lapse(row, day, warn_days)
+        obs_team = s.get("canonical_team_id") if s else None
+        flags = []
+        if s is None:
+            obs = "NOT_OBSERVED"
+        elif s.get("identity_resolution_status") == "RESOLVED":
+            obs = "RESOLVED_ROW_MOOT"
+        elif obs_team != tid:
+            obs = "TEAM_CHANGED"
+        elif not unresolved(s):
+            obs = "INERT_ACTIVE_OR_NOT_LISTED"
+        else:
+            obs = "APPLIES"
+        blocking_if_lapsed = unresolved(s) and row["operational_class"] in NON_BLOCKING
+        if lapse == "EXPIRED" and obs == "APPLIES":
+            flags.append("EXPIRED_BLOCKING")
+        if obs == "TEAM_CHANGED" and unresolved(s):
+            flags.append("TEAM_CHANGED_BLOCKING")
+        if lapse == "EXPIRING_SOON" and blocking_if_lapsed and obs == "APPLIES":
+            flags.append("EXPIRING_SOON_BLOCKING_IF_LAPSED")
+        cid = row.get("canonical_player_id") or ""
+        later = [k for t, k in played.get(cid, []) if k.tz_convert("America/New_York").date() >= pd.Timestamp(row["verified_on"]).date()] \
+            if cid else []
+        if later and row["operational_class"] in INACTIVE_CLASSES:
+            flags.append("CONTRADICTED_BY_PARTICIPATION")
+        rows.append({"kind": "CURATED_STATE", "rotowire_player_id": pid, "name": row["rotowire_player_name"],
+                     "operational_class": row["operational_class"], "affiliated_team_id": tid,
+                     "observed_team_id": obs_team, "effective_status": s and s.get("effective_status"),
+                     "identity": s and s.get("identity_resolution_status"), "lapse": lapse, "review_by": row["review_by"],
+                     "observation": obs, "box_lines_since_verified": len(later), "flags": flags})
+    cur = set(states["rotowire_player_id"]) if states is not None and len(states) else set()
+    for pid, s in sorted(ps.items()):
+        if pid in cur or not unresolved(s):
+            continue
+        flags = []
+        tid = s.get("canonical_team_id")
+        om = RO.in_force(omissions, T) if omissions is not None else pd.DataFrame(columns=RO.COLS)
+        if isinstance(tid, str) and RO.recruit_anchored(om, pid, tid):
+            obs = "RECRUIT_ANCHORED_OMISSION"
+        else:
+            obs = "UNCURATED"
+            flags.append("UNRESOLVED_UNCURATED_BLOCKING")
+        rows.append({"kind": "UNRESOLVED_RECORD", "rotowire_player_id": pid, "name": (names or {}).get(pid),
+                     "observed_team_id": tid,
+                     "effective_status": s.get("effective_status"), "identity": s.get("identity_resolution_status"),
+                     "observation": obs, "flags": flags})
+    for row in (omissions.to_dict("records") if omissions is not None else []):
+        lapse = _lapse(row, day, warn_days)
+        cid, tid = row["canonical_player_id"], row["canonical_team_id"]
+        listed = bool(cid) and cid in by_name.get((tid, MT.norm(row["player_name"])), set())
+        named = by_name.get((tid, MT.norm(row["player_name"])), set())
+        moot = listed or (not cid and bool(named))
+        flags = ["OMISSION_EXPIRED_NOT_MOOT"] if lapse == "EXPIRED" and not moot else []
+        rows.append({"kind": "ROSTER_OMISSION", "rotowire_player_id": row["rotowire_player_id"], "name": row["player_name"],
+                     "canonical_team_id": tid, "lapse": lapse, "review_by": row["review_by"],
+                     "observation": "MOOT_ROSTER_LISTS_PLAYER" if moot else "NEEDED", "flags": flags})
+    # unresolved records whose identity has since become deterministically resolvable (exact name on the identity
+    # roster of the observed team -- the map rule extend_maps applies at the next acquisition)
+    for x in rows:
+        if x["kind"] == "ROSTER_OMISSION" or x.get("identity") == "RESOLVED" or not isinstance(x.get("observed_team_id"), str):
+            continue
+        s = ps.get(x["rotowire_player_id"])
+        if s is None:
+            continue
+        hit = by_name.get((x["observed_team_id"], MT.norm(x.get("name") or "")), set())
+        if len(hit) == 1:
+            x["flags"].append("UNRESOLVED_NOW_RESOLVABLE")
+            x["resolvable_canonical_player_id"] = next(iter(hit))
+    counts = {}
+    for x in rows:
+        for k in [x.get("lapse"), x.get("observation")] + x["flags"]:
+            if k:
+                counts[f"{x['kind']}:{k}"] = counts.get(f"{x['kind']}:{k}", 0) + 1
+    action = [x for x in rows if set(x["flags"]) & set(ACTION)]
+    return {"as_of": T.isoformat(), "warn_days": warn_days, "curated_states": int(len(states)) if states is not None else 0,
+            "unresolved_nonactive": sum(1 for s in ps.values() if unresolved(s)), "counts": dict(sorted(counts.items())),
+            "action_required": len(action), "actions": [{k: x.get(k) for k in ("kind", "rotowire_player_id", "name",
+                                                         "observed_team_id", "flags")} for x in action],
+            "rows": rows}
+
+
+def event_names(events: pd.DataFrame) -> dict:
+    """{rotowire_player_id: 'first last'} of each provider ID's latest stored event."""
+    if events is None or events.empty:
+        return {}
+    last = events.sort_values("seq", kind="mergesort").groupby("rotowire_player_id").tail(1)
+    return {str(p): " ".join(x for x in (f, l) if isinstance(x, str) and x)
+            for p, f, l in zip(last["rotowire_player_id"], last["first_name"], last["last_name"])}
+
