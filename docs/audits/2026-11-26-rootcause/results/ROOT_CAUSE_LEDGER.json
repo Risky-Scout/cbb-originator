@@ -576,7 +576,7 @@
  },
  "stage5_availability_math_20261127": {
   "recorded_at": "2026-11-27T18:45Z",
-  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE",
+  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE (closure C3 included)",
   "scope": "injury / availability / confirmed-lineup mathematics: trace, counterfactuals, participation-state consistency, game bridge; no model refit, no new coefficient, no rotation model",
   "evidence": "docs/audits/2026-11-27-stage5 (README.md, DEPLOY_PROCEDURE.md, results/, scripts/, candidate sha256sums); Droplet /var/lib/sports-models/cbb-originator/audit/stage5-20261127",
   "implemented_mechanisms": {
@@ -622,27 +622,34 @@
   },
   "tests": {
    "focused": "176 + 120 + 20 passed (rotowire adapter +5/1 updated, coherence +2, stage4, availability, release_b, live_feed, refresh_split, game_*, lifecycle availability, identity conflicts)",
-   "ci": {
+   "ci_594ec8b": {
     "workflow": "cbb-production-ci.yml",
     "run_id": 46046420877,
     "sha": "594ec8b96bc93a4e1975331dc751f6f591435228",
     "conclusion": "success"
+   },
+   "ci": {
+    "workflow": "cbb-production-ci.yml",
+    "run_id": 46052406957,
+    "sha": "d392832e579727088f690930f1ac87f29c7867e5",
+    "conclusion": "success"
    }
   },
-  "commit": "594ec8b96bc93a4e1975331dc751f6f591435228",
+  "commit": "d392832e579727088f690930f1ac87f29c7867e5",
   "lineage": [
    "9f65e7f (deployed)",
    "93e5cd278323e5e78fc43a58b8eb2bed68195c4a (Stage 04)",
    "f15d85e",
    "ff59cf8",
    "abb466e (Stage 05 corrections)",
-   "594ec8b96bc93a4e1975331dc751f6f591435228 (docstring + evidence)"
+   "594ec8b96bc93a4e1975331dc751f6f591435228 (docstring + evidence)",
+   "d392832e579727088f690930f1ac87f29c7867e5 (closure C3)"
   ],
   "release_candidate": {
-   "sha": "594ec8b96bc93a4e1975331dc751f6f591435228",
-   "supersedes": "93e5cd2 (by lineage)",
-   "staged": "/opt/sports-models/cbb-originator/releases/594ec8b96bc93a4e1975331dc751f6f591435228.tmp",
-   "files": 915,
+   "sha": "d392832e579727088f690930f1ac87f29c7867e5",
+   "supersedes": "594ec8b (never deployed; tree removed) and 93e5cd2 by lineage",
+   "staged": "/opt/sports-models/cbb-originator/releases/d392832e579727088f690930f1ac87f29c7867e5.tmp",
+   "files": 921,
    "hashes": "identical",
    "deployed": false,
    "production_current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
@@ -666,6 +673,19 @@
    "gamma 0.3 conservative prior (not fitted), beta 0; confirmed-ACTIVE asymmetry in S"
   ],
   "operational_note": "UNSUPPORTED_ROTATION_SHOCK also fires for curated LTO/ineligible players with stale min_mu>=20 or TOP5 (same fail-closed rule as RotoWire OUT)",
-  "next_eligible_stage": "Stage 06 on owner instruction"
+  "next_eligible_stage": "Stage 06 on owner instruction",
+  "closure_20261127": {
+   "news_free_reference": "INTERNAL_REFERENCE_ONLY: team_strength(news_free=True) inside each snapshot for dS (C2); never published, priced or exported; needs no news-free production snapshot",
+   "D5.3_initial_suppressed_valid_information": "INITIAL_0700 and REFIT_RETRY are production forecasts (PMFs, Distributions, Boards) but ran with rotowire_root=None; 11-08..27: 268 simulated player-game rows with a knowable confirmed OUT/LTO (258 RotoWire, 10 curated), 34 at p_play>=0.5 (max 0.958), 37 on 11-27; 20 never corrected by a later lifecycle snapshot (11-24 refresh outage, 11-26 early tip); gated players simulated without gate 0-43/snapshot",
+   "C3": "INITIAL/REFIT_RETRY consume knowable availability under rotowire_state (no acquisition); snapshot+index availability_source; CBB_INITIAL_AVAILABILITY=OFF fallback; game INITIAL-baseline fallback honoured only with OFF",
+   "other_production_paths": "official T-1h tick consumes the canonical state (since 11-26; stale -> game fails closed); refresh windows consume and re-forecast; acquisition unchanged (authorized WEB session + PASS acceptance marker)",
+   "actionability": "unchanged, fail-closed",
+   "tests": "test_full_snapshots_consume_availability_already_knowable[INITIAL|REFIT_RETRY], coherence fallback pairing; focused 260 passed",
+   "evidence": "docs/audits/2026-11-27-stage5 README section 7, results/initial_gap.*",
+   "assigned_to_stage19": [
+    "availability_changes treats stored NO_REPORT != no row: every refresh re-forecasts every remaining pre-cutoff game (11-27 10:00 ET 45/45 games, 2006 'changed' players); writer-lock occupancy, not information loss"
+   ],
+   "ops_lesson": "timeout around ssh/systemd-run does not stop the transient unit; stop the unit explicitly"
+  }
  }
 }

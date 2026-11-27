@@ -43,7 +43,7 @@ ec32c77137fd30493c152ba79be55e5a2e0db0bed4012b7e40a0ddf343888f12  ./cbb_platform
 f12d864d9c3a8645e67a32c92b0bfd3313d56289b0ae0e9a40741652dc4494bf  ./cbb_platform/event_equivalence.py
 0cf81045124d562df46aa6da8cbc41fda82a29d98231df8ace7141d82403019f  ./cbb_platform/event_metrics.py
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./cbb_platform/game/__init__.py
-2d9eacd2350599effeeb6cd2c29cbe047a7bc83eecd0801f5b725446b1a960b9  ./cbb_platform/game/forecast.py
+fdf9c95c4988d59168d16c55aa293409625f806efb248fac2ccdbca40e88cf63  ./cbb_platform/game/forecast.py
 fbf0790cc43f9f84f0325ac22fdd6ac6a74e5d9569eb9f9ba4f0bb2af1e07729  ./cbb_platform/game/joint.py
 d00e9536d6f072559eaa728a3819684b44654e3b983f598cdc657b8278475ea6  ./cbb_platform/game/markets.py
 5f30dd11e3ac9e1c3f79618c97db44e8f2d59f970b07a6c109e2fdeee31ad227  ./cbb_platform/game/model.py
@@ -99,7 +99,7 @@ a7356921d2d91645e148d556aa423343b8b0d66907839153db3cd97af29d3478  ./cbb_platform
 75e633498822a67b68b0e82c18699b049e061a415bb34a104ea527662cf46c26  ./cbb_platform/prod/identity_conflicts.py
 533088922043679f1301b8799a88ac24312d14e08b5e56328d18d214d69af2e9  ./cbb_platform/prod/inputs.py
 07f851a1b8178f90917a33e9f2e7ac49970edc1b2068679b7ea4204256068cfa  ./cbb_platform/prod/ledger.py
-c5dcb8c968090259a72014f64cd7b8d688f0f0c88d74ba0cb9ddbc4cf495b427  ./cbb_platform/prod/lifecycle.py
+b979cd1b3763442ae34c154ec701ffe6dcba1980252c734228f2b9b1a48b7392  ./cbb_platform/prod/lifecycle.py
 9d914b5b3c5c5c6c8dd1c50392bf9de62688c1e176b70eb53863dd1a930cab4b  ./cbb_platform/prod/loader.py
 af3df27319c8828fb2050b5ca4fae66150876793f5671f6a4148ad68a574134d  ./cbb_platform/prod/market_eval.py
 b9789196bb5d05213c180f9006c1f6f7d2e1e1d796356e38b68cfbaf4bb7daca  ./cbb_platform/prod/market_exports.py
@@ -506,7 +506,7 @@ b64fbd0987585179035f96ea8d05a8792004963cd7198ec9a0ef61dddc57e7c4  ./docs/audits/
 b4793b68e5f89246339d3b90addcef9f5a7533d0ad3848976976d21c2a7e342a  ./docs/audits/2026-11-26-rootcause/results/PLAYER_TEAM_BRIDGE_REPORT.json
 6adb6a01a6ce0ec29c4192994c4d365d7e45b0e1995fbeada566c2e43f1cef9f  ./docs/audits/2026-11-26-rootcause/results/PRESEASON_PLAYER_PRIOR_REPORT.json
 657b8abff7aa191f913ab2b3b624426782d65394163b26bc4116744187a763c0  ./docs/audits/2026-11-26-rootcause/results/PRESEASON_TEAM_PRIOR_REPORT.json
-cd663b16dbd0f5c11648f3cea5d427f7e426ccef393568449b0678930c8ead9c  ./docs/audits/2026-11-26-rootcause/results/ROOT_CAUSE_LEDGER.json
+d3406183ff29064bd195cebc9bf9e9af06f40860c1ea66d7d8b663fad4688cfe  ./docs/audits/2026-11-26-rootcause/results/ROOT_CAUSE_LEDGER.json
 e4e0a11ab6797cd88e60bd4018c473b5e4b7c7977f6ef08f0d2aa0cb2b797a08  ./docs/audits/2026-11-26-rootcause/results/ROTOWIRE_RESPONSE_AUDIT.json
 aa8e9da196060af66891cad697c58484bded2bf3099374b369ae598765896f63  ./docs/audits/2026-11-26-rootcause/results/_incumbent_run.json
 5413b1a217f7da7fd7a317213d22b93a898148bac0a3b568247d5c9b6275ee08  ./docs/audits/2026-11-26-rootcause/results/p3_player_prior_by_class.json
@@ -615,7 +615,9 @@ ebb8f9b3783c996ca613e9584e2d74a98d55e25c66053eb429d4e3bfdae09391  ./docs/audits/
 f8bd4e94d089cea6ae5cc0cf2b689df40bad50acfdb5f7733887b80a0644269f  ./docs/audits/2026-11-27-stage4/scripts/s4_rostergap.py
 d8c6db6adeffeea753f17b30672375eadff4312fc6674b662947b35d0762e647  ./docs/audits/2026-11-27-stage4/scripts/s4_run.sh
 a8b42164e29c98fb628e59f32c7cde4a917721c3dfd719066211888dc96db82a  ./docs/audits/2026-11-27-stage4/scripts/s4_tables.py
-7e947614003a55940c6acfb044354b7ceeae45f11519ef8724092917c07b4937  ./docs/audits/2026-11-27-stage5/README.md
+74474a5b1f24e149a16047c2874837c0b81e7c45f3d85a45e2d55ffee7d2c7c7  ./docs/audits/2026-11-27-stage5/DEPLOY_PROCEDURE.md
+caf11f40b6d2a07c4b136880d0e63a329dc59b37bff8f176499d989ab74c33b8  ./docs/audits/2026-11-27-stage5/README.md
+9b4ab1b166d7ef5acd13ba7f1e3e0e334f6eed554cb8626a6ccb36a4cb4fc32d  ./docs/audits/2026-11-27-stage5/candidate_594ec8b96bc93a4e1975331dc751f6f591435228.sha256sums
 74e7e20635b5ba2cdc7084aaa263e8a5be1cbc62778f602146d43ada5db64208  ./docs/audits/2026-11-27-stage5/results/confirmed_out_rows.csv
 828ecfdacec598a6313974869109e7b53d346e7c6ce4d39253d65a2ad3336ebd  ./docs/audits/2026-11-27-stage5/results/counterfactual.log
 bc1b6b24db624ad558fee58cf6f4694fba99880d0aed99d57325099f23f9713e  ./docs/audits/2026-11-27-stage5/results/counterfactual_G-0648df8eb36bddd3.json
@@ -638,11 +640,15 @@ ec10888cb233b315c98f000249c3c0e14455ef5030531b4be0e9cdb01be225d8  ./docs/audits/
 223f53c134e7ff5545ac3d6b74ae7b541f3f4f981ddd3ce473126bd35d5579a0  ./docs/audits/2026-11-27-stage5/results/game_baseline_vs_initial_2026-11-23.csv
 4242befbea6895ab8d7c3bb437a6e816da94d20f5a3c7504fa05383001260aba  ./docs/audits/2026-11-27-stage5/results/game_baseline_vs_initial_2026-11-26.csv
 094a1301986238f6959e1c5340857eeee1dd73486a30e20c25070889e7ceb9cf  ./docs/audits/2026-11-27-stage5/results/game_layer_out_mass.csv
+c1376d1de0bbda004d5315922432a146138d6be03c59edf9f8ff5f5db427102c  ./docs/audits/2026-11-27-stage5/results/initial_gap.json
+046ddec3a9e32a7eaf89a3824800aacb26cd95b53cd07c3b31bb776af898c84b  ./docs/audits/2026-11-27-stage5/results/initial_gap.log
+2eca38ae49dc9606d7155a0cd8b7297061e0387c09b456563df4202f268c4c0b  ./docs/audits/2026-11-27-stage5/results/initial_gap_rows.csv
 0aa62ddbb054c9385f78191e7067106b2662aea1b6ac16495b27a775457f8748  ./docs/audits/2026-11-27-stage5/results/status_measure.json
 ce3c03e7c09fb731151418b2708b04a5e152453036c3429bef5659ae8455a022  ./docs/audits/2026-11-27-stage5/scripts/s5_counterfactual.py
 9c0c7850dddc49a59da74a443bfe6434b307e53c00793ea79c18bdbf67573744  ./docs/audits/2026-11-27-stage5/scripts/s5_curated_after.py
 67ce6e7eb2ed5375eaa44868aa1c94218bf7ecb7680b1bf3b2d7eeec17ad6a85  ./docs/audits/2026-11-27-stage5/scripts/s5_curated_presence.py
 c3add979c8b2d0296aeec700856ea5b5ccf13fefcbad49dbcf42f4afdc645218  ./docs/audits/2026-11-27-stage5/scripts/s5_game_baseline.py
+4a5539b7fe12a4a5cf1ac744720a524181a18b79da3ffd663170655f08889db4  ./docs/audits/2026-11-27-stage5/scripts/s5_initial_gap.py
 388cc6bff834e707a03fcc75e0b0edeedc45b25cf495efd475d0f91ad7ae6d3d  ./docs/audits/2026-11-27-stage5/scripts/s5_run.sh
 02bc46ca67168fef4a1175ceaeff7bf415cbb953793397e899e87855a9d68be6  ./docs/audits/2026-11-27-stage5/scripts/s5_status_measure.py
 d94307184e8f63baf2050135767f045193c34e4ae5642ccca3543a877fb9ae2f  ./docs/game_model/CBB_GAME_MODEL_RELEASE_B.md
@@ -794,7 +800,7 @@ d4eba0514d250ea7959adda6bd64a2a27ab5128a75c0a559a6af738be6c3ac39  ./tests/confte
 a5d6f862e43efa694302735c87762e9158425b76b05627035b636af303360760  ./tests/fixtures/golden/prod_equivalence_v1.json
 ba542a18c6604657e2ad05f79c20a6532c4be54a6d0c5126e0d817ed598a3bb0  ./tests/morning_stage_harness.py
 78bdb7781476e5dcfd3f99bc65948d97dc373f30d39d8e05e70c721ad698c835  ./tests/test_adapters.py
-a8b8e9e5130828aa5da5f32f921252d50c0bf58469b2969aec6e4509c92cad61  ./tests/test_availability_refresh_split.py
+af631215cb519ab3d229d5ba3cdaaf0403919c9c20d4b33d948464a585ea014a  ./tests/test_availability_refresh_split.py
 f368dda3365b6b835b459bf1fd22ea591940236ec75603ede68b131a87f74c48  ./tests/test_canonical_qa.py
 6fda3ba20afe635fdd7ca36545ad864baa8d1644806356264a5b5c619205050a  ./tests/test_cbbd_box_route.py
 c316c46c91ac7445756f71d3299b2f28356d5fcada7da2590675b8f9e8064cf5  ./tests/test_cbbd_box_route_reconcile.py
@@ -825,7 +831,7 @@ f446cf0150697505ed056f0f66ea9af1c6038fe07cf285c3d859e0cae2b1eec2  ./tests/test_m
 b31e8fdc894f0833d74891d43013708da797bb7c75785ad24e467ff7815f783f  ./tests/test_model_registry.py
 46ba2236a462649c2cce717435e63d37d2f8ad753152eec10899560e49d49f4f  ./tests/test_participation.py
 1c12cbdb0fce2a29255f1458eacbbf2b2cb540c4ba61de00eb60d71947607a57  ./tests/test_pit_audit_season_rule.py
-1d2e9673beafe2f93dcab7b292e147e1d76f4db0ff3c265e211f9eed45e1ca1b  ./tests/test_player_game_coherence.py
+637981790d27f4447c340523ab309f2deceb5cf2fc1afb4923995b77472e087f  ./tests/test_player_game_coherence.py
 1fb77258878da38a1323df6791267e00e924ee5b5cc5a2e43d587b24132b7eff  ./tests/test_pre_model_closure.py
 18d652aa426f3ec07028da13771608e542bb23ed2b7f19b368c86a56c3511f6e  ./tests/test_preseason_prior.py
 5b75f3f7c903dd89282f5c0d8b9a01ef0d877adb888d66a0ed0c68665b54bba9  ./tests/test_prod_best_offer.py
