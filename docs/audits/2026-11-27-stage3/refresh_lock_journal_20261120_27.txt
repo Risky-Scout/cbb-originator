@@ -1,0 +1,174 @@
+2026-11-20T15:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-20T15:00:14+00:00 elapsed=13.0s status=COMPLETED sec=13.0
+2026-11-20T15:02:08+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-20T15:02:08+00:00 elapsed=127.1s waited_sec=114.1
+2026-11-20T15:18:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-20T15:18:52+00:00 elapsed=1131.4s held_sec=1004.3
+2026-11-20T15:18:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-20T15:18:52+00:00 elapsed=1131.4s status=PUBLISHED
+2026-11-20T15:18:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-20T15:02:08+00:00",
+2026-11-20T15:18:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1410917]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-20T15:18:52+00:00",
+2026-11-20T18:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-20T18:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-20T18:02:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-20T18:02:18+00:00 elapsed=137.1s waited_sec=125.1
+2026-11-20T18:18:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-20T18:18:54+00:00 elapsed=1133.5s held_sec=996.4
+2026-11-20T18:18:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-20T18:18:54+00:00 elapsed=1133.5s status=PUBLISHED
+2026-11-20T18:18:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-20T18:02:18+00:00",
+2026-11-20T18:18:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1417310]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-20T18:18:54+00:00",
+2026-11-20T21:00:15+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-20T21:00:15+00:00 elapsed=14.0s status=COMPLETED sec=14.0
+2026-11-20T21:02:37+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-20T21:02:37+00:00 elapsed=156.1s waited_sec=142.1
+2026-11-20T21:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-20T21:17:47+00:00 elapsed=1066.4s held_sec=910.3
+2026-11-20T21:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-20T21:17:47+00:00 elapsed=1066.4s status=PUBLISHED
+2026-11-20T21:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-20T21:02:37+00:00",
+2026-11-20T21:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1425865]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-20T21:17:47+00:00",
+2026-11-20T23:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-20T23:00:14+00:00 elapsed=13.0s status=COMPLETED sec=13.0
+2026-11-20T23:02:46+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-20T23:02:46+00:00 elapsed=165.1s waited_sec=152.1
+2026-11-20T23:13:38+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-20T23:13:38+00:00 elapsed=817.3s held_sec=652.3
+2026-11-20T23:13:38+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-20T23:13:38+00:00 elapsed=817.3s status=PUBLISHED
+2026-11-20T23:13:38+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-20T23:02:46+00:00",
+2026-11-20T23:13:38+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1431085]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-20T23:13:38+00:00",
+2026-11-21T15:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-21T15:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-21T15:02:43+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-21T15:02:43+00:00 elapsed=162.1s waited_sec=150.1
+2026-11-21T15:19:40+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-21T15:19:40+00:00 elapsed=1179.7s held_sec=1017.6
+2026-11-21T15:19:40+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-21T15:19:40+00:00 elapsed=1179.7s status=PUBLISHED
+2026-11-21T15:19:40+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-21T15:02:43+00:00",
+2026-11-21T15:19:40+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1479158]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-21T15:19:40+00:00",
+2026-11-21T18:00:11+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-21T18:00:11+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-21T18:02:26+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-21T18:02:26+00:00 elapsed=145.1s waited_sec=134.1
+2026-11-21T18:15:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-21T18:15:51+00:00 elapsed=950.4s held_sec=805.3
+2026-11-21T18:15:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-21T18:15:51+00:00 elapsed=950.4s status=PUBLISHED
+2026-11-21T18:15:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-21T18:02:26+00:00",
+2026-11-21T18:15:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1490577]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-21T18:15:51+00:00",
+2026-11-21T21:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-21T21:00:14+00:00 elapsed=13.1s status=COMPLETED sec=13.1
+2026-11-21T21:02:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-21T21:02:27+00:00 elapsed=146.1s waited_sec=133.1
+2026-11-21T21:12:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-21T21:12:53+00:00 elapsed=772.3s held_sec=626.2
+2026-11-21T21:12:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-21T21:12:53+00:00 elapsed=772.3s status=PUBLISHED
+2026-11-21T21:12:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-21T21:02:27+00:00",
+2026-11-21T21:12:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1498319]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-21T21:12:53+00:00",
+2026-11-21T23:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-21T23:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-21T23:02:38+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-21T23:02:38+00:00 elapsed=157.1s waited_sec=146.0
+2026-11-21T23:09:42+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-21T23:09:42+00:00 elapsed=581.2s held_sec=424.1
+2026-11-21T23:09:42+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-21T23:09:42+00:00 elapsed=581.2s status=PUBLISHED
+2026-11-21T23:09:42+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-21T23:02:38+00:00",
+2026-11-21T23:09:42+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1504764]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-21T23:09:42+00:00",
+2026-11-22T15:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-22T15:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-22T15:02:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-22T15:02:13+00:00 elapsed=132.1s waited_sec=121.0
+2026-11-22T15:15:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-22T15:15:52+00:00 elapsed=951.4s held_sec=819.3
+2026-11-22T15:15:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-22T15:15:52+00:00 elapsed=951.4s status=PUBLISHED
+2026-11-22T15:15:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-22T15:02:13+00:00",
+2026-11-22T15:15:52+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1579943]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-22T15:15:52+00:00",
+2026-11-22T18:00:11+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-22T18:00:11+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-22T18:02:16+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-22T18:02:16+00:00 elapsed=135.1s waited_sec=124.0
+2026-11-22T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-22T18:13:30+00:00 elapsed=809.3s held_sec=674.3
+2026-11-22T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-22T18:13:30+00:00 elapsed=809.3s status=PUBLISHED
+2026-11-22T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-22T18:02:16+00:00",
+2026-11-22T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1586720]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-22T18:13:30+00:00",
+2026-11-22T21:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-22T21:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-22T21:02:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-22T21:02:18+00:00 elapsed=137.1s waited_sec=125.0
+2026-11-22T21:10:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-22T21:10:54+00:00 elapsed=653.3s held_sec=516.2
+2026-11-22T21:10:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-22T21:10:54+00:00 elapsed=653.3s status=PUBLISHED
+2026-11-22T21:10:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-22T21:02:18+00:00",
+2026-11-22T21:10:54+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1591969]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-22T21:10:54+00:00",
+2026-11-22T23:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-22T23:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-22T23:02:03+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-22T23:02:03+00:00 elapsed=122.1s waited_sec=110.1
+2026-11-22T23:09:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-22T23:09:18+00:00 elapsed=557.3s held_sec=435.2
+2026-11-22T23:09:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-22T23:09:18+00:00 elapsed=557.3s status=PUBLISHED
+2026-11-22T23:09:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-22T23:02:03+00:00",
+2026-11-22T23:09:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1597426]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-22T23:09:18+00:00",
+2026-11-23T15:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-23T15:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-23T15:02:40+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-23T15:02:40+00:00 elapsed=159.1s waited_sec=148.1
+2026-11-23T15:14:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-23T15:14:59+00:00 elapsed=898.3s held_sec=739.3
+2026-11-23T15:14:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-23T15:14:59+00:00 elapsed=898.3s status=PUBLISHED
+2026-11-23T15:14:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-23T15:02:40+00:00",
+2026-11-23T15:14:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1680910]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-23T15:14:59+00:00",
+2026-11-23T18:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-23T18:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-23T18:02:32+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-23T18:02:32+00:00 elapsed=151.1s waited_sec=140.1
+2026-11-23T18:14:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-23T18:14:30+00:00 elapsed=869.4s held_sec=718.3
+2026-11-23T18:14:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-23T18:14:30+00:00 elapsed=869.4s status=PUBLISHED
+2026-11-23T18:14:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-23T18:02:32+00:00",
+2026-11-23T18:14:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1686671]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-23T18:14:30+00:00",
+2026-11-23T21:00:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-23T21:00:18+00:00 elapsed=15.0s status=COMPLETED sec=15.0
+2026-11-23T21:02:49+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-23T21:02:49+00:00 elapsed=166.1s waited_sec=151.1
+2026-11-23T21:13:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-23T21:13:59+00:00 elapsed=836.4s held_sec=670.3
+2026-11-23T21:13:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-23T21:13:59+00:00 elapsed=836.4s status=PUBLISHED
+2026-11-23T21:13:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-23T21:02:49+00:00",
+2026-11-23T21:13:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1701163]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-23T21:13:59+00:00",
+2026-11-23T23:00:15+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-23T23:00:15+00:00 elapsed=15.0s status=COMPLETED sec=15.0
+2026-11-23T23:02:50+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-23T23:02:50+00:00 elapsed=169.1s waited_sec=154.0
+2026-11-23T23:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-23T23:11:53+00:00 elapsed=712.3s held_sec=543.2
+2026-11-23T23:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-23T23:11:53+00:00 elapsed=712.3s status=PUBLISHED
+2026-11-23T23:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-23T23:02:50+00:00",
+2026-11-23T23:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1709482]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-23T23:11:53+00:00",
+2026-11-24T15:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-24T15:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-24T15:05:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]: cbb-availability-refresh[10:00]: DEFERRED_WRITER_LOCK at=2026-11-24T15:05:12+00:00 elapsed=311.0s waited_sec=300.0 attempt=1
+2026-11-24T15:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]: cbb-availability-refresh[10:00]: DEFERRED_WRITER_LOCK at=2026-11-24T15:13:31+00:00 elapsed=810.0s waited_sec=199.0 attempt=2
+2026-11-24T15:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-24T15:13:31+00:00 elapsed=810.0s status=DEFERRED_WRITER_LOCK
+2026-11-24T15:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]:  "STATUS": "DEFERRED_WRITER_LOCK",
+2026-11-24T15:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]:  "PHASE_B_LOCK_ACQUIRED_AT": null,
+2026-11-24T15:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1759938]:  "PHASE_B_LOCK_RELEASED_AT": null,
+2026-11-24T18:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-24T18:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-24T18:05:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]: cbb-availability-refresh[13:00]: DEFERRED_WRITER_LOCK at=2026-11-24T18:05:12+00:00 elapsed=311.0s waited_sec=300.0 attempt=1
+2026-11-24T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]: cbb-availability-refresh[13:00]: DEFERRED_WRITER_LOCK at=2026-11-24T18:13:30+00:00 elapsed=810.0s waited_sec=199.0 attempt=2
+2026-11-24T18:13:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-24T18:13:30+00:00 elapsed=810.0s status=DEFERRED_WRITER_LOCK
+2026-11-24T18:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]:  "STATUS": "DEFERRED_WRITER_LOCK",
+2026-11-24T18:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]:  "PHASE_B_LOCK_ACQUIRED_AT": null,
+2026-11-24T18:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1765334]:  "PHASE_B_LOCK_RELEASED_AT": null,
+2026-11-24T21:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-24T21:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-24T21:05:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]: cbb-availability-refresh[16:00]: DEFERRED_WRITER_LOCK at=2026-11-24T21:05:13+00:00 elapsed=312.0s waited_sec=300.0 attempt=1
+2026-11-24T21:10:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]: cbb-availability-refresh[16:00]: DEFERRED_WRITER_LOCK at=2026-11-24T21:10:13+00:00 elapsed=612.0s waited_sec=300.0 attempt=2
+2026-11-24T21:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]: cbb-availability-refresh[16:00]: DEFERRED_WRITER_LOCK at=2026-11-24T21:13:31+00:00 elapsed=810.0s waited_sec=198.0 attempt=3
+2026-11-24T21:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-24T21:13:31+00:00 elapsed=810.0s status=DEFERRED_WRITER_LOCK
+2026-11-24T21:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]:  "STATUS": "DEFERRED_WRITER_LOCK",
+2026-11-24T21:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]:  "PHASE_B_LOCK_ACQUIRED_AT": null,
+2026-11-24T21:13:31+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1796148]:  "PHASE_B_LOCK_RELEASED_AT": null,
+2026-11-24T23:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-24T23:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-24T23:02:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-24T23:02:27+00:00 elapsed=146.1s waited_sec=135.1
+2026-11-24T23:16:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-24T23:16:27+00:00 elapsed=986.3s held_sec=840.3
+2026-11-24T23:16:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-24T23:16:27+00:00 elapsed=986.3s status=PUBLISHED
+2026-11-24T23:16:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-24T23:02:27+00:00",
+2026-11-24T23:16:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1823538]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-24T23:16:27+00:00",
+2026-11-25T15:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-25T15:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-25T15:04:42+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-25T15:04:42+00:00 elapsed=281.1s waited_sec=270.1
+2026-11-25T15:21:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-25T15:21:47+00:00 elapsed=1306.5s held_sec=1025.3
+2026-11-25T15:21:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-25T15:21:47+00:00 elapsed=1306.5s status=PUBLISHED
+2026-11-25T15:21:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-25T15:04:42+00:00",
+2026-11-25T15:21:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[1984722]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-25T15:21:47+00:00",
+2026-11-25T18:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-25T18:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-25T18:04:11+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-25T18:04:11+00:00 elapsed=250.1s waited_sec=238.1
+2026-11-25T18:19:32+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-25T18:19:32+00:00 elapsed=1171.4s held_sec=921.3
+2026-11-25T18:19:32+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-25T18:19:32+00:00 elapsed=1171.4s status=PUBLISHED
+2026-11-25T18:19:32+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-25T18:04:11+00:00",
+2026-11-25T18:19:32+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2015687]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-25T18:19:32+00:00",
+2026-11-25T21:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-25T21:00:14+00:00 elapsed=13.0s status=COMPLETED sec=13.0
+2026-11-25T21:04:23+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-25T21:04:23+00:00 elapsed=262.1s waited_sec=249.1
+2026-11-25T21:16:26+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-25T21:16:26+00:00 elapsed=985.4s held_sec=723.3
+2026-11-25T21:16:26+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-25T21:16:26+00:00 elapsed=985.4s status=PUBLISHED
+2026-11-25T21:16:26+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-25T21:04:23+00:00",
+2026-11-25T21:16:26+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2046461]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-25T21:16:26+00:00",
+2026-11-25T23:00:19+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-25T23:00:19+00:00 elapsed=18.0s status=COMPLETED sec=18.0
+2026-11-25T23:05:19+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: DEFERRED_WRITER_LOCK at=2026-11-25T23:05:19+00:00 elapsed=318.0s waited_sec=300.0 attempt=1
+2026-11-25T23:10:19+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: DEFERRED_WRITER_LOCK at=2026-11-25T23:10:19+00:00 elapsed=618.0s waited_sec=300.0 attempt=2
+2026-11-25T23:10:22+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-25T23:10:22+00:00 elapsed=621.0s waited_sec=3.0
+2026-11-25T23:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-25T23:20:01+00:00 elapsed=1200.2s held_sec=579.2
+2026-11-25T23:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-25T23:20:01+00:00 elapsed=1200.2s status=PUBLISHED
+2026-11-25T23:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-25T23:10:22+00:00",
+2026-11-25T23:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2065220]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-25T23:20:01+00:00",
+2026-11-26T15:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]: cbb-availability-refresh[10:00]: PHASE_A_END at=2026-11-26T15:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-26T15:03:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-26T15:03:51+00:00 elapsed=230.1s waited_sec=219.1
+2026-11-26T15:15:29+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]: cbb-availability-refresh[10:00]: PHASE_B_LOCK_RELEASED at=2026-11-26T15:15:29+00:00 elapsed=928.4s held_sec=698.3
+2026-11-26T15:15:29+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]: cbb-availability-refresh[10:00]: SERVICE_END at=2026-11-26T15:15:29+00:00 elapsed=928.4s status=PUBLISHED
+2026-11-26T15:15:29+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-26T15:03:51+00:00",
+2026-11-26T15:15:29+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2217388]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-26T15:15:29+00:00",
+2026-11-26T18:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]: cbb-availability-refresh[13:00]: PHASE_A_END at=2026-11-26T18:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-26T18:03:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-26T18:03:51+00:00 elapsed=230.1s waited_sec=218.1
+2026-11-26T18:14:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]: cbb-availability-refresh[13:00]: PHASE_B_LOCK_RELEASED at=2026-11-26T18:14:13+00:00 elapsed=852.4s held_sec=622.3
+2026-11-26T18:14:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]: cbb-availability-refresh[13:00]: SERVICE_END at=2026-11-26T18:14:13+00:00 elapsed=852.4s status=PUBLISHED
+2026-11-26T18:14:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-26T18:03:51+00:00",
+2026-11-26T18:14:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2248067]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-26T18:14:13+00:00",
+2026-11-26T21:00:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]: cbb-availability-refresh[16:00]: PHASE_A_END at=2026-11-26T21:00:12+00:00 elapsed=11.0s status=COMPLETED sec=11.0
+2026-11-26T21:03:47+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-26T21:03:47+00:00 elapsed=226.1s waited_sec=215.1
+2026-11-26T21:12:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]: cbb-availability-refresh[16:00]: PHASE_B_LOCK_RELEASED at=2026-11-26T21:12:41+00:00 elapsed=760.3s held_sec=534.2
+2026-11-26T21:12:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]: cbb-availability-refresh[16:00]: SERVICE_END at=2026-11-26T21:12:41+00:00 elapsed=760.3s status=PUBLISHED
+2026-11-26T21:12:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-26T21:03:47+00:00",
+2026-11-26T21:12:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2276500]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-26T21:12:41+00:00",
+2026-11-26T23:00:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]: cbb-availability-refresh[18:00]: PHASE_A_END at=2026-11-26T23:00:13+00:00 elapsed=12.0s status=COMPLETED sec=12.0
+2026-11-26T23:03:39+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_ACQUIRED at=2026-11-26T23:03:39+00:00 elapsed=218.1s waited_sec=206.1
+2026-11-26T23:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]: cbb-availability-refresh[18:00]: PHASE_B_LOCK_RELEASED at=2026-11-26T23:12:12+00:00 elapsed=731.3s held_sec=513.2
+2026-11-26T23:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]: cbb-availability-refresh[18:00]: SERVICE_END at=2026-11-26T23:12:12+00:00 elapsed=731.3s status=PUBLISHED
+2026-11-26T23:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]:  "PHASE_B_LOCK_ACQUIRED_AT": "2026-11-26T23:03:39+00:00",
+2026-11-26T23:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-availability[2305840]:  "PHASE_B_LOCK_RELEASED_AT": "2026-11-26T23:12:12+00:00",

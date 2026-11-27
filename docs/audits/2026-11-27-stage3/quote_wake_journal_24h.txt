@@ -1,0 +1,600 @@
+2026-11-26T03:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T03:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2107771]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T03:20:19.518497+00:00
+2026-11-26T03:34:36+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T03:34:36+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 4min 35.331s CPU time.
+2026-11-26T03:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T03:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2109220]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T03:40:00+00:00
+2026-11-26T03:48:55+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T03:48:55+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 53.100s CPU time.
+2026-11-26T03:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T03:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2110721]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T03:50:08.705691+00:00
+2026-11-26T03:53:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T03:53:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 26.065s CPU time.
+2026-11-26T04:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2112181]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T03:50:08.705691+00:00
+2026-11-26T04:04:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:04:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 4min 36.062s CPU time.
+2026-11-26T04:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2113665]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T04:10:00+00:00
+2026-11-26T04:19:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:19:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 1.363s CPU time.
+2026-11-26T04:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2115125]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T04:20:10.813270+00:00
+2026-11-26T04:23:36+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:23:36+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 35.895s CPU time.
+2026-11-26T04:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2116555]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T04:20:10.813270+00:00
+2026-11-26T04:40:18+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:40:18+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 25.172s CPU time.
+2026-11-26T04:40:18+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:40:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2118271]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T04:54:38.504730+00:00
+2026-11-26T04:43:40+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:43:40+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 21.923s CPU time.
+2026-11-26T04:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T04:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2119697]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T04:54:38.504730+00:00
+2026-11-26T04:53:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T04:53:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 22.984s CPU time.
+2026-11-26T05:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2121126]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T04:54:38.504730+00:00
+2026-11-26T05:09:55+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:09:55+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 3.430s CPU time, 1.7G memory peak, 0B memory swap peak.
+2026-11-26T05:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2124208]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T05:24:12.670446+00:00
+2026-11-26T05:11:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:11:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 44.085s CPU time, 860.8M memory peak, 0B memory swap peak.
+2026-11-26T05:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2126876]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T05:24:12.670446+00:00
+2026-11-26T05:22:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:22:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 58.821s CPU time.
+2026-11-26T05:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2128480]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T05:24:12.670446+00:00
+2026-11-26T05:36:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:36:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 5min 59.457s CPU time.
+2026-11-26T05:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2130140]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T05:53:52.537030+00:00
+2026-11-26T05:41:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:41:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 45.447s CPU time.
+2026-11-26T05:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T05:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2131742]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T05:53:52.537030+00:00
+2026-11-26T05:51:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T05:51:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 48.073s CPU time.
+2026-11-26T06:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2133338]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T05:53:52.537030+00:00
+2026-11-26T06:08:06+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:08:06+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 4.318s CPU time.
+2026-11-26T06:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2135019]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T06:24:51.935373+00:00
+2026-11-26T06:11:52+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:11:52+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 51.592s CPU time.
+2026-11-26T06:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2136548]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T06:24:51.935373+00:00
+2026-11-26T06:21:06+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Main process exited, code=killed, status=15/TERM
+2026-11-26T06:21:06+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 4.728s CPU time, 853.2M memory peak, 0B memory swap peak.
+2026-11-26T06:21:06+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:21:07+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2137525]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T06:24:51.935373+00:00
+2026-11-26T06:23:19+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:23:19+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 11.718s CPU time.
+2026-11-26T06:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2139148]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T06:24:51.935373+00:00
+2026-11-26T06:39:39+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:39:39+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 49.880s CPU time.
+2026-11-26T06:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2140834]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T06:54:25.018660+00:00
+2026-11-26T06:41:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:41:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 47.155s CPU time.
+2026-11-26T06:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T06:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2142442]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T06:54:25.018660+00:00
+2026-11-26T06:51:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T06:51:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 37.592s CPU time.
+2026-11-26T07:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2144043]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T06:54:25.018660+00:00
+2026-11-26T07:06:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:06:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 1.416s CPU time.
+2026-11-26T07:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2145685]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T07:24:05.199178+00:00
+2026-11-26T07:11:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:11:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 44.867s CPU time.
+2026-11-26T07:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2147290]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T07:24:05.199178+00:00
+2026-11-26T07:21:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:21:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 50.209s CPU time.
+2026-11-26T07:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2148900]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T07:24:05.199178+00:00
+2026-11-26T07:37:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:37:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 39.631s CPU time.
+2026-11-26T07:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2150569]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T07:54:18.586206+00:00
+2026-11-26T07:41:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:41:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 41.003s CPU time.
+2026-11-26T07:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T07:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2152190]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T07:54:18.586206+00:00
+2026-11-26T07:51:56+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T07:51:56+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 54.742s CPU time.
+2026-11-26T08:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2153784]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T07:54:18.586206+00:00
+2026-11-26T08:07:21+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:07:21+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 26.219s CPU time.
+2026-11-26T08:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2155448]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T08:24:32.764086+00:00
+2026-11-26T08:11:51+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:11:51+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 50.752s CPU time.
+2026-11-26T08:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2157045]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T08:24:32.764086+00:00
+2026-11-26T08:21:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:21:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 43.003s CPU time.
+2026-11-26T08:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2158660]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T08:24:32.764086+00:00
+2026-11-26T08:36:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:36:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 987ms CPU time.
+2026-11-26T08:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2160187]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T08:53:53.519162+00:00
+2026-11-26T08:41:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:41:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 48.808s CPU time.
+2026-11-26T08:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T08:50:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2161637]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T08:53:53.519162+00:00
+2026-11-26T08:52:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T08:52:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 5.486s CPU time.
+2026-11-26T09:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2163059]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T08:53:53.519162+00:00
+2026-11-26T09:07:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:07:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 46.224s CPU time.
+2026-11-26T09:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2164585]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T09:25:02.292489+00:00
+2026-11-26T09:11:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:11:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 46.430s CPU time.
+2026-11-26T09:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2166025]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T09:25:02.292489+00:00
+2026-11-26T09:21:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:21:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 49.927s CPU time.
+2026-11-26T09:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2167478]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T09:25:02.292489+00:00
+2026-11-26T09:38:11+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:38:11+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 29.041s CPU time.
+2026-11-26T09:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:40:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2169021]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T09:54:14.116937+00:00
+2026-11-26T09:42:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:42:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 1.276s CPU time.
+2026-11-26T09:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T09:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2170638]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T09:54:14.116937+00:00
+2026-11-26T09:52:24+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T09:52:24+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 19.038s CPU time.
+2026-11-26T10:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2172366]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T09:54:14.116937+00:00
+2026-11-26T10:08:13+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:08:13+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 23.192s CPU time.
+2026-11-26T10:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2173935]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T10:15:00+00:00
+2026-11-26T10:12:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:12:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 9.078s CPU time.
+2026-11-26T10:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2175608]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T10:15:00+00:00
+2026-11-26T10:28:25+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:28:25+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 5.436s CPU time.
+2026-11-26T10:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2177093]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T10:45:19.972037+00:00
+2026-11-26T10:31:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:31:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 44.798s CPU time.
+2026-11-26T10:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2178544]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T10:45:19.972037+00:00
+2026-11-26T10:41:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:41:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 49.861s CPU time.
+2026-11-26T10:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T10:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2180016]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T10:45:19.972037+00:00
+2026-11-26T10:56:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T10:56:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 7.585s CPU time.
+2026-11-26T11:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2181549]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T11:14:07.497798+00:00
+2026-11-26T11:02:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:02:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 19.573s CPU time.
+2026-11-26T11:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2183032]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T11:14:07.497798+00:00
+2026-11-26T11:11:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:11:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 44.221s CPU time.
+2026-11-26T11:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2184584]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T11:14:07.497798+00:00
+2026-11-26T11:27:40+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:27:40+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 43.790s CPU time.
+2026-11-26T11:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:30:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2186054]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T11:44:39.880129+00:00
+2026-11-26T11:31:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:31:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 49.197s CPU time.
+2026-11-26T11:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2187522]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T11:44:39.880129+00:00
+2026-11-26T11:41:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:41:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 45.915s CPU time.
+2026-11-26T11:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T11:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2188984]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T11:44:39.880129+00:00
+2026-11-26T11:57:15+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T11:57:15+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 22.673s CPU time.
+2026-11-26T12:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2190434]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T12:00:00+00:00
+2026-11-26T12:03:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:03:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 13.445s CPU time.
+2026-11-26T12:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2191971]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T12:14:28.290354+00:00
+2026-11-26T12:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:11:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 52.615s CPU time.
+2026-11-26T12:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2193551]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T12:14:28.290354+00:00
+2026-11-26T12:27:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:27:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 52.459s CPU time.
+2026-11-26T12:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2195025]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T12:32:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:32:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 1.004s CPU time.
+2026-11-26T12:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2196466]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T12:41:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:41:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 45.825s CPU time.
+2026-11-26T12:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T12:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2197919]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T12:51:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T12:51:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 1min 47.888s CPU time.
+2026-11-26T13:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2199397]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T13:02:05+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T13:02:05+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 4.384s CPU time.
+2026-11-26T13:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2200888]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T13:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T13:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 8.644s CPU time.
+2026-11-26T13:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:20:04+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2202452]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T13:30:04+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2202452]: cbb-originator-run[tick]: CBB writer lock busy > 600 s; tick skipped
+2026-11-26T13:30:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Main process exited, code=exited, status=75/TEMPFAIL
+2026-11-26T13:30:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Failed with result 'exit-code'.
+2026-11-26T13:30:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 4.215s CPU time.
+2026-11-26T13:30:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:30:08+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2204100]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T13:40:08+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2204100]: cbb-originator-run[tick]: CBB writer lock busy > 600 s; tick skipped
+2026-11-26T13:40:08+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Main process exited, code=exited, status=75/TEMPFAIL
+2026-11-26T13:40:08+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Failed with result 'exit-code'.
+2026-11-26T13:40:08+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3.422s CPU time.
+2026-11-26T13:40:08+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:40:10+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2205548]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T13:50:10+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2205548]: cbb-originator-run[tick]: CBB writer lock busy > 600 s; tick skipped
+2026-11-26T13:50:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Main process exited, code=exited, status=75/TEMPFAIL
+2026-11-26T13:50:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Failed with result 'exit-code'.
+2026-11-26T13:50:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2.756s CPU time.
+2026-11-26T13:50:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T13:50:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2206974]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T14:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2206974]: cbb-originator-run[tick]: CBB writer lock busy > 600 s; tick skipped
+2026-11-26T14:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Main process exited, code=exited, status=75/TEMPFAIL
+2026-11-26T14:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Failed with result 'exit-code'.
+2026-11-26T14:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3.069s CPU time.
+2026-11-26T14:00:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:00:17+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2208444]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T14:04:51+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2208444]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T14:10:00+00:00
+2026-11-26T14:06:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:06:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 869ms CPU time.
+2026-11-26T14:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:10:05+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2209942]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T14:16:18+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2209942]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T14:10:00+00:00
+2026-11-26T14:25:19+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:25:19+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 59.768s CPU time.
+2026-11-26T14:25:19+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:25:22+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2212205]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T14:27:43+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2212205]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T15:10:00+00:00
+2026-11-26T14:30:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:30:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 46.687s CPU time.
+2026-11-26T14:30:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:30:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2213001]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T14:30:30+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2213001]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T15:10:00+00:00
+2026-11-26T14:32:54+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:32:54+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 25.985s CPU time.
+2026-11-26T14:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2214399]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T15:10:00+00:00
+2026-11-26T14:42:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:42:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 41.686s CPU time.
+2026-11-26T14:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T14:50:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2215842]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T15:10:00+00:00
+2026-11-26T14:53:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T14:53:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 5.338s CPU time.
+2026-11-26T15:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2217389]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T15:10:00+00:00
+2026-11-26T15:03:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:03:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 37.844s CPU time.
+2026-11-26T15:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:10:04+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2219275]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T15:15:29+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2219275]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T15:10:00+00:00
+2026-11-26T15:25:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:25:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 56.106s CPU time.
+2026-11-26T15:25:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:25:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2221660]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:10:00+00:00
+2026-11-26T15:28:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:28:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 34.171s CPU time.
+2026-11-26T15:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2222347]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:10:00+00:00
+2026-11-26T15:32:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:32:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 48.994s CPU time.
+2026-11-26T15:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2223834]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:10:00+00:00
+2026-11-26T15:43:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:43:07+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 4.365s CPU time.
+2026-11-26T15:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T15:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2225361]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:10:00+00:00
+2026-11-26T15:53:30+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T15:53:30+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 27.494s CPU time.
+2026-11-26T16:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2226858]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:10:00+00:00
+2026-11-26T16:03:42+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:03:42+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 37.835s CPU time.
+2026-11-26T16:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2228458]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T16:10:00+00:00
+2026-11-26T16:18:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:18:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 33.562s CPU time.
+2026-11-26T16:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2229949]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:40:00+00:00
+2026-11-26T16:23:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:23:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 14.439s CPU time.
+2026-11-26T16:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2231470]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T16:40:00+00:00
+2026-11-26T16:33:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:33:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 24.187s CPU time.
+2026-11-26T16:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:40:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2232984]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T16:40:00+00:00
+2026-11-26T16:48:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:48:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 38.943s CPU time.
+2026-11-26T16:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T16:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2234516]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T17:10:00+00:00
+2026-11-26T16:53:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T16:53:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 12.212s CPU time.
+2026-11-26T17:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2236947]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T17:10:00+00:00
+2026-11-26T17:03:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:03:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 32.267s CPU time.
+2026-11-26T17:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2239509]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T17:10:00+00:00
+2026-11-26T17:18:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:18:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 49.431s CPU time.
+2026-11-26T17:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2241709]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T17:40:00+00:00
+2026-11-26T17:23:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:23:01+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 59.915s CPU time.
+2026-11-26T17:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2243532]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T17:40:00+00:00
+2026-11-26T17:33:42+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:33:42+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 39.213s CPU time.
+2026-11-26T17:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2245034]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T17:40:00+00:00
+2026-11-26T17:48:56+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:48:56+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 52.370s CPU time.
+2026-11-26T17:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T17:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2246576]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T18:20:28.251281+00:00
+2026-11-26T17:53:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T17:53:03+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 2.934s CPU time.
+2026-11-26T18:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2248068]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T18:20:28.251281+00:00
+2026-11-26T18:03:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:03:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 45.016s CPU time.
+2026-11-26T18:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:10:03+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2250249]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T18:14:13+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2250249]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T18:20:28.251281+00:00
+2026-11-26T18:17:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:17:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 20.535s CPU time.
+2026-11-26T18:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2252253]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T18:20:28.251281+00:00
+2026-11-26T18:23:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:23:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 3.754s CPU time.
+2026-11-26T18:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2253770]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T18:20:28.251281+00:00
+2026-11-26T18:38:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:38:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 50.505s CPU time.
+2026-11-26T18:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2255265]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T18:40:00+00:00
+2026-11-26T18:49:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:49:43+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 38.926s CPU time.
+2026-11-26T18:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T18:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2256800]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T19:40:00+00:00
+2026-11-26T18:53:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T18:53:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 16.673s CPU time.
+2026-11-26T19:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2258297]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T19:40:00+00:00
+2026-11-26T19:03:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:03:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 43.640s CPU time.
+2026-11-26T19:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2259805]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T19:40:00+00:00
+2026-11-26T19:13:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:13:27+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 25.858s CPU time.
+2026-11-26T19:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2261360]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T19:40:00+00:00
+2026-11-26T19:23:29+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:23:29+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 26.591s CPU time.
+2026-11-26T19:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2262897]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T19:40:00+00:00
+2026-11-26T19:33:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:33:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 34.986s CPU time.
+2026-11-26T19:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2264401]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T19:40:00+00:00
+2026-11-26T19:49:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:49:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 9min 28.111s CPU time.
+2026-11-26T19:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T19:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2265919]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T20:10:00+00:00
+2026-11-26T19:53:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T19:53:04+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 3.602s CPU time.
+2026-11-26T20:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2267416]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T20:10:00+00:00
+2026-11-26T20:03:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:03:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 43.378s CPU time.
+2026-11-26T20:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2268977]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T20:10:00+00:00
+2026-11-26T20:23:35+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:23:35+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 12min 49.346s CPU time.
+2026-11-26T20:23:35+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:23:36+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2271029]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:10:00+00:00
+2026-11-26T20:26:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:26:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 52.710s CPU time.
+2026-11-26T20:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2271991]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:10:00+00:00
+2026-11-26T20:33:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:33:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 30.402s CPU time.
+2026-11-26T20:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2273493]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:10:00+00:00
+2026-11-26T20:43:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:43:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 7.437s CPU time.
+2026-11-26T20:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T20:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2275009]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:10:00+00:00
+2026-11-26T20:53:33+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T20:53:33+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 31.617s CPU time.
+2026-11-26T21:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2276501]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:10:00+00:00
+2026-11-26T21:03:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:03:46+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 35.574s CPU time.
+2026-11-26T21:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:10:03+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2278076]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T21:12:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2278076]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T21:10:00+00:00
+2026-11-26T21:26:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:26:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 12min 42.037s CPU time.
+2026-11-26T21:26:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:26:09+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2280501]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:36:48.426487+00:00
+2026-11-26T21:28:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:28:48+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 39.398s CPU time.
+2026-11-26T21:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2281079]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T21:36:48.426487+00:00
+2026-11-26T21:33:18+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:33:18+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 16.342s CPU time.
+2026-11-26T21:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2282566]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T21:36:48.426487+00:00
+2026-11-26T21:48:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:48:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 31.360s CPU time.
+2026-11-26T21:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T21:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2285761]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T22:04:14.829041+00:00
+2026-11-26T21:53:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T21:53:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 9.611s CPU time.
+2026-11-26T22:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2288201]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T22:04:14.829041+00:00
+2026-11-26T22:03:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:03:23+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 20.356s CPU time.
+2026-11-26T22:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2291300]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T22:04:14.829041+00:00
+2026-11-26T22:23:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:23:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 12min 54.827s CPU time.
+2026-11-26T22:23:45+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:23:46+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2295499]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T22:34:05.895047+00:00
+2026-11-26T22:26:33+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:26:33+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 47.421s CPU time.
+2026-11-26T22:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2298466]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T22:34:05.895047+00:00
+2026-11-26T22:33:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:33:28+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 26.225s CPU time, 1.7G memory peak, 0B memory swap peak.
+2026-11-26T22:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2300112]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T22:34:05.895047+00:00
+2026-11-26T22:47:58+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:47:58+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 16.239s CPU time.
+2026-11-26T22:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T22:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2303036]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T23:04:04.599207+00:00
+2026-11-26T22:53:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T22:53:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 8.954s CPU time.
+2026-11-26T23:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2305841]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T23:04:04.599207+00:00
+2026-11-26T23:03:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:03:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 18.929s CPU time.
+2026-11-26T23:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:10:04+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2307953]: cbb-originator-run[tick]: CBB writer lock busy; close-window game-line capture under the game-quotes lock (rc=0)
+2026-11-26T23:12:12+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2307953]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T23:04:04.599207+00:00
+2026-11-26T23:20:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:20:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 48.527s CPU time.
+2026-11-26T23:20:41+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:20:41+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2310442]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T23:36:31.651303+00:00
+2026-11-26T23:23:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:23:50+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 9.052s CPU time.
+2026-11-26T23:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2311967]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-26T23:36:31.651303+00:00
+2026-11-26T23:33:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:33:17+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 14.610s CPU time.
+2026-11-26T23:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2314491]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-26T23:36:31.651303+00:00
+2026-11-26T23:48:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:48:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 38.158s CPU time.
+2026-11-26T23:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-26T23:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2315967]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T00:03:54.603071+00:00
+2026-11-26T23:53:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-26T23:53:14+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 13.232s CPU time.
+2026-11-27T00:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:00:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2317489]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T00:03:54.603071+00:00
+2026-11-27T00:03:25+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:03:25+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 7.774s CPU time.
+2026-11-27T00:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2319065]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T00:03:54.603071+00:00
+2026-11-27T00:22:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:22:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 11min 47.664s CPU time.
+2026-11-27T00:22:26+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:22:27+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2320978]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T00:33:45.374289+00:00
+2026-11-27T00:25:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:25:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 11.452s CPU time.
+2026-11-27T00:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2322102]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T00:33:45.374289+00:00
+2026-11-27T00:33:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:33:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 8.223s CPU time.
+2026-11-27T00:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2323609]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T00:33:45.374289+00:00
+2026-11-27T00:49:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:49:10+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 8min 28.184s CPU time.
+2026-11-27T00:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T00:50:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2325095]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T01:03:58.628808+00:00
+2026-11-27T00:53:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T00:53:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 685ms CPU time.
+2026-11-27T01:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2327533]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T01:03:58.628808+00:00
+2026-11-27T01:02:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:02:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 48.026s CPU time.
+2026-11-27T01:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2330950]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T01:03:58.628808+00:00
+2026-11-27T01:17:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:17:32+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 6min 54.052s CPU time.
+2026-11-27T01:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2333176]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T01:33:42.197738+00:00
+2026-11-27T01:23:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:23:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 913ms CPU time.
+2026-11-27T01:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:30:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2335088]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T01:33:42.197738+00:00
+2026-11-27T01:32:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:32:53+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 51.827s CPU time.
+2026-11-27T01:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:40:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2337044]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T01:33:42.197738+00:00
+2026-11-27T01:52:58+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:52:58+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 12min 11.621s CPU time.
+2026-11-27T01:52:58+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T01:52:59+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2340380]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T02:03:44.783268+00:00
+2026-11-27T01:55:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T01:55:38+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 39.127s CPU time.
+2026-11-27T02:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2342736]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T02:03:44.783268+00:00
+2026-11-27T02:03:11+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:03:11+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 10.699s CPU time.
+2026-11-27T02:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2345253]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T02:03:44.783268+00:00
+2026-11-27T02:18:29+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:18:29+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 39.554s CPU time.
+2026-11-27T02:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:20:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2348149]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T02:34:00.480056+00:00
+2026-11-27T02:23:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:23:09+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 3min 7.011s CPU time.
+2026-11-27T02:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:30:01+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2350528]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T02:34:00.480056+00:00
+2026-11-27T02:33:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:33:02+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 57.359s CPU time.
+2026-11-27T02:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:40:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2352007]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T02:34:00.480056+00:00
+2026-11-27T02:52:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:52:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 11min 38.324s CPU time.
+2026-11-27T02:52:16+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T02:52:16+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2353850]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T03:03:44.994934+00:00
+2026-11-27T02:54:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T02:54:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 28.140s CPU time.
+2026-11-27T03:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T03:00:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2354979]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T03:03:44.994934+00:00
+2026-11-27T03:02:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T03:02:49+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 46.341s CPU time.
+2026-11-27T03:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T03:10:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2357071]: cbb-originator-run[tick]: due=true reason=NEXT_DUE_REACHED 2026-11-27T03:03:44.994934+00:00
+2026-11-27T03:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T03:17:47+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 7min 7.151s CPU time.
+2026-11-27T03:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T03:20:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2358598]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T03:33:42.750407+00:00
+2026-11-27T03:22:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T03:22:44+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 43.296s CPU time.
+2026-11-27T03:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Starting cbb-originator-quotes.service - CBB Originator quote due check...
+2026-11-27T03:30:00+00:00 ubuntu-s-2vcpu-4gb-tor1 cbb-originator-quotes[2360107]: cbb-originator-run[tick]: due=false reason=IDLE until 2026-11-27T03:33:42.750407+00:00
+2026-11-27T03:32:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: Finished cbb-originator-quotes.service - CBB Originator quote due check.
+2026-11-27T03:32:37+00:00 ubuntu-s-2vcpu-4gb-tor1 systemd[1]: cbb-originator-quotes.service: Consumed 2min 35.841s CPU time.

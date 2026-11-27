@@ -1175,17 +1175,58 @@ def quotes(life: Life, dry_run: bool = False) -> dict:
     out = {"lifecycle": "QUOTES", "quote_refresh": rep}
     day = et_date(life.now())
     gq = game_quotes_capture(life, day) if not dry_run else None
-    if not dry_run:
+    waiter = None if dry_run else writer_priority_waiter(life)
+    if waiter is not None:
+        # An availability refresh is waiting for the writer lock to publish (Phase B = forecast + exports of the same
+        # day under this same lock, minutes from now). Rebuilding the exports here would be redone by that Phase B and
+        # only delays it (2026-11-20..26: every refresh waited 110-270 s behind a quote wake started the same second,
+        # ~96% of an idle wake is this rebuild). The quote requests / repricing / game-line capture above still ran;
+        # only the redundant rebuild is skipped; the prior workbooks stay valid (atomically replaced, never partial).
+        out["exports_deferred"] = {"status": EXPORTS_DEFERRED, "refresh_id": waiter.get("refresh_id"),
+                                   "window": waiter.get("window"), "at": life.now().isoformat()}
+    elif not dry_run:
         out["exports"] = _brief(exports_for(life, day))
     h = OS.read_json(health_path(life, day), {}) or {}
     tot = h.get("quote_refresh_totals") or {"wakes": 0, "requests": 0, "credits": 0, "receipts": 0}
     tot = {"wakes": tot["wakes"] + 1, "requests": tot["requests"] + int(rep.get("requests", 0)),
-           "credits": tot["credits"] + int(rep.get("credits", 0)), "receipts": tot["receipts"] + int(rep.get("receipts", 0) or 0)}
+           "credits": tot["credits"] + int(rep.get("credits", 0)), "receipts": tot["receipts"] + int(rep.get("receipts", 0) or 0),
+           "exports_deferred": int(tot.get("exports_deferred", 0)) + ("exports_deferred" in out)}
     health(life, day, quote_refresh={k: rep.get(k) for k in ("refresh_id", "now", "status", "reason", "due_games",
                                                              "requests", "credits", "receipts", "refits_triggered")},
            quote_refresh_totals=tot, **({"exports": out["exports"]} if "exports" in out else {}),
+           **({"exports_deferred": out["exports_deferred"]} if "exports_deferred" in out else {}),
            **({"game_quotes": gq} if gq else {}))
     return out
+
+
+WRITER_PRIORITY = "cbb-originator.writer.priority"          # written by availability_refresh only while Phase B waits
+WRITER_PRIORITY_MAX_AGE_SEC = 50 * 60                       # == cbb-originator-run CBB_PRIORITY_MAX_AGE_MIN (unit budget)
+EXPORTS_DEFERRED = "DEFERRED_TO_AVAILABILITY_REFRESH"
+
+
+def writer_priority_path(life: Life) -> Path:
+    d = os.environ.get("CBB_LOCK_DIR")
+    return (Path(d) if d else Path(life.prod_root).parent / "locks") / WRITER_PRIORITY
+
+
+def writer_priority_waiter(life: Life) -> dict | None:
+    """The waiting availability refresh ({pid, refresh_id, window, at}) when its priority marker is fresh and its
+    process is alive (the same rule as the wrapper's tick yield); else None. Read-only; never touches the marker."""
+    p = writer_priority_path(life)
+    try:
+        txt, age = p.read_text(), time.time() - p.stat().st_mtime
+    except OSError:
+        return None
+    kv = dict(ln.split("=", 1) for ln in txt.splitlines() if "=" in ln)
+    if age > WRITER_PRIORITY_MAX_AGE_SEC or not kv.get("pid", "").isdigit():
+        return None
+    try:
+        os.kill(int(kv["pid"]), 0)
+    except ProcessLookupError:
+        return None                                            # dead waiter: stale marker
+    except PermissionError:
+        pass                                                   # alive (another uid)
+    return kv
 
 
 GAME_QUOTES_FAR_MIN = 30          # bulk game-line capture cadence (3 credits, every listed game)

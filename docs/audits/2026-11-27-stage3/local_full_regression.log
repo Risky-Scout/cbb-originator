@@ -1,0 +1,91 @@
+........................................................................ [  4%]
+........................................................................ [  8%]
+........................................................................ [ 12%]
+........s.....ss.....ss................................................. [ 16%]
+........................................................................ [ 20%]
+......................................s..s.............................. [ 24%]
+......................s................................................. [ 28%]
+........................................................................ [ 32%]
+........................................................................ [ 36%]
+........................................................................ [ 40%]
+........................................................................ [ 44%]
+........................................................................ [ 48%]
+........................................................................ [ 52%]
+........................................................................ [ 56%]
+........................................................................ [ 60%]
+........................................................................ [ 64%]
+........................................................................ [ 68%]
+........................................................................ [ 73%]
+........................................................................ [ 77%]
+........................................................................ [ 81%]
+.........................................F.............................. [ 85%]
+........................................................................ [ 89%]
+.....................s.................................................. [ 93%]
+........................................................................ [ 97%]
+..............................................                           [100%]
+=================================== FAILURES ===================================
+____________________ test_no_unrelated_project_was_modified ____________________
+
+    def test_no_unrelated_project_was_modified():
+        """Relocation accommodation (architect ruling P / option 1, 2026-10-16), for the known project move only: the recorded
+        sibling names are stat'ed at the same names under the current parent -- metadata only (existence, size, mtime; the
+        recorded folder-level metadata for the Starter Pack, whose content is also proven by its registered digest). The
+        five other siblings are never opened or recursed into, and the new parent is never listed: the no-extra-entries
+        assertion applies only at the historical parent. No baseline is taken of the new parent."""
+        from cbb_platform import relocation as RL
+        snap = json.loads((C.MANIFESTS / WORKSPACE_BASELINES[-1]).read_text())
+        recorded = Path(snap["parent"])
+        moved = RL.relocated() and recorded == RL.HISTORICAL_PROJECT_PARENT and not recorded.exists()
+        parent = C.PROJECT_ROOT.parent if moved else recorded
+        if moved:
+            assert {n for n, s in snap["entries"].items() if s["type"] != "file"} == {C.STARTER_PACK_ROOT.parent.name}
+            assert RL.starter_pack_identity()["pass"]                        # content identity, not the recorded path
+        for name, s in snap["entries"].items():
+            p = parent / name
+            if name in CLEANUP_REMOVED and not p.exists():
+                continue                         # Part XXVI: deleted by the user-approved 2026-11-17 cleanup (not modified)
+            assert p.exists(), name
+            if s["type"] == "file":
+>               assert (p.stat().st_size, p.stat().st_mtime_ns) == (s["size"], s["mtime_ns"]), name
+E               AssertionError: SSH root.docx
+E               assert (13827, 1795033572424524920) == (13571, 1791326489589043367)
+E                 
+E                 At index 0 diff: 13827 != 13571
+E                 Use -v to get more diff
+
+tests/test_stage2.py:504: AssertionError
+=============================== warnings summary ===============================
+tests/test_feature_closure_equivalence.py: 28 warnings
+tests/test_prod_morning_equivalence.py: 14 warnings
+tests/test_walkforward_daily.py: 63 warnings
+tests/test_walkforward_fit.py: 5 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/.venv/lib/python3.12/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: divide by zero encountered in log
+    result = getattr(ufunc, method)(*inputs, **kwargs)
+
+tests/test_walkforward_frame_release.py: 28 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/cbb_platform/v2/marginal.py:222: RuntimeWarning: invalid value encountered in scalar divide
+    vb = max(float(np.sum(m * ((r - mu) ** 2 - mu / m)) / m.sum()), 1e-3 * float(np.mean(mu)) ** 2)
+
+tests/test_walkforward_frame_release.py: 28 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/.venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3862: RuntimeWarning: Mean of empty slice
+    return _methods._mean(a, axis=axis, dtype=dtype,
+
+tests/test_walkforward_frame_release.py: 28 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/.venv/lib/python3.12/site-packages/numpy/_core/_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+    ret = ret.dtype.type(ret / rcount)
+
+tests/test_walkforward_frame_release.py: 28 warnings
+  /Users/josephshackelford/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model/cbb_platform/v2/marginal.py:223: RuntimeWarning: invalid value encountered in scalar divide
+    st["prior_k_minutes"][t] = float(np.sum(m * mu) / m.sum() / vb)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_droplet_deploy_package.py:205: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [2] tests/test_droplet_deploy_package.py:378: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_droplet_deploy_package.py:463: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_droplet_deploy_package.py:492: flock(1) not installed (util-linux; present on the Droplet and CI)
+SKIPPED [1] tests/test_lockbox_trusted_window.py:58: not the opening commit (guard closed)
+SKIPPED [1] tests/test_lockbox_trusted_window.py:78: pre-remediation lockbox build not present
+SKIPPED [1] tests/test_pit_audit_season_rule.py:38: guard closed on this commit
+SKIPPED [1] tests/test_v2_jm1_final_production.py:20: local-only gitignored store absent: data/qa/game_identity_questionable_only.csv
+1 failed, 1764 passed, 9 skipped, 222 warnings in 3259.21s (0:54:19)

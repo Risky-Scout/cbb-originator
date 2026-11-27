@@ -1,0 +1,78 @@
+{
+ "day": "2026-11-26",
+ "now": "2026-11-27 03:46:50.061795+00:00",
+ "quote_refresh": {
+  "status": "NOTHING_DUE",
+  "due_games": 0
+ },
+ "game_quotes_plan": {
+  "due": true,
+  "extras": true,
+  "near": true
+ },
+ "seconds": {
+  "A_quote_refresh_dry": 1.739,
+  "B_game_quotes_plan": 0.832,
+  "exports.slate_games": 0.156,
+  "exports.team_names": 0.171,
+  "exports.distribution_records": 12.358,
+  "exports.player_context": 0.117,
+  "exports.summary_rows": 0.402,
+  "exports.pmf_frame": 1.409,
+  "exports.distributions_if_changed": 0.085,
+  "exports._cutoffs": 0.027,
+  "quote_obs.latest": 0.133,
+  "market_exports.board": 12.09,
+  "market_exports.ingestion_totals": 0.003,
+  "exports.game_lines": 6.161,
+  "exports.write_if_changed": 0.103,
+  "market_exports.freeze": 0.117,
+  "exports.public_contract": 0.167,
+  "exports._freeze_day": 0.152,
+  "market_exports.graded_rows": 27.504,
+  "market_exports.grades_tables": 0.25,
+  "exports.game_grades": 11.046,
+  "exports._performance": 21.476,
+  "C_exports_daily": 137.128
+ },
+ "write_refused": {},
+ "total_s": 142.79,
+ "cpu_s": 143.28,
+ "peak_rss_mb": 1828.2,
+ "exports_status": {
+  "distributions": [
+   "WRITTEN",
+   false
+  ],
+  "game_lines": [
+   "WRITTEN",
+   null
+  ],
+  "boards": [
+   "WRITTEN",
+   false
+  ],
+  "public_contract": [
+   "WRITTEN",
+   null
+  ],
+  "game_grades": [
+   "WRITTEN",
+   null
+  ],
+  "grades": [
+   "WRITTEN",
+   false
+  ],
+  "performance": [
+   "PERFORMANCE_MISSING_EVIDENCE",
+   null
+  ],
+  "game_performance": [
+   "WRITTEN",
+   null
+  ]
+ },
+ "quote_rows": 440282,
+ "raw_quote_rows": 1475
+}
