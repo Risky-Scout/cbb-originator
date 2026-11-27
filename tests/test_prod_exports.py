@@ -409,7 +409,7 @@ def test_release_b_shadow_layout_separates_player_and_game_populations(tmp_path,
     assert rep["game_lines"]["status"] == "NO_GAME_PMFS"                    # no game PMF persisted in this fixture
     nxt = _run(tree, "2026-11-05")
     gw = _book(nxt, "grades")
-    assert tuple(gw)[:3] == ("Player Props", "Game Markets", "Summary")
+    assert tuple(gw)[:4] == ("Player Props", MX.SUCCESS_SHEET, "Game Markets", "Summary")   # Stage 06: 2nd = success
     blocks = [r[0] for r in gw["Summary"]["rows"] if r and r[0] in ("PLAYER PROPS", "GAME MARKETS")]
     assert "PLAYER PROPS" in blocks and "GAME MARKETS" in blocks
     assert nxt["game_performance"]["status"] == "WRITTEN"

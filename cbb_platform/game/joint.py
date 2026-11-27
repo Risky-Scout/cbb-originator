@@ -10,9 +10,16 @@ Construction (design v0, CBB_GAME_MODEL_DESIGN_v0 sections JOINT / ENDGAME / OVE
    conditional on the lead d = h0 - a0 (close-score foul behaviour, leader / trailer asymmetry come from PBP).
 3. Overtime: every regulation tie (s, s) is replaced by s + the OT increment law, repeated while the period ties;
    after MAX_OT periods the residual tie mass (< 1e-6) is split by the OT home-win probability. P(H = A) == 0.
-4. Moment matching: the latent means / SDs / correlation are solved so the FINAL PMF reproduces the target expected
-   home / away scores, margin SD, total SD and margin-total correlation (the calibrated game-level quantities). The
-   endgame and OT therefore shape ties, pushes and tails without moving the calibrated moments.
+4. Moment matching: the latent means / SDs / correlation are solved so the PMF reproduces the target expected
+   home / away scores, margin SD, total SD and margin-total correlation (the calibrated game-level quantities).
+   MEAN BASIS (Stage 06 correction, 2026-11-27): the target expected scores are REGULATION (40-minute) expectations:
+   game.ratings fits pace on per-40 possessions and efficiency on points per possession, so poss x eff / 100 is the
+   expected score of 40 minutes. The means are therefore matched on the regulation PMF (after the endgame, before
+   overtime), and overtime adds its own expected points: E[final] = E[regulation] + P(regulation tie) x E[OT points].
+   Before the correction the OT-inclusive FINAL PMF was matched to the 40-minute target, which removed the OT
+   expectation (~1.2 points of game total; measured 2023-24 / 2024-25 / 2026-27: final - target exceeds
+   per40 - target by P(OT) x OT points). The SD / correlation targets stay matched on the FINAL PMF (the variance
+   model is calibrated on final-score residuals). CBB_GAME_MEAN_BASIS=FINAL restores the previous construction.
 
 No player PMF is summed and no minutes / pace are resampled: the player layer only shifts the target means upstream
 (game.lineup_adjust); this module owns all game-level variance. Pure numpy; deterministic; float64 internally.
@@ -22,11 +29,25 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
 
-JOINT_VERSION = "cbb-game-joint-1.0.0"
+MEAN_BASIS_ENV = "CBB_GAME_MEAN_BASIS"        # REGULATION (default, Stage 06) | FINAL (pre-Stage-06 in-place fallback)
+JOINT_VERSIONS = {"REGULATION": "cbb-game-joint-1.1.0", "FINAL": "cbb-game-joint-1.0.0"}
+
+
+def mean_basis() -> str:
+    v = (os.environ.get(MEAN_BASIS_ENV) or "REGULATION").upper()
+    return v if v in JOINT_VERSIONS else "REGULATION"
+
+
+JOINT_VERSION = JOINT_VERSIONS[mean_basis()]       # read at import; joint_version() is the call-time value
+
+
+def joint_version() -> str:
+    return JOINT_VERSIONS[mean_basis()]
 GL_NODES = 5                              # Gauss-Legendre nodes per home-score cell (exact to ~1e-10 for sd >= 4)
 SUPPORT_SD = 6.0                          # latent support: mean +- 6 SD per axis; tails folded into the edge cells
 MAX_OT = 8                                # repeated overtime periods before the residual-tie split
@@ -309,12 +330,18 @@ def _build(m_h, m_a, sd_m, sd_t, rho, endgame: EndgameKernel, F: np.ndarray):
     h_lo, a_lo = max(h_lo, 0), max(a_lo, 0)
     p0 = bvn_cells(m_h, m_a, sd_m, sd_t, rho, h_lo, h_hi, a_lo, a_hi)
     p1, hm, am = apply_endgame(p0, h_lo, a_lo, endgame)
+    H1 = np.arange(hm, hm + p1.shape[0])[:, None]
+    A1 = np.arange(am, am + p1.shape[1])[None, :]
+    s1 = float(p1.sum())
+    reg = (float((p1 * H1).sum()) / s1, float((p1 * A1).sum()) / s1, float(p1[H1 == A1].sum()) / s1)
     p2, hm, am = apply_overtime(p1, hm, am, F)
     p2, hm, am = _trim(p2, hm, am)
     H = np.arange(hm, hm + p2.shape[0])[:, None]
     A = np.arange(am, am + p2.shape[1])[None, :]
     p2[H == A] = 0.0
-    return GameJointPMF(hm, am, p2 / p2.sum())
+    g = GameJointPMF(hm, am, p2 / p2.sum())
+    g._regulation = {"exp_home": reg[0], "exp_away": reg[1], "tie_mass": reg[2]}
+    return g
 
 
 def build(t: Targets, endgame: EndgameKernel, ot: OvertimeParams) -> GameJointPMF:
@@ -330,11 +357,13 @@ def build(t: Targets, endgame: EndgameKernel, ot: OvertimeParams) -> GameJointPM
     e_inc = inc[int(np.clip(lead0, -endgame.max_lead, endgame.max_lead)) + endgame.max_lead] if endgame.reach else np.zeros(2)
     m_h, m_a = t.exp_home - e_inc[0], t.exp_away - e_inc[1]
     sd_m, sd_t, rho = t.sd_margin, t.sd_total, t.rho_mt
+    basis = mean_basis()
     hist = []
     for it in range(MATCH_ITERS):
         g = _build(m_h, m_a, sd_m, sd_t, rho, endgame, F)
         mo = g.moments()
-        err = {"exp_home": t.exp_home - mo["exp_home"], "exp_away": t.exp_away - mo["exp_away"],
+        mm = g._regulation if basis == "REGULATION" else mo          # the moments the target means refer to
+        err = {"exp_home": t.exp_home - mm["exp_home"], "exp_away": t.exp_away - mm["exp_away"],
                "sd_margin": t.sd_margin - mo["sd_margin"], "sd_total": t.sd_total - mo["sd_total"],
                "rho_mt": t.rho_mt - mo["rho_mt"]}
         hist.append(max(abs(err[k]) for k in ("exp_home", "exp_away", "sd_margin", "sd_total")))
@@ -345,7 +374,8 @@ def build(t: Targets, endgame: EndgameKernel, ot: OvertimeParams) -> GameJointPM
         sd_m = math.sqrt(max(0.25, sd_m ** 2 + t.sd_margin ** 2 - mo["var_margin"]))      # variance-additive step
         sd_t = math.sqrt(max(0.25, sd_t ** 2 + t.sd_total ** 2 - mo["var_total"]))
         rho = float(np.clip(rho + err["rho_mt"], -0.9, 0.9))
-    g.meta = {"joint_version": JOINT_VERSION, "latent": {"m_home": m_h, "m_away": m_a, "sd_margin": sd_m,
+    g.meta = {"joint_version": JOINT_VERSIONS[basis], "mean_basis": basis, "regulation_moments": g._regulation,
+              "latent": {"m_home": m_h, "m_away": m_a, "sd_margin": sd_m,
                                                          "sd_total": sd_t, "rho_mt": rho},
               "targets": t.__dict__, "match_iterations": it + 1, "match_max_abs_err": hist[-1],
               "ot_residual_tie_split": resid, "endgame_kernel_sha256": endgame.sha256(), "ot_params_sha256": ot.sha256(),

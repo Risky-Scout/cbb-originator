@@ -107,8 +107,17 @@ GRADED_COLS = (
     "Entry Timestamp", "Entry Fair Probability", "Close Timestamp", "Close Book", "Close Line",
     "Close Fair Probability", "Probability CLV", "Log-Odds CLV", "Directional Line Movement", "CLV Status",
     "Canonical Game ID", "Canonical Player ID", "Forecast ID", "Model Version", "Engine ID", "Evaluation Hash")
-GRADE_SHEETS = ("Graded Predictions", "By Stat", "By Player Role", "Stat x Role", "By Side", "By Reporting Tier",
-                "By Engine", "Status")
+SUCCESS_SHEET = "Success by Stat and Role"
+GRADE_SHEETS = ("Graded Predictions", SUCCESS_SHEET, "By Stat", "By Player Role", "Stat x Role", "By Side",
+                "By Reporting Tier", "By Engine", "Status")
+# Stage 06 (2026-11-27) export contract: the SECOND Grades worksheet is the success summary by stat category and by
+# player-role category, and it states the three populations separately:
+#   forecast rows              every frozen game x player x stat PMF of the slate (GAME_FROZEN market + model-only rows)
+#   market-matched rows        the frozen best eligible offer of each forecast row that had a real market (= the graded
+#                              rows; includes NO_POSITIVE_EV and PASS_NO_EDGE rows, so this is NOT a selection record)
+#   official eligible selections  rows with Is Actionable = YES (screen AND ACTIONABILITY_VALIDATED; none while the
+#                              actionability policy is not validated out of sample)
+POPULATION_COLS = ("Population", "Rows", "Definition")
 STATUS_COLS = ("GRADE_STATUS", "GRADED_SLATE_DATE", "MARKET_PREDICTIONS", "GRADED", "VOID_DNP", "PENDING",
                "GAMES_FROZEN", "SOURCE")
 GROUPS = {"By Stat": ("stat",), "By Player Role": ("player_role",), "Stat x Role": ("stat", "player_role"),
@@ -587,8 +596,10 @@ def final(row: dict) -> bool:
 def graded_rows(ops_root: Path, day: str, now, reuse: dict | None = None) -> tuple[list[dict], dict]:
     """Graded rows of the frozen evaluations of ET date `day` (reuse: eval_key -> stored FINAL row of the same hash)."""
     evals, games = load_evaluations(eval_path(ops_root, day))
+    pop = {"forecast_rows": sum(int(g.get("market_rows") or 0) + int(g.get("model_only_rows") or 0)
+                                for g in games.values())}
     if not evals:
-        return [], {"games_frozen": len(games), "evaluations": 0}
+        return [], {"games_frozen": len(games), "evaluations": 0, **pop}
     act = actuals(ops_root, {k[0] for k in evals})
     obs = Observations(ops_root, day)
     rows, reused = [], 0
@@ -603,7 +614,7 @@ def graded_rows(ops_root: Path, day: str, now, reuse: dict | None = None) -> tup
             reused += 1
             continue
         rows.append(graded_row(e, act, obs, now))
-    return rows, {"games_frozen": len(games), "evaluations": len(evals), "reused": reused}
+    return rows, {"games_frozen": len(games), "evaluations": len(evals), "reused": reused, **pop}
 
 
 # ============================================================================ metrics (Grades == Performance)
@@ -693,13 +704,38 @@ def grade_status(rows: list[dict]) -> str:
     return "PARTIALLY_SETTLED" if "PENDING" in res else "SETTLED"
 
 
+def success_sheet(rows: list[dict], info: dict) -> dict:
+    """The second Grades worksheet: populations, then success by stat category and by player-role category for the
+    market-matched rows and, separately, for the official eligible selections (Is Actionable = YES)."""
+    official = [r for r in rows if r.get("actionable") is True]
+    pop = [["FORECAST_ROWS", info.get("forecast_rows"), "frozen game x player x stat PMFs of the slate (market + model-only)"],
+           ["MARKET_MATCHED_ROWS", len(rows), "best eligible offer of each forecast row with a real market (graded rows)"],
+           ["MARKET_MATCHED_POSITIVE_EV", sum(1 for r in rows if r.get("preferred_side") in ME.SIDES),
+            "market-matched rows whose best offer has EV > 0"],
+           ["REPORTING_SCREEN_PASS", sum(1 for r in rows if r.get("tier") in (ME.TIER_65, ME.TIER_60, ME.TIER_ACT)),
+            "threshold screen (reporting tiers 65_PLUS / 60_PLUS / ACTIONABLE); not a selection"],
+           ["OFFICIAL_ELIGIBLE_SELECTIONS", len(official),
+            f"Is Actionable = YES (actionability: {ME.ACTIONABILITY_STATUS})"]]
+
+    def blk(title, keys, rr):
+        return {"title": title, "columns": tuple(GROUP_LABELS[k] for k in keys) + GRADE_METRICS,
+                "rows": group_rows(rr, keys, GRADE_METRICS), "formats": METRIC_FORMATS}
+    return {"name": SUCCESS_SHEET, "blocks": [
+        {"title": "POPULATIONS", "columns": POPULATION_COLS, "rows": pop},
+        blk("MARKET-MATCHED ROWS BY STAT", ("stat",), rows),
+        blk("MARKET-MATCHED ROWS BY PLAYER ROLE", ("player_role",), rows),
+        blk("OFFICIAL ELIGIBLE SELECTIONS BY STAT", ("stat",), official),
+        blk("OFFICIAL ELIGIBLE SELECTIONS BY PLAYER ROLE", ("player_role",), official)]}
+
+
 def grades_tables(rows: list[dict], graded_day: str, info: dict) -> list[dict]:
     m = metrics(rows)
     status = [grade_status(rows), graded_day, len(rows), m["Graded"], m["VOID_DNP"], m["Pending"],
               info.get("games_frozen", 0), f"frozen pre-cutoff market evaluations of {graded_day} "
                                            f"(ops/{EVAL_DIR}/{graded_day}/{EVAL_FILE})"]
     sheets = [{"name": "Graded Predictions", "blocks": [{"title": None, "columns": GRADED_COLS,
-                                                         "rows": graded_table_rows(rows), "formats": METRIC_FORMATS}]}]
+                                                         "rows": graded_table_rows(rows), "formats": METRIC_FORMATS}]},
+              success_sheet(rows, info)]
     for name, keys in GROUPS.items():
         sheets.append({"name": name, "blocks": [{"title": None, "columns": tuple(GROUP_LABELS[k] for k in keys)
                                                  + GRADE_METRICS, "rows": group_rows(rows, keys, GRADE_METRICS),

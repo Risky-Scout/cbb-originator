@@ -31,8 +31,21 @@ def test_pmf_valid_zero_tie_mass_and_moments_match_targets(pmf, vp):
     assert v["VALID"] and v["NEGATIVE_CELLS"] == 0 and v["TIE_MASS"] == 0.0 and abs(v["PMF_SUM"] - 1) < 1e-9
     mo = pmf.moments()
     sm, st = vp.sd(142.0, 10)
-    assert abs(mo["exp_home"] - 74) < 0.01 and abs(mo["exp_away"] - 68) < 0.01
+    reg = pmf.meta["regulation_moments"]                     # Stage 06: targets are 40-minute (regulation) means
+    assert pmf.meta["mean_basis"] == "REGULATION" and pmf.meta["joint_version"] == "cbb-game-joint-1.1.0"
+    assert abs(reg["exp_home"] - 74) < 0.01 and abs(reg["exp_away"] - 68) < 0.01
+    # the final mean adds the overtime expectation: P(regulation tie) x E[OT points] (> 0, about 0.4-0.8 per team)
+    ot_h, ot_a = mo["exp_home"] - reg["exp_home"], mo["exp_away"] - reg["exp_away"]
+    assert 0.2 < ot_h < 1.2 and 0.2 < ot_a < 1.2 and 0.02 < reg["tie_mass"] < 0.1
     assert abs(mo["sd_margin"] - sm) < 0.02 and abs(mo["sd_total"] - st) < 0.02
+
+
+def test_mean_basis_final_fallback_restores_previous_construction(eot, vp, monkeypatch):
+    monkeypatch.setenv(J.MEAN_BASIS_ENV, "FINAL")
+    g = GMod.build(GMod.targets(74.0, 68.0, 10, vp), eot)
+    mo = g.moments()
+    assert g.meta["joint_version"] == "cbb-game-joint-1.0.0" and g.meta["mean_basis"] == "FINAL"
+    assert abs(mo["exp_home"] - 74) < 0.01 and abs(mo["exp_away"] - 68) < 0.01
 
 
 def test_pmf_is_deterministic(eot, vp):

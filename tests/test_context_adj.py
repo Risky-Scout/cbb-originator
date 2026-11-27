@@ -70,6 +70,12 @@ def test_update_ledger_is_incremental_and_rebuilds_on_a_new_incumbent(tmp_path, 
 
 def test_engine_names_the_correction_and_the_ledger_incumbent(monkeypatch):
     assert "+DEV1+CTX1+" in ENG.engine_id()
-    assert ENG.pre_context_tag() == "a4b0cb644c60"                 # = the engine the context factors were fit against
+    # Stage 06: the incumbent includes PS2 (simulate_game applies it inside the ledger counterfactual). a4b0cb644c60 was
+    # the pre-PS2 incumbent the context kappas were selected against; the tag change forces one consistent rebuild.
+    assert ENG.pre_context_tag() == "af49d60f2175"
+    from cbb_platform.prod import minutes_state as MS2
+    monkeypatch.setattr(MS2, "ENABLED", False)
+    assert ENG.pre_context_tag() == "a4b0cb644c60"                 # without PS2: the pre-Stage-06 incumbent
+    monkeypatch.setattr(MS2, "ENABLED", True)
     monkeypatch.setattr(CX, "ENABLED", False)
     assert "CTX1" not in ENG.engine_id()

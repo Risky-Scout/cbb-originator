@@ -74,6 +74,29 @@ def test_daily_ratings_one_state_per_day_and_recovery_rebuild(tmp_path):
     assert s3["source"] == "REUSED_DAILY_STATE" and r3.state_id() == r2.state_id()
 
 
+
+def test_daily_ratings_reuse_requires_the_same_fit_params_and_prior(tmp_path):
+    """Stage 06: a mid-day release that changes the rating params (or prior) rebuilds instead of reusing the old fit."""
+    hist = _hist()
+    cut = pd.Timestamp("2026-11-19 11:00", tz="UTC")
+    r1, s1 = GF.daily_ratings(tmp_path, hist, cut, None, GR.RatingParams(), pending_d1=0)
+    assert s1["source"] == "BUILT"
+    _, s2 = GF.daily_ratings(tmp_path, hist, cut, None, GR.RatingParams(carry_level=0.6), pending_d1=0)
+    assert s2["source"] == "REUSED_DAILY_STATE"                      # carry does not enter the in-season fit
+    r3, s3 = GF.daily_ratings(tmp_path, hist, cut, None, GR.RatingParams(lam_off=5.0), pending_d1=0)
+    assert s3["source"] == "REBUILT_PRIOR_OR_PARAMS_CHANGED" and r3.meta["params"]["lam_off"] == 5.0
+    _, s4 = GF.daily_ratings(tmp_path, hist, cut, None, GR.RatingParams(lam_off=5.0), pending_d1=0)
+    assert s4["source"] == "REUSED_DAILY_STATE"
+
+
+def test_nonzero_beta_fails_closed():
+    from cbb_platform.game import model as GMod, params as GP
+    v = GMod.VarianceParams(**GP.game_model()["variance"])
+    with pytest.raises(ValueError, match="beta"):
+        GMod.targets(70.0, 68.0, 5, v, GMod.AdjustParams(beta=0.1, gamma=0.3))
+    assert GP.endgame_ot().manifest_sha256 and len(GP.endgame_ot().manifest_sha256) == 64
+
+
 def test_lineage_validation_detects_a_mismatched_player_snapshot(tmp_path):
     day = "2026-11-19"
     sd = tmp_path / "forecasts" / day / "F1"

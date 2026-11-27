@@ -61,8 +61,12 @@ def _corrections() -> list[tuple[str, dict]]:
 
 
 def pre_context_tag() -> str:
-    """Identity of the context ledger's incumbent: every promoted correction applied before DV1 / CTX1."""
-    cs = [c for t, c in _corrections() if t not in ("DEV1", "CTX1", "PI2", "PS2")]    # PI2 / PS2 act after CTX1
+    """Identity of the context ledger's incumbent: every promoted correction that acts in the ledger's counterfactual
+    (context_adj.ledger_rows: RA2 / TOVT1 on the means, then prod.simulate.simulate_game, which installs PTSC1 and PS2).
+    DEV1 / CTX1 / PI2 multiply the scoring means after the ledger's incumbent and are excluded. Stage 06 correction
+    (2026-11-27): PS2 was excluded although simulate_game always applies it, so the ledger seeded 11-26 13:45Z without
+    PS2 kept that incumbent after PS2 went live (22:48Z) and appended PS2 rows under the same tag (mixed incumbent)."""
+    cs = [c for t, c in _corrections() if t not in ("DEV1", "CTX1", "PI2")]          # PI2 acts after CTX1
     return hashlib.sha256(json.dumps(cs, sort_keys=True, default=float).encode()).hexdigest()[:12]
 
 

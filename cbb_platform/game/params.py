@@ -32,6 +32,7 @@ class EndgameOT:
     max_lead: int
     ot: J.OvertimeParams
     sha256: str
+    manifest_sha256: str = ""          # Stage 06: sha256 of endgame_ot.json (OT kappa / sd / rho, pace edges, T*, max lead)
 
     def kernel(self, exp_total: float) -> J.EndgameKernel:
         """The kernel of the pace bucket implied by the expected FINAL total (regulation points per minute at T*,
@@ -51,7 +52,8 @@ def _sha(p: Path) -> str:
 @lru_cache(maxsize=4)
 def endgame_ot(root: str | None = None) -> EndgameOT:
     r = Path(root) if root else ROOT
-    man = json.loads((r / "endgame_ot.json").read_text())
+    man_p = r / "endgame_ot.json"
+    man = json.loads(man_p.read_text())
     npz = r / man["artifact"]
     if _sha(npz) != man["sha256"]:
         raise ParamsIntegrityError(f"{npz.name}: sha256 {_sha(npz)[:12]} != manifest {man['sha256'][:12]}")
@@ -60,7 +62,7 @@ def endgame_ot(root: str | None = None) -> EndgameOT:
     o = man["ot"]
     return EndgameOT(tab, tuple(man["pace_edges_ppm"]), int(man["t_star_sec"]), int(man["max_lead"]),
                      J.OvertimeParams(kappa=o["kappa"], sd_team=o["sd_team"], rho=o["rho"], reach=o["reach"],
-                                      source=man["artifact"]), man["sha256"])
+                                      source=man["artifact"]), man["sha256"], _sha(man_p))
 
 
 @lru_cache(maxsize=4)

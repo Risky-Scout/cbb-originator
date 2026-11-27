@@ -55,6 +55,8 @@ class AdjustParams:
 def targets(exp_home: float, exp_away: float, n_games: float, v: VarianceParams, adj: AdjustParams | None = None,
             avail_delta_home: float = 0.0, avail_delta_away: float = 0.0) -> J.Targets:
     adj = adj or AdjustParams()
+    if adj.beta != 0.0:                       # Stage 06: beta (absolute S bridge) is not implemented; fail closed
+        raise ValueError(f"AdjustParams.beta={adj.beta}: the absolute-S term is not implemented (only gamma is)")
     h = exp_home + adj.gamma * avail_delta_home
     a = exp_away + adj.gamma * avail_delta_away
     sm, st = v.sd(h + a, n_games)

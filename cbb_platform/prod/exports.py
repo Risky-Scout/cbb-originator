@@ -1276,13 +1276,14 @@ def grades_shadow_sheets(sheets: list, grows: list, game_rows: list) -> list:
                       m.get("Units Won"), m.get("ROI")]
     sfmt = {"HIT_RATE": MX.PCT, "RETURN": MX.PCT}
     out = [{**first, "name": "Player Props"},
+           sheets[1],                                    # MX.SUCCESS_SHEET: the second worksheet (Stage 06 contract)
            {"name": "Game Markets", "blocks": [{"title": None, "columns": GX.GRADE_COLS,
                                                 "rows": GX.grade_table(game_rows), "formats": gfmt}]},
            {"name": "Summary", "blocks": [
                {"title": "PLAYER PROPS", "columns": GX.SUMMARY_COLS, "rows": [player_summary], "formats": sfmt},
                {"title": "GAME MARKETS (SHADOW: research only, never actionable)", "columns": GX.SUMMARY_COLS,
                 "rows": GX.summary(game_rows), "formats": sfmt}]}]
-    return out + sheets[1:]
+    return out + sheets[2:]
 
 
 def _cutoffs(pmfs: list, games: pd.DataFrame, ops_root: Path, date: str) -> dict:

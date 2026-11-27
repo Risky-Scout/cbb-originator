@@ -327,6 +327,17 @@ def test_grades_d_grades_prior_day_and_performance_agrees_exactly(tmp_path):
     p = EX.write_xlsx(out / "CBB_Grades.xlsx", sheets)
     wb = EX.read_xlsx(p)
     assert tuple(wb) == MX.GRADE_SHEETS and len(wb["Graded Predictions"]["rows"]) == 2
+    assert tuple(wb)[1] == MX.SUCCESS_SHEET
+    srows = wb[MX.SUCCESS_SHEET]["rows"]
+    titles = [r[0] for r in srows if len(r) == 1]
+    assert titles == ["POPULATIONS", "MARKET-MATCHED ROWS BY STAT", "MARKET-MATCHED ROWS BY PLAYER ROLE",
+                      "OFFICIAL ELIGIBLE SELECTIONS BY STAT", "OFFICIAL ELIGIBLE SELECTIONS BY PLAYER ROLE"]
+    pop = {r[0]: r[1] for r in srows if len(r) >= 2 and isinstance(r[0], str) and r[0].isupper() and "_" in r[0]}
+    assert pop["MARKET_MATCHED_ROWS"] == len(grows) and pop["OFFICIAL_ELIGIBLE_SELECTIONS"] == 0
+    assert pop["FORECAST_ROWS"] == info["forecast_rows"] >= len(grows)
+    i = srows.index(["MARKET-MATCHED ROWS BY STAT"])                  # identical to the By Stat worksheet
+    j = srows.index(["MARKET-MATCHED ROWS BY PLAYER ROLE"])
+    assert [r for r in srows[i + 1: j] if r] == [r for r in wb["By Stat"]["rows"] if r]
     rep = PF.export(DAY, ops, out, now)
     assert rep["status"] == "WRITTEN" and rep["start_date"] == PRIOR
     assert tuple(EX.read_xlsx(out / PF.performance_name(DAY))) == PF.SHEETS

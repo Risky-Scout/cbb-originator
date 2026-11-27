@@ -185,7 +185,10 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
     v = GMod.VarianceParams(**gm["variance"])
     adj = GMod.AdjustParams(**gm["adjust"])
     rp = GR.RatingParams(**{k: gm["ratings"][k] for k in ("tau_days", "lam_off", "lam_def", "lam_pace", "rho_carry",
-                                                          "lam_league")})
+                                                          "lam_league") + tuple(k for k in ("carry_level", "carry_pace")
+                                                                                if k in gm["ratings"])})
+    # (Stage 06) carry_level / carry_pace act only where the sealed prior was built; passing them makes the persisted
+    # ratings meta record the sealed values instead of the RatingParams default 1.0. The fit is unchanged.
     hist = season_games(increment_db, season)
     pri = prior(season, params_root)
     d1 = (pd.Timestamp(training_cutoff).tz_convert("America/New_York") - pd.Timedelta(days=1)).date()
@@ -247,8 +250,9 @@ def forecast(sdir: Path, snapshot: dict, games: pd.DataFrame, increment_db, trai
             "pmf_sha256": g.sha256(), "h_min": int(g.h_min), "a_min": int(g.a_min), "rows": int(g.p.shape[0]),
             "cols": int(g.p.shape[1]), "pmf_zlib": encode(g), "tie_mass": float(g.tie_mass()),
             "pmf_sum": float(g.p.sum()), "coherent": True,
-            "joint_version": J.JOINT_VERSION, "model_version": gm["model_version"],   # the sealed params' version
+            "joint_version": J.joint_version(), "mean_basis": J.mean_basis(), "model_version": gm["model_version"],   # the sealed params' version
             "params_sha256": gm["params_sha256"], "endgame_ot_sha256": eot.sha256,
+            "endgame_ot_manifest_sha256": eot.manifest_sha256,         # Stage 06: OT / pace-edge values are lineage too
             "moment_match_error": float(g0.meta.get("match_max_abs_err", 0.0)),
             "match_iterations": int(g0.meta.get("match_iterations", 0)), "status": "FORECAST"})
     out = pd.DataFrame(rows)
@@ -280,6 +284,15 @@ def daily_ratings(day_dir: Path, hist: pd.DataFrame, cutoff: pd.Timestamp, pri: 
     idx = rd / "index.jsonl"
     rows = [json.loads(l) for l in idx.read_text().splitlines() if l.strip()] if idx.exists() else []
     fresh = [x for x in rows if x["fresh"]["TEAM_RATINGS_FRESH"] and x["cutoff_utc"] == pd.Timestamp(cutoff).isoformat()]
+    # Stage 06: a persisted state is reused only if it was fit under the SAME prior and the same fit parameters; a
+    # release that changes the prior or the rating params mid-day rebuilds instead of carrying the old fit forward
+    # under the new params_sha256 / prior id.
+    want_prior = pri.meta.get("state_id") or pri.meta.get("prior_of") if pri is not None else None
+    fit_keys = ("tau_days", "lam_off", "lam_def", "lam_pace", "lam_league")
+    same = [x for x in fresh if x["meta"].get("prior") == want_prior
+            and all(x["meta"].get("params", {}).get(k) == getattr(rp, k) for k in fit_keys)]
+    stale_fit = bool(fresh) and not same
+    fresh = same
     if fresh:
         x = fresh[-1]
         df = pd.read_parquet(rd / f"{x['state_id']}.parquet")
@@ -298,7 +311,8 @@ def daily_ratings(day_dir: Path, hist: pd.DataFrame, cutoff: pd.Timestamp, pri: 
            "rebuild_of": rows[-1]["state_id"] if rows else None}
     with idx.open("a") as f:
         f.write(json.dumps(rec, default=str) + "\n")
-    return r, {"fresh": fr, "source": "BUILT" if not rows else "REBUILT_RECOVERY_NOT_FRESH", "game_ids": used}
+    src = "REBUILT_PRIOR_OR_PARAMS_CHANGED" if stale_fit else "BUILT" if not rows else "REBUILT_RECOVERY_NOT_FRESH"
+    return r, {"fresh": fr, "source": src, "game_ids": used}
 
 
 def ratings_fresh(hist: pd.DataFrame, r: GR.Ratings, cutoff: pd.Timestamp, pending_d1: int = 0) -> dict:

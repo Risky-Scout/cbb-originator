@@ -1,0 +1,290 @@
+{
+ "slate": "2026-11-26",
+ "independent": "no cbb_platform import",
+ "A_pmf_mean_vs_reported_mean": {
+  "max_abs": 7.105427357601002e-15,
+  "p99": 3.552713678800501e-15
+ },
+ "A_tail_point_mass": {
+  "max": 1.6125108330349054e-09,
+  "n_over_1e-6": 0
+ },
+ "A_combo_mean_minus_sum_of_base_means": {
+  "n": 3120,
+  "max_abs": 0.11235107981304182,
+  "median": 0.010167301649512961
+ },
+ "B_evaluations": 758,
+ "B_order_mismatch_hashes": [],
+ "C_grades_sheet_order": [
+  "Graded Predictions",
+  "Success by Stat and Role",
+  "By Stat",
+  "By Player Role",
+  "Stat x Role",
+  "By Side",
+  "By Reporting Tier",
+  "By Engine",
+  "Status"
+ ],
+ "C_all_rows_metrics": {
+  "N": 758,
+  "Graded": 752,
+  "Wins": 406,
+  "Losses": 346,
+  "Pushes": 0,
+  "VOID_DNP": 6,
+  "Hit Rate": 0.5398936170212766,
+  "Brier Score": 0.23519022134079726,
+  "Log Loss": 0.6624326935104512,
+  "Units Won": -5.604987398490376,
+  "ROI": -0.0074534406894818835
+ },
+ "C_population": {
+  "market_matched_graded_rows": 758,
+  "preferred_side_positive_ev": 408,
+  "no_positive_ev_rows": 350,
+  "screen_pass": 23,
+  "official_eligible_selections": 0
+ },
+ "D_boards_sheet_order": [
+  "Player Props",
+  "Game Lines",
+  "Player 60 Percent Plus",
+  "Player 65 Percent Plus",
+  "Model Coverage"
+ ],
+ "D_rows": {
+  "full_board": 758,
+  "model_coverage": 6730,
+  "60_plus": 19,
+  "65_plus": 12
+ },
+ "checks": {
+  "A0_receipt_pmf_parquet_sha256": {
+   "pass": 1,
+   "fail": 0
+  },
+  "A0_receipt_rows": {
+   "pass": 1,
+   "fail": 0
+  },
+  "A0_receipt_xlsx_sha256": {
+   "pass": 1,
+   "fail": 0
+  },
+  "A1_unique_game_player_stat": {
+   "pass": 1,
+   "fail": 0
+  },
+  "A2_all_12_supported_stats_per_player": {
+   "pass": 624,
+   "fail": 0
+  },
+  "A3_summary_rows_eq_refs": {
+   "pass": 1,
+   "fail": 0
+  },
+  "A4_pmf_located": {
+   "pass": 7488,
+   "fail": 0
+  },
+  "A5_sha256_recomputed": {
+   "pass": 7488,
+   "fail": 0
+  },
+  "A6_mass_one_nonneg": {
+   "pass": 7488,
+   "fail": 0
+  },
+  "A7_support_matches": {
+   "pass": 7488,
+   "fail": 0
+  },
+  "A8_summary_stats_recomputed": {
+   "pass": 7488,
+   "fail": 0
+  },
+  "B0_unique_eval_keys": {
+   "pass": 1,
+   "fail": 0
+  },
+  "B10_entry_fields_eq_best": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B11_one_offer_selected_per_key": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B12_preferred_side": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B13_books_at_line": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B14_reliable": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B15_screen_and_tier": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B16_never_actionable_unvalidated": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B17_role_from_prediction_minutes": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B18_pit_prediction_and_quote_before_cutoff": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B19_line_inside_support": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B1_eval_pmf_located": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B2_candidate_count": {
+   "pass": 758,
+   "fail": 0
+  },
+  "B3_decimal_eq_american": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B4_pwin_plose_ppush_from_pmf": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B4b_integer_line_push_only": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B5_model_p_nonpush": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B6_same_book_devig": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B7_edge": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B8_ev_push_aware": {
+   "pass": 1440,
+   "fail": 0
+  },
+  "B9_best_offer_reproduced": {
+   "pass": 758,
+   "fail": 0
+  },
+  "C0_grades_receipt_xlsx_sha256": {
+   "pass": 1,
+   "fail": 0
+  },
+  "C2_graded_rows_eq_evaluations": {
+   "pass": 1,
+   "fail": 0
+  },
+  "C3_graded_row_traces_to_frozen_eval": {
+   "pass": 758,
+   "fail": 0
+  },
+  "C4_graded_row_fields_eq_eval": {
+   "pass": 758,
+   "fail": 0
+  },
+  "C5_combo_actual_eq_sum": {
+   "pass": 250,
+   "fail": 0
+  },
+  "C6_result_independent": {
+   "pass": 758,
+   "fail": 0
+  },
+  "C7_units_eq_decimal_minus_one": {
+   "pass": 758,
+   "fail": 0
+  },
+  "C8_By Player Role_metrics_recomputed": {
+   "pass": 3,
+   "fail": 0
+  },
+  "C8_By Stat_metrics_recomputed": {
+   "pass": 12,
+   "fail": 0
+  },
+  "C8_Stat x Role_metrics_recomputed": {
+   "pass": 26,
+   "fail": 0
+  },
+  "C9_second_worksheet_success_by_stat_and_role": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D0_boards_receipt_xlsx_sha256": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D1_one_row_per_game_player_stat": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D2_full_board_all_valid_market": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D3_coverage_none_valid_market": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D4_Player 60 Percent Plus_exact_subset": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D4_Player 65 Percent Plus_exact_subset": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D5_Player 60 Percent Plus_threshold": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D5_Player 65 Percent Plus_threshold": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D6_Player 60 Percent Plus_complete_vs_model_p": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D6_Player 65 Percent Plus_complete_vs_model_p": {
+   "pass": 1,
+   "fail": 0
+  },
+  "D7_tier_consistent_with_row": {
+   "pass": 758,
+   "fail": 0
+  },
+  "D8_is_actionable_NO": {
+   "pass": 758,
+   "fail": 0
+  },
+  "D9_board_row_eq_frozen_eval_same_forecast_offer": {
+   "pass": 133,
+   "fail": 0
+  }
+ },
+ "failed_checks": []
+}
