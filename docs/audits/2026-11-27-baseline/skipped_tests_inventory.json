@@ -1,0 +1,446 @@
+[
+ {
+  "file": "tests/test_pit_audit_season_rule.py",
+  "line": 38,
+  "reason": "guard closed on this commit",
+  "test": "test_open_state_authorizes_only_2026",
+  "doc": "",
+  "n_asserts": 1,
+  "asserts": [
+   "assert _rule(\"open\") == {\"mode\": \"LOCKBOX_OPEN_2025_26\", \"unauthorized\": \"season > 2026\", \"authorized\": \"season = 2026\"}"
+  ]
+ },
+ {
+  "file": "tests/test_prod_footprint_minimization.py",
+  "line": 89,
+  "reason": "compact candidate / frozen Stage 3 store absent (local stores only)",
+  "test": "test_candidate_verifies_and_holds_the_traced_subset",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert set(HS.HX.RELATIONS) <= set(man[\"relations\"])",
+   "assert len(man[\"columns\"][\"player_features\"]) == 46 and len(man[\"columns\"][\"player_box_state\"]) == 15",
+   "assert \"oos_forecasts_phase1.parquet\" not in json.dumps(man[\"sources\"])"
+  ]
+ },
+ {
+  "file": "tests/test_prod_footprint_minimization.py",
+  "line": 97,
+  "reason": "compact candidate / frozen Stage 3 store absent (local stores only)",
+  "test": "test_candidate_oos_store_equals_parquet",
+  "doc": "",
+  "n_asserts": 0,
+  "asserts": []
+ },
+ {
+  "file": "tests/test_prod_morning_equivalence.py",
+  "line": 93,
+  "reason": "frozen local stores not present",
+  "test": "test_21_walk_forward_stage_in_a_fresh_process_produces_byte_identical_artifacts",
+  "doc": "The real walk-forward (feature catch-up, fit 1, fit 2, deterministic repeat gate, hard gates, promotion) on the\nlabeled fixture season: lifecycle.walk_forward in-process vs the WALK_FORWARD stage in a",
+  "n_asserts": 10,
+  "asserts": [
+   "assert a[\"DAILY_MODEL_PROMOTION\"] == \"PROMOTED\", a",
+   "assert out[\"code\"] == 0 and out[\"out\"][\"status\"] == MS.PASS and out[\"out\"][\"DAILY_MODEL_PROMOTION\"] == \"PROMOTED\", out",
+   "assert ma[\"artifacts\"] == mb[\"artifacts\"] and ma[\"TRAINING_CUTOFF\"] == mb[\"TRAINING_CUTOFF\"]",
+   "assert ma[\"deterministic_refit\"][\"BIT_IDENTICAL\"] and mb[\"deterministic_refit\"][\"BIT_IDENTICAL\"]"
+  ]
+ },
+ {
+  "file": "tests/test_prod_replay.py",
+  "line": 60,
+  "reason": "frozen local stores not present",
+  "test": "test_feature_rows_identical_to_lockbox_store",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert prov[\"target_outcome_rows\"] == 0 and prov[\"post_as_of_rows\"] == 0",
+   "assert len(a) == len(b) > 0, t",
+   "assert set(b.columns) <= set(a.columns), t",
+   "assert _eq(a, b) == [], (t, _eq(a, b))"
+  ]
+ },
+ {
+  "file": "tests/test_prod_replay.py",
+  "line": 75,
+  "reason": "frozen local stores not present",
+  "test": "test_marginal_forecasts_reproduce_validated_oos_store",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert len(m) == len(rows) == len(store) > 0",
+   "assert (m[\"role_diagnostic\"] == m[\"role_diagnostic_store\"].fillna(\"NO_ROLE_HISTORY\")).all()",
+   "assert np.allclose(m[c], m[f\"{c}_store\"], rtol=1e-10, atol=1e-12), c"
+  ]
+ },
+ {
+  "file": "tests/test_prod_replay.py",
+  "line": 87,
+  "reason": "frozen local stores not present",
+  "test": "test_environment_reproduces_frozen_team_loader",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert len(mine) == len(ref) == 4",
+   "assert np.allclose(mine[(r.game_id, r.team_id)], [r.pace_dev, r.own_eff_dev, r.opp_eff_dev], rtol=1e-12, atol=1e-12)"
+  ]
+ },
+ {
+  "file": "tests/test_props_v1_pricing.py",
+  "line": 88,
+  "reason": "local-only gitignored store absent: modeling/store/features.duckdb, modeling/store/labels.duckdb",
+  "test": "test_participation_probability_stays_separate_from_the_pmf",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert pts[\"participation_probability\"].between(0, 1).all() and (pts[\"participation_probability\"] < 0.2).any()",
+   "assert np.allclose(low[\"over_probability\"] + low[\"under_probability\"] + low[\"push_probability\"], 1.0)",
+   "assert np.allclose(pmf.sum(axis=1), 1.0)",
+   "assert np.array_equal(again[k], o[k].to_numpy()), k"
+  ]
+ },
+ {
+  "file": "tests/test_props_v1_pricing.py",
+  "line": 107,
+  "reason": "local-only gitignored store absent: modeling/store/features.duckdb, modeling/store/labels.duckdb",
+  "test": "test_frozen_model_outputs_unchanged",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert np.allclose(got[\"participation_probability\"], got[\"pp\"], atol=0) and np.allclose(got[\"mean\"], got[\"pts\"], atol=0)",
+   "assert np.allclose(got[\"conditional_minutes\"], got[\"min\"], atol=0)",
+   "assert hashlib.sha256((P.CONFIG_PATH.parent / f).read_bytes()).hexdigest() == h, f"
+  ]
+ },
+ {
+  "file": "tests/test_props_v1_pricing.py",
+  "line": 131,
+  "reason": "local-only gitignored store absent: modeling/store/features.duckdb, modeling/store/labels.duckdb",
+  "test": "test_deterministic_rerun_is_byte_identical",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert a == b and a == V.SAMPLE_PATH.read_bytes()",
+   "assert b\"\\r\" not in a"
+  ]
+ },
+ {
+  "file": "tests/test_v2_jm1_final_production.py",
+  "line": 20,
+  "reason": "local-only gitignored store absent: modeling/v2_oos/oos_forecasts_phase1b_v1ref.parquet, modeling/v2_oos/oos_forecasts_phase1b_v1ref_F2023.parquet, data/qa/game_identity_questionable_only.csv",
+  "test": "<module-level skip>",
+  "module_tests": [
+   "test_final_chronology_and_rollback_identity",
+   "test_frozen_jm1_final_code_unchanged_since_protocol",
+   "test_architecture_constants_unchanged",
+   "test_frozen_artifacts_load_and_reference_the_phase1b_marginal",
+   "test_numeric_diff_tolerates_last_bit_noise_only"
+  ],
+  "asserts": []
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 181,
+  "reason": "frozen local stores not present",
+  "test": "test_first_refit_includes_the_completed_game_the_next_morning",
+  "doc": "",
+  "n_asserts": 10,
+  "asserts": [
+   "assert r[\"DAILY_REFIT_STATUS\"] == \"PASS\" and r[\"DAILY_MODEL_PROMOTION\"] == \"PROMOTED\", r.get(\"gates\")",
+   "assert m[\"MODEL_VERSION\"] == \"cbb-jm1-2026-27-20261104\" and m[\"PREVIOUS_MODEL_VERSION\"] == \"cbb-jm1-2026-27-20261101\"",
+   "assert m[\"N_INCLUDED_2026_27_GAMES\"] == 1 and m[\"LATEST_INCLUDED_GAME\"][\"game_id\"] == s[\"A\"]",
+   "assert m[\"N_INCLUDED_2026_27_PLAYER_GAMES\"] > 0 and m[\"TRAINING_THROUGH_SEASON\"] == 2027"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 202,
+  "reason": "frozen local stores not present",
+  "test": "test_in_progress_and_incomplete_box_games_are_deferred_then_enter",
+  "doc": "",
+  "n_asserts": 5,
+  "asserts": [
+   "assert tuple(e4.loc[s[\"B\"], [\"decision\", \"reason\"]]) == (\"DEFERRED\", \"NOT_FINAL_AT_CUTOFF\")",
+   "assert tuple(e4.loc[s[\"C\"], [\"decision\", \"reason\"]]) == (\"DEFERRED\", \"BOX_INCOMPLETE\")",
+   "assert set(e4.index[e4[\"decision\"] == \"INCLUDED\"]) == {s[\"A\"]}",
+   "assert set(e7.index[e7[\"decision\"] == \"INCLUDED\"]) == {s[\"A\"], s[\"B\"], s[\"C\"], *s[\"r2\"]}"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 211,
+  "reason": "frozen local stores not present",
+  "test": "test_future_and_late_arriving_outcomes_never_enter_training",
+  "doc": "",
+  "n_asserts": 9,
+  "asserts": [
+   "assert late[\"decision\"] == \"DEFERRED\" and late[\"reason\"] == \"NOT_FINAL_AT_CUTOFF\"",
+   "assert pd.Timestamp(late[\"knowable_at\"]) <= WC.refit_cutoff(D7)",
+   "assert v[m7[\"STATE_VERSION\"]][\"created_at\"] <= WC.refit_cutoff(D7)",
+   "assert (e7[\"scheduled_tip_utc\"] < WC.refit_cutoff(D7)).all()"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 228,
+  "reason": "frozen local stores not present",
+  "test": "test_corrected_box_enters_only_the_next_version",
+  "doc": "",
+  "n_asserts": 6,
+  "asserts": [
+   "assert len(corr) == 1 and corr[0][\"game_id\"] == s[\"A\"]",
+   "assert c[\"FIRST_MODEL_VERSION_USING_CORRECTION\"] == \"cbb-jm1-2026-27-20261107\"",
+   "assert c[\"CORRECTION_RECEIVED_AT\"] == \"2026-11-07T09:00:00+00:00\"",
+   "assert {(x[\"relation\"], x[\"field\"]) for x in c[\"changes\"]} == {(r, f) for r in (\"flagship.player_game_outcomes\",                                                "
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 247,
+  "reason": "frozen local stores not present",
+  "test": "test_failed_candidate_leaves_the_active_model_unchanged",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert r[\"DAILY_REFIT_STATUS\"] == \"FAIL\" and r[\"DAILY_MODEL_PROMOTION\"] == \"REFUSED\"",
+   "assert r[\"gates\"][\"failed\"] == [\"DETERMINISTIC_REPEAT_FIT\"]",
+   "assert r[\"ACTIVE_MODEL_VERSION\"] == \"cbb-jm1-2026-27-20261107\"",
+   "assert not SO.version_dir(tl[\"root\"], D8).exists() and Path(r[\"refused_candidate\"]).exists()"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 255,
+  "reason": "frozen local stores not present",
+  "test": "test_atomic_promotion_and_rollback",
+  "doc": "",
+  "n_asserts": 7,
+  "asserts": [
+   "assert tl[\"d11\"][\"DAILY_MODEL_PROMOTION\"] == \"PROMOTED\" and tl[\"d11\"][\"ACTIVE_MODEL_VERSION\"] == \"cbb-jm1-2026-27-20261111\"",
+   "assert SO.rollback_pointer(root)[\"ROLLBACK_MODEL_VERSION\"] == \"cbb-jm1-2026-27-20261107\"",
+   "assert [d.name for d in (root / \"candidates\").iterdir() if d.name.startswith(\".candidate\")] == []",
+   "assert SO.versions(root) == [f\"cbb-jm1-2026-27-2026{d}\" for d in (\"1101\", \"1104\", \"1107\", \"1111\")]"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 270,
+  "reason": "frozen local stores not present",
+  "test": "test_predictions_carry_model_version_and_training_cutoff",
+  "doc": "",
+  "n_asserts": 6,
+  "asserts": [
+   "assert r[\"predictions\"] > 0",
+   "assert {p[\"model_version\"] for p in preds} == {\"cbb-jm1-2026-27-20261107\"}",
+   "assert {p[\"training_cutoff\"] for p in preds} == {WC.refit_cutoff(D7).isoformat()}",
+   "assert all(p[\"checkpoint\"] == \"TIP_MINUS_1H\" and p[\"feature_cutoff\"] and p[\"data_cutoff\"] for p in preds)"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 282,
+  "reason": "frozen local stores not present",
+  "test": "test_monitoring_is_attached_to_the_predicting_version",
+  "doc": "",
+  "n_asserts": 5,
+  "asserts": [
+   "assert r[\"settlement\"][\"settled\"] > 0",
+   "assert b[\"ALL\"][\"n\"] > 0 and set(b[\"MODEL_VERSION\"]) == {\"cbb-jm1-2026-27-20261107\"}",
+   "assert all(k in b for k in (\"STAT\", \"ROLE\", \"STAT_X_ROLE\", \"LINE\", \"LINE_RANGE\", \"CHECKPOINT\"))",
+   "assert b[\"ALL\"][\"brier\"][\"value\"] is not None and b[\"ALL\"][\"log_loss\"][\"value\"] is not None"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 294,
+  "reason": "frozen local stores not present",
+  "test": "test_market_comparison_uses_the_exact_matched_line_and_timestamp",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert len(m) > 0",
+   "assert mk[\"ALL\"][\"n\"] > 0 and \"DELTA_BRIER\" in mk[\"ALL\"] and \"DELTA_LOG_LOSS\" in mk[\"ALL\"] and mk[\"SPORTSBOOK\"]",
+   "assert set(o[\"side\"]) == {\"OVER\", \"UNDER\"}",
+   "assert np.isclose(r.p_market, (1 / do) / (1 / do + 1 / du))"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 312,
+  "reason": "frozen local stores not present",
+  "test": "test_rerun_is_idempotent",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert b[\"DAILY_MODEL_PROMOTION\"] in (\"NOT_REQUIRED\", \"IDEMPOTENT_NO_CHANGE\") and b[\"ACTIVE_MODEL_VERSION\"] == a[\"ACTIVE_MODEL_VERSION\"]",
+   "assert c[\"DAILY_MODEL_PROMOTION\"] in (\"NOT_REQUIRED\", \"IDEMPOTENT_NO_CHANGE\") and c[\"settlement\"][\"settled\"] == 0",
+   "assert tl[\"idem\"][\"report_identical\"] and tl[\"idem\"][\"settlements_before\"] == tl[\"idem\"][\"settlements_after\"]",
+   "assert len({r[\"run_id\"] for r in runs}) == len(runs)"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 322,
+  "reason": "frozen local stores not present",
+  "test": "test_same_inputs_produce_byte_identical_artifacts",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert tl[\"d4_fresh\"][\"DAILY_MODEL_PROMOTION\"] == \"PROMOTED\"",
+   "assert (SO.version_dir(tl[\"root\"], D4) / f).read_bytes() == (SO.version_dir(tl[\"root2\"], D4) / f).read_bytes(), f"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_daily.py",
+  "line": 328,
+  "reason": "frozen local stores not present",
+  "test": "test_other_sports_models_untouched",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert tl[\"root\"].name == \"cbb-originator\"",
+   "assert p.startswith((\"cbb_platform/\", \"tests/\", \"docs/\", \"deploy/droplet/\")) or p in (             \"data/qa/game_identity_questionable_only.csv\", \".github/workf",
+   "assert not any(x in p.lower() for x in (\"massey\", \"nba\", \"nfl\", \"ncaaf\")), p"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_finalize.py",
+  "line": 176,
+  "reason": "frozen local stores not present",
+  "test": "test_a_materially_different_morning_run_is_not_suppressed",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert a[\"run_id\"] == b[\"run_id\"] and len(runs) == 1",
+   "assert c[\"run_id\"] != a[\"run_id\"] and len(runs) == 2",
+   "assert runs[1][\"run_identity\"][\"config_hash\"] == \"a-materially-different-config\""
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_fit.py",
+  "line": 43,
+  "reason": "frozen local stores not present",
+  "test": "test_opening_chronology_and_recency",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert f[\"T\"] == WC.OPENING_THROUGH == 2026",
+   "assert f[\"params\"][\"resid_seasons\"] == [2024, 2025, 2026]",
+   "assert f[\"params\"][\"struct\"][\"glm\"][\"seasons\"] == [2023, 2024, 2025, 2026]",
+   "assert w[\"2026\"] == 1.0 and w[\"2025\"] == 0.5 and w[\"2024\"] == 0.25 and w[\"2014\"] == 0.5 ** 12"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_fit.py",
+  "line": 52,
+  "reason": "frozen local stores not present",
+  "test": "test_marginal_parameters_bit_identical",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert mine[\"v0_state\"] == fz[\"v0_state\"]",
+   "assert mine[\"participation_state\"] == fz[\"participation_state\"]",
+   "assert mine[\"config\"] == fz[\"config\"] and mine[\"coef_order\"] == fz[\"coef_order\"]"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_fit.py",
+  "line": 59,
+  "reason": "frozen local stores not present",
+  "test": "test_structural_parameters_reproduce",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert nd[\"NUMERICALLY_IDENTICAL\"] and nd[\"max_rel_diff\"] <= JP.DET_RTOL, nd",
+   "assert mine[k] == ref[k], k"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_fit.py",
+  "line": 68,
+  "reason": "frozen local stores not present",
+  "test": "test_prediction_level_reproduction_on_the_golden_slate",
+  "doc": "",
+  "n_asserts": 3,
+  "asserts": [
+   "assert got[\"platform\"] == gold[\"platform\"] == f\"{sys.platform}-{platform.machine()}\", \"exact comparison needs the golden platform\"",
+   "assert bad == []",
+   "assert {p[\"model_version\"] for p in got[\"predictions\"]} == {REPRO}"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_fit.py",
+  "line": 90,
+  "reason": "frozen local stores not present",
+  "test": "test_opening_baseline_artifacts_unchanged",
+  "doc": "",
+  "n_asserts": 1,
+  "asserts": [
+   "assert hashlib.sha256((C.PROJECT_ROOT / path).read_bytes()).hexdigest() == sha, k"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_training_rows.py",
+  "line": 68,
+  "reason": "frozen local stores not present",
+  "test": "test_frame_equals_frozen_loader",
+  "doc": "",
+  "n_asserts": 5,
+  "asserts": [
+   "assert list(got.columns) == list(frame.columns)",
+   "assert len(got) == len(ref) > 0",
+   "assert set(pg[pg[\"player_game_example_id\"].isin(ref[\"player_game_example_id\"])][\"canonical_game_id\"]) == set(rep[\"ids\"])",
+   "assert len(full) == len(got)"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_training_rows.py",
+  "line": 81,
+  "reason": "frozen local stores not present",
+  "test": "test_finals_equal_frozen_loader",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert list(got.columns) == list(ref.columns) and len(got) == len(ref) > 1000",
+   "assert _eq(got, ref) == []"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_training_rows.py",
+  "line": 89,
+  "reason": "frozen local stores not present",
+  "test": "test_participation_equals_frozen_loader",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert list(got.columns) == list(ref.columns) and len(got) == len(ref) > 0",
+   "assert _eq(got, ref) == []"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_training_rows.py",
+  "line": 97,
+  "reason": "frozen local stores not present",
+  "test": "test_team_frame_equals_frozen_loader",
+  "doc": "",
+  "n_asserts": 2,
+  "asserts": [
+   "assert list(got.columns) == list(ref.columns) and len(got) == len(ref) == 4",
+   "assert _eq(got, ref) == []"
+  ]
+ },
+ {
+  "file": "tests/test_walkforward_training_rows.py",
+  "line": 105,
+  "reason": "frozen local stores not present",
+  "test": "test_oos_rows_equal_validated_store",
+  "doc": "",
+  "n_asserts": 4,
+  "asserts": [
+   "assert list(got.columns) == list(ref.columns) and len(got) == len(ref) > 0",
+   "assert _eq(got[exact], ref[exact]) == []",
+   "assert rep[\"a\"][\"coverage\"][\"candidates_without_label\"] == 0",
+   "assert np.allclose(got[c], ref[c], rtol=1e-10, atol=1e-12), c"
+  ]
+ }
+]

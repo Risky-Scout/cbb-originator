@@ -1,0 +1,144 @@
+{
+ "id": "CBB_STAGE_BASELINE_20261127",
+ "recorded_at": "2026-11-27T01:05Z",
+ "mode": "READ_ONLY (no production mutation; no acquisition; no frozen row rewritten)",
+ "evidence_files": {
+  "baseline_droplet.json": "4197105a7ee143e27eed3a91c96b76aa163b4a9678947af0be961a99867c2693",
+  "reference_games.jsonl": "9c8c957cabda5ebd02eec658d9f85a4fbfc85f7bc65b7c81d228b30439a47315",
+  "reference_players.jsonl": "de5cf6dc27b17b02413a61f5f05e29bf03bcd40e509e964597dbd0f35fa53954",
+  "skipped_tests_inventory.json": "e792569427baeccba8a8e6a7e07e5c76e9cf75cee9b246a48c17719820829ed8",
+  "baseline.py": "46ec1fcf552ae64e6088eb2d530ef46ca3b0eee58890b050280a3589da160cf8",
+  "droplet_copy": "/var/lib/sports-models/cbb-originator/audit/baseline-20261127/ (run as cbb-originator, ReadOnlyPaths=/var/lib/sports-models, MemoryMax=1800M, 6 s wall)"
+ },
+
+ "git": {
+  "local_repo": "~/CBB Predictive Model 2027 Preseason Edition/CBB_Originator_Model",
+  "local_branch": "research/root-cause-20261126",
+  "local_head": "04afadd76329fbaa51ba7aaac2355fa63d90a317 (docs-only on top of 9f65e7f)",
+  "working_tree": "CLEAN (no uncommitted changes; nothing to preserve; no reset performed)",
+  "origin_production_root_cause_20261126": "04afadd",
+  "origin_research_root_cause_20261126": "04afadd",
+  "origin_main": "60c7a44 (ancestor of 9f65e7f, 31 commits behind production)",
+  "ci": {
+   "9f65e7f": "run 45904931318 success: full regression 1121 passed, 34 skipped (log re-read 2026-11-27)",
+   "04afadd": "run 45910329517 success",
+   "lead_1111_passes": "RESOLVED: 1111 passed is run 45865910265 for c30c173 (superseded); not the current release"
+  }
+ },
+
+ "release": {
+  "current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f (/opt/sports-models/cbb-originator/current, deployed 2026-11-26T22:48Z)",
+  "rollback_pointer": "cae2a027430184c5686eb87d180e6062457359ac (ROLLBACK_RELEASE)",
+  "retained": "c30c17304b419bbcab32b792e7b35a19f9b9b135",
+  "integrity_on_droplet": {"9f65e7f": "822/822 OK", "cae2a02": "822/822 OK", "c30c173": "821/821 OK", "pyc_in_releases": 0},
+  "release_vs_git_tree": "ALL 822 sha256sums match git archive 9f65e7f byte-for-byte",
+  "sha256sums_file_sha256": {"9f65e7f": "f8d5f9d22d53ef7c...", "cae2a02": "476ade445924597e...", "c30c173": "a8c24ca772b5ce3d..."},
+  "lead_821_integrity": "RESOLVED: 821/821 is c30c173; current is 822/822",
+  "env_file_sha256": "9dfaa5857b0fe6c48a90ea0535dfdc8da9f6ffee9f29663af0aa4dc7da01a287",
+  "env_flags": "CBB_EXPECTED_COMMIT=9f65e7f, PRIMARY_WRITER, ROTOWIRE_ENABLED=true, ROTOWIRE_SOURCE=WEB, WIZARDOFODDS_PUBLICATION=disabled, AUTOMATIC_WAGERING=disabled, REAL_MONEY_ACTIONABILITY=disabled, CBB_HISTORY_SOURCE=CANDIDATE, PYTHONDONTWRITEBYTECODE=1",
+  "entry_point": "/opt/sports-models/cbb-originator/current/deploy/droplet/bin/cbb-originator-run (sha256 ec7849e2a302..., equals git 9f65e7f)",
+  "units": "23 installed cbb-originator-* unit files byte-identical to current release AND to rollback release deploy/droplet/systemd",
+  "active_fit": "cbb-jm1-2026-27-20261126 (ACTIVE_MODEL.json, promoted 2026-11-26T14:04:51Z, WF-20261126-e204bbd454307922, manifest f7ccfc6aecd1...; previous cbb-jm1-2026-27-20261125)",
+  "player_engine": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+  "game_model": "cbb-game-model-1.2.0 (params_sha256 abe0533360f9..., recomputed OK in current and rollback), joint cbb-game-joint-1.0.0, mode SHADOW, ratings prior TR-e2c7494ad87941ff"
+ },
+
+ "receipts_verified": {
+  "morning_2026-11-26": {
+   "forecast": "F20261126T140651Z-2bdce5 / R20261126T140651Z-7218aae1, code 0c64776 (ancestor of 9f65e7f), window INITIAL_0700, run_reasons [STALE_ROSTER]",
+   "chain": "PREP 11:11Z, FEATURE_WARMUP 11:15-13:13Z, WALK_FORWARD 13:13-14:04Z, INITIAL 14:06-14:16Z, EXPORTS 14:25-14:27Z, HEALTH 14:30Z, RECOVERY 14:32Z (INITIAL ~3 h late; warm-up dominated)",
+   "pmfs.parquet": "f3465c566be1fd8e0864fba052437ad29d291331ba6bcdcd9a3b9b22effde9da = snapshot.pmfs_sha256; 7092 rows, 0 per-row PMF hash mismatches",
+   "game_pmfs.parquet": "be20aa5709e94d152e7feb3146c00444b47031229c6361c4cd771339eb585444 = game_forecast.file_sha256; 20 rows, 0 decoded-PMF hash mismatches",
+   "forecast_ledger.jsonl": "36ccab63870a9fc237df91aadb508f9ae4a00f4f8aecd078c66e909a45fb6f7d; 10285 rows (1 RUN + 10284 PREDICTION), 0 row_hash mismatches, 0 chain breaks, head da5b697cb3e5..."
+  },
+  "refresh_18Z_2026-11-26": {
+   "forecast": "F20261126T180352Z-e2916f / R20261126T180352Z-04e50531, code c30c173, window ROTOWIRE_1300, rotowire_refresh ENABLED, run_reasons [STALE_ROSTER]",
+   "publication_receipt": "ops/availability_publications/R20261126T180001Z-b9d6f6.publish.json status PUBLISHED (Boards 7488 rows / 727 valid market / 0 dup; Distributions 7488; Game Lines lineage PASS)",
+   "pmfs.parquet": "f3c8e93a33b2e7ca8dc0879257584f167a868cdfa18ece8a51b636c8adf3b645 = snapshot.pmfs_sha256; 4740 rows, 0 mismatches",
+   "game_pmfs.parquet": "2a46d804c523cf0034b501fb03360f05917cbd3b8cb626f6084f2aa1a1a9a969 = game_forecast.file_sha256; 14 rows, 0 mismatches",
+   "forecast_ledger.jsonl": "d9a2eee95d294547b2525d697eb9ea1222775fe7f464b6ed3439778e7c9c2c2a; 7225 rows, 0 mismatches, 0 breaks, head a16f76ddbc1f..."
+  },
+  "lead_8_of_14_changed_game_pmfs": "CONFIRMED: 14 shared games, 8 PMFs changed 14:06Z->18:03Z, all 8 have nonzero availability deltas, 0 changed without a delta, 0 deltas without a change; 1090/4740 player PMFs changed",
+  "export_and_public_payload_hashes_at_those_ticks": "NOT_RECOVERABLE: exports/2026-11-26/{xlsx, public/cbb_public_v1.json} are rewritten in place by every tick (latest public 01:00:15Z on 11-27); publication receipts record row counts and lineage status, not file hashes; no archived copy exists. Current-state hashes recorded below. Gap logged as dependency D3.",
+  "export_state_at_baseline": {
+   "public/cbb_public_v1.json": "6d60d95ee3ef75f357fd26c063a55afc7f5b686641c7edcd9e9ed5afcd78eb34 (as of 00:51Z; regenerated 01:00Z during this stage)",
+   "public/qa_receipt.json": "WIZARDOFODDS_ROW_QA PASS, 100 game / 758 prop rows, 0 mismatches (00:50Z)",
+   "boards_receipt.content_sha256": "40724097bdcbb074211d19c5354b79456ff64e1aa95cf5b4c66f5eb9ba18e7e7",
+   "public_payload_identity_fields": "ABSENT: payload has no engine/model/forecast id; lineage is only via Boards/Game Lines receipts (dependency D4)"
+  }
+ },
+
+ "label_reconciliation_frozen_rows": {
+  "rule": "game PMF version = sealed params_sha256 (cbb_platform/game/model.py note); labels not rewritten",
+  "params_map_from_git": {"4174a1760f71": "cbb-game-model-1.0.0 (b1d95e0)", "ffb91c4375c0": "cbb-game-model-1.1.0 (2361c15)", "abe0533360f9": "cbb-game-model-1.2.0 (4671297)"},
+  "persisted_game_pmf_rows": "11-19..11-25 label 1.0.0 + params 4174a176 = genuine 1.0.0 (891 rows); 11-25 label 1.0.0 + ffb91c43 = effective 1.1.0 (25); 11-26 label 1.0.0 + abe05333 = effective 1.2.0 (39, pre-cdf233c rows incl. morning 20); 11-26 label 1.2.0 + abe05333 (27). 0 unknown params.",
+  "frozen_game_evaluations": "via (forecast_id, game_id, pmf_sha256) join: 11-25 95 rows label 1.0.0 = effective 1.1.0; 11-26 36 rows label 1.0.0 = effective 1.2.0; 66 rows labelled 1.2.0; rows with no label are GAME_FROZEN / GAME_MARKET_STALE_OFFER markers carrying no PMF",
+  "mutation": "NONE"
+ },
+
+ "reference_sample": {
+  "pins": {
+   "seed": "SIM_SEED 20263 (cbb_platform/v2/joint.py), structural_base 20271, draws_per_game 20000, per-game seed D.game_seed(SIM_SEED, game_id)",
+   "fit": "cbb-jm1-2026-27-20261126; artifact_sha256 in baseline_droplet.json forecasts.*.artifact_sha256",
+   "input_cutoff": "training_cutoff_utc 2026-11-26T11:00Z; state_version S20261126T122412Z-9a0a514efa19 (morning, 18Z); prediction_as_of 2026-11-26T18:03:52.672730Z",
+   "config": "engine #972018d0ebf9, game params abe0533360f9, endgame_ot 93369a1ac4d6, ratings state TR-15c7547b8bf4ba18, ratings prior TR-e2c7494ad87941ff, env sha 9dfaa585"
+  },
+  "games": "8: INJURY_AFFECTED G-62e6da40e2bedef9, G-90d92f6af1e6f91a, G-e175ae5484d913ea; UNAFFECTED G-26db047b4a2f3227, G-436b2f0d7833f7ba; CLOSE_SPREAD G-8343f0ff7a21d30e (-0.13), G-b0b9d41f8a123e14 (-0.30), G-242f787507ed3244 (+0.74, also unaffected). Full rows + compressed joint PMF in reference_games.jsonl",
+  "players": "272 PMF rows: all 12 stats (PTS REB AST FG3M STL BLK TOV PR PA RA PRA STOCKS) x 6 cold-start/role categories (WARM, COLD_EARLY_SEASON, COLD_NO_HISTORY, COLD_TRANSFER_IN x TOP5/ROTATION/BENCH), availability ACTIVE/GTD/QUESTIONABLE/UNKNOWN, top-minutes player per team in every reference game; every PMF hash recomputed and asserted",
+  "selection": "deterministic sort by player_id / game_id; source 18Z refresh for its 14 games, morning for the 6 earlier games"
+ },
+
+ "operational_baseline": {
+  "scheduler": "11 cbb timers active (quotes 10-min, morning 11:10Z, recover 13:00Z, poll 13:30Z, availability 15/18/21/23Z, selection-audit 14:15Z, retention); cbb-originator-availability-poll.service FAILED 2026-11-26 13:55Z (writer lock busy >1500 s, pre-10d1538 code)",
+  "locks": "writer.lock and game-quotes.lock present, no holder at 01:03Z",
+  "resources": "load 1.08/0.75/0.72; mem 7941 MB total, 6676 MB available, no swap; disk 114G/154G (74%); prod/runs 9.8G, prod/ops 1.8G, walkforward 1.1G, prod/cache 729M, history 668M, exports 362M",
+  "feature_warmup": "11-26 Stage 3 warm-up 1 h 58 min (pre-46e07f3); fix offline-PASS, unverified until 11-27 11:10Z",
+  "rotowire_request_rate": "10 logged requests/day 11-21..11-25, 8 on 11-26 (08:30 poll skipped)"
+ },
+
+ "skipped_tests": "34 skipped in the 9f65e7f full regression; each mapped to test + assertions in skipped_tests_inventory.json. 33 need gitignored local frozen stores (walk-forward refit/promotion/rollback/idempotence 12, training-row equality to frozen loader 5, fit reproduction 5, replay/lockbox equality 3, props v1 pricing 3, footprint candidate 2, morning byte-equivalence 1, JM1_FINAL chronology 1, finalize 1); 1 (test_pit_audit_season_rule:38) skips by design because the lockbox guard is closed. Ledger records test_walkforward_daily 12/12 passing locally (710 s) on 11-26; not re-run in this stage.",
+
+ "scope": {
+  "unrelated_services_identity_before_and_after": "massey-api (PID 2137565, frag 276ae33d377d), massey-health.timer, massey-api-restart.path, massey-cycle-daily/weekly (disabled), docker (PID 1056), containerd (PID 922614), container massey-postgres healthy: IDENTICAL at start and end",
+  "writes_this_stage": "only /var/lib/sports-models/cbb-originator/audit/baseline-20261127/ and this repo folder; temp /tmp scripts removed",
+  "other_trees_on_droplet": "/opt/sports-models/{fanatics-demo, massey-predictive-models, nba-production, nba-release-review} not read or touched"
+ },
+
+ "rights": {
+  "policy": "docs/COMMERCIAL_DATA_RIGHTS_AND_PRODUCTION_SOURCE_POLICY.md v1.0 FROZEN: a deployment/publication gate, not an acquisition ban",
+  "register_live": "rights_gate() on release 9f65e7f = FAIL (Starter Pack RESEARCH_ONLY; CBBD UNVERIFIED; RotoWire UNVERIFIED) -> PUBLIC transport raises PublicationRejected COMMERCIAL_RIGHTS_UNVERIFIED",
+  "wrapper_probe": "cbb-originator-run preflight with WIZARDOFODDS_PUBLICATION=enabled -> 'REFUSED: WIZARDOFODDS_PUBLICATION must be disabled' (refuses before any code identity check or acquisition)",
+  "acquisition_inventory": {
+   "CBBD API": "enabled, operator-provided key; rights UNVERIFIED; internal modeling only",
+   "The Odds API": "enabled, operator-provided key; quote ingestion",
+   "RotoWire WEB": "enabled since 2026-11-08 by the operator with their own subscriber session (cookie install is a human-only step); 10 GETs/day; rights UNVERIFIED (automation and commercial); ROOT_CAUSE_PROTOCOL keeps request frequency frozen",
+   "RotoWire API": "not configured (no key)",
+   "Torvik / KenPom / Covers / BALLDONTLIE": "not acquired (Torvik adapter raises NotImplementedError)"
+  },
+  "decision": "NO ACQUISITION DISABLED: no CBB acquisition is enabled without operator authorization; every source with unverified rights is blocked at publication, which is the enforcement point of the frozen policy. No new acquisition was made to test rights.",
+  "operator_flag": "There is no written record of RotoWire terms permitting automated retrieval. If the operator rules it unauthorized, the existing safe control is ROTOWIRE_SOURCE=DISABLED + ROTOWIRE_ENABLED=false in /etc/sports-models/cbb-originator.env (wrapper-validated; fallback = fail-closed NO_REPORT availability), applied under the env backup/preflight procedure.",
+  "nit": "register key reads 'RotoWire CBB API (availability)' while the live source is WEB; status UNVERIFIED covers both"
+ },
+
+ "gates": {
+  "BASELINE_AUTHENTICATED": "PASS",
+  "RELEASE_HASHES_MATCH": "PASS",
+  "ROLLBACK_VERIFIED": "PASS (static: pointer cae2a02 present, 822/822, units identical, env backup pre-9f65e7f differs only in CBB_EXPECTED_COMMIT, release diff = rotowire_player_states.csv + one test; no live rollback exercised)",
+  "ORIGINAL_FORECASTS_PRESERVED": "PASS for forecasts, PMFs, ledgers, frozen evaluations (all hashes recomputed, nothing rewritten); export/public payload snapshots of those ticks were never retained by design (D3)",
+  "CBB_SCOPE_VERIFIED": "PASS",
+  "RIGHTS_GATE_ENFORCED": "PASS (publication gate FAIL->refuse verified live; publication disabled; operator flag on RotoWire automation rights)"
+ },
+
+ "remaining_dependencies": {
+  "D1": "2026-11-27 11:10Z morning: warm-up information_state_builds << cutoffs, walk-forward PASS, INITIAL on time (46e07f3 runtime unverified)",
+  "D2": "2026-11-27 13:30Z 08:30-ET poll writes a receipt, health MERGED or DEFERRED then folded (10d1538 unverified; 11-26 poll failed on lock)",
+  "D3": "export/public payload content hashes are not persisted per tick; ORIGINAL_FORECASTS_PRESERVED for exports needs a per-tick hash receipt (or archived copy) before any change that alters exports",
+  "D4": "public payload carries no engine/model/forecast identity; end-state proof item 'public payload built from those identities' rests on Boards/Game Lines receipts only",
+  "D5": "game ratings REBUILT_RECOVERY_NOT_FRESH (1 D-1 final awaiting); TEAM_RATINGS_FRESH false",
+  "D6": "Nwuli curated row team id (Seton Hall -> Rutgers); CBBD roster gaps Luis/Avila fail closed",
+  "D7": "origin/main 31 commits behind production 9f65e7f (main-is-production rule); fast-forward only after certification",
+  "D8": "33 store-dependent tests never run in CI; the gitignored local stores are the only place they can run",
+  "D9": "operator decision on RotoWire automation/commercial rights (external); WizardOfOdds deploy key / publication (external)"
+ },
+ "next_eligible_stage": "Stage 2 is eligible to start now, read-only or offline only, against this pinned reference sample. A production change is not eligible until D1 and D2 close with the natural 2026-11-27 receipts (11:10Z morning, 13:30Z poll, 14:10Z scoring) and D3 is in place for any change that alters exports."
+}

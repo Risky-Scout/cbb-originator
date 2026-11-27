@@ -1,0 +1,736 @@
+{
+ "generated_by": "stage baseline (read-only)",
+ "release_current": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+ "forecasts": {
+  "morning_INITIAL_0700": {
+   "forecast_id": "F20261126T140651Z-2bdce5",
+   "run_id": "R20261126T140651Z-7218aae1",
+   "code_commit": "0c64776c55fb33277f9812bf588b9655830b6e2d",
+   "window": "INITIAL_0700",
+   "executed_at": "2026-11-26T14:06:51.625451+00:00",
+   "engine_id": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+   "model_version": "cbb-jm1-2026-27-20261126",
+   "state_version": "S20261126T122412Z-9a0a514efa19",
+   "run_reasons": [
+    "STALE_ROSTER"
+   ],
+   "readiness_state": "BLOCKED",
+   "artifact_sha256": {
+    "jm1_final": "1fa558abf0743c4499f0bd3c9d8d5954f6cae3780531f3a8d9dbed5e3015eaf1",
+    "marginal": "e1cc4a5101343223a21915b72f5f95fc0c92a23cc473942ee7e1542ffd0ba301",
+    "production_manifest": "f7ccfc6aecd180b02223b3fcb12556de85ed71055a26fb711ee468d91b5cb041",
+    "residual_j2": "10838c163aca010810d2daf5c1366efc890220683bfafb519d30cfa2f0335699"
+   },
+   "file_sha256": {
+    "forecast_ledger.jsonl": "36ccab63870a9fc237df91aadb508f9ae4a00f4f8aecd078c66e909a45fb6f7d",
+    "forecast_players.parquet": "e2a4ef49fa335871db8ba33b94ffd14066e733c9e68bb3ac4deb29496cb9320a",
+    "game_forecast.json": "027cb2fba7327f20363cc254bebf55c791ab41cfb7fdfeba0baf4d066deefafd",
+    "game_pmfs.parquet": "be20aa5709e94d152e7feb3146c00444b47031229c6361c4cd771339eb585444",
+    "pmfs.parquet": "f3465c566be1fd8e0864fba052437ad29d291331ba6bcdcd9a3b9b22effde9da",
+    "side_monitor.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "snapshot.json": "d5df0349b6b8c09d18a22621fa68d8c96be54eccfd79218e9c686a1863e37abd"
+   },
+   "index_line_sha256": "8c06dbe0f5e9a5011f70f30f4f33d3462acec063169afd1034afb1dd903e89e4",
+   "snapshot_pmfs_sha256_matches_file": true,
+   "game_forecast_file_sha256_matches_file": true,
+   "player_pmf_rows": 7092,
+   "player_pmf_sha_recompute_mismatch": 0,
+   "player_pmf_max_abs_sum_err": 5.773159728050814e-15,
+   "game_pmf_rows": 20,
+   "game_pmf_sha_recompute_mismatch": 0,
+   "game_labels": [
+    [
+     "cbb-game-model-1.0.0",
+     "abe0533360f9",
+     "cbb-game-joint-1.0.0",
+     20
+    ]
+   ],
+   "game_params_sha256": [
+    "abe0533360f9dd1c385080e2130a9a4768b5e8570ad68aad9124284c57391be4"
+   ],
+   "game_ratings_state": [
+    "TR-15c7547b8bf4ba18"
+   ],
+   "game_ratings_prior": [
+    "TR-e2c7494ad87941ff"
+   ],
+   "game_ratings_source": "BUILT",
+   "team_ratings_fresh": false,
+   "ledger": {
+    "rows": 10285,
+    "row_hash_mismatch": 0,
+    "chain_link_breaks": 0,
+    "genesis_prev": "0000000000000000000000000000000000000000000000000000000000000000",
+    "head_row_hash": "da5b697cb3e553b81495ded60b39f14e4d3d25726807cf1d5d945ffe324131de",
+    "record_types": {
+     "RUN": 1,
+     "PREDICTION": 10284
+    }
+   }
+  },
+  "refresh_ROTOWIRE_1300_18Z": {
+   "forecast_id": "F20261126T180352Z-e2916f",
+   "run_id": "R20261126T180352Z-04e50531",
+   "code_commit": "c30c17304b419bbcab32b792e7b35a19f9b9b135",
+   "window": "ROTOWIRE_1300",
+   "executed_at": "2026-11-26T18:03:52.672730+00:00",
+   "engine_id": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+   "model_version": "cbb-jm1-2026-27-20261126",
+   "state_version": "S20261126T122412Z-9a0a514efa19",
+   "run_reasons": [
+    "STALE_ROSTER"
+   ],
+   "readiness_state": "BLOCKED",
+   "artifact_sha256": {
+    "jm1_final": "1fa558abf0743c4499f0bd3c9d8d5954f6cae3780531f3a8d9dbed5e3015eaf1",
+    "marginal": "e1cc4a5101343223a21915b72f5f95fc0c92a23cc473942ee7e1542ffd0ba301",
+    "production_manifest": "f7ccfc6aecd180b02223b3fcb12556de85ed71055a26fb711ee468d91b5cb041",
+    "residual_j2": "10838c163aca010810d2daf5c1366efc890220683bfafb519d30cfa2f0335699"
+   },
+   "file_sha256": {
+    "forecast_ledger.jsonl": "d9a2eee95d294547b2525d697eb9ea1222775fe7f464b6ed3439778e7c9c2c2a",
+    "forecast_players.parquet": "006928b096e65ecaf04cc61ed46262cd8a3b74b1f685f2258071b57a55e28d5d",
+    "game_forecast.json": "516072bb559ac5bc2538163789c5ea19ceb0ade003b92c22a4d55aeca2e7793f",
+    "game_pmfs.parquet": "2a46d804c523cf0034b501fb03360f05917cbd3b8cb626f6084f2aa1a1a9a969",
+    "pmfs.parquet": "f3c8e93a33b2e7ca8dc0879257584f167a868cdfa18ece8a51b636c8adf3b645",
+    "side_monitor.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "snapshot.json": "dd97c8a08640a0a28e6ca772335cb00b2daf0231a7c90b389a1e42b166bd9fc0"
+   },
+   "index_line_sha256": "c80640ba43a072b4e46c9042d015d8bd77c21e2775e128408703f09830882779",
+   "snapshot_pmfs_sha256_matches_file": true,
+   "game_forecast_file_sha256_matches_file": true,
+   "player_pmf_rows": 4740,
+   "player_pmf_sha_recompute_mismatch": 0,
+   "player_pmf_max_abs_sum_err": 5.773159728050814e-15,
+   "game_pmf_rows": 14,
+   "game_pmf_sha_recompute_mismatch": 0,
+   "game_labels": [
+    [
+     "cbb-game-model-1.2.0",
+     "abe0533360f9",
+     "cbb-game-joint-1.0.0",
+     14
+    ]
+   ],
+   "game_params_sha256": [
+    "abe0533360f9dd1c385080e2130a9a4768b5e8570ad68aad9124284c57391be4"
+   ],
+   "game_ratings_state": [
+    "TR-15c7547b8bf4ba18"
+   ],
+   "game_ratings_prior": [
+    "TR-e2c7494ad87941ff"
+   ],
+   "game_ratings_source": "REBUILT_RECOVERY_NOT_FRESH",
+   "team_ratings_fresh": false,
+   "ledger": {
+    "rows": 7225,
+    "row_hash_mismatch": 0,
+    "chain_link_breaks": 0,
+    "genesis_prev": "0000000000000000000000000000000000000000000000000000000000000000",
+    "head_row_hash": "a16f76ddbc1fb57a62ae31edf88ce839e3d4e39feab521fc5d25deceaf290c04",
+    "record_types": {
+     "RUN": 1,
+     "PREDICTION": 7224
+    }
+   }
+  },
+  "refresh_ROTOWIRE_1800_23Z": {
+   "forecast_id": "F20261126T230340Z-7f5614",
+   "run_id": "R20261126T230340Z-6bc1ea30",
+   "code_commit": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "window": "ROTOWIRE_1800",
+   "executed_at": "2026-11-26T23:03:40.714157+00:00",
+   "engine_id": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+   "model_version": "cbb-jm1-2026-27-20261126",
+   "state_version": "S20261126T224400Z-30cba3905d36",
+   "run_reasons": [],
+   "readiness_state": "SHADOW_ONLY",
+   "artifact_sha256": {
+    "jm1_final": "1fa558abf0743c4499f0bd3c9d8d5954f6cae3780531f3a8d9dbed5e3015eaf1",
+    "marginal": "e1cc4a5101343223a21915b72f5f95fc0c92a23cc473942ee7e1542ffd0ba301",
+    "production_manifest": "f7ccfc6aecd180b02223b3fcb12556de85ed71055a26fb711ee468d91b5cb041",
+    "residual_j2": "10838c163aca010810d2daf5c1366efc890220683bfafb519d30cfa2f0335699"
+   },
+   "file_sha256": {
+    "forecast_ledger.jsonl": "9c576eec612b96ac52293115acabd5dd06b0414e60c905abe8f1455eb0ed49fe",
+    "forecast_players.parquet": "5ab833d91927ccee219aabdd99afb108c28d4fb37f35d8bc799469977a3bdf05",
+    "game_forecast.json": "13c9fc98173b8b83a0f46a30ee5c1117d822c87027c76db8c2771894ddd93db8",
+    "game_pmfs.parquet": "85b4d526e01da45c650c1102abb751c8525b33b5276a762e298b1d2edfcd6b44",
+    "pmfs.parquet": "4f757e61977f006e7526f065482b26bdb7b91988eebf935fa7786a9fb61c354c",
+    "side_monitor.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "snapshot.json": "ff65a9828b5f66f7b29cd31e2cad56c72ba65478bac725e17c9fbdbf7637402b"
+   },
+   "index_line_sha256": "ec23fa22d6367a69261d8158be5c4202bba50f6d5f0d5c4c6e5d31989332c6a0",
+   "snapshot_pmfs_sha256_matches_file": true,
+   "game_forecast_file_sha256_matches_file": true,
+   "player_pmf_rows": 1680,
+   "player_pmf_sha_recompute_mismatch": 0,
+   "player_pmf_max_abs_sum_err": 5.551115123125783e-15,
+   "game_pmf_rows": 5,
+   "game_pmf_sha_recompute_mismatch": 0,
+   "game_labels": [
+    [
+     "cbb-game-model-1.2.0",
+     "abe0533360f9",
+     "cbb-game-joint-1.0.0",
+     5
+    ]
+   ],
+   "game_params_sha256": [
+    "abe0533360f9dd1c385080e2130a9a4768b5e8570ad68aad9124284c57391be4"
+   ],
+   "game_ratings_state": [
+    "TR-15c7547b8bf4ba18"
+   ],
+   "game_ratings_prior": [
+    "TR-e2c7494ad87941ff"
+   ],
+   "game_ratings_source": "REBUILT_RECOVERY_NOT_FRESH",
+   "team_ratings_fresh": false,
+   "ledger": {
+    "rows": 2845,
+    "row_hash_mismatch": 0,
+    "chain_link_breaks": 0,
+    "genesis_prev": "0000000000000000000000000000000000000000000000000000000000000000",
+    "head_row_hash": "dbfcb7eba19ee65e00f0a27e4ed58f86336e5befe9e9df80338807ed25f69d2e",
+    "record_types": {
+     "RUN": 1,
+     "PREDICTION": 2844
+    }
+   }
+  }
+ },
+ "changed_game_pmfs_morning_vs_18z": {
+  "shared_games": 14,
+  "pmf_changed": 8,
+  "changed_with_availability_delta": 8,
+  "unchanged_with_availability_delta": 0,
+  "changed_without_availability_delta": 0,
+  "per_game": [
+   [
+    "G-5aff2aa1f3ac4afe",
+    true,
+    0.6702025122823301,
+    9.946,
+    9.872
+   ],
+   [
+    "G-8343f0ff7a21d30e",
+    true,
+    0.2773156188032573,
+    -0.175,
+    -0.13
+   ],
+   [
+    "G-e0311271263563e9",
+    true,
+    0.12798222872041265,
+    1.188,
+    1.176
+   ],
+   [
+    "G-7aa8bb09847ad257",
+    true,
+    0.1492302174688831,
+    -0.942,
+    -0.987
+   ],
+   [
+    "G-811da82bd96e2bed",
+    false,
+    0.0,
+    6.529,
+    6.529
+   ],
+   [
+    "G-efa09e4a68af4f32",
+    false,
+    0.0,
+    6.724,
+    6.724
+   ],
+   [
+    "G-90d92f6af1e6f91a",
+    true,
+    1.0355610137851698,
+    2.651,
+    2.962
+   ],
+   [
+    "G-26db047b4a2f3227",
+    false,
+    0.0,
+    5.645,
+    5.645
+   ],
+   [
+    "G-be512f1bc3ddd634",
+    false,
+    0.0,
+    1.407,
+    1.407
+   ],
+   [
+    "G-8728719d5f08cef0",
+    false,
+    0.0,
+    12.056,
+    12.056
+   ],
+   [
+    "G-9442f7d9b3581122",
+    true,
+    0.7452702452960551,
+    5.839,
+    5.916
+   ],
+   [
+    "G-f1e8fb0e9bef14ca",
+    false,
+    0.0,
+    -8.328,
+    -8.328
+   ],
+   [
+    "G-62e6da40e2bedef9",
+    true,
+    4.054697631943299,
+    -5.023,
+    -3.807
+   ],
+   [
+    "G-e175ae5484d913ea",
+    true,
+    5.242434853121736,
+    -9.451,
+    -10.964
+   ]
+  ]
+ },
+ "changed_player_pmfs_morning_vs_18z": {
+  "rows_18z": 4740,
+  "matched_in_morning": 4740,
+  "pmf_changed": 1090
+ },
+ "label_reconciliation_game_pmfs": [
+  [
+   "2026-11-19",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   104
+  ],
+  [
+   "2026-11-20",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   209
+  ],
+  [
+   "2026-11-21",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   138
+  ],
+  [
+   "2026-11-22",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   107
+  ],
+  [
+   "2026-11-23",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   115
+  ],
+  [
+   "2026-11-24",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   98
+  ],
+  [
+   "2026-11-25",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   120
+  ],
+  [
+   "2026-11-25",
+   "cbb-game-model-1.0.0",
+   "ffb91c4375c0",
+   "cbb-game-model-1.1.0",
+   25
+  ],
+  [
+   "2026-11-26",
+   "cbb-game-model-1.0.0",
+   "abe0533360f9",
+   "cbb-game-model-1.2.0",
+   39
+  ],
+  [
+   "2026-11-26",
+   "cbb-game-model-1.2.0",
+   "abe0533360f9",
+   "cbb-game-model-1.2.0",
+   27
+  ]
+ ],
+ "label_reconciliation_frozen_game_evaluations": [
+  [
+   "2026-11-19",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   29
+  ],
+  [
+   "2026-11-19",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   103
+  ],
+  [
+   "2026-11-20",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   51
+  ],
+  [
+   "2026-11-20",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   142
+  ],
+  [
+   "2026-11-21",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   48
+  ],
+  [
+   "2026-11-21",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   145
+  ],
+  [
+   "2026-11-22",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   36
+  ],
+  [
+   "2026-11-22",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   210
+  ],
+  [
+   "2026-11-23",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   33
+  ],
+  [
+   "2026-11-23",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   191
+  ],
+  [
+   "2026-11-24",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   88
+  ],
+  [
+   "2026-11-24",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   442
+  ],
+  [
+   "2026-11-25",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   60
+  ],
+  [
+   "2026-11-25",
+   "cbb-game-model-1.0.0",
+   "4174a1760f71",
+   "UNKNOWN_PARAMS",
+   178
+  ],
+  [
+   "2026-11-25",
+   "cbb-game-model-1.0.0",
+   "ffb91c4375c0",
+   "cbb-game-model-1.1.0",
+   95
+  ],
+  [
+   "2026-11-26",
+   "None",
+   "PMF_NOT_FOUND",
+   "UNRESOLVED",
+   17
+  ],
+  [
+   "2026-11-26",
+   "cbb-game-model-1.0.0",
+   "abe0533360f9",
+   "cbb-game-model-1.2.0",
+   36
+  ],
+  [
+   "2026-11-26",
+   "cbb-game-model-1.2.0",
+   "abe0533360f9",
+   "cbb-game-model-1.2.0",
+   66
+  ]
+ ],
+ "frozen_evaluation_file_sha256": {
+  "2026-11-16/market_evaluations.jsonl": "3e977ebcbc16444b8e49c2e4cbe32d38146c11864b3fb438ff1bc96afd8267bd",
+  "2026-11-17/market_evaluations.jsonl": "4f33ca6b0021e8873be3b17e9482369efb6327f649be7dd61a79b64e14f1880d",
+  "2026-11-18/market_evaluations.jsonl": "1dce970b96ca78a50fb39a0726b8b40ff0f2d58c35df3ecf3ead9be46aba7231",
+  "2026-11-19/game_market_evaluations.jsonl": "433f3deb20d35f746ff9b4631da2a4f839929c9a565cd0400fa9cb0ebbe88ce3",
+  "2026-11-19/market_evaluations.jsonl": "24bede1b7a665ebdd6ff111eef60a66167dad729a521b37aca6d7303ae3ce5d3",
+  "2026-11-20/game_market_evaluations.jsonl": "80ef9e4e7fdfc452618ffa0be7885e07e6a4ee906c410f0df274cd2a7c48951d",
+  "2026-11-20/market_evaluations.jsonl": "42b687e1f0ffad914a2bcbcb997e9167e9011fb0f5a08b12c60b2e3aac10f5f8",
+  "2026-11-21/game_market_evaluations.jsonl": "81c60be36bb45223fc5a3561cedd5df35d1331a03e6270a4775c00beeeb3c7af",
+  "2026-11-21/market_evaluations.jsonl": "7871d00fccc6cfc236e3799015132caad8067dc3e7be4908044c2a811d1cc35d",
+  "2026-11-22/game_market_evaluations.jsonl": "59275dc28feef03d4ef26c43efd2add033e110fc777179f4f3c3da30f2d27c05",
+  "2026-11-22/market_evaluations.jsonl": "45577040a9b55d5364ed7c6bbe2397e6ab297bf49ff4a6c150d6f058e801e389",
+  "2026-11-23/game_market_evaluations.jsonl": "fd3dfd9ca9b8152a003ce0731c8afa2f199c86a41fbafa0085826e301a05b07e",
+  "2026-11-23/market_evaluations.jsonl": "f710c2f0301df3a377b1144410a81dd57fd6c2eda7579afb915b1f9902e9338c",
+  "2026-11-24/game_market_evaluations.jsonl": "54defeebf2a770259b624236fcb2c25cfbd68ded589505d8cd21653166258f15",
+  "2026-11-24/market_evaluations.jsonl": "0644bcc739e019d2ab36dc8aa65b3b9117533a79b32f81ca93de51bda80bde4c",
+  "2026-11-25/game_market_evaluations.jsonl": "d605f7fa7ef1a35371fd6a890fcba1de30d93890bd6dba3aee4793086f704c79",
+  "2026-11-25/market_evaluations.jsonl": "83c4c64ef9cb8c97e8fdbb74946d63304c58b11c4343f810927d2797eaf5f081",
+  "2026-11-26/game_market_evaluations.jsonl": "d8c2cd4d51b08f5a54e8aa66e02e93454416a658099edabfe788a85786458150",
+  "2026-11-26/market_evaluations.jsonl": "6161d4a5937a4efbf249a33c5ec4dc6a1678494d2252475fd89c2a6ad4bf58d3"
+ },
+ "pins": {
+  "seed": {
+   "SIM_SEED": 20263,
+   "structural_base": 20271,
+   "draws_per_game": 20000,
+   "per_game_seed": "D.game_seed(J.SIM_SEED, game_id) (prod/simulate.py)"
+  },
+  "fit": {
+   "model_version": "cbb-jm1-2026-27-20261126",
+   "artifact_sha256": {
+    "jm1_final": "1fa558abf0743c4499f0bd3c9d8d5954f6cae3780531f3a8d9dbed5e3015eaf1",
+    "marginal": "e1cc4a5101343223a21915b72f5f95fc0c92a23cc473942ee7e1542ffd0ba301",
+    "production_manifest": "f7ccfc6aecd180b02223b3fcb12556de85ed71055a26fb711ee468d91b5cb041",
+    "residual_j2": "10838c163aca010810d2daf5c1366efc890220683bfafb519d30cfa2f0335699"
+   }
+  },
+  "input_cutoff": {
+   "training_cutoff_utc": [
+    "2026-11-26T11:00:00+00:00"
+   ],
+   "state_version_am_18z": "S20261126T122412Z-9a0a514efa19",
+   "state_version_23z": "S20261126T224400Z-30cba3905d36",
+   "prediction_as_of_18z": "2026-11-26T18:03:52.672730+00:00"
+  },
+  "config": {
+   "engine_id": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+   "game_params_sha256": [
+    "abe0533360f9dd1c385080e2130a9a4768b5e8570ad68aad9124284c57391be4"
+   ],
+   "endgame_ot_sha256": [
+    "93369a1ac4d6510a4685e9fa3352233fc2167ffb53ff8f1a8d626d2f0812ea57"
+   ],
+   "ratings_state_id": [
+    "TR-15c7547b8bf4ba18"
+   ],
+   "ratings_prior_id": [
+    "TR-e2c7494ad87941ff"
+   ],
+   "game_model_json_sha256_current": "9a41fa9acb8c5cd4caabba30186fc716e39575ad4509161ba63867082bf2fafe",
+   "env_file_sha256": "9dfaa5857b0fe6c48a90ea0535dfdc8da9f6ffee9f29663af0aa4dc7da01a287"
+  }
+ },
+ "reference_sample": {
+  "games": [
+   [
+    "G-242f787507ed3244",
+    "morning_INITIAL_0700",
+    "CLOSE_SPREAD+UNAFFECTED",
+    "56e2ca2830ff3435ee30f1b06110b9670f39765d1d4d782c52d31fec959c2f37",
+    0.7395321821907856,
+    150.7132262986441,
+    0.0,
+    0.0
+   ],
+   [
+    "G-26db047b4a2f3227",
+    "refresh_ROTOWIRE_1300_18Z",
+    "UNAFFECTED",
+    "5f0383cd8a1e4f057b2ca2f6226122866b0e94287eed2e63bdcc2e61c7fc448b",
+    5.6451286849626285,
+    160.00656437182892,
+    0.0,
+    0.0
+   ],
+   [
+    "G-436b2f0d7833f7ba",
+    "morning_INITIAL_0700",
+    "UNAFFECTED",
+    "c2727f8523b3eed1c1f6e49fbbf9b797051bcc046e714c000f48cb40d6296eb8",
+    -7.647076354781419,
+    141.95329135999805,
+    0.0,
+    0.0
+   ],
+   [
+    "G-62e6da40e2bedef9",
+    "refresh_ROTOWIRE_1300_18Z",
+    "INJURY_AFFECTED",
+    "a1190fbac7da0d2e60080eb96855b4c5625edf285e843374c0c843d9f0cd2a78",
+    -3.8069687597078854,
+    154.41120232623894,
+    0.0,
+    -4.054697631943299
+   ],
+   [
+    "G-8343f0ff7a21d30e",
+    "refresh_ROTOWIRE_1300_18Z",
+    "CLOSE_SPREAD",
+    "c5116aaf902b4d4bd7708fa1e419c5860751dff060387d5d14441fe0bff7854c",
+    -0.12968252958407334,
+    162.61447380729354,
+    -0.06360114188711918,
+    -0.2137144769161381
+   ],
+   [
+    "G-90d92f6af1e6f91a",
+    "refresh_ROTOWIRE_1300_18Z",
+    "INJURY_AFFECTED",
+    "a7d482c9b1bb16922fbcedf51e663b803ddd3cddb8fc89d050d107de7a9bf6a7",
+    2.962035763599019,
+    151.35710686254487,
+    0.0,
+    -1.0355610137851698
+   ],
+   [
+    "G-b0b9d41f8a123e14",
+    "morning_INITIAL_0700",
+    "CLOSE_SPREAD",
+    "ac6af9abbb34dc83269db8016643f235aa688a918dffcc963529519bd921b989",
+    -0.3046082009474702,
+    147.13392206303467,
+    0.0,
+    0.0
+   ],
+   [
+    "G-e175ae5484d913ea",
+    "refresh_ROTOWIRE_1300_18Z",
+    "INJURY_AFFECTED",
+    "9f0de5eb5e985e682acf5e2b45cc880fa7b924a84f6c7670936978321c01d124",
+    -10.963933443265162,
+    141.27478879502956,
+    -5.142938940198093,
+    -0.09949591292364346
+   ]
+  ],
+  "player_rows": 272,
+  "player_cases": [
+   [
+    "REF_GAME_TOP_MINUTES",
+    192
+   ],
+   [
+    "CATEGORY:COLD_EARLY_SEASON|BENCH_9PLUS",
+    12
+   ],
+   [
+    "CATEGORY:WARM|ROTATION_6_8",
+    12
+   ],
+   [
+    "CATEGORY:COLD_NO_HISTORY|BENCH_9PLUS",
+    12
+   ],
+   [
+    "CATEGORY:COLD_TRANSFER_IN|BENCH_9PLUS",
+    12
+   ],
+   [
+    "CATEGORY:WARM|TOP5_MINUTES",
+    12
+   ],
+   [
+    "CATEGORY:WARM|BENCH_9PLUS",
+    12
+   ],
+   [
+    "AVAILABILITY:ACTIVE",
+    2
+   ],
+   [
+    "AVAILABILITY:QUESTIONABLE",
+    2
+   ],
+   [
+    "AVAILABILITY:UNKNOWN",
+    2
+   ],
+   [
+    "AVAILABILITY:GTD",
+    2
+   ]
+  ],
+  "stats": [
+   "AST",
+   "BLK",
+   "FG3M",
+   "PA",
+   "PR",
+   "PRA",
+   "PTS",
+   "RA",
+   "REB",
+   "STL",
+   "STOCKS",
+   "TOV"
+  ],
+  "cold_start_classes": [
+   "COLD_EARLY_SEASON",
+   "COLD_NO_HISTORY",
+   "COLD_TRANSFER_IN",
+   "WARM"
+  ],
+  "roles": [
+   "BENCH_9PLUS",
+   "ROTATION_6_8",
+   "TOP5_MINUTES"
+  ]
+ }
+}
