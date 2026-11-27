@@ -3,14 +3,14 @@
 > **Authoritative candidate: 93e5cd2** (= af1998f + release pinning in `cbb-originator-run`; CI 46037886213 green). af1998f was never deployed. Its staging tree was removed 2026-11-27 17:18Z after the bounded watcher was retired with no deploy begun (`audit/stage4-20261127/s4_deploy.log`). Its CI run (45947348593) and hashes are kept as lineage.
 
 The candidate `93e5cd278323e5e78fc43a58b8eb2bed68195c4a` (branch `research/root-cause-20261126`) supersedes the Stage 03 candidate 25b83ed
-by lineage. It contains 25b83ed and therefore 56f3dae unchanged, plus Stage 04. Only one candidate is deployed: af1998f. The Stage 02 and Stage 03 post-deploy
+by lineage. It contains 25b83ed and therefore 56f3dae unchanged, plus Stage 04. Only one candidate is deployed: 93e5cd2. The Stage 02 and Stage 03 post-deploy
 checks still apply (see `../2026-11-27-stage3/DEPLOY_PROCEDURE.md`).
 
 Staged inert at `/opt/sports-models/cbb-originator/releases/93e5cd278323e5e78fc43a58b8eb2bed68195c4a.tmp` (root:cbb-originator, read-only).
 Hashes: `candidate_93e5cd278323e5e78fc43a58b8eb2bed68195c4a.sha256sums` (884 files; the local `git archive` matches the Droplet tree, identical). A
 Droplet copy is in `/var/lib/sports-models/cbb-originator/audit/stage4-20261127/`.
 
-Diff vs 25b83ed: `prod/{roster_omissions,rotowire_feed,rotowire_web_acquire,universe,rotowire_player_states,lifecycle}.py`,
+Diff vs 25b83ed: `deploy/droplet/bin/cbb-originator-run` (release pinning), `prod/{roster_omissions,rotowire_feed,rotowire_web_acquire,universe,rotowire_player_states,lifecycle}.py`,
 `prod/rotowire_player_states.csv`, `prod/roster_omissions.csv`, tests. There is no systemd unit, env, wrapper, schema, model, parameter or
 export-format change. The new output directory `ops/identity/curated_reconciliation/` is created on first use.
 
