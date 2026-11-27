@@ -1,0 +1,104 @@
+{
+ "as_of": "2026-11-27T17:47:40.820816+00:00",
+ "state_version": "S20261127T171335Z-24b7c0812882",
+ "games_7d": 367,
+ "frame_rows": 405,
+ "curated_rows": 16,
+ "curated_players": [
+  {
+   "rotowire_player_id": "20354",
+   "player_id": "P-63fc9f2c1a76d168",
+   "team_id": "T-5b19c5328a174ffa",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "20395",
+   "player_id": "P-85780921596bddb4",
+   "team_id": "T-5b19c5328a174ffa",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "20474",
+   "player_id": "P-c5ee9993e78a9305",
+   "team_id": "T-4e17df68aaf3c89c",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "20532",
+   "player_id": "P-5e2e5516496fe238",
+   "team_id": "T-c3a0e948892d1f1c",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "20703",
+   "player_id": "P-a64cdcf86d329ebd",
+   "team_id": "T-ac5ed60df62aa41e",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "STALE_NONCURRENT",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "20936",
+   "player_id": "P-c1d01799a0cbb02a",
+   "team_id": "T-edf1aa8d8951fd1c",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 2
+  },
+  {
+   "rotowire_player_id": "21070",
+   "player_id": "P-ab45f6ef90f288af",
+   "team_id": "T-71636d38f55f4671",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "STALE_NONCURRENT",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "21195",
+   "player_id": "P-28b75d94f9a46335",
+   "team_id": "T-cbe2bcccfc976437",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "AFFILIATED_INACTIVE_ELIGIBILITY",
+   "games": 2
+  },
+  {
+   "rotowire_player_id": "21227",
+   "player_id": "P-4d09d7c26bdff49d",
+   "team_id": "T-46677ad8b399306a",
+   "status": "LONG_TERM_OUT",
+   "availability_raw_status": "ROSTERED_LONG_TERM_OUT",
+   "games": 2
+  },
+  {
+   "rotowire_player_id": "26154",
+   "player_id": "P-aaedc84d200cb3ab",
+   "team_id": "T-aacc10aee85ee832",
+   "status": "UNAVAILABLE",
+   "availability_raw_status": "STALE_NONCURRENT",
+   "games": 1
+  },
+  {
+   "rotowire_player_id": "26727",
+   "player_id": "P-e2e7b5969de91a19",
+   "team_id": "T-e2aafa5a44190f86",
+   "status": "LONG_TERM_OUT",
+   "availability_raw_status": "ROSTERED_LONG_TERM_OUT",
+   "games": 3
+  }
+ ],
+ "blocked_games": [
+  "G-7eb2c124713e7171",
+  "G-9df4d2b0d7e9a65f",
+  "G-dc6bb47c27f748d0",
+  "G-f2245b05d0c3892d"
+ ],
+ "duplicate_game_player_keys": 0
+}

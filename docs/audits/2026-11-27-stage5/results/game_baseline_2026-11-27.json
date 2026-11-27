@@ -1,0 +1,43 @@
+{
+ "day": "2026-11-27",
+ "snapshots": 2,
+ "modes": {
+  "INITIAL": [
+   {
+    "snapshot": "F20261127T122751Z-11ebe6",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   },
+   {
+    "snapshot": "F20261127T150445Z-8d10cf",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   }
+  ],
+  "NEWS_FREE": [
+   {
+    "snapshot": "F20261127T122751Z-11ebe6",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   },
+   {
+    "snapshot": "F20261127T150445Z-8d10cf",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   }
+  ]
+ },
+ "initial_reproduces_production": {
+  "rows": 91,
+  "pmf_sha_equal": 91
+ },
+ "news_free_vs_production": {
+  "rows": 91,
+  "rows_changed": 0,
+  "games_changed_final_snapshot": 0,
+  "final_snapshot_abs_d_p_home_win": {},
+  "final_snapshot_abs_d_margin": {},
+  "final_snapshot_d_total": {},
+  "largest": []
+ }
+}

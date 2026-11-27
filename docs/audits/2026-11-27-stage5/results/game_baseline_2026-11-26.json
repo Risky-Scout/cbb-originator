@@ -1,0 +1,139 @@
+{
+ "day": "2026-11-26",
+ "snapshots": 5,
+ "modes": {
+  "INITIAL": [
+   {
+    "snapshot": "F20261126T140651Z-2bdce5",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   },
+   {
+    "snapshot": "F20261126T150352Z-ffc258",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   },
+   {
+    "snapshot": "F20261126T180352Z-e2916f",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   },
+   {
+    "snapshot": "F20261126T210348Z-61feec",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   },
+   {
+    "snapshot": "F20261126T230340Z-7f5614",
+    "status": "COMPLETE",
+    "baseline": "INITIAL"
+   }
+  ],
+  "NEWS_FREE": [
+   {
+    "snapshot": "F20261126T140651Z-2bdce5",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   },
+   {
+    "snapshot": "F20261126T150352Z-ffc258",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   },
+   {
+    "snapshot": "F20261126T180352Z-e2916f",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   },
+   {
+    "snapshot": "F20261126T210348Z-61feec",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   },
+   {
+    "snapshot": "F20261126T230340Z-7f5614",
+    "status": "COMPLETE",
+    "baseline": "NEWS_FREE"
+   }
+  ]
+ },
+ "initial_reproduces_production": {
+  "rows": 66,
+  "pmf_sha_equal": 55
+ },
+ "news_free_vs_production": {
+  "rows": 66,
+  "rows_changed": 11,
+  "games_changed_final_snapshot": 3,
+  "final_snapshot_abs_d_p_home_win": {
+   "count": 3.0,
+   "mean": 0.0151,
+   "std": 0.0243,
+   "min": 0.0002,
+   "25%": 0.001,
+   "50%": 0.0018,
+   "75%": 0.0225,
+   "max": 0.0431
+  },
+  "final_snapshot_abs_d_margin": {
+   "count": 3.0,
+   "mean": 0.569,
+   "std": 0.935,
+   "min": 0.007,
+   "25%": 0.03,
+   "50%": 0.052,
+   "75%": 0.85,
+   "max": 1.649
+  },
+  "final_snapshot_d_total": {
+   "count": 3.0,
+   "mean": -0.569,
+   "std": 0.935,
+   "min": -1.649,
+   "25%": -0.85,
+   "50%": -0.052,
+   "75%": -0.03,
+   "max": -0.007
+  },
+  "largest": [
+   {
+    "game_id": "G-436b2f0d7833f7ba",
+    "availability_delta_home_prod": 0.0,
+    "availability_delta_home_nf": -5.4955,
+    "availability_delta_away_prod": 0.0,
+    "availability_delta_away_nf": 0.0,
+    "d_p_home_win": -0.0431,
+    "d_model_margin": -1.6487,
+    "d_model_total": -1.6487
+   },
+   {
+    "game_id": "G-242f787507ed3244",
+    "availability_delta_home_prod": 0.0,
+    "availability_delta_home_nf": 0.0,
+    "availability_delta_away_prod": 0.0,
+    "availability_delta_away_nf": -0.1724,
+    "d_p_home_win": 0.0018,
+    "d_model_margin": 0.0517,
+    "d_model_total": -0.0517
+   },
+   {
+    "game_id": "G-955361979c640b7e",
+    "availability_delta_home_prod": 0.0,
+    "availability_delta_home_nf": 0.0,
+    "availability_delta_away_prod": 0.0,
+    "availability_delta_away_nf": -0.0243,
+    "d_p_home_win": 0.0002,
+    "d_model_margin": 0.0073,
+    "d_model_total": -0.0073
+   }
+  ]
+ },
+ "news_free_vs_initial_same_code": {
+  "games_final_snapshot": 20,
+  "games_changed": 0,
+  "abs_d_p_home_win": {},
+  "abs_d_margin": {},
+  "d_total": {},
+  "largest": []
+ }
+}

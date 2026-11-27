@@ -4,11 +4,13 @@ Called by prod.lifecycle.forecast after the player PMFs are written, for exactly
 `now`, state version and training cutoff. Never refits the player model; never sums player PMFs; the player layer
 enters only through the availability term (model.AdjustParams.gamma x availability_delta; beta = 0 by walk-forward
 selection). availability_delta (Stage 05, 2026-11-27) = S over the player layer's SCORED set minus S over EVERY candidate
-at the model's own p_play in the SAME snapshot (the news-free expectation): every confirmed non-participation known at
-the snapshot moves the game mean once, whenever it became known. Before, the baseline was the day's INITIAL snapshot,
-so news already known at INITIAL never reached the game layer (11-20..27: 39.5% of confirmed-OUT expected points
-reflected; 5 of 7 team-games with >= 5 points of OUT mass had delta 0). CBB_GAME_AVAILABILITY_BASELINE=INITIAL restores
-the old baseline (in-place fallback).
+at the model's own p_play in the SAME snapshot (the news-free expectation): the delta is caused by availability only.
+Before, the baseline was the day's INITIAL snapshot. INITIAL never carries RotoWire availability (it runs before the
+first refresh), so since the 2026-11-26 S fix the two agree on availability; the INITIAL baseline additionally
+attributed every non-availability change of the model inputs between INITIAL and a later snapshot (candidate set,
+inputs) to availability, and gave delta 0 to a game with no earlier snapshot that day (morning recovery / late slate).
+Replay 11-20/23/26/27: 1 game changed, |dP(home)| 0.0015. CBB_GAME_AVAILABILITY_BASELINE=INITIAL restores the old
+baseline (in-place fallback).
 
 Ratings: params/ratings_prior_<season>.parquet (season-final chain 2014..season-1, sealed in game_model.json) + every
 promoted-state DI_VS_DI final knowable strictly before refit_cutoff(D) (all of D-1), fit in milliseconds per snapshot
