@@ -1,0 +1,79 @@
+{
+ "pmf_rows_complete_games": 989604,
+ "pmf_rows_by_window": {
+  "OFFICIAL_TICK": 271596,
+  "INITIAL_0700": 204660,
+  "ROTOWIRE_1000": 152640,
+  "ROTOWIRE_1300": 138840,
+  "ROTOWIRE_1600": 105132,
+  "ROTOWIRE_1800": 77844,
+  "REFIT_RETRY_0800": 38892
+ },
+ "pmf_rows_by_kind": {
+  "SNAPSHOT": 718008,
+  "TICK": 271596
+ },
+ "unique_player_game_stat": 275964,
+ "unique_player_games": 22997,
+ "unique_players": 5337,
+ "games": 811,
+ "vintages_per_player_game_stat": {
+  "1": 51768,
+  "2": 30036,
+  "3": 43776,
+  "4": 59976,
+  "5": 45984,
+  "6": 34356,
+  "7": 10068
+ },
+ "forecast_artifacts": 345,
+ "frozen_model_rows": 217620,
+ "engine_attribution": {
+  "TIME_ATTRIBUTED": 778212,
+  "RECORDED": 211392
+ },
+ "engine_rows": {
+  "JM1_FINAL": 774828,
+  "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1": 114276,
+  "JM1_FINAL+RA2V1[AST,FG3M,STL]": 53568,
+  "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2": 29544,
+  "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1": 15972,
+  "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1": 1416
+ },
+ "s5_initial_defect_rows": 2628,
+ "s5_initial_defect_player_games": 219,
+ "vintage_units": {
+  "LAST_PREGAME": {
+   "rows": 275964,
+   "player_games": 22997,
+   "games": 811,
+   "played_rows": 201396,
+   "frozen_model_rows": 205320,
+   "hours_before_tip_median": 1.7799374597222222
+  },
+  "INITIAL": {
+   "rows": 204660,
+   "player_games": 17055,
+   "games": 609,
+   "played_rows": 148596,
+   "frozen_model_rows": 0,
+   "hours_before_tip_median": 11.440942964722224
+  },
+  "REFRESH_LAST": {
+   "rows": 198156,
+   "player_games": 16513,
+   "games": 589,
+   "played_rows": 146388,
+   "frozen_model_rows": 0,
+   "hours_before_tip_median": 2.9559025525
+  },
+  "CUTOFF_TICK": {
+   "rows": 271596,
+   "player_games": 22633,
+   "games": 794,
+   "played_rows": 198396,
+   "frozen_model_rows": 217620,
+   "hours_before_tip_median": 1.7810831358333332
+  }
+ }
+}

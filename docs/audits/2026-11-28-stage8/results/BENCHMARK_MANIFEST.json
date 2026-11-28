@@ -1,0 +1,106 @@
+{
+ "benchmark_id": "CBB-S08-BENCHMARK-20261128",
+ "frozen_at_utc": "2026-11-28T01:40:48.507710+00:00",
+ "evaluation_cutoff_utc": "2026-11-27T20:40:23Z",
+ "evaluation_state": "S20261127T201352Z-8eeab0c20aef",
+ "evaluation_state_increment_sha256": "8eeab0c20aefe79da8e651b9cf08cdad60635fa2c029a3220f62e3c9f03f857f",
+ "code_lineage": {
+  "stage7_successor": "7d160b1c7c5a02db834793954924c4ff240a0690",
+  "ci_run": 46078107204,
+  "stage7_checkpoint": "45761b7d577cb4c076acf571c4abdf0e74c7c64c",
+  "production_at_freeze": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f"
+ },
+ "incumbent_identities": {
+  "player_engine_final": "JM1_FINAL+RA2V1[AST,FG3M,STL,REB]+PTSC1[0]+TOVT1+DEV1+CTX1+PI2+PS2#972018d0ebf9",
+  "game_model": "cbb-game-model-1.0.0..1.2.0 SHADOW, all historical PMFs joint 1.0.0 (pre-C4)",
+  "frozen_opening_model": "cbb-v2-jm1-final-shadow-1.0.0"
+ },
+ "source_artifacts": {
+  "count": 370,
+  "hash_status": {
+   "MATCHES_RECORDED": 343,
+   "LOGGED_LOSSLESS_COMPACTION_2026-11-16": 27
+  },
+  "model_versions": {
+   "cbb-jm1-2026-27-20261110": 10,
+   "cbb-jm1-2026-27-20261115": 5,
+   "cbb-jm1-2026-27-20261116": 5,
+   "cbb-jm1-2026-27-20261118": 5,
+   "cbb-jm1-2026-27-20261119": 5,
+   "cbb-jm1-2026-27-20261120": 5,
+   "cbb-jm1-2026-27-20261121": 5,
+   "cbb-jm1-2026-27-20261122": 5,
+   "cbb-jm1-2026-27-20261123": 5,
+   "cbb-jm1-2026-27-20261125": 5,
+   "cbb-jm1-2026-27-20261126": 5,
+   "cbb-jm1-2026-27-20261127": 5,
+   "cbb-jm1-2026-27-20261113": 4,
+   "cbb-jm1-2026-27-20261114": 4,
+   "cbb-jm1-2026-27-20261117": 4,
+   "cbb-jm1-2026-27-20261108": 2,
+   "cbb-jm1-2026-27-20261112": 2,
+   "cbb-jm1-2026-27-20261124": 2
+  }
+ },
+ "populations": {
+  "A_HISTORICAL_PRODUCTION": "every pregame PMF in a COMPLETE game (989,604 rows, 22,997 player-games, 811 games); game PMFs 331 games",
+  "B_CORRECTED_CANDIDATE_REPLAY": "NOT EXECUTED (BLOCKED): outstanding population = 1,127 complete DI games with an exact retained state; see README \u00a77",
+  "C_MARKET_OVERLAP": "player: 2,299 primary decision contracts (97 games); game: 1,415 consensus main-line contracts (285 games) + 112,241 book-line contracts",
+  "D_DIAGNOSTIC_RECONSTRUCTION": "selection-exposed dates (all 2026-27 games <= 2026-11-26), lockbox seasons, pre-11-02 games, time-attributed engine ids"
+ },
+ "definitions": {
+  "primary_player_vintage": "LAST_PREGAME = latest PMF with prediction_as_of < tip per (game, player, stat)",
+  "other_vintages": [
+   "INITIAL (INITIAL_0700 / REFIT_RETRY_0800, earliest)",
+   "REFRESH_LAST (ROTOWIRE_*, latest)",
+   "CUTOFF_TICK (OFFICIAL_TICK, latest)"
+  ],
+  "played": "box line with minutes > 0 in the evaluation state",
+  "bias": "mean(forecast - actual)",
+  "crps": "discrete CRPS sum_k (F(k) - 1{y<=k})^2",
+  "log_score": "-ln p(y), floor 1e-12",
+  "pit": "randomized PIT, blake2b-seeded per artifact",
+  "intervals": "central quantile intervals of the PMF (q.10-q.90, q.05-q.95, q.01-q.99)",
+  "market_probability": "same-book two-way no-vig, non-push conditional; player props void on DNP; game markets OT-inclusive",
+  "horizons": "OPEN = first retained observation; DECISION = the evaluation's observation / last capture <= cutoff; CLOSE = last observation before tip; model held at the decision forecast",
+  "inference": "cluster bootstrap over games, B=1000, seed 20261128; date-block bootstrap for game-distribution bias; Holm over the DECISION family",
+  "noninferiority": "no margin pre-registered before data exposure: no noninferiority claim is made in Stage 08",
+  "min_n": 30
+ },
+ "results_sha256": {
+  "final_engine_prospective_metrics.csv": "080bac73cfd0b20bc39018906d5097274b4f0a7c3a098e4c5733fa2272b31f60",
+  "game_distribution_metrics.json": "6a5f044a123f583d278ded45a14aa679b3636b40ba4d715d69bf69b0e1dcfede",
+  "game_moneyline_reliability.csv": "29ec86403a2953620879529f3cd355f29fe7a32f2cb3c95718a7784bc2f116dc",
+  "market_comparison.csv": "ff0b05deda058323390f3dbf4ab85b29bfa758f55edd21c941f4482e80e7fb00",
+  "market_coverage.json": "832caaefc6a387b86137cfbd720aa5450efd301c39e78d5618d67f33157a2259",
+  "market_reliability.csv": "623f5788b6f614b4705766bc2c06628ccfd61c543bd4482306ea4c2b03468652",
+  "minutes_metrics.csv": "223bfd589da42d0ff7f1df6b33ef37fc60d43f7457fe75aaa6183250075d5cd0",
+  "parameter_reconciliation.csv": "09b041af07ba4cde8e228f199e3899aa18c40608c091e700e9703d933469e09b",
+  "participation_metrics.csv": "c666476dbd8e9dc951b03949d819773c0119916cac9593f912488e6bcf934486",
+  "pit_calibration.json": "27f2cd4e22db03e76cb58c343b98db942332c914c317aab3c45e5b59ba9dde7e",
+  "player_distribution_metrics.csv": "14cca12755169e5222a2c089c2248763c84ab322e8343d49f62b5501154c1e4e",
+  "player_metrics_by_engine.csv": "0e52278abed310e5bba92ef929a1f7855fd2441cf9fec3d7a93a25f385c8974a",
+  "player_unconditional_metrics.csv": "54ea69fba8221ed3fbd1d17d1d65f9b9ccf80fff412159eb7386d52ca44ae977",
+  "role_stat_metrics.csv": "2a8a9d06f182097eda934fb96a1007195ff18e6a2fa0262a82cc74376fd9a0f4",
+  "vintage_reconciliation.json": "578415318182e54208650869199b3537320fccf62348b15892333133efbcd1ca"
+ },
+ "scripts_sha256": {
+  "s8_analyze.py": "d64d630b8e520ff0a813bf0f6107a54357b280556d852ab3167f2129b01cefcc",
+  "s8_extract.py": "099ec1d084a5cc3f83545e6389f40acb9d0368b8a9d880be4598ac489ee833cb",
+  "s8_manifest.py": "9d0afddc7daa853fbe97f479b1a306457120c05148426d5b5fa3cb4e9041a73e",
+  "s8_market.py": "f6ea397511d94e6b0909983734b74fb251a6075b1637128b1a6f3d8b62291227",
+  "s8_parameters.py": "1b45b1ceb2600dd35b027ef9b9acf409d6803c22b1145a9cc763f60fa9c86105"
+ },
+ "intermediate_sha256": {
+  "box.parquet": "da9f444c8617741f81a74298edecf32a44f3c8dbd1fec923683c604a25226066",
+  "game_evals.parquet": "dd5ebb83d4368331ddd41c84894a04c9e0b3241e70f4ed4840e1f853edd709ed",
+  "game_market_consensus.parquet": "fdf7e1ed22196815b52d56412bdf3b8c178793f1ba69d4b6e5e1f3913f6eb9df",
+  "game_market_contracts.parquet": "c15fbc293bbc972e8d2e28b9af7f2bd906275c1a574aa6fe9cf2896081a41301",
+  "game_quote_pairs.parquet": "e3a2cd1b5a995e06abd8cb7e29d57b9e9e2f023a8b41d4422ef104769d924385",
+  "games.parquet": "91db9715ac5e81d892f831f9550d829afb582cb2cb38d17ff3a07d9f198318ec",
+  "player_evals.parquet": "59482ba6460db8bcf33c290ba292ef2902a0c035fdecf896fa5da047e5c82700",
+  "player_market_contracts.parquet": "d32d2bdacad1bbe503fdb450f4f6eb237171814b79dfd31eed90069d692790b4",
+  "player_quote_pairs.parquet": "77570c3d7be188f492e0e64e14a4824b790bc7ecc143698af807edd108e79735",
+  "player_rows_all.parquet": "36f10637d207c111e848773b7dec11c61f2042bc67ca269c6c7d2479b8a05105"
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "player": {
+  "evaluations_complete_games": 3036,
+  "contracts_all_book_lines": 3633,
+  "contracts_settled": 3597,
+  "primary_contracts_settled": 2299,
+  "primary_games": 97,
+  "primary_player_games": 567,
+  "primary_by_stat": {
+   "PTS": 554,
+   "REB": 499,
+   "PRA": 420,
+   "AST": 398,
+   "FG3M": 372,
+   "PR": 56
+  },
+  "void_dnp": 36,
+  "decision_source_kind": {
+   "OFFICIAL_TICK": 2015,
+   "FORECAST_SNAPSHOT": 284
+  },
+  "decision_frozen_model": 886
+ },
+ "game": {
+  "contracts_all": 116445,
+  "games": 285,
+  "consensus_rows": 1415,
+  "consensus_by_market": {
+   "AWAY_TEAM_TOTAL": 285,
+   "GAME_TOTAL": 285,
+   "HOME_TEAM_TOTAL": 285,
+   "SPREAD": 285,
+   "MONEYLINE": 275
+  },
+  "pushes_excluded": 199
+ }
+}

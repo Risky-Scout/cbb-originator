@@ -41,8 +41,8 @@ every stage. A stage's engineering completion is never production activation.
 | 04 | Roster, transfer and player identity integrity | accepted | `docs/audits/2026-11-27-stage4` |
 | 05 | Injury and confirmed lineup integration | accepted | `docs/audits/2026-11-27-stage5` |
 | 06 | Independent probability, export and settlement validation, including parameter provenance | accepted | `docs/audits/2026-11-27-stage6` |
-| 07 | Season-complete universe, point-in-time information integrity and predictive fit lineage | engineering complete pending acceptance; successor staged, NOT deployed (disk gate 37.95 < 38.5 GB); directive texts BLOCKED | `docs/audits/2026-11-27-stage7` |
-| 08 | Definitive chronological performance benchmark | not started | |
+| 07 | Season-complete universe, point-in-time information integrity and predictive fit lineage | engineering complete; successor 7d160b1 staged, guarded deploy scheduled 2026-11-28 04:50Z / 16:50Z; PARAMETER_DIRECTIVE_PRESERVED resolved in Stage 08 (§6); gate tally corrected to 14 PASS + 4 qualified PASS + 1 BLOCKED | `docs/audits/2026-11-27-stage7` |
+| 08 | Definitive chronological performance benchmark | engineering complete pending acceptance; benchmark CBB-S08-BENCHMARK-20261128 frozen; population B replay BLOCKED (carried to 18) | `docs/audits/2026-11-28-stage8` |
 | 09 | Participation, starting lineups and joint minutes allocation | not started | |
 | 10 | Player development, transfers and cold-start priors | not started | |
 | 11 | Stat-specific opportunity and conversion modeling | not started | |
@@ -531,6 +531,8 @@ When the full text is supplied, insert it here verbatim. The Stage 06 inventory 
 
 **Stage 07 (2026-11-27).** The Stage 07 addendum states that this directive, the *Binding Mathematical Enhancement Addendum* and the *Binding Engineering Campaign Override* "have now been supplied". However, none of their text was included in the Stage 07 message, or in any file in the repo, the Droplet, or the memory. They cannot be preserved verbatim, and the 55 groups cannot be reconciled against text that was not received. Status: **BLOCKED pending receipt**.
 
+**Stage 08 (2026-11-28): RESOLVED.** The consolidated successor instrument (§6) supplies the operative text of all three directives. The 55 groups are reconciled against Part III in `docs/audits/2026-11-28-stage8/results/parameter_reconciliation.csv`.
+
 ## 5. Production end-state (summary; full text at `../../CBB_RESUME_DIRECTIVE_PRODUCTION_END_STATE.md`)
 
 Done means: the Droplet `/current` scores with the final validated engine, proven by the 14-item live proof.
@@ -538,3 +540,909 @@ Done means: the Droplet `/current` scores with the final validated engine, prove
 * Game: 1.2.0 / GC3 / TP1P / bridge.
 
 A fix that exists only in research, a branch, CI or a report does not count. If any validated enhancement is shadow-only, FINAL_DEPLOY = FAIL.
+
+## 6. CONSOLIDATED SUCCESSOR GOVERNANCE INSTRUMENT (verbatim, received 2026-11-28 01:20Z with the Stage 08 directive)
+
+**Status.** This is the consolidated successor governance instrument. It supplies the operative requirements of the *Binding Engineering
+Campaign Override*, the *Binding Mathematical Enhancement Addendum* and the *Binding Parameter Estimation, Provenance and Validation
+Directive*. It supersedes the "requirements as cited" summary in §4 and resolves the Stage 07 BLOCKED status of PARAMETER_DIRECTIVE_PRESERVED.
+Where §1 and this instrument differ, this instrument governs. Sections 1–5 above are retained unchanged as the historical record.
+The text below is reproduced verbatim (headings demoted one level so they nest under this section).
+
+### CBB ORIGINATOR — CONSOLIDATED BINDING GOVERNANCE AND STAGE 08 EXECUTION DIRECTIVE
+
+### PART I — PERMANENT ENGINEERING GOVERNANCE
+
+#### 1. Mission
+
+Repair and optimize the existing CBB Originator into a mathematically sophisticated, empirically validated, operationally reliable, market-independent probabilistic forecasting system.
+
+Do not rebuild the model unnecessarily.
+
+Preserve every validated component unless evidence supports its replacement.
+
+The ultimate objective is credible predictive superiority or noninferiority relative to appropriately matched sportsbook market probabilities across player and game prediction categories.
+
+Do not guarantee statistical superiority where the evidence does not support it.
+
+#### 2. Durable governing document
+
+This consolidated directive supplies the operative requirements of the Binding Engineering Campaign Override, Binding Mathematical Enhancement Addendum and Binding Parameter Estimation, Provenance and Validation Directive.
+
+Preserve this complete text in:
+
+docs/governance/CBB_STAGE_PROGRAM_DIRECTIVES.md
+
+Identify it as the consolidated successor governance instrument.
+
+Preserve previously recorded directives and evidence without unnecessary duplication.
+
+Reconcile the 55 existing parameter groups against these requirements.
+
+Do not repeat the completed Stage 06 inventory.
+
+Resolve the previously blocked PARAMETER_DIRECTIVE_PRESERVED gate by verifying the consolidated governance requirements are durably present.
+
+#### 3. Engineering discipline
+
+- Repair demonstrated root causes, not superficial symptoms.
+- Require regression evidence for material implementation corrections.
+- Protect existing validated predictive behavior.
+- Preserve historical prospective forecasts unchanged.
+- Distinguish engineering completion, deployment and live validation.
+- Do not conceal failures through silent fallbacks.
+- Do not fabricate missing historical information.
+- Do not weaken tests to obtain passing results.
+- Do not use retrospective corrections to misrepresent actual historical performance.
+- Do not repeatedly audit previously resolved questions.
+- Complete internally resolvable defects within their assigned stages.
+- Do not begin subsequent stages without authorization.
+
+#### 4. Resource and production protection
+
+Run one substantial computational workload at a time.
+
+Use one numerical thread unless explicitly authorized otherwise.
+
+Maintain the established memory and disk safety thresholds.
+
+Do not lower those thresholds.
+
+Use bounded execution, checkpointed computation and restart-safe processes.
+
+Do not duplicate remote workloads following SSH or local timeout interruptions.
+
+Do not clear host-wide caches.
+
+Do not initiate unauthorized provider requests.
+
+Do not modify NBA Prop Quant, Massey NCAAF/NFL, Fanatics or unrelated systems.
+
+Protect active production and immutable historical evidence.
+
+No external publication or wagering is authorized by this directive.
+
+#### 5. Authoritative stage mapping
+
+01 — Production baseline and evidence protection.
+
+02 — Feature warm-up architectural optimization.
+
+03 — Availability acquisition and lock contention.
+
+04 — Roster, transfer and player identity integrity.
+
+05 — Injury and confirmed lineup integration.
+
+06 — Independent probability, export and settlement validation, including parameter provenance.
+
+07 — Season-complete universe, point-in-time information integrity and predictive fit lineage.
+
+08 — Definitive chronological performance benchmark.
+
+09 — Participation, starting lineups and joint minutes allocation.
+
+10 — Player development, transfers and cold-start priors.
+
+11 — Stat-specific opportunity and conversion modeling.
+
+12 — Marginal PMF shape, dispersion and calibration.
+
+13 — Player dependence and combination-prop coherence.
+
+14 — Latent team strength and preseason roster uncertainty.
+
+15 — Offensive efficiency, defensive efficiency, pace and matchup modeling.
+
+16 — Player-to-team bridge and replacement-player value.
+
+17 — Joint score distributions, margin, totals and game calibration.
+
+18 — Integrated champion selection and protected-category validation.
+
+19 — Autonomous lifecycle, exports and publication optimization.
+
+20 — Final production deployment and independent certification.
+
+---
+
+### PART II — BINDING MATHEMATICAL ENHANCEMENT REQUIREMENTS
+
+The following five structural mechanisms are mandatory targeted engineering objectives.
+
+Do not replace them with arbitrary hardcoded adjustments.
+
+#### Hook A — Availability-conditioned participation
+
+Stage 09.
+
+Preserve the existing empirically estimated baseline participation mechanism.
+
+Develop a statistically estimated availability-conditioned adjustment on a suitable probability or hazard scale.
+
+Account for status category, source reliability, information age, forecast horizon, historical player role and absence context.
+
+Use hierarchical pooling or regularization where observations are sparse.
+
+Confirmed ineligibility or non-participation must be enforced when legitimately established.
+
+Do not assign arbitrary participation probabilities to questionable, doubtful, probable or active players.
+
+Do not interpret absence of an injury report as confirmed availability.
+
+Validate using chronological Bernoulli proper scores, calibration and subgroup analysis.
+
+#### Hook B — Joint participation and starting lineups
+
+Stage 09.
+
+Model team participation and starting lineups jointly.
+
+Generate feasible team states rather than independently assigning incompatible starting probabilities.
+
+Enforce five starters in ordinary valid game states.
+
+Maintain explicit expected-lineup uncertainty.
+
+Use confirmed lineups only when an authorized source supplies credible information before the relevant forecast cutoff.
+
+Never fabricate a confirmed lineup.
+
+Distinguish participation probability from starting probability.
+
+#### Hook C — Joint minutes allocation
+
+Stage 09.
+
+Replace unconstrained independent player-minute allocation with a coherent joint rotation distribution.
+
+For regulation, enforce the team-level minutes conservation requirement of 200 player-minutes, with individual minutes bounded by participation and game duration.
+
+Represent overtime through an appropriate shared overtime state.
+
+Account for injury-related absence, return from absence, rotation role, starting status and teammate replacement.
+
+Use statistically justified uncertainty and redistribution mechanisms.
+
+A weighted bounded-simplex projection may be evaluated as a surgical implementation approach.
+
+Its weights, raw minute distributions and redistribution mechanisms must be empirically justified.
+
+Do not impose arbitrary injury discounts or allocate every absent player's minutes proportionally without validation.
+
+#### Hook D — Stat-specific opportunity and conversion
+
+Stage 11.
+
+Separate player minutes, opportunity generation and conditional conversion.
+
+Develop appropriate mechanisms for points, rebounds, assists, three-pointers, steals, blocks and turnovers.
+
+Account for teammate availability, lineup composition, team pace, opponent characteristics and role changes.
+
+Do not assume every category responds identically to an absent teammate.
+
+Do not force all team-level stat totals to remain unchanged after an injury.
+
+Avoid double-counting adjustments already incorporated through minutes, role or contextual features.
+
+Estimate material coefficients and validate individual and joint effects.
+
+#### Hook E — Replacement-adjusted player-to-team bridge
+
+Stage 16.
+
+Replace unsupported player-to-team availability coefficients with a statistically justified bridge.
+
+Measure the difference between the projected available rotation and the historical roster contribution already implicit in the independent team-strength estimate.
+
+Account for replacement-player quality.
+
+Distinguish new availability shocks from chronic absences already incorporated into team ratings.
+
+Investigate offensive and defensive effects separately where data support identification.
+
+Avoid double-counting team-level information.
+
+The existing gamma = 0.3 is not an empirically established coefficient.
+
+Estimate and validate its replacement, or establish a defensible constrained alternative.
+
+The unused beta parameter must be mathematically justified, implemented and validated, or eliminated.
+
+Do not introduce unsupported player impact metrics merely to create apparent sophistication.
+
+#### Dependence and distribution requirements
+
+Stages 12, 13 and 17 must preserve valid marginal and joint probability distributions.
+
+Combination props must derive from coherent shared simulation states.
+
+Account for both conditional residual dependence and dependence induced by shared game and rotation states.
+
+Validate dispersion and covariance against the corrected mean specification.
+
+Avoid double-counting overtime or shared contextual uncertainty.
+
+---
+
+### PART III — BINDING PARAMETER ESTIMATION, PROVENANCE AND VALIDATION
+
+#### 1. Parameter accountability
+
+Every material predictive parameter must have an explicit mathematical role, statistical justification and production lineage.
+
+Maintain the existing parameter inventory.
+
+Classify each material parameter as:
+
+- EMPIRICALLY_FITTED
+- VALIDATED_FIXED_PARAMETER
+- REGULARIZED_OR_PRIOR_DRIVEN
+- UNFITTED_HEURISTIC
+- MATHEMATICAL_CONSTANT
+- OPERATIONAL_CONTROL
+- SAFETY_CONTROL
+- UNKNOWN_PROVENANCE
+
+Do not confuse mathematical constants or operational controls with estimable predictive coefficients.
+
+Do not indiscriminately refit every constant.
+
+#### 2. Required parameter evidence
+
+For each material predictive parameter or parameter group, record:
+
+- Mathematical definition.
+- Current value or authenticated artifact reference.
+- Estimation population.
+- Training cutoff.
+- Information-availability constraints.
+- Estimation method.
+- Objective function.
+- Regularization or prior.
+- Effective sample size.
+- Identifiability limitations.
+- Estimation uncertainty or sensitivity.
+- Out-of-sample validation.
+- Temporal stability.
+- Interactions with other components.
+- Runtime consumer.
+- Fallback behavior.
+- Affected prediction categories.
+- Responsible engineering stage.
+- Final disposition.
+
+Trace actual fitted parameters from estimation through serialization, authentication, runtime consumption and final probability distributions.
+
+An estimator existing in the repository does not prove its output is used in production.
+
+#### 3. Estimation standards
+
+Use statistically appropriate likelihoods, proper scoring rules and regularized predictive objectives.
+
+Use chronological training and validation partitions.
+
+Prevent leakage through feature generation, standardization, imputation, prior construction, calibration and model selection.
+
+Estimate hyperparameters using appropriate inner chronological validation.
+
+Protect outer evaluation periods from parameter selection.
+
+Where historical model-selection exposure already exists, label it explicitly.
+
+Do not claim untouched out-of-sample validation on previously examined selection populations.
+
+Use genuine prospective evidence wherever possible.
+
+#### 4. Material unsupported parameters
+
+Every material unsupported parameter must ultimately receive one of these dispositions:
+
+A. EMPIRICALLY_ESTIMATED_AND_VALIDATED.
+
+B. EXISTING_VALUE_INDEPENDENTLY_VALIDATED.
+
+C. MATHEMATICALLY_REDUNDANT_AND_ELIMINATED.
+
+D. STATISTICALLY_CONSTRAINED_WITH_JUSTIFIED_PRIOR_AND_UNCERTAINTY.
+
+An unfitted parameter inventory is not completion.
+
+A favorable in-sample fit is not validation.
+
+#### 5. Explicit mandatory optimization assignments
+
+Stage 09:
+
+- Availability-conditioned participation.
+- Starting-lineup probabilities.
+- Joint minutes distribution.
+- Return-from-absence effects.
+- Rotation replacement.
+- Minutes clipping and dispersion.
+
+Stage 10:
+
+- DEV1 and PI2 K = 31.
+- PI2 clipping range [0.7, 1.3].
+- PI2 standardization constants.
+- Player-development and transfer parameters.
+- Cold-start prior strength.
+- Prior recency.
+
+Stage 11:
+
+- Environment shrinkage.
+- Stat-specific opportunity and conversion.
+- CTX1 validation under PS2.
+- Daily GLM and frozen-correction compatibility.
+- Potential double-correction.
+- Remaining F2–F9 predictive fallback mechanisms as applicable.
+
+Stage 12:
+
+- Unused dispersion parameters.
+- Conditional dispersion.
+- PMF shape and tail parameters.
+- PTSC1 interaction.
+- Calibration stability.
+
+Stage 13:
+
+- Residual dependence.
+- Shared-state dependence.
+- Combination-prop coherence.
+- Dependence regularization.
+
+Stage 14:
+
+- Team-rating hyperparameter provenance and estimation.
+- Preseason priors.
+- Carry and regression strength.
+- Home-court effects.
+- Roster uncertainty.
+
+Stage 15:
+
+- Offensive and defensive efficiency.
+- Pace.
+- Opponent adjustments.
+- Environment shrinkage.
+- Current-season scoring-level drift.
+
+Stage 16:
+
+- Unfitted gamma.
+- Unused beta.
+- Replacement-player value.
+- Offensive and defensive bridge effects.
+
+Stage 17:
+
+- Game variance parameters fitted against older means.
+- Score covariance.
+- Endgame design parameters.
+- Overtime distribution and calibration.
+- Joint score-distribution accuracy.
+
+Stages 18–19:
+
+- Daily-refit predictive validation.
+- Frozen-correction compatibility.
+- Integrated champion selection.
+- Protected-category non-regression.
+- Sustainable model promotion and monitoring.
+
+Resolve any additional material deficiencies identified in the existing parameter inventory.
+
+#### 6. Predictive fit promotion
+
+Integrity checks alone are insufficient to establish predictive fitness.
+
+Develop a computationally sustainable promotion framework using appropriate rolling predictive evaluation, causal validation, stability diagnostics and monitoring.
+
+Do not require an expensive complete historical replay every morning.
+
+Do not silently substitute the frozen opening model.
+
+Any authorized fallback must identify the actual artifact, cutoff, age, reason, degraded status, actionability and recovery policy.
+
+---
+
+### PART IV — STAGE 08: DEFINITIVE CHRONOLOGICAL PERFORMANCE BENCHMARK
+
+#### 1. Starting lineage
+
+Validated Stage 07 successor:
+
+7d160b1c7c5a02db834793954924c4ff240a0690
+
+CI run:
+
+46078107204
+
+Reported CI:
+
+1,186 passed, 36 skipped.
+
+Focused regression:
+
+200 passed, 2 skipped.
+
+Engineering checkpoint:
+
+45761b7
+
+Ledger key:
+
+stage7_universe_bitemporal_lineage_20261127
+
+Read the existing Stage 07 evidence and ROOT_CAUSE_LEDGER.json.
+
+Authenticate the starting lineage.
+
+Do not modify the validated predictive mathematics during this stage.
+
+#### 2. Deployment separation
+
+A bounded remote deployment procedure already exists for 7d160b1.
+
+Do not duplicate, restart or silently replace that procedure.
+
+Authenticate its current state and receipt.
+
+Stage 08 offline evaluation may proceed independently of production activation.
+
+Do not compete with active production workloads.
+
+Do not stage a successor that invalidates the scheduled deployment unexpectedly.
+
+Do not merge or promote an unvalidated Stage 08 predictive change.
+
+#### 3. Resolve administrative governance discrepancies
+
+Preserve this consolidated directive.
+
+Reconcile the Stage 07 acceptance-gate arithmetic against the authoritative ledger.
+
+The reported 17 unqualified passes, two qualified passes and one blocked gate do not reconcile to 19.
+
+Correct the reporting count without rerunning completed tests.
+
+#### 4. Freeze the benchmark population
+
+Use the Stage 07 cutoff:
+
+2026-11-27T20:40:23Z
+
+The primary benchmark must preserve this fixed evaluation cutoff.
+
+Account for all reported populations:
+
+- 1,485 tipped games.
+- 1,443 completed games.
+- 1,134 completed D-I versus D-I games.
+- 1,430 games with reportedly reconstructable information states.
+- 810 genuine prospective D-I game forecasts.
+- 300 games predating Droplet forecasting.
+- 24 games never slated.
+- 32,757 player box lines.
+- 22,997 forecast player-games.
+- 1,014,192 recorded pregame PMFs.
+- 514 games with player-market observations.
+- 349 games with game-market observations.
+- 72 ambiguous or unverifiable historical artifacts.
+- 4,112 unresolved player identities or identity records.
+
+Reconcile definitions, intersections and exclusions.
+
+Do not assume these populations are directly comparable or nested.
+
+Explain the PMF count relative to unique player-game-stat combinations and forecast vintages.
+
+Determine the exact denominator and unit of the unresolved identity population.
+
+Do not omit difficult games or unexpected players.
+
+#### 5. Preserve distinct evaluation populations
+
+A. HISTORICAL_PRODUCTION:
+
+Genuine immutable forecasts as originally generated.
+
+Include historical defective forecasts with their actual lineage and defect labels.
+
+B. CORRECTED_CANDIDATE_REPLAY:
+
+The frozen Stage 07 architecture applied only to legitimate historical information.
+
+Use historically available fit artifacts or causally reconstructed fits under explicit reconstruction rules.
+
+Distinguish exact retained states from conservative reconstructions.
+
+C. MARKET_OVERLAP:
+
+Matched predictions and sportsbook observations with comparable line, side, quote timestamp, settlement and forecast horizon.
+
+D. DIAGNOSTIC_RECONSTRUCTION:
+
+Incomplete information provenance, timing-rule-only historical states, ambiguous lineage or prior model-selection exposure.
+
+Do not combine these populations into an undifferentiated performance result.
+
+#### 6. Chronological replay integrity
+
+For every corrected replay, authenticate:
+
+- Forecast cutoff.
+- Information-state cutoff.
+- Actual acquisition availability.
+- Historical roster membership.
+- Availability event chronology.
+- Fitted artifact identity.
+- Training cutoff.
+- Model-promotion availability.
+- Feature-state identity.
+- Configuration and parameter lineage.
+- Forecast vintage.
+
+Do not use a model fitted or promoted using future outcomes.
+
+The mere existence of a retained database state does not establish a valid replay.
+
+Historical lockbox seasons that can only be positioned through a timing rule must remain explicitly qualified.
+
+#### 7. Forecast-vintage discipline
+
+Evaluate comparable horizons independently.
+
+At minimum distinguish, where supported:
+
+- Initial daily forecast.
+- Intraday refresh forecast.
+- Official pregame cutoff forecast.
+- Earliest available market observation.
+- Same-time market observation.
+- Closing market observation.
+
+Do not select the best historical forecast vintage after observing the outcome.
+
+Do not count repeated PMFs for the same realized outcome as independent observations.
+
+Report unique events, players, player-games, market contracts and forecast vintages.
+
+#### 8. Complete player-distribution evaluation
+
+Evaluate every supported player-stat category, not merely sportsbook-listed props.
+
+For each category report, where appropriate:
+
+- Actual and forecast means.
+- Signed bias.
+- MAE and RMSE.
+- Discrete CRPS.
+- Predictive log score.
+- Randomized PIT or appropriate discrete calibration diagnostics.
+- Prediction interval coverage.
+- Interval width.
+- Tail calibration.
+- Conditional and unconditional performance.
+
+Account for DNP outcomes and participation separately.
+
+Do not conflate a participation-conditioned prop PMF with an unconditional player-production distribution.
+
+Evaluate:
+
+- Participation probabilities.
+- Minutes distributions.
+- Starting and role classification where credible historical labels exist.
+- PTS.
+- REB.
+- AST.
+- FG3M.
+- STL.
+- BLK.
+- TOV.
+- PRA.
+- PR.
+- PA.
+- RA.
+- STOCKS.
+
+Reconcile all supported stat categories against the actual engine contract.
+
+Include unexpected participants and missing forecasts in coverage reporting.
+
+#### 9. Complete game-distribution evaluation
+
+Evaluate:
+
+- Home score.
+- Away score.
+- Game total.
+- Margin of victory.
+- Moneyline probability.
+- Spread probabilities.
+- Team totals.
+- Alternate spreads and totals where comparable observations exist.
+
+Report:
+
+- Signed bias.
+- MAE.
+- RMSE.
+- CRPS.
+- Log score.
+- Brier score for relevant binary contracts.
+- Calibration.
+- Tail performance.
+- Joint distribution diagnostics.
+- Relevant covariance and correlation diagnostics.
+
+Distinguish FBS/FCS terminology from CBB eligibility classifications. Do not import unrelated football assumptions.
+
+Evaluate D-I versus D-I and other supported game classes separately.
+
+#### 10. Independent market comparison
+
+For every comparable player and game market, calculate both model and de-vigged market probabilities under identical settlement conventions.
+
+Use matched line, side, event, player, book and quote timing.
+
+Report opening, contemporaneous and closing comparisons separately.
+
+Do not treat closing odds as information available to an earlier originator forecast.
+
+Calculate paired differences in:
+
+- Brier score.
+- Log loss.
+- Calibration measures where appropriate.
+
+Use additional proper scores only where the market supplies sufficient distributional information.
+
+Do not infer a complete market PMF from a single binary quote without explicitly justified assumptions.
+
+Keep market-independent predictive accuracy separate from market-relative probability accuracy.
+
+#### 11. Role and category analysis
+
+For each player-stat category, break down performance by sufficiently supported groups:
+
+- Starter versus nonstarter where actual or prediction-time labels are appropriately defined.
+- Prediction-time role category.
+- Projected minutes.
+- Actual minutes for diagnostic analysis only.
+- Participation probability.
+- Availability status.
+- Return-from-absence context.
+- Early-season versus established history.
+- Transfer and cold-start status.
+- Forecast horizon.
+- Conference or competition level.
+- Over versus under.
+
+Report unsupported or empty categories as NOT_EVALUABLE.
+
+Do not use realized player role to claim prospective subgroup performance.
+
+Distinguish diagnostic conditioning on actual outcomes from information available before prediction.
+
+#### 12. Probability calibration
+
+Produce reliability tables with sample sizes and uncertainty intervals.
+
+Examine:
+
+- Overall calibration.
+- Calibration-in-the-large.
+- Calibration slope where statistically appropriate.
+- Overconfidence and underconfidence.
+- High-probability tails.
+- 60% and 65% reporting tiers.
+- Role and stat interactions.
+- Market-relative calibration.
+
+Use appropriate regularization or pooling for sparse subgroup diagnostics.
+
+Do not interpret a small high-probability sample as reliable evidence of sustained predictive advantage.
+
+#### 13. Statistical inference
+
+Use paired comparisons on identical observations.
+
+Account for dependence among:
+
+- Players in the same game.
+- Multiple stats for the same player.
+- Repeated games for the same teams.
+- Alternative lines.
+- Repeated forecast vintages.
+- Shared market events.
+
+Use defensible clustered or blocked uncertainty estimation.
+
+Report effective sample sizes and confidence intervals.
+
+Control or explicitly account for multiplicity when examining numerous categories.
+
+Do not claim statistical superiority from a negative point estimate alone.
+
+Do not claim noninferiority merely because a difference is statistically insignificant.
+
+Any formal noninferiority margin must be justified and specified before evaluating the comparison.
+
+#### 14. Root-cause diagnosis
+
+For each materially weak prediction category, distinguish:
+
+- Mean bias.
+- Dispersion error.
+- Tail error.
+- Participation error.
+- Minutes error.
+- Rotation error.
+- Role classification error.
+- Opportunity-rate error.
+- Conversion-rate error.
+- Dependence error.
+- Team-strength error.
+- Pace error.
+- Availability-bridge error.
+- Parameter-estimation instability.
+- Data coverage or identity limitations.
+- Information horizon differences.
+
+Use existing evidence and targeted diagnostics.
+
+Do not infer causality solely from descriptive subgroup associations.
+
+Rank candidate root causes by demonstrated evidence, affected sample size, materiality and expected relevance to the assigned engineering stage.
+
+#### 15. Protect the incumbent benchmark
+
+Freeze the benchmark architecture and evaluation definitions.
+
+Record exact model identities, artifact hashes, population manifests, metrics and statistical methodology.
+
+Subsequent Stages 09–17 must evaluate improvements against this frozen benchmark.
+
+Do not optimize parameters during Stage 08.
+
+Do not repeatedly tune later models against a purported untouched holdout.
+
+Establish protected evaluation periods and prospective validation procedures for later stages.
+
+#### 16. Resource-efficient execution
+
+Reuse validated historical artifacts wherever possible.
+
+Do not reconstruct every intraday forecast vintage unnecessarily.
+
+Run one substantial computation at a time.
+
+Use checkpointed chronological processing.
+
+Perform a bounded feasibility pilot before any expensive season replay.
+
+Quantify projected CPU, RAM, disk and elapsed resource requirements.
+
+If a complete replay cannot safely run, preserve the exact outstanding population and report the blocker.
+
+Do not substitute an unrepresentative sample and call it season-complete.
+
+No unauthorized provider calls.
+
+No production data modification.
+
+#### 17. Required benchmark deliverables
+
+Produce concise human-readable reports and machine-readable tables containing:
+
+- Season game coverage.
+- Season player coverage.
+- Forecast-vintage reconciliation.
+- Historical information limitations.
+- Player-category performance.
+- Game-category performance.
+- Role-by-stat performance.
+- Calibration diagnostics.
+- Matched market comparisons.
+- Clustered statistical uncertainty.
+- Root-cause priority matrix.
+- Parameter-estimation priorities.
+- Protected benchmark manifest.
+
+Every material result must include its actual denominator.
+
+#### 18. Required final questions
+
+Answer explicitly:
+
+1. How well does the genuine historical production model perform?
+
+2. How well does the corrected incumbent perform under legitimate chronological reconstruction?
+
+3. Which player categories credibly outperform the matched market?
+
+4. Which game categories credibly outperform the matched market?
+
+5. Which categories remain inferior?
+
+6. Which categories remain statistically inconclusive?
+
+7. What are the principal predictive weaknesses by stat and player role?
+
+8. What evidence supports each proposed structural repair?
+
+9. Which unfitted or poorly validated parameters deserve the highest priority?
+
+10. What exact benchmark must Stage 09 and subsequent stages improve upon?
+
+#### 19. Acceptance gates
+
+Report PASS, FAIL, BLOCKED or UNVERIFIED for:
+
+- CONSOLIDATED_GOVERNANCE_PRESERVED
+- PARAMETER_INVENTORY_RECONCILED
+- BENCHMARK_LINEAGE_AUTHENTICATED
+- COMPLETE_GAME_UNIVERSE_ACCOUNTED_FOR
+- COMPLETE_PLAYER_UNIVERSE_ACCOUNTED_FOR
+- FORECAST_VINTAGES_RECONCILED
+- PROSPECTIVE_AND_REPLAY_POPULATIONS_SEPARATED
+- HISTORICAL_INFORMATION_LIMITATIONS_QUANTIFIED
+- MARKET_COMPARISON_MATCHING_VERIFIED
+- PLAYER_DISTRIBUTION_METRICS_COMPLETE
+- GAME_DISTRIBUTION_METRICS_COMPLETE
+- ROLE_STAT_ANALYSIS_COMPLETE
+- CALIBRATION_ANALYSIS_COMPLETE
+- DEPENDENCE_AWARE_INFERENCE_COMPLETE
+- ROOT_CAUSE_PRIORITIES_EVIDENCE_SUPPORTED
+- PARAMETER_ESTIMATION_PRIORITIES_ESTABLISHED
+- BENCHMARK_MANIFEST_FROZEN
+- RESOURCE_SAFETY_VERIFIED
+- STAGE_09_READY
+
+Do not award PASS to unsupported evidence.
+
+Do not obscure limitations in an aggregate completion percentage.
+
+#### 20. Final handoff
+
+Return the complete Stage 08 engineering report.
+
+Include the definitive performance tables, exact sample definitions, unresolved blockers, benchmark identities and prioritized Stage 09–17 optimization requirements.
+
+Preserve the authoritative ledger and governance records.
+
+Report the separately scheduled production deployment status.
+
+Do not begin Stage 09 independently.
+
+Do not rebuild the model.
+
+Do not refit the predictive architecture during this benchmark.
+
+BEGIN STAGE 08 NOW.

@@ -849,5 +849,99 @@
    "reclaimed": "292876288 B superseded staged trees",
    "stage19": "S19-STOR-1..7 mandatory"
   }
+ },
+ "stage8_chronological_benchmark_20261128": {
+  "recorded_at": "2026-11-28T01:50Z",
+  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE",
+  "benchmark_id": "CBB-S08-BENCHMARK-20261128",
+  "evidence": "docs/audits/2026-11-28-stage8 (README, results/BENCHMARK_MANIFEST.json, results/*.csv|json, scripts/s8_*.py)",
+  "lineage": {
+   "stage7_successor": "7d160b1c7c5a02db834793954924c4ff240a0690",
+   "ci_run": 46078107204,
+   "ci": "success (gh run view, head 7d160b1)",
+   "stage7_checkpoint": "45761b7",
+   "production": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "predictive_code_changed": false
+  },
+  "deployment_status_at_handoff": {
+   "state_file": "absent (not yet run)",
+   "current": "9f65e7f",
+   "timers": [
+    "w1 2026-11-28 04:50Z",
+    "w2 16:50Z"
+   ],
+   "free_disk_B": 38320631808,
+   "gate_B": 41339060224,
+   "stage8_touched_procedure": false
+  },
+  "corrections": {
+   "stage7_gate_tally": "19 = 14 PASS + 4 qualified PASS + 1 BLOCKED (handoff text 17/2/1 was wrong); no test rerun",
+   "parameter_directive_preserved": "RESOLVED: consolidated instrument verbatim in governance \u00a76",
+   "stage7_market_counts": "player-market games 514 -> 117 with MARKET_EVALUATION (99 complete; 3,036 evals, 598 player-games correct); game-market 349 -> 285 complete games with evaluation + captures + decision PMF (marker records had been counted)"
+  },
+  "authentication": {
+   "sources": 370,
+   "sha_matches_recorded": 343,
+   "logged_lossless_compaction_20261116": 27,
+   "unexplained": 0,
+   "frozen_probabilities_reproduced_exactly": {
+    "player": 2330,
+    "game": 64949
+   }
+  },
+  "populations": {
+   "A": "989,604 PMFs = 275,964 player-game-stats x 3.59 vintages; 22,997 player-games; 811 games; 331 game PMFs",
+   "B": "NOT EXECUTED (BLOCKED): 1,127 complete DI games outstanding; ~7-8 CPU-h, ~14 GB scratch vs deploy disk gate; selection exposure <= 11-26; assigned to 18",
+   "C": "player 2,299 primary contracts / 97 games; game 1,415 consensus main-line / 285 games",
+   "D": "labelled only"
+  },
+  "headline": {
+   "player_market": "no category better; PTS dBrier +0.0135 [0.0021,0.0270] (Holm 0.29); others inconclusive; STL/BLK/TOV/PA/RA/STOCKS not evaluable",
+   "game_market": "SPREAD inferior dBrier +0.0191 (Holm p 0.009); AWAY_TT inferior unadjusted; ML/total/home TT inconclusive",
+   "market_calibration_slope": {
+    "player_model": 0.38,
+    "player_market": 0.87,
+    "game_model": 0.42,
+    "game_market": 1.03
+   },
+   "pts_zero_mass": "P(PTS=0|play) forecast/realized: bench .224/.412, rotation .082/.178, top5 .016/.052; PTS lower-5% PIT 9.7%",
+   "role_bias_pts": "BENCH +0.70, ROTATION +0.38, TOP5 -0.33 with unbiased projected minutes",
+   "participation": "Brier 0.1091; p<0.10 realizes 8-19%",
+   "game_margin": "90% cov 0.858; sd 11.70 vs 12.83"
+  },
+  "priorities": [
+   "12: P31/P29 PTS zero & low mass",
+   "11: P27 low-minute conversion",
+   "17: G11 variance",
+   "09: P1/P2 participation tails",
+   "09: P3/P5 joint minutes",
+   "10: P12/P18/P20",
+   "14/15: G4/G1",
+   "16: G10/G9"
+  ],
+  "protection": "Stages 09-17 must not select on the Stage 08 populations; post-activation window reserved for Stage 18; Stage 18 NI margins declared before scoring",
+  "gates": {
+   "CONSOLIDATED_GOVERNANCE_PRESERVED": "PASS",
+   "PARAMETER_INVENTORY_RECONCILED": "PASS",
+   "BENCHMARK_LINEAGE_AUTHENTICATED": "PASS",
+   "COMPLETE_GAME_UNIVERSE_ACCOUNTED_FOR": "PASS",
+   "COMPLETE_PLAYER_UNIVERSE_ACCOUNTED_FOR": "PASS",
+   "FORECAST_VINTAGES_RECONCILED": "PASS",
+   "PROSPECTIVE_AND_REPLAY_POPULATIONS_SEPARATED": "PASS",
+   "HISTORICAL_INFORMATION_LIMITATIONS_QUANTIFIED": "PASS",
+   "MARKET_COMPARISON_MATCHING_VERIFIED": "PASS",
+   "PLAYER_DISTRIBUTION_METRICS_COMPLETE": "PASS (qualified: minutes 2 moments only; starters realized-only)",
+   "GAME_DISTRIBUTION_METRICS_COMPLETE": "PASS (qualified: DI_VS_NON_DI not evaluable)",
+   "ROLE_STAT_ANALYSIS_COMPLETE": "PASS",
+   "CALIBRATION_ANALYSIS_COMPLETE": "PASS",
+   "DEPENDENCE_AWARE_INFERENCE_COMPLETE": "PASS",
+   "ROOT_CAUSE_PRIORITIES_EVIDENCE_SUPPORTED": "PASS",
+   "PARAMETER_ESTIMATION_PRIORITIES_ESTABLISHED": "PASS",
+   "BENCHMARK_MANIFEST_FROZEN": "PASS",
+   "RESOURCE_SAFETY_VERIFIED": "PASS",
+   "STAGE_09_READY": "PASS (qualified: population B BLOCKED, 7d160b1 activation pending)"
+  },
+  "gate_tally": "16 PASS + 3 qualified PASS = 19"
  }
 }
