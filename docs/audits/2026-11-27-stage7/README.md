@@ -196,7 +196,7 @@ Selection-exposed dates are identified in `STAGE08_POPULATIONS.md` D. A new para
 | HISTORICAL_ROSTER_INTEGRITY_VERIFIED | **PASS** | roster comes only from the state as-of T; 316 roster rows first seen after pregame are not admitted earlier |
 | REPLAY_LEAKAGE_DEFECTS_REPAIRED | **PASS** | §2 table; `tests/test_stage7_bitemporal.py` (old path fails, corrected path passes) |
 | CAUSAL_FEATURE_CACHE_PROTECTED | **PASS** | `causal_key` includes state version and hashes (verified, unchanged); compact build now records and checks the information state |
-| SILENT_MODEL_FALLBACKS_ELIMINATED | **PASS** (engineering; not active in production until deploy) | §3, F1–F9 |
+| SILENT_MODEL_FALLBACKS_ELIMINATED | **PASS** (engineering; active in production once the scheduled deploy runs) | §3, F1–F9 |
 | HISTORICAL_FIT_LINEAGE_VERIFIED | **PASS** (with classified gaps) | §4; 848 of 920 code commits recorded or derived; 50 AMBIGUOUS and 22 UNVERIFIED kept as such |
 | ORIGINAL_PROSPECTIVE_FORECASTS_PRESERVED | **PASS** | all audit units ran read-only (ReadOnlyPaths); corrections are separate attribution rows |
 | CORRECTED_REPLAY_POPULATION_DEFINED | **PASS** | `STAGE08_POPULATIONS.md` B; 1,430 complete games (1,127 DI) eligible |
@@ -204,8 +204,27 @@ Selection-exposed dates are identified in `STAGE08_POPULATIONS.md` D. A new para
 | MISSING_INFORMATION_LIMITATIONS_QUANTIFIED | **PASS** | §5, `STAGE08_POPULATIONS.md` D and missing/excluded table |
 | STAGE_08_BENCHMARK_READY | **PASS** (engineering) | populations, frozen cutoff, replay contract. Stage 08 not started |
 | RESOURCE_SAFETY_VERIFIED | **PASS** | §1 |
-| SUCCESSOR_LINEAGE_PRESERVED | see ledger key `stage7_universe_bitemporal_lineage_20261127` | successor on 2ac9117, CI and staged-tree hashes recorded there |
+| SUCCESSOR_LINEAGE_PRESERVED | **PASS** | 7d160b1 descends from 2ac9117 → … → 9f65e7f (all Stage 02–06 commits are ancestors); CI 46078107204 success (1,186 passed, 36 skipped; 33-test step passed); staged tree identical to `git archive` (960 files); ledger key `stage7_universe_bitemporal_lineage_20261127` |
 
 ## 9. Activation
 
-Not deployed. Blocker: free disk 37.95 GB below the 38.5 GB deploy gate, and it does not reopen by itself. Details and the owner options are in `DEPLOY_PROCEDURE.md`.
+**At handoff (2026-11-28 01:15Z): production 9f65e7f, rollback cae2a02.** Successor `7d160b1c7c5a02db834793954924c4ff240a0690` is staged inert and hash-verified (960 files).
+
+The owner-authorized activation is **scheduled**, not yet executed. It is one guarded script with two bounded windows: 2026-11-28 04:50–05:40Z, with a fallback at 16:50–17:25Z. Details are in `DEPLOY_PROCEDURE.md`.
+* It deploys only if every established safeguard passes, including free disk ≥ 38.5 GiB.
+* It aborts if production or the staged set changed, so it cannot activate a superseded candidate or race later work.
+* On preflight failure it rolls back to 9f65e7f automatically.
+
+Free disk at handoff is 37.80e9 bytes (35.2 GiB), below the gate. Whether a window opens depends on the retention passes; the 16:45Z pass has passed the gate every day. Disk growth: see `../2026-11-27-storage/STORAGE_ROOT_CAUSE.md` and the mandatory Stage 19 requirements S19-STOR-1…7 in `ASSIGNMENT_REGISTER.md`. Details and the owner options are in `DEPLOY_PROCEDURE.md`.
+
+## 10. Validation
+
+* **Focused local:**
+  * The first run of 69 files gave 15 failures and 12 errors. All were Stage 07 regressions:
+    * hash-sealed frozen files had been touched; the F6/F7 counters were moved to the run layer;
+    * `subprocess` was imported in the production layer;
+    * FUTURE_PROMOTION fired in prospective scoring, so it is now replay-only;
+    * the new run reason had no board mapping;
+    * two tests had outdated expectations.
+  * Rerun of the 15 affected files plus the new and changed tests: **200 passed, 2 skipped**.
+* **GitHub CI `cbb-production-ci.yml`:** run 46078107204 on 7d160b1, **success**: 1,186 passed, 36 skipped (Stage 06: 1,172 / 36); a 33-test step passed.

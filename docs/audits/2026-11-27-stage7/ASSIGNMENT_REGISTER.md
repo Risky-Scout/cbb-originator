@@ -48,9 +48,23 @@ No item is left unassigned. Items resolved in Stage 07 are marked **RESOLVED (07
 | 34 | Protected-category validation (stat × role) | program | **18** |
 | 35 | Export redundancy / idle-wake rebuilds; writer-lock 47 %; refresh latency (1,345 s); `availability_changes` NO_REPORT ≠ no row re-forecasts every game; selection_audit PYTHONPATH=current | S04, S05 | **19** |
 | 36 | Health alert routing for the new MODEL_SOURCE_FALLBACK blocker; F-counter thresholds | S07 | **19** |
-| 37 | **Disk headroom:** free 37.95 GB < the 38.5 GB deploy gate, and falling about 1 GB/day (state versions 4.9 GB, no version pruning by design) | S07 | **19** (retention policy for immutable versions must keep replay evidence; see row 1). Blocks activation (**20**) until resolved |
-| 38 | Consolidated activation of Stages 02–07 on the Droplet; 14-item live proof | program | **20** (blocked by row 37) |
+| 37 | **Disk headroom (corrected by the storage investigation):** the gate (38.5 GiB) cycles with run scratch; host growth 3.35 GB/day is ~70% non-CBB; CBB's persistent grower is the full-copy state versions. Mandatory Stage 19 requirements S19-STOR-1…7 below | S07, storage | **19** (mandatory). Activation proceeds when the gate passes (scheduled guarded deploy) |
+| 38 | Consolidated activation of Stages 02–07 on the Droplet; 14-item live proof | program | activation of 7d160b1 scheduled (guarded, 2026-11-28 04:50Z / 16:50Z windows); live proof **20** |
 | 39 | RotoWire commercial data authorization; WizardOfOdds deploy key (Massey, unrelated) | S04 | owner decision (external), recorded for **20** |
 | 40 | Full text of the Binding Parameter Estimation, Provenance and Validation Directive, the Mathematical Enhancement Addendum and the Engineering Campaign Override not received | S06, S07 | **BLOCKED (07)**, owner to supply. The 55-group reconciliation against them is then a Stage 07 follow-up |
 | 41 | Lockbox seasons ≤ 2025-26 are rule-only by nature (true acquisition unknown) | S07 | permanent limitation, **DIAGNOSTIC_RECONSTRUCTION** label in **08** |
 | 42 | 2026-27 games whose pregame cutoff precedes the first retained state (2026-11-02 18:45Z), or falls in a non-retained GitHub-era promotion | S07 | permanent limitation. Counts in README §5; DIAGNOSTIC in **08** |
+
+## Mandatory Stage 19 storage requirements (owner directive, 2026-11-27)
+
+Evidence: `../2026-11-27-storage/STORAGE_ROOT_CAUSE.md`. No requirement may drop historical replay, rollback or evaluation evidence, and none may lower the disk gate.
+
+| id | requirement | measured basis | expected effect |
+|---|---|---|---|
+| S19-STOR-1 | Canonical state versions in a relation-level content-addressed or append-only bitemporal store. A version becomes a manifest of relation hashes. Existing versions are migrated losslessly: each must reproduce its recorded relation sha256 through `walkforward.eligibility.state_asof` before any full copy is removed | 313 full 8–19 MB copies, 5.29 GB, 0.33–0.64 GB/day and rising with the season (≈50 MB/copy by March). `prod_schedule` changes 312/312, teams 1/312 | ≈4 GB reclaimed; state growth falls from about 0.5 to well under 0.1 GB/day |
+| S19-STOR-2 | Delete run feature scratch as soon as the run's durable outputs are verified, keeping only the newest 1–2 runs that `shadow_tick.scoring_evidence` reads | ~540 MB per run, 18–24 h window, ~11 GB intraday swing | stable headroom; the gate stops cycling |
+| S19-STOR-3 | Resolve the UNVERIFIED-run class: write durable PMF evidence for runs whose `market_pmfs.parquet` is incomplete, or record why the scratch must stay | 2 runs from 11-17, 1.07 GB; market_pmfs rows 19,008 / 17,988 vs predictions 30,360 / 28,860 | 1.07 GB, once their predictions are durably preserved |
+| S19-STOR-4 | Compress raw provider payloads (cbbd, the-odds-api) at write, keeping the sha256 of the raw bytes | 20,026 uncompressed JSON, 0.47 GB | ≈0.4 GB; raw-cache growth falls by about 80% |
+| S19-STOR-5 | Content-address tick and forecast PMFs per (game, model, inputs) so unchanged games are not rewritten every 30 min | ticks 0.34 GB, forecasts 1.0 GB, ops +0.12 GB/day | most of the ops growth |
+| S19-STOR-6 | TTL or RETAIN-marker rule for `audit/`, like `qa/`; review the existing RETAIN markers | `audit/causal/ov/candidates` 0.63 GB (NO_REASON); qa 0.35 GB marked | ≤1 GB, after owner review |
+| S19-STOR-7 | The disk gate in the deploy tooling is checked in bytes (38.5 GiB = 41,339,060,224) and logged, and the footprint report trends host vs CBB vs other tenants | gate unit ambiguity found in Stage 07 | no unit ambiguity |

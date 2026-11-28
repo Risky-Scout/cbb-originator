@@ -53,7 +53,7 @@ every stage. A stage's engineering completion is never production activation.
 | 16 | Player-to-team bridge and replacement-player value | not started | |
 | 17 | Joint score distributions, margin, totals and game calibration | not started | |
 | 18 | Integrated champion selection and protected-category validation | not started | |
-| 19 | Autonomous lifecycle, exports and publication optimization | not started | |
+| 19 | Autonomous lifecycle, exports and publication optimization | not started; **mandatory storage requirements S19-STOR-1…7** (owner directive 2026-11-27) | `docs/audits/2026-11-27-stage7/ASSIGNMENT_REGISTER.md`, `docs/audits/2026-11-27-storage` |
 | 20 | Final production deployment and independent certification | not started | |
 
 Stage 06 assigned some items to provisional domain numbers (10 rates/priors, 12 shape/tails, 13 dependence, 14 calibration, 15 game ratings).

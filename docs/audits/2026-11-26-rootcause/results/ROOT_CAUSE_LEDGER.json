@@ -775,5 +775,79 @@
    "gamma unfitted, one-sided; beta unimplemented; no opponent term"
   ],
   "unnumbered_domains": "rates/priors, shape/tails, dependence, calibration, game ratings (provisional 10/12/13/14/15; confirm program list)"
+ },
+ "stage7_universe_bitemporal_lineage_20261127": {
+  "recorded_at": "2026-11-28T01:20Z",
+  "engineering_status": "COMPLETE_PENDING_ACCEPTANCE",
+  "lineage": {
+   "production": "9f65e7f9196c21a15811560d14c9974cb0bb2d7f",
+   "rollback": "cae2a027430184c5686eb87d180e6062457359ac",
+   "stage6_successor": "2ac9117e25a92fcc090f2a5da4584a5248213e90",
+   "stage6_checkpoint": "d5a7dac",
+   "stage7_successor": "7d160b1c7c5a02db834793954924c4ff240a0690",
+   "ci_run": 46078107204,
+   "ci": "success: 1186 passed, 36 skipped; 33-test step passed",
+   "staged": "releases/7d160b1c7c5a02db834793954924c4ff240a0690.tmp, 960 files identical to git archive; audit/stage7-20261127/candidate_7d160b1c7c5a02db834793954924c4ff240a0690.sha256sums"
+  },
+  "evidence": "docs/audits/2026-11-27-stage7 (README gates, ASSIGNMENT_REGISTER incl. S19-STOR-1..7, STAGE08_POPULATIONS, DEPLOY_PROCEDURE, results/, scripts/); docs/audits/2026-11-27-storage/STORAGE_ROOT_CAUSE.md",
+  "gates": {
+   "COMPLETE_STAGE_MAPPING_PRESERVED": "PASS",
+   "PARAMETER_DIRECTIVE_PRESERVED": "BLOCKED (texts not received)",
+   "SEASON_GAME_UNIVERSE_RECONCILED": "PASS",
+   "SEASON_PLAYER_UNIVERSE_RECONCILED": "PASS",
+   "HISTORICAL_INFORMATION_AVAILABILITY_VERIFIED": "PASS (2026-27 retained window; earlier rule-only)",
+   "PROVIDER_REVISION_PROTECTION_VERIFIED": "PASS",
+   "AVAILABILITY_EVENT_CHRONOLOGY_VERIFIED": "PASS",
+   "HISTORICAL_ROSTER_INTEGRITY_VERIFIED": "PASS",
+   "REPLAY_LEAKAGE_DEFECTS_REPAIRED": "PASS",
+   "CAUSAL_FEATURE_CACHE_PROTECTED": "PASS",
+   "SILENT_MODEL_FALLBACKS_ELIMINATED": "PASS (engineering)",
+   "HISTORICAL_FIT_LINEAGE_VERIFIED": "PASS (72 of 920 classified AMBIGUOUS/UNVERIFIED)",
+   "ORIGINAL_PROSPECTIVE_FORECASTS_PRESERVED": "PASS",
+   "CORRECTED_REPLAY_POPULATION_DEFINED": "PASS",
+   "MARKET_OVERLAP_POPULATION_DEFINED": "PASS",
+   "MISSING_INFORMATION_LIMITATIONS_QUANTIFIED": "PASS",
+   "STAGE_08_BENCHMARK_READY": "PASS (engineering)",
+   "RESOURCE_SAFETY_VERIFIED": "PASS",
+   "SUCCESSOR_LINEAGE_PRESERVED": "PASS"
+  },
+  "universe": {
+   "cutoff": "2026-11-27T20:40:23Z",
+   "state": "S20261127T201352Z-8eeab0c20aef",
+   "games_tipped": 1485,
+   "complete": 1443,
+   "complete_di": 1134,
+   "exact_state_complete": 1430,
+   "exact_state_complete_di": 1127,
+   "forecast_games": 833,
+   "forecast_complete_di": 810,
+   "missing_forecast_complete_di": {
+    "before_droplet": 300,
+    "never_slated": 24
+   },
+   "box_lines": 32757,
+   "forecast_player_games": 22997,
+   "pregame_pmf_rows": 1014192,
+   "invalid_pmfs": 0
+  },
+  "activation": {
+   "status": "SCHEDULED_NOT_EXECUTED at handoff",
+   "script": "/root/cbb-s7-deploy.sh sha256 5aceb74ebb92651afd283c5288ed3bca644b3c2a3a69cf51b44d9e00605dfcdf",
+   "timers": [
+    "cbb-s7-deploy-7d160b1-w1 2026-11-28 04:50Z (deadline 05:40Z)",
+    "cbb-s7-deploy-7d160b1-w2 16:50Z (deadline 17:25Z)"
+   ],
+   "gate": "free disk >= 41339060224 B (38.5 GiB), MemAvailable >= 4 GiB, tick/refresh/oneshot windows, staged hash, current==9f65e7f, no other staged candidate",
+   "receipts": "audit/stage7-20261127/deploy_receipt.jsonl, /root/cbb-s7-deploy.state",
+   "cancel": "touch /root/cbb-s7-deploy.CANCEL",
+   "pending_operator": "after DEPLOYED: fast-forward origin/main and origin/production/root-cause-20261126 to 7d160b1; post-deploy checks after the next 11:10Z morning"
+  },
+  "storage": {
+   "host_growth": "3.35 GB/day measured (11-16..11-27)",
+   "cbb_recurring": "~0.5 GB/day (state versions full copies)",
+   "non_cbb_share": "~70%; NBA production ~15.6 GB since 11-16",
+   "reclaimed": "292876288 B superseded staged trees",
+   "stage19": "S19-STOR-1..7 mandatory"
+  }
  }
 }
